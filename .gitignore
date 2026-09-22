@@ -18,3 +18,11 @@ coverage/
 test-corpus/
 artifacts/recordings/
 artifacts/private/
+
+# Screen recordings and other video evidence stay local; never push them.
+*.mp4
+*.mov
+*.m4v
+*.webm
+*.mkv
+*.avi
