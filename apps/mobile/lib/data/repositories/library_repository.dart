@@ -26,6 +26,7 @@ class LibraryRepository extends ChangeNotifier {
   final Downloader _downloader;
   final Map<String, LibraryEntry> _entries = {};
   final Set<String> _cancelRequests = {};
+  final Map<String, LibraryEntry> _verifiedBeforeUpdate = {};
   bool _loaded = false;
   Future<void> _writes = Future.value();
 
@@ -76,7 +77,10 @@ class LibraryRepository extends ChangeNotifier {
   }
 
   Future<void> _persist() {
-    final snapshot = {'entries': _entries.values.map((e) => e.toJson()).toList()};
+    final snapshot = {
+      'entries': _entries.values.map((e) =>
+        (e.download.isActive ? (_verifiedBeforeUpdate[e.id] ?? e) : e).toJson()).toList(),
+    };
     // Serialize snapshots: a slower old write must never replace newer progress.
     final next = _writes.then((_) => _store.writeJson(_key, snapshot));
     _writes = next.catchError((Object error) {
@@ -101,6 +105,7 @@ class LibraryRepository extends ChangeNotifier {
     final existing = _entries[id];
     if (existing != null && existing.download.isActive) return;
 
+    if (existing?.download.isReady == true) _verifiedBeforeUpdate[id] = existing!;
     var e = existing == null
         ? LibraryEntry(
             book: book,
@@ -156,8 +161,13 @@ class LibraryRepository extends ChangeNotifier {
           ),
         ),
       );
+      if (existing?.download.path != null && existing!.download.path != path) {
+        await _bookStore.delete(existing.download.path!);
+      }
     } on DownloadCancelled {
-      _put(e.copyWith(download: DownloadState(totalBytes: book.fileSize)));
+      _put(existing?.download.isReady == true
+          ? existing!
+          : e.copyWith(download: DownloadState(totalBytes: book.fileSize)));
     } catch (err) {
       final message = switch (err) {
         DownloadFailure f => f.message,
@@ -165,7 +175,9 @@ class LibraryRepository extends ChangeNotifier {
         _ => 'Download failed: $err',
       };
       _put(
-        e.copyWith(
+        existing?.download.isReady == true
+        ? existing!.copyWith(download: existing.download.copyWith(error: 'Update failed. $message'))
+        : e.copyWith(
           download: DownloadState(
             status: DownloadStatus.failed,
             totalBytes: book.fileSize,
@@ -176,6 +188,7 @@ class LibraryRepository extends ChangeNotifier {
     } finally {
       await flush();
       _cancelRequests.remove(id);
+      _verifiedBeforeUpdate.remove(id);
     }
   }
 

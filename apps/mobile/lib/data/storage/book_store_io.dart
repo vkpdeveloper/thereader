@@ -8,13 +8,22 @@ import 'book_store.dart';
 
 Future<BookStore> createBookStore() async {
   final support = await getApplicationSupportDirectory();
-  return IoBookStore(Directory(p.join(support.path, 'books')));
+  final store = IoBookStore(Directory(p.join(support.path, 'books')));
+  await store.clearInterrupted();
+  return store;
 }
 
 class IoBookStore implements BookStore {
   IoBookStore(this.root);
 
   final Directory root;
+
+  Future<void> clearInterrupted() async {
+    if (!await root.exists()) return;
+    await for (final item in root.list(recursive: true, followLinks: false)) {
+      if (item is File && item.path.endsWith('.part')) await item.delete();
+    }
+  }
 
   @override
   bool get isDurable => true;

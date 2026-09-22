@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:thereader/data/api/api_client.dart';
 import 'package:thereader/data/models/book.dart';
@@ -79,6 +80,43 @@ void main() {
     expect(await lib.bookStore.exists(b.download.path!), isTrue);
   });
 
+  test('failed edition update preserves the verified file and reading locator', () async {
+    final lib = LibraryRepository(store: MemoryKeyValueStore(), bookStore: MemoryBookStore());
+    await lib.load();
+    final source = SampleCatalogSource(bundle: rootBundle);
+    final book = (await source.listBooks()).items.first;
+    await lib.download(book, source);
+    final old = lib.entryFor(book, source)!;
+    await lib.saveProgress(old.id, const ReadingLocator(href: 'chapter', progression: .5));
+    final invalid = Book.fromJson({...book.toJson(), 'version': '2', 'sha256': '0' * 64});
+    await lib.download(invalid, source);
+    final kept = lib.entryFor(book, source)!;
+    expect(kept.download.isReady, isTrue);
+    expect(kept.book.sha256, book.sha256);
+    expect(kept.progress!.locator.href, 'chapter');
+    expect(await lib.bookStore.exists(kept.download.path!), isTrue);
+  });
+
+  test('restart during edition update retains the previous verified edition', () async {
+    final kv = MemoryKeyValueStore();
+    final store = MemoryBookStore();
+    final lib = LibraryRepository(store: kv, bookStore: store);
+    await lib.load();
+    final source = _PausedSource();
+    final book = (await source.listBooks()).items.first;
+    await lib.download(book, source);
+    source.pause = true;
+    final invalid = Book.fromJson({...book.toJson(), 'version': '2', 'sha256': '0' * 64});
+    final update = lib.download(invalid, source);
+    await lib.flush();
+    final restarted = LibraryRepository(store: kv, bookStore: store);
+    await restarted.load();
+    expect(restarted.entryFor(book, source)!.download.isReady, isTrue);
+    expect(restarted.entryFor(book, source)!.book.sha256, book.sha256);
+    source.gate.complete();
+    await update;
+  });
+
   test('interrupted downloads become retryable after restart', () async {
     for (final status in [DownloadStatus.queued, DownloadStatus.downloading, DownloadStatus.verifying]) {
       final state = DownloadState.fromJson({'status': status.name, 'receivedBytes': 12});
@@ -136,5 +174,16 @@ class _SerializedStore extends MemoryKeyValueStore {
     await Future<void>.delayed(const Duration(milliseconds: 5));
     await super.write(key, value);
     active--;
+  }
+}
+
+class _PausedSource extends SampleCatalogSource {
+  _PausedSource() : super(bundle: rootBundle);
+  bool pause = false;
+  final gate = Completer<void>();
+  @override
+  Future<DownloadStream> openDownload(Book book) async {
+    if (pause) await gate.future;
+    return super.openDownload(book);
   }
 }
