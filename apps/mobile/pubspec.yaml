@@ -1,0 +1,44 @@
+name: thereader
+description: "The Reader: a calm, offline-first EPUB reader."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.11.4
+  flutter: ">=3.41.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  archive: ^4.3.0
+  crypto: ^3.0.7
+  flutter_readium: 0.3.3
+  flutter_widget_from_html_core: ^0.17.4
+  http: ^1.6.0
+  path: ^1.9.0
+  path_provider: ^2.1.6
+  shared_preferences: ^2.5.5
+  xml: ^7.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/samples/
+  fonts:
+    - family: Literata
+      fonts:
+        - asset: assets/fonts/Literata.ttf
+        - asset: assets/fonts/Literata-Italic.ttf
+          style: italic
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter.ttf
+        - asset: assets/fonts/Inter-Italic.ttf
+          style: italic

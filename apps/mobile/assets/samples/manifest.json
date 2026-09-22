@@ -1,0 +1,54 @@
+{
+  "items": [
+    {
+      "id": "the-quiet-hour",
+      "version": "1",
+      "title": "The Quiet Hour",
+      "author": "The Reader",
+      "description": "An original short reading sample about the hour before the house wakes.",
+      "language": "en",
+      "subjects": [
+        "Essays"
+      ],
+      "coverUrl": null,
+      "downloadUrl": "/v1/books/the-quiet-hour/download",
+      "fileSize": 3793,
+      "sha256": "dd5a35d255ba1491cd8a3d1c8647ebf8334632fb3ab12772518b99b707946248",
+      "updatedAt": "2026-09-22T00:00:00.000Z"
+    },
+    {
+      "id": "a-walk-in-the-rain",
+      "version": "1",
+      "title": "A Walk in the Rain",
+      "author": "The Reader",
+      "description": "An original short story about a walk that goes on longer than planned.",
+      "language": "en",
+      "subjects": [
+        "Fiction"
+      ],
+      "coverUrl": null,
+      "downloadUrl": "/v1/books/a-walk-in-the-rain/download",
+      "fileSize": 3686,
+      "sha256": "e817d9144cc10de9044d7b3a6bc99ec449ab78121a1e66a8eec8f39d6958d3df",
+      "updatedAt": "2026-09-22T00:00:00.000Z"
+    },
+    {
+      "id": "notes-on-attention",
+      "version": "1",
+      "title": "Notes on Attention",
+      "author": "The Reader",
+      "description": "Original short notes on reading slowly and paying attention.",
+      "language": "en",
+      "subjects": [
+        "Essays",
+        "Reading"
+      ],
+      "coverUrl": null,
+      "downloadUrl": "/v1/books/notes-on-attention/download",
+      "fileSize": 3436,
+      "sha256": "5e8ac17e3a908c3fc4c347ffad95e065fb2363666298af59e0f19c56ff81dabb",
+      "updatedAt": "2026-09-22T00:00:00.000Z"
+    }
+  ],
+  "nextCursor": null
+}

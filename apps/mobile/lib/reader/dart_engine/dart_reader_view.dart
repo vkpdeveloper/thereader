@@ -1,0 +1,215 @@
+import 'dart:typed_data';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
+
+import '../../core/theme/tokens.dart';
+import '../../data/models/settings.dart';
+import 'dart_reader_engine.dart';
+import 'epub_package.dart';
+
+/// Renders the current spine document on a pure black canvas. Images are
+/// served straight from the EPUB container; original imagery is preserved.
+class DartReaderView extends StatefulWidget {
+  const DartReaderView({super.key, required this.controller});
+
+  final DartReaderController controller;
+
+  @override
+  State<DartReaderView> createState() => _DartReaderViewState();
+}
+
+class _DartReaderViewState extends State<DartReaderView> {
+  final ScrollController _scroll = ScrollController();
+  int _renderedChapter = -1;
+  String? _html;
+  String? _error;
+  bool _seeking = false;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.chapter.addListener(_onChapter);
+    _scroll.addListener(_onScroll);
+    _onChapter();
+  }
+
+  @override
+  void dispose() {
+    widget.controller.chapter.removeListener(_onChapter);
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  void _onChapter() {
+    final index = widget.controller.chapter.value;
+    if (index < 0) return;
+    final pkg = widget.controller.package;
+    final item = pkg.spine[index];
+    setState(() {
+      _renderedChapter = index;
+      _error = null;
+      _seeking = true;
+      final text = pkg.readText(item.href);
+      _html = text == null ? null : _prepare(text);
+      if (_html == null) _error = 'Could not read ${item.href} from the book.';
+    });
+    // Seek after layout.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _seekTo(widget.controller.pendingProgression));
+  }
+
+  void _seekTo(double fraction) {
+    if (!mounted || !_scroll.hasClients) return;
+    final max = _scroll.position.maxScrollExtent;
+    _scroll.jumpTo((max * fraction).clamp(0, max));
+    // A second pass once images have laid out and extents settled.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scroll.hasClients) return;
+      final m = _scroll.position.maxScrollExtent;
+      if ((m - max).abs() > 1) _scroll.jumpTo((m * fraction).clamp(0, m));
+      _seeking = false;
+    });
+  }
+
+  void _onScroll() {
+    if (_seeking || !_scroll.hasClients) return;
+    final max = _scroll.position.maxScrollExtent;
+    final f = max <= 0 ? 1.0 : (_scroll.offset / max).clamp(0.0, 1.0);
+    widget.controller.reportProgression(f);
+  }
+
+  /// Strips the document down to its body so page-level CSS cannot paint a
+  /// white background or fight the reader's typography.
+  static String _prepare(String xhtml) {
+    var s = xhtml;
+    final body = RegExp(r'<body[^>]*>([\s\S]*?)</body>', caseSensitive: false).firstMatch(s);
+    if (body != null) s = body.group(1)!;
+    s = s.replaceAll(RegExp(r'<style[\s\S]*?</style>', caseSensitive: false), '');
+    s = s.replaceAll(RegExp(r'<script[\s\S]*?</script>', caseSensitive: false), '');
+    s = s.replaceAll(RegExp(r'\sstyle="[^"]*"', caseSensitive: false), '');
+    return s;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = widget.controller;
+    return ValueListenableBuilder<ReaderPreferences>(
+      valueListenable: controller.prefs,
+      builder: (context, prefs, _) {
+        final family = prefs.font == ReaderFont.serif ? Fonts.serif : Fonts.sans;
+        final base = TextStyle(
+          fontFamily: family,
+          fontSize: prefs.fontSize,
+          height: prefs.lineHeight,
+          color: Palette.fg,
+          fontWeight: FontWeight.w400,
+        );
+        final gutter = (Space.gutter + 8) * prefs.marginScale;
+        final item = controller.package.spine[_renderedChapter < 0 ? 0 : _renderedChapter];
+        final content = _error != null
+            ? Padding(
+                padding: EdgeInsets.symmetric(horizontal: gutter, vertical: Space.xxl),
+                child: Text(_error!, style: base.copyWith(color: Palette.muted)),
+              )
+            : HtmlWidget(
+                _html ?? '',
+                key: ValueKey('${item.href}#${prefs.font}'),
+                textStyle: base,
+                baseUrl: Uri.parse('epub:///${item.href}'),
+                factoryBuilder: () => _EpubWidgetFactory(controller.package, item.href),
+                customStylesBuilder: (element) => _styles(element, prefs),
+                renderMode: RenderMode.column,
+              );
+        return ColoredBox(
+          color: Palette.bg,
+          child: Scrollbar(
+            controller: _scroll,
+            child: SingleChildScrollView(
+              controller: _scroll,
+              physics: const ClampingScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(
+                gutter,
+                MediaQuery.paddingOf(context).top + Space.xxl + Space.md,
+                gutter,
+                MediaQuery.paddingOf(context).bottom + Space.xxl * 2,
+              ),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 680),
+                  child: content,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  static Map<String, String>? _styles(dynamic element, ReaderPreferences prefs) {
+    final tag = (element.localName as String?) ?? '';
+    final justify = prefs.justify ? {'text-align': 'justify'} : <String, String>{};
+    switch (tag) {
+      case 'h1':
+        return {'font-size': '1.55em', 'font-weight': '500', 'line-height': '1.2', 'margin': '0 0 1.2em', 'color': '#ededed'};
+      case 'h2':
+        return {'font-size': '1.25em', 'font-weight': '500', 'line-height': '1.25', 'margin': '1.6em 0 0.7em', 'color': '#ededed'};
+      case 'h3':
+      case 'h4':
+        return {'font-size': '1.05em', 'font-weight': '600', 'margin': '1.4em 0 0.5em', 'color': '#ededed'};
+      case 'p':
+        return {'margin': '0 0 1em', ...justify};
+      case 'blockquote':
+        return {'margin': '1.2em 1.2em', 'color': '#a1a1a1', 'font-style': 'italic'};
+      case 'a':
+        return {'color': '#52a8ff', 'text-decoration': 'none'};
+      case 'pre':
+        return {'font-family': 'monospace', 'font-size': '0.82em', 'background-color': '#101010', 'padding': '12px', 'margin': '1em 0', 'white-space': 'pre-wrap', 'color': '#ededed'};
+      case 'code':
+        return {'font-family': 'monospace', 'font-size': '0.9em', 'color': '#ededed'};
+      case 'hr':
+        return {'border-color': '#1f1f1f', 'margin': '1.6em 0'};
+      case 'img':
+      case 'image':
+      case 'svg':
+        return {'max-width': '100%', 'margin': '1em auto', 'display': 'block'};
+      case 'table':
+        return {'border-color': '#1f1f1f', 'font-size': '0.9em'};
+      case 'body':
+      case 'section':
+      case 'div':
+        return {'background-color': 'transparent', 'color': '#ededed'};
+      case 'li':
+        return {'margin': '0 0 0.4em'};
+    }
+    return null;
+  }
+}
+
+class _EpubWidgetFactory extends WidgetFactory {
+  _EpubWidgetFactory(this.package, this.fromHref);
+
+  final EpubPackage package;
+  final String fromHref;
+
+  @override
+  ImageProvider? imageProviderFromNetwork(String url) => _fromPackage(url) ?? super.imageProviderFromNetwork(url);
+
+  @override
+  ImageProvider? imageProviderFromFileUri(String url) => _fromPackage(url) ?? super.imageProviderFromFileUri(url);
+
+  @override
+  ImageProvider? imageProviderFromAsset(String url) => _fromPackage(url) ?? super.imageProviderFromAsset(url);
+
+  /// Relative `src` values are resolved by the HTML widget against the
+  /// synthetic `epub:///` base URL, then served from the container here.
+  ImageProvider? _fromPackage(String url) {
+    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return null;
+    final path = url.startsWith('epub:///')
+        ? Uri.decodeComponent(url.substring('epub:///'.length).split('#').first)
+        : package.resolve(fromHref, url);
+    final bytes = package.readBytes(path);
+    if (bytes == null) return null;
+    return MemoryImage(Uint8List.fromList(bytes));
+  }
+}
