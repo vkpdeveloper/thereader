@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "thereader-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-22",
+  "r2_buckets": [
+    {
+      "binding": "BOOKS",
+      "bucket_name": "thereader-books-example"
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}

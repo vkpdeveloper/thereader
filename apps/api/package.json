@@ -1,0 +1,21 @@
+{
+  "name": "@thereader/api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --persist-to .wrangler/state",
+    "generate:fixtures": "bun run scripts/generate-fixtures.ts",
+    "seed:local": "bun run generate:fixtures && bun run scripts/seed-local.ts",
+    "test": "bun run generate:fixtures && vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p scripts/tsconfig.json && tsc --noEmit -p test/tsconfig.json",
+    "types": "wrangler types"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.0",
+    "@cloudflare/vitest-plugin": "^1.0.0",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.0",
+    "wrangler": "^4.0.0"
+  }
+}

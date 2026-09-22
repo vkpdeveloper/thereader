@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-22T00:00:00.000Z",
+  "books": [
+    {
+      "id": "the-quiet-hour",
+      "version": "1",
+      "title": "The Quiet Hour",
+      "author": "The Reader",
+      "description": "An original short reading sample about making room for stillness.",
+      "language": "en",
+      "subjects": [
+        "Essays"
+      ],
+      "coverUrl": null,
+      "downloadUrl": "/v1/books/the-quiet-hour/download",
+      "fileSize": 2851,
+      "sha256": "2b60eadeb03c4c5d02e2ce8e619cf2fb1ddd8c2e0ad30b7ae3c72c21b90c7072",
+      "updatedAt": "2026-09-22T00:00:00.000Z",
+      "objectKey": "books/the-quiet-hour/v1.epub",
+      "cover": null
+    },
+    {
+      "id": "a-walk-in-the-rain",
+      "version": "1",
+      "title": "A Walk in the Rain",
+      "author": "The Reader",
+      "description": "An original short reading sample about a rainy neighborhood walk.",
+      "language": "en",
+      "subjects": [
+        "Short Fiction"
+      ],
+      "coverUrl": null,
+      "downloadUrl": "/v1/books/a-walk-in-the-rain/download",
+      "fileSize": 2883,
+      "sha256": "108f25039cbbb03fb72fe91327822520b6c95bb4a7ecd7ebd8d7ac58b9b71eb6",
+      "updatedAt": "2026-09-22T00:00:00.000Z",
+      "objectKey": "books/a-walk-in-the-rain/v1.epub",
+      "cover": null
+    },
+    {
+      "id": "notes-on-attention",
+      "version": "1",
+      "title": "Notes on Attention",
+      "author": "The Reader",
+      "description": "An original short reading sample on noticing one thing at a time.",
+      "language": "en",
+      "subjects": [
+        "Mindfulness"
+      ],
+      "coverUrl": null,
+      "downloadUrl": "/v1/books/notes-on-attention/download",
+      "fileSize": 2772,
+      "sha256": "fb650abd116c06e981fbcec0f41d13e7a4798b656ade6fc9270f62eb5782bf2d",
+      "updatedAt": "2026-09-22T00:00:00.000Z",
+      "objectKey": "books/notes-on-attention/v1.epub",
+      "cover": null
+    }
+  ]
+}
