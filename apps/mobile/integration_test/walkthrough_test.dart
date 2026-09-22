@@ -1,15 +1,18 @@
-// Drives the full sample-mode flow on a real device/simulator:
+// Drives the full bundled-fixture flow on a real device/simulator:
 // library (empty) -> browse -> detail -> download+verify -> reader -> typography.
 // Pauses let an external screenshot loop capture each state.
 //
-//   flutter test integration_test/walkthrough_test.dart -d <device>
+//   flutter test integration_test/walkthrough_test.dart -d <device> \
+//       --dart-define=THEREADER_BUNDLED_CATALOG=true
+//
+// The define swaps the API for the bundled fixture catalog at the composition
+// root; shipping builds have no such switch.
 import 'package:flutter/material.dart';
 import 'package:flutter_readium/flutter_readium.dart' show ReadiumReaderWidget;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:thereader/main.dart' as app;
 import 'package:thereader/app_scope.dart';
-import 'package:thereader/data/models/settings.dart';
 
 /// Set with `--dart-define=THEREADER_ENGINE=dart` to exercise the built-in
 /// engine; by default the preferred engine (Readium on native) is used.
@@ -23,12 +26,12 @@ Future<void> pause(WidgetTester tester, [int seconds = 3]) async {
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('sample mode walkthrough', (tester) async {
+  testWidgets('bundled catalog walkthrough', (tester) async {
     await app.main();
     await pause(tester, 3);
     final services = AppScope.of(tester.element(find.byType(Scaffold).first));
-    await services.settings.setMode(AppMode.sample);
-    await pause(tester, 1);
+    expect(services.catalog.source.origin, 'sample',
+        reason: 'run with --dart-define=THEREADER_BUNDLED_CATALOG=true');
 
     await tester.tap(find.text('Browse'));
     await pause(tester, 3);

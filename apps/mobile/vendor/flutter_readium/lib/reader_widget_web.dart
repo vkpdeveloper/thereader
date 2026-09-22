@@ -16,6 +16,8 @@ class ReadiumReaderWidget extends StatefulWidget {
     this.goForwardSemanticLabel = 'Go Forward',
     this.toggleShowControlsSemanticLabel = 'Toggle show controls',
     this.verticalScroll = false,
+    this.preloadPreviousPositionCount = 2,
+    this.preloadNextPositionCount = 6,
     this.onTextSelected,
     this.onSelectionAction,
     this.onDecorationInteraction,
@@ -34,6 +36,9 @@ class ReadiumReaderWidget extends StatefulWidget {
   final String goForwardSemanticLabel;
   final String toggleShowControlsSemanticLabel;
   final bool verticalScroll;
+  // API parity with the native widget; preloading is configured on iOS only.
+  final int preloadPreviousPositionCount;
+  final int preloadNextPositionCount;
   final void Function(TextSelectionEvent)? onTextSelected;
   final void Function(SelectionActionEvent)? onSelectionAction;
   final void Function(DecorationInteractionEvent)? onDecorationInteraction;
@@ -45,7 +50,8 @@ class ReadiumReaderWidget extends StatefulWidget {
   State<ReadiumReaderWidget> createState() => _ReadiumReaderWidgetState();
 }
 
-class _ReadiumReaderWidgetState extends State<ReadiumReaderWidget> implements ReadiumReaderWidgetInterface {
+class _ReadiumReaderWidgetState extends State<ReadiumReaderWidget>
+    implements ReadiumReaderWidgetInterface {
   static final _log = ReadiumLog.tag('ReaderWidget');
 
   @override

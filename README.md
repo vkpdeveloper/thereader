@@ -23,8 +23,8 @@ API normally listens on port 8787. Connect the Flutter app to
 `http://127.0.0.1:8787`; Android emulators use `http://10.0.2.2:8787` instead.
 Physical devices need a reachable development-machine address.
 
-Sample books are original development fixtures. Demo/sample mode is distinct from
-the live API catalog; connection failures must not silently turn into demo success.
+The shipping app always uses the configured API. Original bundled books remain
+explicit test fixtures only; there is no Sample mode in the interface.
 
 ## Scope
 
@@ -37,8 +37,10 @@ social, purchase, user-account, or cloud-progress features.
 The API is deployed at `https://reader.ordinity.com`. Check
 [/health](https://reader.ordinity.com/health) or the
 [catalog](https://reader.ordinity.com/v1/books). Fresh mobile installs use this API;
-existing saved endpoint and sample-mode preferences are preserved.
+existing custom API addresses are preserved. Legacy Sample mode settings migrate
+to the API.
 
 See [deployment verification](docs/production-deployment.md), the application
 READMEs, and [native verification](docs/native-verification.md) for evidence and
-remaining platform limits.
+remaining platform limits. [Progressive reading](docs/progressive-reading.md)
+describes early opening, background caching and offline verification.

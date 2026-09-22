@@ -6,7 +6,7 @@ import '../../data/api/api_client.dart';
 import '../../data/models/settings.dart';
 import '../shared/states.dart';
 
-/// Source selection (sample vs your API), storage facts, and engine status.
+/// Library API address, storage facts, and a short note on privacy.
 /// No accounts, no tokens: the API URL is the only configuration.
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -50,7 +50,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final h = await client.health();
       if (!mounted) return;
       setState(() {
-        _checkResult = h.ok ? 'Connected · ${h.service}' : 'Responded, but status was not ok.';
+        _checkResult = h.ok
+            ? 'Connected · ${h.service}'
+            : 'Responded, but status was not ok.';
         _checkColor = h.ok ? Palette.green : Palette.orange;
       });
     } on ApiException catch (e) {
@@ -65,6 +67,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  Future<void> _useDefault() async {
+    _url.text = AppSettings.defaultApiBaseUrl;
+    setState(() => _checkResult = null);
+    await AppScope.of(
+      context,
+    ).settings.setApiBaseUrl(AppSettings.defaultApiBaseUrl);
+  }
+
   @override
   Widget build(BuildContext context) {
     final services = AppScope.of(context);
@@ -73,31 +83,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
       listenable: services.settings,
       builder: (context, _) {
         final s = services.settings.settings;
+        final isDefault = s.apiBaseUrl == AppSettings.defaultApiBaseUrl;
         return ListView(
           physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(Space.gutter, Space.md, Space.gutter, Space.xxl),
+          padding: const EdgeInsets.fromLTRB(
+            Space.gutter,
+            Space.md,
+            Space.gutter,
+            Space.xxl,
+          ),
           children: [
             Text('Settings', style: text.displaySmall),
             const SizedBox(height: Space.xl),
-            const Eyebrow('Source'),
-            const SizedBox(height: Space.sm),
-            _ModeTile(
-              title: 'Sample mode',
-              body: 'Three bundled original samples. Clearly labelled; never substituted for the API.',
-              selected: s.mode == AppMode.sample,
-              accent: Palette.orange,
-              onTap: () => services.settings.setMode(AppMode.sample),
-            ),
-            const SizedBox(height: Space.sm),
-            _ModeTile(
-              title: 'Your API',
-              body: 'The Reader Worker at the URL below. No login, no keys.',
-              selected: s.mode == AppMode.api,
-              accent: Palette.green,
-              onTap: () => services.settings.setMode(AppMode.api),
-            ),
-            const SizedBox(height: Space.lg),
-            const Eyebrow('API URL'),
+            const Eyebrow('Library API'),
             const SizedBox(height: Space.sm),
             TextField(
               controller: _url,
@@ -105,94 +103,63 @@ class _SettingsScreenState extends State<SettingsScreen> {
               autocorrect: false,
               enableSuggestions: false,
               textInputAction: TextInputAction.done,
-              style: text.bodyMedium?.copyWith(fontFamily: 'monospace', fontSize: 13),
-              decoration: const InputDecoration(hintText: AppSettings.defaultApiBaseUrl),
+              style: text.bodyMedium?.copyWith(
+                fontFamily: 'monospace',
+                fontSize: 13,
+              ),
+              decoration: const InputDecoration(
+                hintText: AppSettings.defaultApiBaseUrl,
+              ),
               onSubmitted: (_) => _check(),
               onChanged: (_) => setState(() => _checkResult = null),
             ),
             const SizedBox(height: Space.sm),
             Text(
-              'Use the default library or enter another Reader API URL.',
+              isDefault
+                  ? 'Books come from The Reader library. Enter another Reader API URL to use your own.'
+                  : 'Books come from this Reader API. Downloads already on this device stay readable.',
               style: text.bodySmall,
             ),
             const SizedBox(height: Space.md),
-            Row(
+            Wrap(
+              spacing: Space.sm,
+              runSpacing: Space.sm,
               children: [
                 QuietButton(
                   label: _checking ? 'Checking' : 'Save and check /health',
                   onPressed: _checking ? null : _check,
                 ),
-                const SizedBox(width: Space.md),
-                if (_checkResult != null)
-                  Expanded(child: Text(_checkResult!, style: text.bodySmall?.copyWith(color: _checkColor))),
+                if (!isDefault)
+                  QuietButton(
+                    label: 'Use default',
+                    onPressed: _checking ? null : _useDefault,
+                  ),
               ],
             ),
+            if (_checkResult != null) ...[
+              const SizedBox(height: Space.sm),
+              Text(
+                _checkResult!,
+                style: text.bodySmall?.copyWith(color: _checkColor),
+              ),
+            ],
             const SizedBox(height: Space.xl),
             const Eyebrow('Storage'),
             const SizedBox(height: Space.sm),
-            Text(services.library.bookStore.description, style: text.bodyMedium?.copyWith(color: Palette.muted)),
+            Text(
+              services.library.bookStore.description,
+              style: text.bodyMedium?.copyWith(color: Palette.muted),
+            ),
             const SizedBox(height: Space.xl),
             const Eyebrow('About'),
             const SizedBox(height: Space.sm),
-            Text('The Reader · personal EPUB reader. Reading progress and preferences stay on this device.',
-                style: text.bodySmall),
+            Text(
+              'The Reader · personal EPUB reader. Reading progress and preferences stay on this device.',
+              style: text.bodySmall,
+            ),
           ],
         );
       },
-    );
-  }
-}
-
-class _ModeTile extends StatelessWidget {
-  const _ModeTile({required this.title, required this.body, required this.selected, required this.accent, required this.onTap});
-  final String title;
-  final String body;
-  final bool selected;
-  final Color accent;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    return Semantics(
-      button: true,
-      selected: selected,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: const BorderRadius.all(Radii.lg),
-        child: AnimatedContainer(
-          duration: Motion.of(context, Motion.fast),
-          padding: const EdgeInsets.all(Space.md),
-          decoration: BoxDecoration(
-            color: selected ? Palette.panel : Colors.transparent,
-            border: Border.all(color: selected ? Palette.borderActive : Palette.border),
-            borderRadius: const BorderRadius.all(Radii.lg),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: text.titleMedium?.copyWith(color: onTap == null ? Palette.muted : Palette.fg)),
-                    if (body.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(body, style: text.bodySmall),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(width: Space.md),
-              AnimatedContainer(
-                duration: Motion.of(context, Motion.fast),
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(shape: BoxShape.circle, color: selected ? accent : Palette.element),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

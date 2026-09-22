@@ -27,10 +27,13 @@ class ReadiumReaderEngine implements ReaderEngine {
   @override
   EngineAvailability get availability => kIsWeb
       ? const EngineAvailability.unavailable(
-          'Readium (native)', 'Not bundled for the browser preview; the built-in engine is used.')
+          'Readium (native)',
+          'Not bundled for the browser preview; the built-in engine is used.',
+        )
       : const EngineAvailability.available(
           'Readium (native)',
-          note: 'Readium swift-toolkit 3.9 / kotlin-toolkit 3.2 through flutter_readium 0.3.3. '
+          note:
+              'Readium swift-toolkit 3.9 / kotlin-toolkit 3.2 through flutter_readium 0.3.3. '
               'Paginated or scrolled, publisher styles, full EPUB fidelity.',
         );
 
@@ -42,17 +45,47 @@ class ReadiumReaderEngine implements ReaderEngine {
   }) async {
     await _closing;
     final path = file.path;
-    if (path == null) throw UnsupportedError('Readium needs an on-disk file.');
+    if (path == null) {
+      throw UnsupportedError(
+        'Readium needs a file or a leased publication URL.',
+      );
+    }
     final readium = rd.FlutterReadium();
-    readium.setDefaultPreferences(ReadiumReaderController.toEpubPreferences(prefs));
-    final publication = await readium.openPublication(path);
-    await file.close();
-    return ReadiumReaderController(
-      readium: readium,
-      publication: publication,
-      prefs: prefs,
-      initial: initialLocator,
-    );
+    try {
+      readium.setDefaultPreferences(
+        ReadiumReaderController.toEpubPreferences(prefs),
+      );
+      final publication = await readium.openPublication(path);
+      return ReadiumReaderController(
+        readium: readium,
+        publication: publication,
+        file: file,
+        prefs: prefs,
+        initial: initialLocator,
+      );
+    } catch (_) {
+      // A failed open can still leave native resources reading from the proxy.
+      _closing = closeAndRelease(readium, file);
+      await _closing;
+      rethrow;
+    }
+  }
+
+  static Future<void> closeAndRelease(
+    rd.FlutterReadium readium,
+    BookFile file,
+  ) async {
+    try {
+      await readium.closePublication();
+    } catch (error) {
+      debugPrint('[readium] close failed: $error');
+    } finally {
+      try {
+        await file.close();
+      } catch (error) {
+        debugPrint('[readium] lease release failed: $error');
+      }
+    }
   }
 
   @override
@@ -64,6 +97,7 @@ class ReadiumReaderController implements ReaderController, ReaderSearch {
   ReadiumReaderController({
     required this.readium,
     required this.publication,
+    required this.file,
     required ReaderPreferences prefs,
     ReadingLocator? initial,
   }) {
@@ -91,6 +125,9 @@ class ReadiumReaderController implements ReaderController, ReaderSearch {
 
   final rd.FlutterReadium readium;
   final rd.Publication publication;
+  // A provisional URL remains live until native publication teardown completes.
+  final BookFile file;
+  bool _disposed = false;
   late final rd.Locator? initialLocator;
   late final PublicationInfo _info;
   late final ValueNotifier<ReadingLocator?> _locator;
@@ -111,11 +148,11 @@ class ReadiumReaderController implements ReaderController, ReaderSearch {
   ValueListenable<bool> get controlsToggle => showControls;
 
   static List<TocEntry> _flattenToc(List<rd.Link> links, int depth) => [
-        for (final l in links) ...[
-          TocEntry(title: (l.title ?? l.href).trim(), href: l.href, depth: depth),
-          ..._flattenToc(l.children, depth + 1),
-        ],
-      ];
+    for (final l in links) ...[
+      TocEntry(title: (l.title ?? l.href).trim(), href: l.href, depth: depth),
+      ..._flattenToc(l.children, depth + 1),
+    ],
+  ];
 
   void _onLocator(rd.Locator l) {
     final loc = l.locations;
@@ -146,9 +183,12 @@ class ReadiumReaderController implements ReaderController, ReaderSearch {
     }
     // Locator from the built-in engine: same href convention (path inside the
     // container), so Readium can resolve it plus a progression fraction.
-    final link = publication.linkWithHref(l.href) ??
+    final link =
+        publication.linkWithHref(l.href) ??
         publication.linkWithHref('/${l.href}') ??
-        publication.readingOrder.where((x) => x.href.endsWith(l.href)).firstOrNull;
+        publication.readingOrder
+            .where((x) => x.href.endsWith(l.href))
+            .firstOrNull;
     if (link == null) return null;
     return rd.Locator(
       href: link.href,
@@ -163,12 +203,19 @@ class ReadiumReaderController implements ReaderController, ReaderSearch {
     return results.map((r) {
       final l = r.locator;
       return ReaderSearchMatch(
-        excerpt: [l.text?.before, l.text?.highlight, l.text?.after]
-            .whereType<String>().join().trim(),
-        locator: ReadingLocator(href: l.href,
+        excerpt: [
+          l.text?.before,
+          l.text?.highlight,
+          l.text?.after,
+        ].whereType<String>().join().trim(),
+        locator: ReadingLocator(
+          href: l.href,
           progression: l.locations?.progression ?? 0,
           totalProgression: l.locations?.totalProgression,
-          title: r.chapterTitle, engine: ReadiumReaderEngine.engineId, raw: l.toJson()),
+          title: r.chapterTitle,
+          engine: ReadiumReaderEngine.engineId,
+          raw: l.toJson(),
+        ),
       );
     }).toList();
   }
@@ -181,8 +228,12 @@ class ReadiumReaderController implements ReaderController, ReaderSearch {
 
   @override
   Future<void> goToHref(String href) async {
-    final link = publication.linkWithHref(href) ?? publication.linkWithHref(href.split('#').first);
-    await readium.goToLocator(rd.Locator(href: href, type: link?.type ?? 'application/xhtml+xml'));
+    final link =
+        publication.linkWithHref(href) ??
+        publication.linkWithHref(href.split('#').first);
+    await readium.goToLocator(
+      rd.Locator(href: href, type: link?.type ?? 'application/xhtml+xml'),
+    );
   }
 
   @override
@@ -205,33 +256,36 @@ class ReadiumReaderController implements ReaderController, ReaderSearch {
 
   /// Maps app preferences onto Readium's. Colors are pinned to the app palette
   /// so the native surface never flashes white.
-  static rd.EPUBPreferences toEpubPreferences(ReaderPreferences p) => rd.EPUBPreferences(
-        backgroundColor: Palette.bg,
-        textColor: Palette.fg,
-        // Native WebViews use their platform serif/sans families; a comma-separated
-        // string is treated by Readium as one (nonexistent) font family.
-        fontFamily: p.font == ReaderFont.serif
-            ? 'serif'
-            : 'sans-serif',
-        fontSize: p.fontSize / 16.0,
-        lineHeight: p.lineHeight,
-        pageMargins: 0.8 + p.marginScale * 0.6,
-        scroll: p.flow == ReaderFlow.scrolled,
-        textAlign: p.justify ? TextAlign.justify : TextAlign.left,
-        publisherStyles: false,
-      );
+  static rd.EPUBPreferences toEpubPreferences(
+    ReaderPreferences p,
+  ) => rd.EPUBPreferences(
+    backgroundColor: Palette.bg,
+    textColor: Palette.fg,
+    // Native WebViews use their platform serif/sans families; a comma-separated
+    // string is treated by Readium as one (nonexistent) font family.
+    fontFamily: p.font == ReaderFont.serif ? 'serif' : 'sans-serif',
+    fontSize: p.fontSize / 16.0,
+    lineHeight: p.lineHeight,
+    pageMargins: 0.8 + p.marginScale * 0.6,
+    scroll: p.flow == ReaderFlow.scrolled,
+    textAlign: p.justify ? TextAlign.justify : TextAlign.left,
+    publisherStyles: false,
+  );
 
   @override
   void dispose() {
+    if (_disposed) return;
+    _disposed = true;
     _sub?.cancel();
     _errSub?.cancel();
     _statusSub?.cancel();
     showControls.dispose();
     _locator.dispose();
     // Complete close before the next open; no delayed close may target a new book.
-    ReadiumReaderEngine._closing = readium.closePublication().catchError((Object error) {
-      debugPrint('[readium] close failed: $error');
-    });
+    ReadiumReaderEngine._closing = ReadiumReaderEngine.closeAndRelease(
+      readium,
+      file,
+    );
   }
 }
 
@@ -255,6 +309,10 @@ class _ReadiumView extends StatelessWidget {
         ),
         child: rd.ReadiumReaderWidget(
           publication: controller.publication,
+          // The disk downloader already fills the rest in the background.
+          // Avoid competing speculative chapter loads during an early open.
+          preloadPreviousPositionCount: controller.file.isProvisional ? 0 : 2,
+          preloadNextPositionCount: controller.file.isProvisional ? 0 : 6,
           initialLocator: controller.initialLocator,
           shouldShowControls: controller.showControls,
           loadingWidget: const ColoredBox(color: Palette.bg),

@@ -4,7 +4,6 @@ import '../../app_scope.dart';
 import '../../core/theme/tokens.dart';
 import '../../data/models/book.dart';
 import '../../data/models/library.dart';
-import '../../data/models/settings.dart';
 import '../../data/repositories/catalog_repository.dart';
 import '../book/book_detail_screen.dart';
 import '../shared/cover_art.dart';
@@ -49,10 +48,9 @@ class _CatalogScreenState extends State<CatalogScreen> {
   Widget build(BuildContext context) {
     final services = AppScope.of(context);
     return ListenableBuilder(
-      listenable: Listenable.merge([services.catalog, services.library, services.settings]),
+      listenable: Listenable.merge([services.catalog, services.library]),
       builder: (context, _) {
         final catalog = services.catalog;
-        final mode = services.settings.settings.mode;
         if (catalog.status == CatalogStatus.idle) {
           WidgetsBinding.instance.addPostFrameCallback((_) => catalog.refresh());
         }
@@ -83,9 +81,11 @@ class _CatalogScreenState extends State<CatalogScreen> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Expanded(child: Text('Browse', style: text.displaySmall)),
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 6),
-                          child: _SourceBadge(mode: mode, onTap: widget.onOpenSettings),
+                        QuietIconButton(
+                          icon: Icons.tune,
+                          label: 'Library API settings',
+                          color: Palette.muted,
+                          onPressed: widget.onOpenSettings,
                         ),
                       ],
                     ),
@@ -137,7 +137,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                 ),
               ),
             ),
-            ..._body(context, catalog, items, mode),
+            ..._body(context, catalog, items),
           ],
         );
       },
@@ -148,16 +148,11 @@ class _CatalogScreenState extends State<CatalogScreen> {
     BuildContext context,
     CatalogRepository catalog,
     List<Book> items,
-    AppMode mode,
   ) {
     if (catalog.status == CatalogStatus.loading || catalog.status == CatalogStatus.idle) {
       return [
         SliverToBoxAdapter(
-          child: LoadingLine(
-            label: mode == AppMode.sample
-                ? 'Loading bundled samples'
-                : 'Contacting ${catalog.source.origin}',
-          ),
+          child: LoadingLine(label: 'Contacting ${catalog.source.origin}'),
         ),
       ];
     }
@@ -186,7 +181,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                 ? 'The catalog is empty.'
                 : 'No matches.',
             body: catalog.query.isEmpty && _subject == null && !_onlyDownloaded
-                ? (mode == AppMode.api ? 'Seed the Worker catalog and pull to refresh.' : null)
+                ? 'Nothing is published at ${catalog.source.origin} yet.\nPull to refresh, or change the API in Settings.'
                 : 'Try a different search or clear the filters.',
             actionLabel: _subject != null || _onlyDownloaded ? 'Clear filters' : null,
             onAction: () => setState(() {
@@ -215,27 +210,6 @@ class _CatalogScreenState extends State<CatalogScreen> {
             : const SizedBox(height: Space.xxl),
       ),
     ];
-  }
-}
-
-class _SourceBadge extends StatelessWidget {
-  const _SourceBadge({required this.mode, required this.onTap});
-  final AppMode mode;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: mode == AppMode.sample ? 'Sample mode, open settings' : 'API mode, open settings',
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: const BorderRadius.all(Radius.circular(4)),
-        child: mode == AppMode.sample
-            ? const Tag('Sample mode', color: Palette.orange, filled: true)
-            : const Tag('Live API', color: Palette.green, filled: true),
-      ),
-    );
   }
 }
 

@@ -1,20 +1,21 @@
 import 'package:flutter/foundation.dart';
 
-/// Which catalog the app talks to. Sample mode is bundled and clearly labelled;
-/// API mode talks to the user's own Worker. Never silently swapped.
-enum AppMode { sample, api }
-
+/// Connection and engine settings. The app always talks to a Reader API; there
+/// is no bundled catalog mode in shipping builds. Fixture catalogs exist only
+/// for tests and are injected at the composition root, never chosen here.
 @immutable
 class AppSettings {
   const AppSettings({
-    this.mode = AppMode.api,
     this.apiBaseUrl = defaultApiBaseUrl,
     this.preferredEngine = 'readium',
   });
 
   static const defaultApiBaseUrl = 'https://reader.ordinity.com';
 
-  final AppMode mode;
+  /// Default written by builds that still had a sample mode. Records that
+  /// carried it only because sample mode was active adopt the production URL.
+  static const _legacyLocalApiBaseUrl = 'http://127.0.0.1:8787';
+
   final String apiBaseUrl;
 
   /// Engine id to try first (`readium` or `dart`). If it is unavailable or
@@ -22,22 +23,25 @@ class AppSettings {
   /// says so.
   final String preferredEngine;
 
-  AppSettings copyWith({AppMode? mode, String? apiBaseUrl, String? preferredEngine}) => AppSettings(
-        mode: mode ?? this.mode,
+  AppSettings copyWith({String? apiBaseUrl, String? preferredEngine}) => AppSettings(
         apiBaseUrl: apiBaseUrl ?? this.apiBaseUrl,
         preferredEngine: preferredEngine ?? this.preferredEngine,
       );
 
-  Map<String, dynamic> toJson() =>
-      {'mode': mode.name, 'apiBaseUrl': apiBaseUrl, 'preferredEngine': preferredEngine};
+  Map<String, dynamic> toJson() => {'apiBaseUrl': apiBaseUrl, 'preferredEngine': preferredEngine};
 
-  // Existing records keep their original defaults even when a legacy field is
-  // absent. Only installs without a saved record adopt the production defaults.
-  factory AppSettings.fromJson(Map<String, dynamic> json) => AppSettings(
-        mode: AppMode.values.byName(json['mode'] as String? ?? 'sample'),
-        apiBaseUrl: json['apiBaseUrl'] as String? ?? 'http://127.0.0.1:8787',
-        preferredEngine: json['preferredEngine'] as String? ?? 'readium',
-      );
+  /// A saved custom URL is always preserved. The legacy `mode` field is read
+  /// once for migration: sample-mode installs that never chose an API move to
+  /// the production default; API-mode installs keep whatever they had.
+  factory AppSettings.fromJson(Map<String, dynamic> json) {
+    final legacyMode = json['mode'] as String?;
+    var url = json['apiBaseUrl'] as String? ?? defaultApiBaseUrl;
+    if (legacyMode == 'sample' && url == _legacyLocalApiBaseUrl) url = defaultApiBaseUrl;
+    return AppSettings(
+      apiBaseUrl: url,
+      preferredEngine: json['preferredEngine'] as String? ?? 'readium',
+    );
+  }
 }
 
 enum ReaderFont { serif, sans }

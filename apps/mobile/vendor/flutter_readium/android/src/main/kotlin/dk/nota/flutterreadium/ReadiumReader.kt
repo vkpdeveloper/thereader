@@ -190,7 +190,14 @@ object ReadiumReader :
     private val assetRetriever: AssetRetriever
         get() {
             if (assetRetrieverCache == null) {
-                assetRetrieverCache = AssetRetriever(context.contentResolver, httpClient)
+                assetRetrieverCache = AssetRetriever(
+                    org.readium.r2.shared.util.asset.DefaultResourceFactory(
+                        context.contentResolver, httpClient,
+                        listOf(dk.nota.flutterreadium.progressive.LoopbackResourceFactory(httpClient)),
+                    ),
+                    dk.nota.flutterreadium.progressive.LoopbackArchiveOpener(),
+                    org.readium.r2.shared.util.asset.DefaultFormatSniffer(),
+                )
             }
 
             return assetRetrieverCache!!

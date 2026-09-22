@@ -14,9 +14,8 @@ flutter build apk --release --split-per-abi --target-platform android-arm64
 flutter build ios --release --no-codesign
 ```
 
-Fresh installs use **Your API** at `https://reader.ordinity.com`. Existing saved
-source choices and URLs are preserved. Bundled samples remain an explicit,
-clearly labelled choice in Settings. For local development, enter
+Fresh installs use `https://reader.ordinity.com`. Existing custom API URLs are
+preserved; Sample mode has been removed. For local development, enter
 `http://127.0.0.1:8787` on the iOS simulator or `http://10.0.2.2:8787` on the
 Android emulator. The health check button calls `GET /health`.
 
@@ -47,9 +46,9 @@ assets/fonts/        Literata and Inter (SIL OFL)
 ```sh
 flutter analyze
 flutter test
-# On-device walkthrough (sample mode, default Readium engine or forced Dart engine):
-flutter test integration_test/walkthrough_test.dart -d <simulator-id>
-flutter test integration_test/walkthrough_test.dart -d <simulator-id> --dart-define=THEREADER_ENGINE=dart
+# Test-only bundled fixture walkthrough (no runtime Sample mode):
+flutter test integration_test/walkthrough_test.dart -d <simulator-id> --dart-define=THEREADER_BUNDLED_CATALOG=true
+flutter test integration_test/walkthrough_test.dart -d <simulator-id> --dart-define=THEREADER_BUNDLED_CATALOG=true --dart-define=THEREADER_ENGINE=dart
 ```
 
 Note: `flutter build ios --simulator` currently fails on this machine with a
@@ -61,3 +60,7 @@ corpus harness, release sizes, offline process restart procedure, performance
 diagnostics, recordings and remaining limitations. Native Readium is pinned with
 small local fixes in `vendor/flutter_readium`; its provenance and patch notes are
 tracked beside the upstream license. Private books and recordings stay ignored.
+
+See [progressive reading](../../docs/progressive-reading.md) for early native
+opening while bytes continue downloading. Partial publications require a
+connection; only complete, verified files are marked downloaded.

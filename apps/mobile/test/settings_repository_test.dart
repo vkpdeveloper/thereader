@@ -8,42 +8,64 @@ void main() {
     final repository = SettingsRepository(MemoryKeyValueStore());
     await repository.load();
 
-    expect(repository.settings.mode, AppMode.api);
     expect(repository.settings.apiBaseUrl, 'https://reader.ordinity.com');
+    expect(repository.settings.toJson().containsKey('mode'), isFalse);
   });
 
-  for (final mode in AppMode.values) {
-    test('saved ${mode.name} mode and custom origin survive the new defaults', () async {
-      final store = MemoryKeyValueStore();
-      final saved = AppSettings(mode: mode, apiBaseUrl: 'http://127.0.0.1:8787', preferredEngine: 'dart');
-      await store.writeJson('settings.v1', saved.toJson());
-      final repository = SettingsRepository(store);
-      await repository.load();
-
-      expect(repository.settings.toJson(), saved.toJson());
-      expect(await store.readJson('settings.v1'), saved.toJson());
-    });
-  }
-
-  test('partial legacy records retain their original sample and local defaults', () async {
+  test('a saved custom origin and engine survive reload', () async {
     final store = MemoryKeyValueStore();
-    await store.writeJson('settings.v1', {'preferredEngine': 'readium'});
+    const saved = AppSettings(apiBaseUrl: 'http://192.168.1.20:8787', preferredEngine: 'dart');
+    await store.writeJson('settings.v1', saved.toJson());
     final repository = SettingsRepository(store);
     await repository.load();
 
-    expect(repository.settings.mode, AppMode.sample);
+    expect(repository.settings.toJson(), saved.toJson());
+    expect(await store.readJson('settings.v1'), saved.toJson());
+  });
+
+  test('legacy API-mode records keep their custom URL, even the old local default', () async {
+    final store = MemoryKeyValueStore();
+    await store.writeJson('settings.v1', {
+      'mode': 'api',
+      'apiBaseUrl': 'http://127.0.0.1:8787',
+      'preferredEngine': 'readium',
+    });
+    final repository = SettingsRepository(store);
+    await repository.load();
+
     expect(repository.settings.apiBaseUrl, 'http://127.0.0.1:8787');
   });
 
-  test('samples remain an explicit persisted choice on a fresh install', () async {
+  test('legacy sample-mode records that never chose an API move to production', () async {
     final store = MemoryKeyValueStore();
+    await store.writeJson('settings.v1', {
+      'mode': 'sample',
+      'apiBaseUrl': 'http://127.0.0.1:8787',
+      'preferredEngine': 'readium',
+    });
     final repository = SettingsRepository(store);
     await repository.load();
-    await repository.setMode(AppMode.sample);
-    final reloaded = SettingsRepository(store);
-    await reloaded.load();
 
-    expect(reloaded.settings.mode, AppMode.sample);
-    expect(reloaded.settings.apiBaseUrl, AppSettings.defaultApiBaseUrl);
+    expect(repository.settings.apiBaseUrl, AppSettings.defaultApiBaseUrl);
+  });
+
+  test('legacy sample-mode records with a custom URL keep it', () async {
+    final store = MemoryKeyValueStore();
+    await store.writeJson('settings.v1', {'mode': 'sample', 'apiBaseUrl': 'https://books.example.net'});
+    final repository = SettingsRepository(store);
+    await repository.load();
+
+    expect(repository.settings.apiBaseUrl, 'https://books.example.net');
+  });
+
+  test('the legacy mode field is dropped on the next write', () async {
+    final store = MemoryKeyValueStore();
+    await store.writeJson('settings.v1', {'mode': 'sample', 'apiBaseUrl': 'http://127.0.0.1:8787'});
+    final repository = SettingsRepository(store);
+    await repository.load();
+    await repository.setPreferredEngine('dart');
+
+    final written = await store.readJson('settings.v1');
+    expect(written, {'apiBaseUrl': AppSettings.defaultApiBaseUrl, 'preferredEngine': 'dart'});
   });
 }

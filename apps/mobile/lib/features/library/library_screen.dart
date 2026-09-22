@@ -4,7 +4,6 @@ import '../../app_scope.dart';
 import '../../core/theme/tokens.dart';
 import '../../data/models/book.dart';
 import '../../data/models/library.dart';
-import '../../data/models/settings.dart';
 import '../book/book_detail_screen.dart';
 import '../reader/reader_screen.dart';
 import '../shared/cover_art.dart';
@@ -62,11 +61,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Expanded(child: Text('Library', style: text.displayLarge)),
-                    if (services.settings.settings.mode == AppMode.sample)
-                      const Padding(
-                        padding: EdgeInsets.only(bottom: 10),
-                        child: Tag('Sample mode', color: Palette.orange, filled: true),
-                      ),
                   ],
                 ),
               ),
@@ -76,9 +70,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 hasScrollBody: false,
                 child: StateMessage(
                   title: 'Nothing here yet.',
-                  body: services.settings.settings.mode == AppMode.sample
-                      ? 'Browse the bundled samples and download one to start reading. Sample mode is on; switch to your API in Settings.'
-                      : 'Browse your catalog and download a book. Downloads are kept on this device for offline reading.',
+                  body: 'Browse the library and download a book. Downloads are kept on this device for offline reading.',
                   actionLabel: 'Browse books',
                   onAction: widget.onBrowse,
                 ),
@@ -136,7 +128,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       crossAxisCount: columns,
                       mainAxisSpacing: Space.lg,
                       crossAxisSpacing: Space.md,
-                      childAspectRatio: 0.52,
+                      mainAxisExtent:
+                          ((width - Space.gutter * 2 - Space.md * (columns - 1)) / columns) /
+                              CoverArt.ratio + MediaQuery.textScalerOf(context).scale(96),
                     ),
                     itemCount: shown.length,
                     itemBuilder: (context, i) => _GridItem(entry: shown[i]),
@@ -180,7 +174,7 @@ class _FilterLink extends StatelessWidget {
 }
 
 Uri? _cover(AppServices services, LibraryEntry entry) =>
-    entry.source == BookSource.api ? services.currentSource.coverUri(entry.book) : null;
+    entry.source == BookSource.api ? services.sourceForEntry(entry).coverUri(entry.book) : null;
 
 /// The single in-progress feature: cover, title, chapter, a thin progress line.
 class _ContinueReading extends StatelessWidget {
@@ -298,7 +292,7 @@ class _GridItem extends StatelessWidget {
       button: true,
       label: '${entry.book.title} by ${entry.book.author}',
       child: InkWell(
-        onTap: () => d.isReady
+        onTap: () => services.library.canRead(entry.id)
             ? ReaderScreen.open(context, entry)
             : BookDetailScreen.open(context, entry.book, entry: entry),
         onLongPress: () => BookDetailScreen.open(context, entry.book, entry: entry),
@@ -326,10 +320,6 @@ class _GridItem extends StatelessWidget {
               Row(
                 children: [
                   Expanded(child: status),
-                  if (entry.source == BookSource.sample) ...[
-                    const SizedBox(width: 6),
-                    const Tag('Sample', color: Palette.orange),
-                  ],
                 ],
               ),
             ],

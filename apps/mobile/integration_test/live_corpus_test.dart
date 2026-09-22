@@ -38,7 +38,6 @@ void main() {
     final services = AppScope.of(tester.element(find.byType(Scaffold).first));
     await until(tester, () => services.library.loaded);
     await services.settings.setApiBaseUrl(api);
-    await services.settings.setMode(AppMode.api);
     await services.settings.setPreferredEngine('readium');
     await services.settings.updateReader((p) => p.copyWith(flow: ReaderFlow.paginated));
     final source = services.currentSource;

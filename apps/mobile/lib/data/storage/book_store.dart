@@ -2,7 +2,8 @@ import 'dart:typed_data';
 
 import 'book_store_stub.dart'
     if (dart.library.io) 'book_store_io.dart'
-    if (dart.library.js_interop) 'book_store_web.dart' as impl;
+    if (dart.library.js_interop) 'book_store_web.dart'
+    as impl;
 
 /// A write handle for an in-progress download. Bytes are streamed in; nothing
 /// is buffered whole in memory on native platforms.
@@ -26,6 +27,13 @@ abstract class BookFile {
   Future<Uint8List> readRange(int start, int end);
   Future<Uint8List> readAll();
   Future<void> close();
+}
+
+/// A temporary online reader lease, never a verified offline file.
+abstract class ProvisionalBookFile implements BookFile {}
+
+extension BookFileState on BookFile {
+  bool get isProvisional => this is ProvisionalBookFile;
 }
 
 /// Durable application storage for downloaded EPUBs. Native platforms write to

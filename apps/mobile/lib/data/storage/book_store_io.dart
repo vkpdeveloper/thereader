@@ -29,14 +29,19 @@ class IoBookStore implements BookStore {
   bool get isDurable => true;
 
   @override
-  String get description => 'Application support storage (kept across launches, not a cache).';
+  String get description =>
+      'Application support storage (kept across launches, not a cache).';
 
-  Directory _bookDir(String bookId) => Directory(p.join(root.path, _safe(bookId)));
+  Directory _bookDir(String bookId) =>
+      Directory(p.join(root.path, _safe(bookId)));
 
   static String _safe(String s) => s.replaceAll(RegExp(r'[^a-z0-9._-]'), '_');
 
   @override
-  Future<BookSink> openSink({required String bookId, required String version}) async {
+  Future<BookSink> openSink({
+    required String bookId,
+    required String version,
+  }) async {
     final dir = _bookDir(bookId);
     await dir.create(recursive: true);
     final finalPath = p.join(dir.path, '${_safe(version)}.epub');
@@ -44,14 +49,23 @@ class IoBookStore implements BookStore {
     final part = File(partPath);
     if (await part.exists()) await part.delete();
     final sink = part.openWrite();
-    return _IoSink(part, File(finalPath), sink, p.relative(finalPath, from: root.path));
+    return _IoSink(
+      part,
+      File(finalPath),
+      sink,
+      p.relative(finalPath, from: root.path),
+    );
   }
 
   File _resolve(String key) {
     // Migrate absolute paths from older installs when iOS moves the container.
-    final relative = p.isAbsolute(key) ? p.join(p.basename(p.dirname(key)), p.basename(key)) : key;
+    final relative = p.isAbsolute(key)
+        ? p.join(p.basename(p.dirname(key)), p.basename(key))
+        : key;
     final path = p.normalize(p.join(root.path, relative));
-    if (!p.isWithin(root.path, path)) throw ArgumentError('Invalid storage key');
+    if (!p.isWithin(root.path, path)) {
+      throw ArgumentError('Invalid storage key');
+    }
     return File(path);
   }
 
@@ -122,6 +136,7 @@ class _IoBookFile implements BookFile {
   _IoBookFile(this.raf, this.length, this.path);
 
   final RandomAccessFile raf;
+  bool _closed = false;
   @override
   final String path;
   @override
@@ -137,5 +152,9 @@ class _IoBookFile implements BookFile {
   Future<Uint8List> readAll() => readRange(0, length);
 
   @override
-  Future<void> close() => raf.close();
+  Future<void> close() async {
+    if (_closed) return;
+    _closed = true;
+    await raf.close();
+  }
 }

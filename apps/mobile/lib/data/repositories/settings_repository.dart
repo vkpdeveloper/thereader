@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../models/settings.dart';
 import '../storage/key_value_store.dart';
 
-/// App mode, API URL and reader preferences. Persisted immediately on change.
+/// API URL, preferred engine and reader preferences. Persisted immediately on change.
 class SettingsRepository extends ChangeNotifier {
   SettingsRepository(this._store);
 
@@ -27,8 +27,6 @@ class SettingsRepository extends ChangeNotifier {
     _loaded = true;
     notifyListeners();
   }
-
-  Future<void> setMode(AppMode mode) => _update(_settings.copyWith(mode: mode));
 
   Future<void> setApiBaseUrl(String url) => _update(_settings.copyWith(apiBaseUrl: url.trim()));
 

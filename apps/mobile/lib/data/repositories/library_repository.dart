@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import '../api/api_client.dart';
 import '../api/catalog_source.dart';
 import '../download/downloader.dart';
+import '../download/progressive_download.dart';
 import '../models/book.dart';
 import '../models/library.dart';
 import '../storage/book_store.dart';
@@ -14,10 +15,12 @@ import '../storage/key_value_store.dart';
 /// The user's local library: which books were added, their durable download
 /// state and reading progress. This is the source of truth for offline use.
 class LibraryRepository extends ChangeNotifier {
-  LibraryRepository({required KeyValueStore store, required BookStore bookStore})
-    : _store = store,
-      _bookStore = bookStore,
-      _downloader = Downloader(store: bookStore);
+  LibraryRepository({
+    required KeyValueStore store,
+    required BookStore bookStore,
+  }) : _store = store,
+       _bookStore = bookStore,
+       _downloader = Downloader(store: bookStore);
 
   static const _key = 'library.v1';
 
@@ -26,6 +29,7 @@ class LibraryRepository extends ChangeNotifier {
   final Downloader _downloader;
   final Map<String, LibraryEntry> _entries = {};
   final Set<String> _cancelRequests = {};
+  final Map<String, ProgressiveDownload> _progressive = {};
   final Map<String, LibraryEntry> _verifiedBeforeUpdate = {};
   bool _loaded = false;
   Future<void> _writes = Future.value();
@@ -33,7 +37,8 @@ class LibraryRepository extends ChangeNotifier {
   BookStore get bookStore => _bookStore;
   bool get loaded => _loaded;
 
-  UnmodifiableListView<LibraryEntry> get entries => UnmodifiableListView(_entries.values);
+  UnmodifiableListView<LibraryEntry> get entries =>
+      UnmodifiableListView(_entries.values);
 
   LibraryEntry? entry(String id) => _entries[id];
 
@@ -42,9 +47,28 @@ class LibraryRepository extends ChangeNotifier {
 
   /// Ready books, most recently opened first.
   List<LibraryEntry> get continueReading {
-    final list = _entries.values.where((e) => e.download.isReady && e.lastOpenedAt != null).toList()
-      ..sort((a, b) => b.lastOpenedAt!.compareTo(a.lastOpenedAt!));
+    final list =
+        _entries.values
+            .where((e) => canRead(e.id) && e.lastOpenedAt != null)
+            .toList()
+          ..sort((a, b) => b.lastOpenedAt!.compareTo(a.lastOpenedAt!));
     return list;
+  }
+
+  /// Partial publications stay online-only until their final SHA is verified.
+  bool canRead(String id) =>
+      _entries[id]?.download.isReady == true ||
+      (_entries[id]?.download.isActive == true &&
+          _progressive[id]?.canRead == true);
+
+  Future<BookFile> openForReading(String id) async {
+    final entry = _entries[id];
+    if (entry?.download.isReady == true) {
+      return _bookStore.open(entry!.download.path!);
+    }
+    final partial = _progressive[id];
+    if (partial?.canRead == true) return partial!.open();
+    throw StateError('This book is not ready to read yet.');
   }
 
   Future<void> load() async {
@@ -62,7 +86,8 @@ class LibraryRepository extends ChangeNotifier {
     // Reconcile with disk: a "ready" record whose file vanished is not ready.
     for (final e in _entries.values.toList()) {
       final path = e.download.path;
-      if (e.download.isReady && (path == null || !await _bookStore.exists(path))) {
+      if (e.download.isReady &&
+          (path == null || !await _bookStore.exists(path))) {
         _entries[e.id] = e.copyWith(
           download: const DownloadState(
             status: DownloadStatus.failed,
@@ -78,8 +103,13 @@ class LibraryRepository extends ChangeNotifier {
 
   Future<void> _persist() {
     final snapshot = {
-      'entries': _entries.values.map((e) =>
-        (e.download.isActive ? (_verifiedBeforeUpdate[e.id] ?? e) : e).toJson()).toList(),
+      'entries': _entries.values
+          .map(
+            (e) =>
+                (e.download.isActive ? (_verifiedBeforeUpdate[e.id] ?? e) : e)
+                    .toJson(),
+          )
+          .toList(),
     };
     // Serialize snapshots: a slower old write must never replace newer progress.
     final next = _writes.then((_) => _store.writeJson(_key, snapshot));
@@ -105,7 +135,9 @@ class LibraryRepository extends ChangeNotifier {
     final existing = _entries[id];
     if (existing != null && existing.download.isActive) return;
 
-    if (existing?.download.isReady == true) _verifiedBeforeUpdate[id] = existing!;
+    if (existing?.download.isReady == true) {
+      _verifiedBeforeUpdate[id] = existing!;
+    }
     var e = existing == null
         ? LibraryEntry(
             book: book,
@@ -113,44 +145,77 @@ class LibraryRepository extends ChangeNotifier {
             origin: source.origin,
             addedAt: DateTime.now(),
           )
-        : existing.copyWith(book: book, clearProgress: existing.book.sha256 != book.sha256);
+        : existing.copyWith(
+            book: book,
+            clearProgress: existing.book.sha256 != book.sha256,
+          );
     e = e.copyWith(
-      download: DownloadState(status: DownloadStatus.queued, totalBytes: book.fileSize),
+      download: DownloadState(
+        status: DownloadStatus.queued,
+        totalBytes: book.fileSize,
+      ),
     );
     _cancelRequests.remove(id);
     _put(e);
 
     try {
-      final stream = await source.openDownload(book);
+      var lastPaint = DateTime.now();
+      void progress(int received, int? total) {
+        final now = DateTime.now();
+        final done = total != null && received >= total;
+        if (done ||
+            (received >= book.fileSize * .05 &&
+                e.download.receivedBytes < book.fileSize * .05) ||
+            now.difference(lastPaint).inMilliseconds >= 80) {
+          lastPaint = now;
+          // Reading locators may change while bytes arrive. Never overwrite
+          // newer reading progress with the entry captured at download start.
+          e = (_entries[id] ?? e).copyWith(
+            download: e.download.copyWith(
+              status: done
+                  ? DownloadStatus.verifying
+                  : DownloadStatus.downloading,
+              receivedBytes: received,
+              totalBytes: total,
+            ),
+          );
+          _put(e, persist: false);
+        }
+      }
+
+      final partial = source is ApiCatalogSource
+          ? await ProgressiveDownload.create(
+              store: _bookStore,
+              book: book,
+              storageId: id,
+              client: source.client,
+              onProgress: progress,
+              onReadable: () => notifyListeners(),
+            )
+          : null;
+      if (partial != null) _progressive[id] = partial;
+      if (_cancelRequests.contains(id)) {
+        await partial?.cancel();
+        throw DownloadCancelled();
+      }
       _put(
-        e = e.copyWith(
-          download: e.download.copyWith(status: DownloadStatus.downloading, clearError: true),
+        e = (_entries[id] ?? e).copyWith(
+          download: e.download.copyWith(
+            status: DownloadStatus.downloading,
+            clearError: true,
+          ),
         ),
       );
-      var lastPaint = DateTime.now();
-      final path = await _downloader.download(
-        book: book,
-        storageId: id,
-        source: stream,
-        isCancelled: () => _cancelRequests.contains(id),
-        onProgress: (received, total) {
-          final now = DateTime.now();
-          final done = total != null && received >= total;
-          if (done || now.difference(lastPaint).inMilliseconds >= 80) {
-            lastPaint = now;
-            _put(
-              e = e.copyWith(
-                download: e.download.copyWith(
-                  status: done ? DownloadStatus.verifying : DownloadStatus.downloading,
-                  receivedBytes: received,
-                  totalBytes: total,
-                ),
-              ),
-              persist: false,
+      final path = partial != null
+          ? await partial.run()
+          : await _downloader.download(
+              book: book,
+              storageId: id,
+              source: await source.openDownload(book),
+              isCancelled: () => _cancelRequests.contains(id),
+              onProgress: progress,
             );
-          }
-        },
-      );
+      e = _entries[id] ?? e;
       _put(
         e.copyWith(
           download: DownloadState(
@@ -165,28 +230,39 @@ class LibraryRepository extends ChangeNotifier {
         await _bookStore.delete(existing.download.path!);
       }
     } on DownloadCancelled {
-      _put(existing?.download.isReady == true
-          ? existing!
-          : e.copyWith(download: DownloadState(totalBytes: book.fileSize)));
+      final verified = _verifiedBeforeUpdate[id] ?? existing;
+      _put(
+        verified?.download.isReady == true
+            ? verified!
+            : (_entries[id] ?? e).copyWith(
+                download: DownloadState(totalBytes: book.fileSize),
+              ),
+      );
     } catch (err) {
       final message = switch (err) {
         DownloadFailure f => f.message,
         ApiException a => a.message,
         _ => 'Download failed: $err',
       };
+      final verified = _verifiedBeforeUpdate[id] ?? existing;
       _put(
-        existing?.download.isReady == true
-        ? existing!.copyWith(download: existing.download.copyWith(error: 'Update failed. $message'))
-        : e.copyWith(
-          download: DownloadState(
-            status: DownloadStatus.failed,
-            totalBytes: book.fileSize,
-            error: message,
-          ),
-        ),
+        verified?.download.isReady == true
+            ? verified!.copyWith(
+                download: verified.download.copyWith(
+                  error: 'Update failed. $message',
+                ),
+              )
+            : (_entries[id] ?? e).copyWith(
+                download: DownloadState(
+                  status: DownloadStatus.failed,
+                  totalBytes: book.fileSize,
+                  error: message,
+                ),
+              ),
       );
     } finally {
       await flush();
+      await _progressive.remove(id)?.release();
       _cancelRequests.remove(id);
       _verifiedBeforeUpdate.remove(id);
     }
@@ -194,7 +270,10 @@ class LibraryRepository extends ChangeNotifier {
 
   void cancelDownload(String bookId) {
     final e = _entries[bookId];
-    if (e != null && e.download.isActive) _cancelRequests.add(bookId);
+    if (e != null && e.download.isActive) {
+      _cancelRequests.add(bookId);
+      unawaited(_progressive[bookId]?.cancel());
+    }
   }
 
   Future<void> remove(String bookId) async {
@@ -206,22 +285,55 @@ class LibraryRepository extends ChangeNotifier {
     await _persist();
   }
 
-  Future<void> markOpened(String bookId) async {
-    final e = _entries[bookId];
-    if (e == null) return;
-    _put(e.copyWith(lastOpenedAt: DateTime.now()));
-    await flush();
+  Future<void> markOpened(String bookId, {String? expectedSha256}) async {
+    final now = DateTime.now();
+    await _updateReadingState(
+      bookId,
+      expectedSha256: expectedSha256,
+      update: (entry) => entry.copyWith(lastOpenedAt: now),
+    );
   }
 
-  Future<void> saveProgress(String bookId, ReadingLocator locator) async {
-    final e = _entries[bookId];
-    if (e == null) return;
-    _put(
-      e.copyWith(
-        progress: ReadingProgress(locator: locator, updatedAt: DateTime.now()),
-        lastOpenedAt: DateTime.now(),
+  Future<void> saveProgress(
+    String bookId,
+    ReadingLocator locator, {
+    String? expectedSha256,
+  }) async {
+    final now = DateTime.now();
+    await _updateReadingState(
+      bookId,
+      expectedSha256: expectedSha256,
+      update: (entry) => entry.copyWith(
+        progress: ReadingProgress(locator: locator, updatedAt: now),
+        lastOpenedAt: now,
       ),
     );
-    await flush();
+  }
+
+  Future<void> _updateReadingState(
+    String bookId, {
+    required String? expectedSha256,
+    required LibraryEntry Function(LibraryEntry entry) update,
+  }) async {
+    final current = _entries[bookId];
+    if (current == null) return;
+    if (expectedSha256 == null || current.book.sha256 == expectedSha256) {
+      final verified = _verifiedBeforeUpdate[bookId];
+      if (verified?.book.sha256 == current.book.sha256) {
+        _verifiedBeforeUpdate[bookId] = update(verified!);
+      }
+      _put(update(current));
+      await flush();
+      return;
+    }
+
+    // A verified edition can remain open while its replacement downloads.
+    // Route that reader's progress to the recovery snapshot rather than
+    // contaminating the new edition. Once replacement finishes the snapshot
+    // is removed, so late writes from the old reader are safely ignored.
+    final verified = _verifiedBeforeUpdate[bookId];
+    if (verified?.book.sha256 != expectedSha256) return;
+    _verifiedBeforeUpdate[bookId] = update(verified!);
+    await _persist();
   }
 }

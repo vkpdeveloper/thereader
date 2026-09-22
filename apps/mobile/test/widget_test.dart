@@ -6,8 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:thereader/app.dart';
 import 'package:thereader/app_scope.dart';
 import 'package:thereader/data/api/catalog_source.dart';
-import 'package:thereader/data/models/settings.dart';
 import 'package:thereader/data/models/book.dart';
+import 'package:thereader/data/models/settings.dart';
 import 'package:thereader/data/models/library.dart';
 import 'package:thereader/data/repositories/library_repository.dart';
 import 'package:thereader/data/repositories/settings_repository.dart';
@@ -18,31 +18,36 @@ import 'package:thereader/features/reader/reader_screen.dart';
 import 'package:thereader/reader/dart_engine/dart_reader_engine.dart';
 import 'package:thereader/reader/engine/reader_engine.dart';
 
-Future<AppServices> makeServices({ReaderEngine engine = const DartReaderEngine()}) async {
+Future<AppServices> makeServices({ReaderEngine engine = const DartReaderEngine(), LibraryEntry? existing}) async {
   final kv = MemoryKeyValueStore();
   final settings = SettingsRepository(kv);
   await settings.load();
-  await settings.setMode(AppMode.sample);
-  final library = LibraryRepository(store: kv, bookStore: MemoryBookStore());
+  final bookStore = MemoryBookStore();
+  if (existing != null) {
+    bookStore.files[existing.download.path!] = Uint8List(0);
+    await kv.writeJson('library.v1', {'entries': [existing.toJson()]});
+  }
+  final library = LibraryRepository(store: kv, bookStore: bookStore);
   await library.load();
   return AppServices(
     settings: settings,
     library: library,
     readerService: ReaderService(engines: [engine]),
-    sampleSource: SampleCatalogSource(),
+    // Bundled fixtures stand in for the API; shipping builds have no such switch.
+    catalogSource: SampleCatalogSource(),
   );
 }
 
 void main() {
   // Asset futures cached under one test's FakeAsync zone never resolve in the next.
   setUp(rootBundle.clear);
-  testWidgets('library empty state offers Browse, and Browse lists sample books', (tester) async {
+  testWidgets('library empty state offers Browse, and Browse lists the fixture catalog', (tester) async {
     final services = await makeServices();
     await tester.pumpWidget(TheReaderApp(services: services));
     await tester.pumpAndSettle();
 
     expect(find.text('Nothing here yet.'), findsOneWidget);
-    expect(find.text('SAMPLE MODE'), findsOneWidget);
+    expect(find.textContaining('Sample mode'), findsNothing);
     await tester.tap(find.text('Browse books'));
     await tester.pumpAndSettle();
 
@@ -96,6 +101,64 @@ void main() {
     expect(services.library.entries.singleWhere((e) => e.book.id == 'the-quiet-hour').progress, isNotNull);
   });
 
+  testWidgets('settings has no sample mode and shows the production API', (tester) async {
+    final services = await makeServices();
+    await tester.pumpWidget(TheReaderApp(services: services));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Settings'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sample mode'), findsNothing);
+    expect(find.text('Your API'), findsNothing);
+    expect(find.text('LIBRARY API'), findsOneWidget);
+    expect(find.text('Use default'), findsNothing);
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.controller!.text, 'https://reader.ordinity.com');
+    expect(services.settings.settings.apiBaseUrl, 'https://reader.ordinity.com');
+  });
+
+  testWidgets('delete lives in the app bar, asks first, and is absent beside Read', (tester) async {
+    final services = await makeServices();
+    await tester.pumpWidget(TheReaderApp(services: services));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Browse'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byWidgetPredicate((w) => w is Text && w.data == 'The Quiet Hour' && w.maxLines == 1));
+    await tester.pumpAndSettle();
+
+    // Nothing to remove before a download exists.
+    expect(find.byTooltip('Remove download'), findsNothing);
+    await tester.tap(find.textContaining('Download ·'));
+    await tester.pumpAndSettle();
+    expect(find.text('Read'), findsOneWidget);
+
+    final remove = find.byTooltip('Remove download');
+    expect(remove, findsOneWidget);
+    final appBar = find.byType(AppBar);
+    expect(find.descendant(of: appBar, matching: remove), findsOneWidget);
+    // The reading action and the delete action are not neighbours.
+    final readRect = tester.getRect(find.text('Read'));
+    final removeRect = tester.getRect(remove);
+    expect(removeRect.bottom, lessThan(readRect.top));
+    expect(removeRect.right, greaterThan(tester.getRect(find.byType(BackButton)).right));
+
+    await tester.tap(remove);
+    await tester.pumpAndSettle();
+    expect(find.text('Remove download?'), findsOneWidget);
+    await tester.tap(find.text('Keep'));
+    await tester.pumpAndSettle();
+    expect(services.library.entries, hasLength(1));
+    expect(find.text('Read'), findsOneWidget);
+
+    await tester.tap(remove);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Remove'));
+    await tester.pumpAndSettle();
+    expect(services.library.entries, isEmpty);
+    expect(find.byTooltip('Remove download'), findsNothing);
+    expect(find.textContaining('Download ·'), findsOneWidget);
+  });
+
   testWidgets('scaffold background is pure black', (tester) async {
     final services = await makeServices();
     await tester.pumpWidget(TheReaderApp(services: services));
@@ -107,13 +170,12 @@ void main() {
 
   testWidgets('back during async open waits for old owner cleanup before reopening', (tester) async {
     final engine = _DelayedEngine();
-    final services = await makeServices(engine: engine);
-    (services.library.bookStore as MemoryBookStore).files['pending.epub'] = Uint8List(0);
     final entry = LibraryEntry(
       book: Book.fromJson({'id': 'pending', 'downloadUrl': '', 'fileSize': 0, 'sha256': ''}),
       source: BookSource.sample, origin: 'sample', addedAt: DateTime(2026),
       download: const DownloadState(status: DownloadStatus.ready, path: 'pending.epub'),
     );
+    final services = await makeServices(engine: engine, existing: entry);
     await tester.pumpWidget(TheReaderApp(services: services));
     await tester.pumpAndSettle();
     final context = tester.element(find.byType(Scaffold));

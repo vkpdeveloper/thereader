@@ -12,14 +12,14 @@ import 'reader/engine/reader_engine.dart';
 
 /// Composition root handed down the tree. Deliberately tiny: three
 /// repositories, the reader service, and a catalog source that follows the
-/// current mode/URL.
+/// configured API URL.
 class AppServices {
   AppServices({
     required this.settings,
     required this.library,
     required this.readerService,
-    SampleCatalogSource? sampleSource,
-  }) : _sample = sampleSource ?? SampleCatalogSource() {
+    CatalogSource? catalogSource,
+  }) : _fixed = catalogSource {
     catalog = CatalogRepository(sourceFor(settings.settings));
     settings.addListener(_onSettings);
   }
@@ -28,11 +28,16 @@ class AppServices {
   final LibraryRepository library;
   final ReaderService readerService;
   late final CatalogRepository catalog;
-  final SampleCatalogSource _sample;
+
+  /// Test-only catalog injection (bundled fixtures). Shipping builds never set
+  /// it, so the catalog always follows the saved API URL.
+  final CatalogSource? _fixed;
   final Map<String, ApiCatalogSource> _apis = {};
+  SampleCatalogSource? _legacySamples;
 
   CatalogSource sourceFor(AppSettings s) {
-    if (s.mode == AppMode.sample) return _sample;
+    final fixed = _fixed;
+    if (fixed != null) return fixed;
     Uri uri;
     try {
       uri = ApiClient.normalizeBaseUrl(s.apiBaseUrl);
@@ -46,12 +51,19 @@ class AppServices {
     );
   }
 
-  CatalogSource sourceForEntry(LibraryEntry entry) => entry.source == BookSource.sample
-      ? _sample
-      : _apis.putIfAbsent(entry.origin, () => ApiCatalogSource(ApiClient(baseUrl: entry.origin)));
-
   /// Source for an already-added library entry (so re-downloads use the
-  /// origin the entry came from when possible).
+  /// origin the entry came from when possible). Entries downloaded by earlier
+  /// builds' sample mode stay readable from disk; their bundled origin is
+  /// resolved lazily and never becomes the browsing source.
+  CatalogSource sourceForEntry(LibraryEntry entry) {
+    if (entry.source == BookSource.sample) {
+      final fixed = _fixed;
+      if (fixed != null && fixed.source == BookSource.sample) return fixed;
+      return _legacySamples ??= SampleCatalogSource();
+    }
+    return _apis.putIfAbsent(entry.origin, () => ApiCatalogSource(ApiClient(baseUrl: entry.origin)));
+  }
+
   CatalogSource get currentSource => sourceFor(settings.settings);
 
   void _onSettings() => catalog.replaceSource(sourceFor(settings.settings));

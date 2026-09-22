@@ -44,9 +44,11 @@ target 'Runner' do
 end
 
 require_relative 'patches/readium_href_index'
+require_relative 'patches/readium_progressive_zip'
 
 post_install do |installer|
   patch_readium_href_index(installer.sandbox.root.to_s)
+  patch_readium_progressive_zip(installer.sandbox.root.to_s)
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
     target.build_configurations.each do |config|

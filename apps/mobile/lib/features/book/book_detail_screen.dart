@@ -10,6 +10,8 @@ import '../shared/cover_art.dart';
 import '../shared/states.dart';
 
 /// Book page: description, edition facts, and one honest download control.
+/// Removing a downloaded book lives in the app bar, away from the reading
+/// action, and always asks first.
 class BookDetailScreen extends StatelessWidget {
   const BookDetailScreen({super.key, required this.book, required this.source});
 
@@ -31,19 +33,35 @@ class BookDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final services = AppScope.of(context);
-    return Scaffold(
-      appBar: AppBar(leading: const BackButton()),
-      body: ListenableBuilder(
-        listenable: services.library,
-        builder: (context, _) {
-          final entry = services.library.entryFor(book, source);
-          final current = entry?.book ?? book;
-          final text = Theme.of(context).textTheme;
-          final d = entry?.download ?? const DownloadState();
-          final coverUri = source.coverUri(current);
-          final outdated = entry != null && entry.book.sha256 != book.sha256 && d.isReady;
+    return ListenableBuilder(
+      listenable: services.library,
+      builder: (context, _) {
+        final entry = services.library.entryFor(book, source);
+        final current = entry?.book ?? book;
+        final text = Theme.of(context).textTheme;
+        final d = entry?.download ?? const DownloadState();
+        final coverUri = source.coverUri(current);
+        final outdated = entry != null && entry.book.sha256 != book.sha256 && d.isReady;
+        // Anything not mid-transfer can leave the library: ready, failed, or cancelled.
+        final removable = entry != null && !d.isActive;
 
-          return ListView(
+        return Scaffold(
+          appBar: AppBar(
+            leading: const BackButton(),
+            actions: [
+              if (removable)
+                Padding(
+                  padding: const EdgeInsets.only(right: Space.xs),
+                  child: QuietIconButton(
+                    icon: Icons.delete_outline,
+                    label: d.isReady ? 'Remove download' : 'Remove from library',
+                    color: Palette.muted,
+                    onPressed: () => _confirmRemove(context, entry, d),
+                  ),
+                ),
+            ],
+          ),
+          body: ListView(
             physics: const BouncingScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(Space.gutter, 0, Space.gutter, Space.xxl),
             children: [
@@ -60,11 +78,6 @@ class BookDetailScreen extends StatelessWidget {
                   for (final s in current.subjects) Tag(s),
                   Tag(current.language.toUpperCase()),
                   Tag(formatBytes(current.fileSize)),
-                  if (entry != null)
-                    Tag(
-                      entry.source.label,
-                      color: entry.source == BookSource.sample ? Palette.orange : Palette.green,
-                    ),
                 ],
               ),
               const SizedBox(height: Space.lg),
@@ -83,12 +96,39 @@ class BookDetailScreen extends StatelessWidget {
               const SizedBox(height: Space.sm),
               _Fact('Version', current.version),
               _Fact('Updated', current.updatedAt.toLocal().toString().split(' ').first),
-
             ],
-          );
-        },
+          ),
+        );
+      },
+    );
+  }
+
+  /// One confirmation for every state. A verified download loses its file and
+  /// reading position; anything else only leaves the library.
+  Future<void> _confirmRemove(BuildContext context, LibraryEntry entry, DownloadState d) async {
+    final lib = AppScope.of(context).library;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(d.isReady ? 'Remove download?' : 'Remove from library?'),
+        content: Text(
+          d.isReady
+              ? 'The file and your reading position for this book will be deleted from this device.'
+              : 'This book and its reading position will be removed from your library. You can download it again from Browse.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep', style: TextStyle(color: Palette.muted)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Remove', style: TextStyle(color: Palette.error)),
+          ),
+        ],
       ),
     );
+    if (ok == true) await lib.remove(entry.id);
   }
 }
 
@@ -151,9 +191,23 @@ class _DownloadPanel extends StatelessWidget {
             : d.status == DownloadStatus.queued
             ? 'Connecting'
             : '${formatBytes(d.receivedBytes)} of ${formatBytes(d.totalBytes ?? book.fileSize)}';
+        // Once the opening slice is cached the book is readable while the rest
+        // arrives. It is not "downloaded": that word waits for verification.
+        final readable = entry != null && lib.canRead(entry!.id);
         inner = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (readable) ...[
+              QuietButton(
+                label: entry!.progress == null ? 'Read' : 'Continue reading',
+                emphasis: true,
+                expand: true,
+                onPressed: () => ReaderScreen.open(context, entry!),
+              ),
+              const SizedBox(height: Space.xs),
+              Text('The rest downloads while you read.', style: text.bodySmall),
+              const SizedBox(height: Space.md),
+            ],
             Row(
               children: [
                 Expanded(child: Text(label, style: text.bodyMedium)),
@@ -204,16 +258,10 @@ class _DownloadPanel extends StatelessWidget {
                     onPressed: () => ReaderScreen.open(context, entry!),
                   ),
                 ),
-                const SizedBox(width: Space.sm),
-                if (outdated)
+                if (outdated) ...[
+                  const SizedBox(width: Space.sm),
                   QuietButton(label: 'Update', onPressed: () => lib.download(book, source)),
-                if (outdated) const SizedBox(width: Space.sm),
-                QuietIconButton(
-                  icon: Icons.delete_outline,
-                  label: 'Remove download',
-                  color: Palette.muted,
-                  onPressed: () => _confirmRemove(context),
-                ),
+                ],
               ],
             ),
           ],
@@ -227,24 +275,11 @@ class _DownloadPanel extends StatelessWidget {
               style: text.bodyMedium?.copyWith(color: Palette.error),
             ),
             const SizedBox(height: Space.md),
-            Row(
-              children: [
-                Expanded(
-                  child: QuietButton(
-                    label: 'Try again',
-                    emphasis: true,
-                    expand: true,
-                    onPressed: () => lib.download(book, source),
-                  ),
-                ),
-                const SizedBox(width: Space.sm),
-                QuietIconButton(
-                  icon: Icons.delete_outline,
-                  label: 'Remove from library',
-                  color: Palette.muted,
-                  onPressed: () => lib.remove(entry!.id),
-                ),
-              ],
+            QuietButton(
+              label: 'Try again',
+              emphasis: true,
+              expand: true,
+              onPressed: () => lib.download(book, source),
             ),
           ],
         );
@@ -284,29 +319,5 @@ class _DownloadPanel extends StatelessWidget {
         child: inner,
       ),
     );
-  }
-
-  Future<void> _confirmRemove(BuildContext context) async {
-    final lib = AppScope.of(context).library;
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Remove download?'),
-        content: const Text(
-          'The file and your reading position for this book will be deleted from this device.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Keep', style: TextStyle(color: Palette.muted)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Remove', style: TextStyle(color: Palette.error)),
-          ),
-        ],
-      ),
-    );
-    if (ok == true) await lib.remove(entry!.id);
   }
 }

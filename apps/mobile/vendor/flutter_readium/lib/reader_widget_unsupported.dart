@@ -18,6 +18,8 @@ class ReadiumReaderWidget extends StatelessWidget {
     this.goForwardSemanticLabel = 'Go Forward',
     this.toggleShowControlsSemanticLabel = 'Toggle show controls',
     this.verticalScroll = false,
+    this.preloadPreviousPositionCount = 2,
+    this.preloadNextPositionCount = 6,
     super.key,
   });
 
@@ -36,7 +38,11 @@ class ReadiumReaderWidget extends StatelessWidget {
   final String goForwardSemanticLabel;
   final String toggleShowControlsSemanticLabel;
   final bool verticalScroll;
+  // API parity with the native widget; preloading is configured on iOS only.
+  final int preloadPreviousPositionCount;
+  final int preloadNextPositionCount;
 
   @override
-  Widget build(final BuildContext context) => Center(child: Text('ReaderWidget is not available on this platform.'));
+  Widget build(final BuildContext context) =>
+      Center(child: Text('ReaderWidget is not available on this platform.'));
 }
