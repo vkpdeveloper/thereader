@@ -134,6 +134,41 @@ class Device {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   test(
+    'normalized server locator does not requeue acknowledged progress',
+    () async {
+      final cloud = Cloud();
+      final a = await Device.create(cloud);
+      addTearDown(a.dispose);
+      await a.library.saveProgress(
+        a.entry.id,
+        const ReadingLocator(
+          href: 'chapter.xhtml',
+          progression: 0,
+          raw: {
+            'locations': {'progression': 0.0, 'position': 1},
+          },
+        ),
+      );
+      await a.sync.syncNow();
+      // JavaScript JSON.stringify serializes whole-valued doubles as integers.
+      // It may also return equivalent native maps in a different key order.
+      final local = a.entry.progress!;
+      cloud.row['progress'] = {
+        ...local.locator.toJson(),
+        'raw': {
+          'locations': {'position': 1, 'progression': 0},
+        },
+      };
+      for (var i = 0; i < 3; i++) {
+        await a.sync.syncNow();
+        expect(a.sync.pendingCount, 0);
+        expect(cloud.batches.last, isEmpty);
+      }
+      expect(identical(a.entry.progress, local), isTrue);
+    },
+  );
+
+  test(
     'oversized native context retains portable position without poisoning sync',
     () async {
       final cloud = Cloud();

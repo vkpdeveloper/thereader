@@ -376,7 +376,13 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
             if (!active &&
                 progress != null &&
                 applied.progress?.updatedAt == progress.updatedAt) {
-              state.seen['progress:$sha'] = jsonEncode(progress.toJson());
+              // The server can normalize JSON numbers (0.0 to 0) or map
+              // ordering. At an acknowledged timestamp, fingerprint the
+              // retained local locator so representation differences cannot
+              // continuously enqueue the same reading position.
+              state.seen['progress:$sha'] = jsonEncode(
+                applied.progress!.toJson(),
+              );
             }
           }
         }
