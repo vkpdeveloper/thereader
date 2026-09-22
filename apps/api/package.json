@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "deploy": "wrangler deploy --env production",
     "dev": "wrangler dev --persist-to .wrangler/state",
     "generate:fixtures": "bun run scripts/generate-fixtures.ts",
     "seed:local": "bun run generate:fixtures && bun run scripts/seed-local.ts",

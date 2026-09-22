@@ -11,5 +11,20 @@
   ],
   "observability": {
     "enabled": true
+  },
+  "env": {
+    "production": {
+      "name": "thereader-api",
+      "account_id": "ed59abf53bf57001191058534ff8634d",
+      "workers_dev": false,
+      "preview_urls": false,
+      "routes": [
+        { "pattern": "reader.ordinity.com", "custom_domain": true }
+      ],
+      "r2_buckets": [
+        { "binding": "BOOKS", "bucket_name": "thereader-books" }
+      ],
+      "observability": { "enabled": true }
+    }
   }
 }

@@ -37,4 +37,37 @@ bunx wrangler deploy --dry-run
 
 The manifest includes the public book metadata, the private R2 object key, and the real byte length and SHA-256 checksum generated from each EPUB. The Worker never exposes R2 credentials and has no public write endpoint.
 
-The Wrangler bucket name is intentionally illustrative. Before a separately authorized remote deployment, create or select the real R2 bucket and update `bucket_name` in `wrangler.jsonc`. No secrets or `.dev.vars` file are needed.
+## Production deployment
+
+The `production` environment targets `https://reader.ordinity.com` with Worker
+`thereader-api` and the separate R2 bucket `thereader-books`. The default
+environment retains the local example bucket so local fixture commands cannot
+overwrite production data. Deploy with `bun run deploy` (equivalent to
+`bunx wrangler deploy --env production`). The custom domain manages DNS and TLS;
+the workers.dev and version preview URLs are disabled.
+
+Authenticate Wrangler outside the repository. Prefer `wrangler login
+--use-keyring` on macOS; CI can supply a scoped `CLOUDFLARE_API_TOKEN` through its
+secret store. Never put deployment credentials in Wrangler `vars`, app code, or
+tracked files. The Worker uses the native `BOOKS` binding: no S3 access keys or
+runtime secrets are required. R2 public access stays disabled; the unauthenticated
+Worker exposes only catalog reads and the books named in the catalog, with no
+upload endpoint.
+
+For the initial authorized provisioning:
+
+```sh
+bunx wrangler r2 bucket create thereader-books --env production --location apac
+```
+
+Upload EPUBs and covers first with `wrangler r2 object put
+thereader-books/<object-key> --env production --remote --file <local-file>
+--content-type <mime-type>`. Then publish `catalog/v1/manifest.json` the same way
+with `application/json`. Use content-addressed edition keys, actual byte lengths
+and SHA-256 checksums. Read and merge the existing catalog before later imports;
+do not replace it with the local fixture manifest. Keep personal EPUBs, catalog
+input files, and extracted covers under ignored `artifacts/private/`.
+
+Verify `/health`, `/v1/books`, a complete download checksum, byte ranges, cover
+loading and actual mobile rendering after deployment. A successful health request
+alone does not verify R2 or the catalog.
