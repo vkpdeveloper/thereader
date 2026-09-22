@@ -17,6 +17,10 @@ function isNonEmptyString(value: unknown, max: number): value is string {
   return typeof value === "string" && value.length > 0 && value.length <= max;
 }
 
+function isBoundedString(value: unknown, max: number): value is string {
+  return typeof value === "string" && value.length <= max;
+}
+
 function containsHeaderUnsafeCharacters(value: string): boolean {
   return /[\u0000-\u001f\u007f]/.test(value);
 }
@@ -63,7 +67,7 @@ function parseBook(value: unknown): CatalogBook | null {
     !isNonEmptyString(title, 300) ||
     containsHeaderUnsafeCharacters(title) ||
     !isNonEmptyString(author, 300) ||
-    !isNonEmptyString(description, 4_000) ||
+    !isBoundedString(description, 4_000) ||
     !isNonEmptyString(language, 35) ||
     !LANGUAGE_PATTERN.test(language) ||
     !Array.isArray(subjects) ||
@@ -122,11 +126,66 @@ function parseBook(value: unknown): CatalogBook | null {
   };
 }
 
-export async function loadCatalog(env: Env): Promise<CatalogManifest> {
-  const object = await env.BOOKS.get(CATALOG_KEY);
-  if (object === null) {
-    throw new ApiError(503, "CATALOG_UNAVAILABLE", "Catalog is unavailable.");
+interface UploadedBookRow {
+  id: string;
+  sha256: string;
+  version: string;
+  title: string;
+  author: string;
+  description: string;
+  language: string;
+  subjects_json: string;
+  file_size: number;
+  object_key: string;
+  updated_at: string;
+}
+
+function uploadedRowToBook(row: UploadedBookRow): CatalogBook {
+  let subjects: unknown;
+  try {
+    subjects = JSON.parse(row.subjects_json);
+  } catch {
+    throw new ApiError(500, "CATALOG_INVALID", "Catalog data is invalid.");
   }
+  const parsed = parseBook({
+    id: row.id,
+    version: row.version,
+    title: row.title,
+    author: row.author,
+    description: row.description,
+    language: row.language,
+    subjects,
+    coverUrl: null,
+    downloadUrl: `/v1/books/${row.id}/download`,
+    fileSize: row.file_size,
+    sha256: row.sha256,
+    updatedAt: row.updated_at,
+    objectKey: row.object_key,
+    cover: null,
+  });
+  if (parsed === null) throw new ApiError(500, "CATALOG_INVALID", "Catalog data is invalid.");
+  return parsed;
+}
+
+async function loadUploadedBooks(env: Env): Promise<CatalogBook[]> {
+  const result = await env.DB.prepare(
+    `SELECT id, sha256, version, title, author, description, language,
+            subjects_json, file_size, object_key, updated_at
+       FROM uploaded_books
+      ORDER BY updated_at, id
+      LIMIT ?`,
+  )
+    .bind(MAX_BOOKS + 1)
+    .all<UploadedBookRow>();
+  if (result.results.length > MAX_BOOKS) {
+    throw new ApiError(500, "CATALOG_INVALID", "Catalog data is invalid.");
+  }
+  return result.results.map(uploadedRowToBook);
+}
+
+async function loadLegacyCatalog(env: Env): Promise<CatalogManifest | null> {
+  const object = await env.BOOKS.get(CATALOG_KEY);
+  if (object === null) return null;
   if (object.size > MAX_CATALOG_BYTES) {
     throw new ApiError(500, "CATALOG_INVALID", "Catalog data is invalid.");
   }
@@ -157,6 +216,45 @@ export async function loadCatalog(env: Env): Promise<CatalogManifest> {
   }
 
   return { schemaVersion: 1, generatedAt: raw.generatedAt, books };
+}
+
+export async function loadCatalog(env: Env): Promise<CatalogManifest> {
+  const [legacy, uploaded] = await Promise.all([loadLegacyCatalog(env), loadUploadedBooks(env)]);
+  if (legacy === null && uploaded.length === 0) {
+    throw new ApiError(503, "CATALOG_UNAVAILABLE", "Catalog is unavailable.");
+  }
+  const books = [...(legacy?.books ?? [])];
+  const ids = new Set(books.map((book) => book.id));
+  const checksums = new Set(books.map((book) => book.sha256));
+  for (const book of uploaded) {
+    // The seeded manifest predates D1 and remains authoritative for its IDs.
+    if (ids.has(book.id) || checksums.has(book.sha256)) continue;
+    ids.add(book.id);
+    checksums.add(book.sha256);
+    books.push(book);
+    if (books.length > MAX_BOOKS) {
+      throw new ApiError(500, "CATALOG_INVALID", "Catalog data is invalid.");
+    }
+  }
+  return {
+    schemaVersion: 1,
+    generatedAt: new Date().toISOString(),
+    books,
+  };
+}
+
+export async function findPublishedBookBySha(env: Env, sha256: string): Promise<CatalogBook | null> {
+  const legacy = await loadLegacyCatalog(env);
+  const legacyBook = legacy?.books.find((book) => book.sha256 === sha256);
+  if (legacyBook !== undefined) return legacyBook;
+  const row = await env.DB.prepare(
+    `SELECT id, sha256, version, title, author, description, language,
+            subjects_json, file_size, object_key, updated_at
+       FROM uploaded_books WHERE sha256 = ?`,
+  )
+    .bind(sha256)
+    .first<UploadedBookRow>();
+  return row === null ? null : uploadedRowToBook(row);
 }
 
 export function toPublicBook(book: CatalogBook): Book {

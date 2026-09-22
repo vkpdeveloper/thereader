@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-import { reset } from "cloudflare:test";
+import { applyD1Migrations, reset } from "cloudflare:test";
 import { beforeEach, describe, expect, it } from "vitest";
 import worker from "../src/index";
 import { CATALOG_KEY } from "../src/catalog";
@@ -76,6 +76,8 @@ async function body(response: Response): Promise<any> {
 
 beforeEach(async () => {
   await reset();
+  const migrations = (env as typeof env & { TEST_MIGRATIONS: Parameters<typeof applyD1Migrations>[1] }).TEST_MIGRATIONS;
+  await applyD1Migrations(env.DB, migrations);
 });
 
 describe("public API", () => {
@@ -301,6 +303,9 @@ describe("EPUB download", () => {
     expect(legacy.status).toBe(206);
 
     await reset();
+    const migrations = (env as typeof env & { TEST_MIGRATIONS: Parameters<typeof applyD1Migrations>[1] })
+      .TEST_MIGRATIONS;
+    await applyD1Migrations(env.DB, migrations);
     await seed({ r2Sha256: true });
     const verified = await request("/v1/books/the-quiet-hour/download", { headers: { Range: "bytes=0-3" } });
     expect(verified.status).toBe(206);
@@ -359,7 +364,7 @@ describe("EPUB download", () => {
       new Request(`${origin}${book.downloadUrl}`, {
         headers: { "If-Range": `"${checksum}"`, Range: "bytes=0-3" },
       }),
-      { BOOKS: fakeBucket } satisfies Env,
+      { BOOKS: fakeBucket, DB: env.DB } satisfies Env,
       book,
     );
 
@@ -412,7 +417,7 @@ describe("EPUB download", () => {
 
     const response = await downloadBook(
       new Request(`${origin}${book.downloadUrl}`, { headers: { Range: "bytes=2-8" } }),
-      { BOOKS: fakeBucket } satisfies Env,
+      { BOOKS: fakeBucket, DB: env.DB } satisfies Env,
       book,
     );
 

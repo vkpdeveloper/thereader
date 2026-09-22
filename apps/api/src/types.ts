@@ -30,4 +30,5 @@ export interface CatalogManifest {
 
 export interface Env {
   BOOKS: R2Bucket;
+  DB: D1Database;
 }

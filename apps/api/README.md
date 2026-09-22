@@ -1,6 +1,13 @@
 # The Reader API
 
-A small, unauthenticated Cloudflare Worker API backed by an R2 catalog manifest and immutable EPUB objects. Bun is used for package management and local scripts; the deployed request handler uses only Cloudflare Workers and Web Platform APIs.
+A small, unauthenticated Cloudflare Worker API backed by R2 and D1. Bun is used
+for package management and local scripts; the deployed request handler uses only
+Cloudflare Workers bindings and Web Platform APIs.
+
+This is one deliberately shared personal profile. Anyone who can reach the API
+can read its catalog and sync state, upload EPUBs, and change that state. There
+are no accounts, login flows, bearer tokens, API keys, or per-device access
+controls. Keep the deployment URL private if that shared behavior is not wanted.
 
 ## Local setup
 
@@ -35,8 +42,48 @@ bunx wrangler deploy --dry-run
 - `catalog/v1/manifest.json` is a bounded, runtime-validated manifest.
 - `books/<id>/<edition>.epub` contains EPUB editions that publishing tools must
   treat as immutable.
+- `uploads/<sha256>.epub` contains device uploads verified by R2 SHA-256 and a
+  bounded EPUB ZIP structure check before their D1 catalog row is published.
+- D1 stores uploaded catalog rows, pending upload metadata, and the shared sync
+  state. Apply `migrations/*.sql` before starting the Worker.
 
-The manifest includes the public book metadata, the private R2 object key, and the real byte length and SHA-256 checksum generated from each EPUB. The Worker never exposes R2 credentials and has no public write endpoint.
+The manifest includes the public book metadata, the private R2 object key, and
+the real byte length and SHA-256 checksum generated from each EPUB. The Worker
+never exposes R2 credentials. Uploads stream through the server-side R2 binding
+with a 64 MiB application limit.
+
+## Upload and sync contract
+
+`POST /v1/uploads/prepare` accepts
+`{sha256,fileSize,title,author,description,language,subjects}` and returns
+`{book,uploaded,uploadUrl}`. New IDs are `epub-<full-sha256>`; a matching legacy
+manifest object keeps its legacy ID. When `uploaded` is false, send the exact raw
+EPUB to the relative `uploadUrl` with `PUT`, `Content-Type:
+application/epub+zip`, and the prepared `Content-Length`. Publishing is
+idempotent by SHA and only happens after checksum and EPUB structure validation.
+
+`GET /v1/sync` returns the full shared state. `POST /v1/sync` accepts up to 100
+edition-pinned changes in `{deviceId,changes}` and returns the merged state plus
+`acceptedChangeIds`. Progress, library membership, and preferences use
+last-write-wins ordering by `(updatedAt,id)`. Reading sessions use a stable
+device/session ID and cumulative milliseconds; retries take the maximum instead
+of adding time twice. Requests are atomic and state above 1,000 book editions
+returns `SYNC_STATE_TOO_LARGE` instead of silently truncating.
+
+Progress payloads are Flutter `ReadingLocator` JSON: a non-empty `href` up to
+4,096 characters, `progression` in 0–1, and optional nullable
+`totalProgression`, `title`, `engine`, and object-valued `raw`. Preference
+payloads are `{value:{...}}`; known fields are checked against the app's reader
+settings (`fontSize` 14–28, `lineHeight` 1.2–2.2, `marginScale` 0.5–2,
+`font` serif/sans, `flow` scrolled/paginated, and Boolean `justify` and
+`keepAwake`). Settings may be omitted to use client defaults. Unknown preference
+fields are retained so newer clients can add settings without breaking older
+Workers.
+
+Sync changes are keyed by the supplied `(bookId,sha256)` and do not require the
+edition to be present in the catalog. This keeps a cancelled or still-pending
+upload from rejecting unrelated changes in the same atomic batch. Clients skip
+state for catalog editions they cannot resolve.
 
 When R2 exposes an object SHA-256 checksum, the Worker verifies it against the
 catalog before serving bytes. Objects uploaded by existing Wrangler workflows may
@@ -56,13 +103,17 @@ overwrite production data. Deploy with `bun run deploy` (equivalent to
 `bunx wrangler deploy --env production`). The custom domain manages DNS and TLS;
 the workers.dev and version preview URLs are disabled.
 
+The default local D1 binding uses an invalid all-zero placeholder because
+Wrangler's local store does not need a remote database. The production binding
+points at the private `thereader-state` database by its non-secret ID. Apply
+remote migrations before deployment; repository scripts never provision or
+migrate remote resources automatically.
+
 Authenticate Wrangler outside the repository. Prefer `wrangler login
 --use-keyring` on macOS; CI can supply a scoped `CLOUDFLARE_API_TOKEN` through its
 secret store. Never put deployment credentials in Wrangler `vars`, app code, or
-tracked files. The Worker uses the native `BOOKS` binding: no S3 access keys or
-runtime secrets are required. R2 public access stays disabled; the unauthenticated
-Worker exposes only catalog reads and the books named in the catalog, with no
-upload endpoint.
+tracked files. The Worker uses native `BOOKS` and `DB` bindings: no S3 access
+keys or runtime secrets are required. R2 public access stays disabled.
 
 For the initial authorized provisioning:
 

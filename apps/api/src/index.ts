@@ -2,9 +2,11 @@ import { loadCatalog, toPublicBook, validateBookId } from "./catalog";
 import { downloadBook } from "./download";
 import { ApiError, errorResponse } from "./errors";
 import { encodeCursor, parseListQuery } from "./query";
+import { getSyncState, pushSync } from "./sync";
 import type { CatalogBook, Env } from "./types";
+import { prepareUpload, uploadEpub } from "./upload";
 
-const METHODS = "GET, HEAD, OPTIONS";
+const METHODS = "GET, HEAD, POST, PUT, OPTIONS";
 
 function corsHeaders(): Headers {
   return new Headers({
@@ -100,6 +102,28 @@ async function route(request: Request, env: Env): Promise<Response> {
       throw new ApiError(405, "METHOD_NOT_ALLOWED", "Method not allowed.", { Allow: "GET, OPTIONS" });
     }
     return listBooks(request, env);
+  }
+
+  if (url.pathname === "/v1/uploads/prepare") {
+    if (request.method !== "POST") {
+      throw new ApiError(405, "METHOD_NOT_ALLOWED", "Method not allowed.", { Allow: "POST, OPTIONS" });
+    }
+    return json(await prepareUpload(request, env), { headers: { "Cache-Control": "no-store" } });
+  }
+
+  const uploadMatch = /^\/v1\/uploads\/([a-f0-9]{64})$/.exec(url.pathname);
+  if (uploadMatch !== null) {
+    if (request.method !== "PUT") {
+      throw new ApiError(405, "METHOD_NOT_ALLOWED", "Method not allowed.", { Allow: "PUT, OPTIONS" });
+    }
+    const result = await uploadEpub(request, env, uploadMatch[1]!);
+    return json(result.body, { status: result.status, headers: { "Cache-Control": "no-store" } });
+  }
+
+  if (url.pathname === "/v1/sync") {
+    if (request.method === "GET") return json(await getSyncState(env), { headers: { "Cache-Control": "no-store" } });
+    if (request.method === "POST") return json(await pushSync(request, env), { headers: { "Cache-Control": "no-store" } });
+    throw new ApiError(405, "METHOD_NOT_ALLOWED", "Method not allowed.", { Allow: "GET, POST, OPTIONS" });
   }
 
   const match = /^\/v1\/books\/([^/]+)(?:\/(download|cover))?$/.exec(url.pathname);

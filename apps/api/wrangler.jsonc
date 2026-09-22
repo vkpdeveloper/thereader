@@ -9,6 +9,14 @@
       "bucket_name": "thereader-books-example"
     }
   ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "thereader-db",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
   "observability": {
     "enabled": true
   },
@@ -23,6 +31,14 @@
       ],
       "r2_buckets": [
         { "binding": "BOOKS", "bucket_name": "thereader-books" }
+      ],
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "thereader-state",
+          "database_id": "aa9b03e1-4efc-466a-b2a3-6fc23edf016b",
+          "migrations_dir": "migrations"
+        }
       ],
       "observability": { "enabled": true }
     }
