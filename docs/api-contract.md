@@ -81,8 +81,10 @@ the frontend testable without pretending a text preview is EPUB rendering.
 
 ## UI direction
 
-App name: The Reader. Editorial and calm, charcoal near-black surfaces, warm off-white
-text, restrained warm accent, generous whitespace, exceptional typography, compact
-controls. No light theme, decorative dashboard, gradients, bright neon, PDFs, audio,
-or platform-native styling requirement. Brief thoughtful motion and reduced-motion
-support. Large hit targets and accessible labels. No fake controls or fake success.
+App name: The Reader. Editorial and calm, using the exact user-supplied palette in
+`docs/design-theme.json` and `docs/design-theme.md`: pure black background, #101010
+panels, #1f1f1f elements/borders, #ededed text, #a1a1a1 muted text, #52a8ff primary.
+Generous whitespace, exceptional typography, compact controls. No light/sepia theme,
+decorative dashboard, gradients, bright neon, PDFs, audio, or platform-native styling
+requirement. Brief thoughtful motion and reduced-motion support. Large hit targets
+and accessible labels. No fake controls or fake success.
