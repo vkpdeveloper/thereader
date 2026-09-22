@@ -10,6 +10,8 @@ flutter pub get
 flutter run -d "iPhone 17"          # iOS simulator (preferred for review)
 flutter run -d chrome               # browser preview (sample mode, in-memory downloads)
 flutter build apk --debug           # Android
+flutter build apk --release --split-per-abi --target-platform android-arm64
+flutter build ios --release --no-codesign
 ```
 
 Sample mode is the default and is labelled everywhere. Switch to **Your API**
@@ -52,3 +54,9 @@ flutter test integration_test/walkthrough_test.dart -d <simulator-id> --dart-def
 Note: `flutter build ios --simulator` currently fails on this machine with a
 Flutter tool lipo-ordering check (Xcode 27, dual-arch simulator build).
 `flutter run -d <simulator>` and the integration test build work.
+
+See [native verification](../../docs/native-verification.md) for the real local
+corpus harness, release sizes, offline process restart procedure, performance
+diagnostics, recordings and remaining limitations. Native Readium is pinned with
+small local fixes in `vendor/flutter_readium`; its provenance and patch notes are
+tracked beside the upstream license. Private books and recordings stay ignored.

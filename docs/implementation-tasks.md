@@ -42,6 +42,16 @@ Provide the recording to the user; do not publicly publish private corpus conten
 Document file sizes, workload and observed timings without claiming that file size
 alone predicts rendering cost. Keep screen recordings and benchmark traces distinct.
 
+## Verification outcome
+
+The backend, frontend and integration milestones are committed on `main`.
+The local real-corpus native walkthrough passed on iOS and Android. Normal app
+process restart with the Worker stopped was verified separately. Release builds,
+recordings, measured lookup/retention improvements, reproduction commands and
+remaining limits are recorded in [native verification](native-verification.md).
+Physical-device energy/latency and native Copy-menu behavior are not signed off.
+No Cloudflare deployment has occurred.
+
 ## Performance evidence rules
 
 - User prefers the local iOS simulator for primary app testing and previews.

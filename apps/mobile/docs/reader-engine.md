@@ -1,65 +1,63 @@
-# Reader engine status
+# Reader engines
 
-The reading surface is built behind `lib/reader/engine/reader_engine.dart`
-(`ReaderEngine`, `ReaderController`, `ReaderService`). UI code never imports
-an engine directly. Two engines are compiled in:
+The UI depends on `ReaderEngine`, `ReaderController`, and optional `ReaderSearch`
+interfaces in `lib/reader/engine/reader_engine.dart`.
 
-| Engine | Where | Status |
+| Engine | Targets | Behavior |
 | --- | --- | --- |
-| `ReadiumReaderEngine` (`lib/reader/readium_engine/`) | iOS, Android | Native Readium through `flutter_readium` 0.3.3 (swift-toolkit 3.9.0, kotlin-toolkit 3.2.0). Preferred by default. Unavailable on web (JS bundle not shipped). |
-| `DartReaderEngine` (`lib/reader/dart_engine/`) | iOS, Android, web | Built-in pure-Dart EPUB engine. Fallback on native, the only engine in the browser preview. |
+| Native Readium | iOS, Android | Default; publication CSS, images, native text layout, search, TOC and exact native locators. |
+| Dart EPUB | iOS, Android, browser preview | Reduced-fidelity fallback; scrolled chapter rendering, stripped publisher styles, no native publication search. |
 
-Settings lets the user pick the preferred engine. `ReaderService.candidates`
-orders the available engines by that preference; the reader tries them in
-order and, if the preferred engine throws while opening a book, falls back to
-the next one and shows a snackbar saying which engine is in use.
-`--dart-define=THEREADER_ENGINE=dart|readium` forces the preference (used by
-the integration walkthrough).
+The engine preference is a development setting (`--dart-define=THEREADER_ENGINE=dart|readium`),
+not a primary product control. If native opening fails, the reader tries the Dart
+engine and explicitly reports the fallback. A fallback does not establish native
+compatibility or large-book performance.
 
-## Readium adapter
+## Native integration
 
-- Opens the durable file by path (`FlutterReadium.openPublication`).
-- Maps `Locator` events to `ReadingLocator` (href, progression,
-  totalProgression, title) and keeps the Readium JSON in `raw` so the exact
-  position is restored. Locators written by the Dart engine (href + fraction)
-  are translated back via the publication's reading order.
-- Applies `ReaderPreferences` with `EPUBPreferences`: background `#000000`,
-  text `#ededed`, Literata/Inter, size ratio, line height, page margins,
-  justification, scrolled vs paginated, publisher styles off.
-- Native requirements already applied: Android `minSdk 24`, core library
-  desugaring, `FlutterFragmentActivity`; iOS deployment target 15 and the six
-  Readium pods in `ios/Podfile`.
+`vendor/flutter_readium` pins the source of 0.3.3 with its upstream license and
+`THEREADER.md` patch notes. It uses Swift Readium 3.9.0 and Kotlin Readium 3.2.0.
+This version supports Flutter 3.41.6; later wrapper releases require a newer Flutter.
+The native publication is opened from a verified durable path. Native locator JSON
+is retained and restored; generic fallback locators use href plus progression.
 
-Why 0.3.3: `flutter_readium` 0.4.0 through 0.6.0 declare `flutter >= 3.44.8`;
-the machine has 3.41.6 and a global upgrade was out of scope. 0.3.3 declares
-`>= 3.32.0`. Scratch-project probes on 2026-09-22 built a debug APK and an
-unsigned iOS device app with it. The wrapper also pulls Readium's PDF and
-audio modules, which inflates the Android debug APK (about 170 MB debug in
-the probe); trimming those is a follow-up for the integration pass.
+Reading preferences set the exact black background and off-white text, generic
+`serif`/`sans-serif` families, size, leading, margins, justification, and flow.
+The Flutter UI uses bundled Literata/Inter; native book text uses platform font
+families, not a comma-separated font list. Serif/Sans changes were visually checked
+on both native targets. Transparent publisher images receive a light backing;
+explicit monochrome math-image wrappers are selectively inverted for dark reading.
+Photos and covers retain their original colors.
 
-Verified on the iPhone 17 (iOS 26.5) simulator on 2026-09-22: the Readium
-view opens the sample EPUB on a black canvas, paginates, restores position,
-navigates by contents, and the app chrome toggles from Readium's tap signal.
+Native search uses Readium's publication search, returns snippets and locators,
+and navigates to the selected match. No service or account is involved.
 
-Not yet verified: whether Readium honours the comma-separated
-`fontFamily` fallback list (the page still looked serif after choosing Sans in
-one run), real-corpus performance, the native text-selection menu, and
-locator round-tripping between engines on large books. `flutter build apk`
-for the app itself was started at the end of this build; check
-`/tmp/thereader_android_build.log` or rebuild.
+The iOS method channel uses a weak reader capture and is unregistered on disposal.
+Closing is serialized with the next open; a close error cannot poison later opens.
+Progress flushes on inactive/paused lifecycle events as well as close. Archive/file
+owners are closed on success, failure and fallback disposal.
 
-## Built-in Dart engine
+The tracked `ios/patches/readium_href_index.rb` is applied by CocoaPods. It indexes
+publication hrefs once rather than normalizing/scanning all resources for each
+image request. The index preserves exact-first/fallback and depth-first semantics,
+and rebuilds on manifest mutation. RunnerTests exercise equivalence and measure
+the same synthetic lookup workload before/after.
 
-A real EPUB package reader, not a text preview:
+Android disables PDF parsing and excludes PDFium native libraries. Some upstream
+PDF/audio adapter classes and iOS modules remain dependencies; the app only accepts
+EPUBs and exposes neither PDF nor audio features. See the verification report for
+release artifact sizes instead of comparing a debug APK with a release APK.
 
-- On native the zip is indexed from disk (`InputFileStream`) and entries are
-  inflated on demand, so a 70 MB illustrated book is not loaded whole.
-- Parses `META-INF/container.xml`, the OPF package (metadata, manifest,
-  spine) and the table of contents (EPUB 3 nav or EPUB 2 NCX).
-- Renders each spine document's XHTML with `flutter_widget_from_html_core`
-  on a pure black canvas with app typography. Book-level `<style>` and inline
-  styles are stripped so no page can paint white; images are served from the
-  container.
+## Verification and limits
 
-Limitations (stated in Settings): scrolled flow only, no publisher CSS, one
-column per spine item so very long chapters open slower than in Readium.
+See [native verification](../../../docs/native-verification.md) for real-corpus
+tests, recorded sessions, memory diagnostics, release builds and reproducible commands.
+Native text-selection handles were observed on iOS, but the Copy context menu was
+not reliably observed in automation; clipboard behavior is not signed off.
+Cross-engine locator fidelity on arbitrary large books is also not qualified.
+
+The Dart engine indexes ZIPs from disk on native and inflates entries on demand.
+It parses EPUB 2 NCX / EPUB 3 navigation, renders one column per spine document,
+and closes its archive stream on disposal. Very long chapters and complex publisher
+CSS are a limitation of this fallback; the real-corpus performance results are
+from native Readium only.

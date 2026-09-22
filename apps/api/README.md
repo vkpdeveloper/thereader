@@ -14,6 +14,14 @@ bun run dev
 
 The API is available at `http://127.0.0.1:8787`. `seed:local` is safe to repeat. It always regenerates byte-identical EPUB files and uploads them through Wrangler into `.wrangler/state`, the same local state used by `dev`.
 
+For an explicitly authorized private EPUB corpus, `bun run scripts/import-local.ts
+<private-manifest.json>` imports into local R2 only. The input has
+`selected: [{role, source}]`, with absolute local EPUB paths. It streams checksums,
+uses neutral catalog aliases, and writes its generated catalog beneath ignored
+`.wrangler/`. Run fixture generation first. See
+[native verification](../../docs/native-verification.md) for the three-role corpus
+and mobile walkthrough. Never commit the manifest, EPUBs or extracted pages.
+
 Useful checks:
 
 ```sh
