@@ -3,7 +3,11 @@
 The user authorized creating the Worker, R2 bucket and custom API domain, then
 uploading one EPUB from the supplied local library for an actual app test.
 
-## Resources
+This document records the initial deployment and subsequent reading checks.
+The newer [D1/import deployment](cloud-sync.md) supersedes its API version and
+adds unauthenticated write endpoints and D1 access.
+
+## Initial resources
 
 - API: `https://reader.ordinity.com`.
 - Worker: `thereader-api`; production version
@@ -15,8 +19,9 @@ uploading one EPUB from the supplied local library for an actual app test.
   are disabled. The bucket's r2.dev access is disabled and no bucket custom domain
   is attached.
 - The read API intentionally has no login, matching the personal-app requirement.
-  Its catalog and catalog-listed downloads are publicly reachable; there is no
-  public write/upload endpoint.
+  Its catalog and catalog-listed downloads are publicly reachable; there was no
+  public write/upload endpoint at this initial checkpoint. Upload/sync endpoints
+  were added subsequently, as documented in the D1/import deployment.
 
 Wrangler's OAuth credential is stored outside the repository in its encrypted
 configuration, with the encryption key in macOS Keychain. Its authorization covers

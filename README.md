@@ -2,7 +2,9 @@
 
 A personal, always-dark EPUB reader for iOS and Android. Flutter supplies the
 interface; a small TypeScript Cloudflare Worker serves a catalog and books from R2.
-Downloaded books and reading progress live on the phone. No login or accounts.
+Books stay on the phone for offline reading; D1 syncs position, reading time and
+typography across devices. Native EPUB imports upload to R2 while remaining
+readable from their local copy. No login or accounts.
 
 ## Workspace
 
@@ -29,8 +31,8 @@ explicit test fixtures only; there is no Sample mode in the interface.
 ## Scope
 
 EPUB only. One dark theme. A quiet library, search, downloads, reading controls,
-typography preferences, and locally saved reading position. No PDF, audiobook,
-social, purchase, user-account, or cloud-progress features.
+typography preferences, EPUB imports, and cloud reading-state sync. No PDF,
+audiobook, social, purchase, or user-account features.
 
 ## Production API
 
@@ -44,3 +46,5 @@ See [deployment verification](docs/production-deployment.md), the application
 READMEs, and [native verification](docs/native-verification.md) for evidence and
 remaining platform limits. [Progressive reading](docs/progressive-reading.md)
 describes early opening, background caching and offline verification.
+[Import and cloud sync](docs/cloud-sync.md) covers D1, resumable uploads and
+conflict handling.

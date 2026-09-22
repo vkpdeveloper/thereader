@@ -1,8 +1,9 @@
-# The Reader: first application contract
+# The Reader: application contract
 
 The app is Flutter for iOS and Android. It is always dark, minimal, and EPUB-only.
 Backend: TypeScript on Cloudflare Workers. Bun is the package manager, script runner,
-and local tooling, not the deployed runtime. R2 holds books and catalog data.
+and local tooling, not the deployed runtime. R2 holds books; D1 stores uploaded
+book metadata and the shared personal reading state.
 
 ## Workspace ownership
 
@@ -13,7 +14,8 @@ and local tooling, not the deployed runtime. R2 holds books and catalog data.
 Agents may read all files but should write only their owned directory. The user
 authorized a private `vkpdeveloper/thereader` repository and separate commits on
 `main`, pushed as each subtask completes. The coordinator owns Git operations to
-avoid concurrent staging. Do not deploy or provision Cloudflare resources.
+avoid concurrent staging. The user subsequently authorized provisioning and
+deploying the Worker, R2 bucket, custom domain and D1 database.
 
 ## HTTP API
 
@@ -59,8 +61,9 @@ The user explicitly requires no login or authentication flow. All reader endpoin
 work without bearer tokens, API keys, accounts, or sessions. R2 is accessed by the
 Worker binding, not client-side storage credentials. The app needs only an API base
 URL. Do not add auth middleware, token entry, or user management.
-No sign-up, purchases, recommendations service, social features, or cloud progress
-sync in this first implementation. Reading progress is local.
+There is one shared personal profile. Upload and sync endpoints also have no
+authentication: anyone with the API URL can access or change that shared state.
+No sign-up, purchases, recommendations service or social features.
 
 ## Catalog and offline reading
 
@@ -70,7 +73,7 @@ local seed script with three original, valid reflowable EPUB samples:
 Do not fetch copyrighted book files or depend on remote cover images for development.
 The backend owns generation/seeding of these fixtures and its exact manifest format.
 
-Frontend should support a clearly identified sample/demo mode and a real API mode.
+Sample mode is removed from the shipping interface; bundled books are test-only.
 Do not silently substitute demo data on network failure. Library/search/filter/book
 details/download states/reading settings should work. Full downloaded EPUB files go
 in durable application storage, not OS cache; verify integrity before marking ready.
@@ -88,3 +91,19 @@ Generous whitespace, exceptional typography, compact controls. No light/sepia th
 decorative dashboard, gradients, bright neon, PDFs, audio, or platform-native styling
 requirement. Brief thoughtful motion and reduced-motion support. Large hit targets
 and accessible labels. No fake controls or fake success.
+
+## Imports and D1 sync
+
+The live protocol, validation limits and response examples are documented in
+[the API README](../apps/api/README.md). Routes include:
+
+- `POST /v1/uploads/prepare`: SHA-based deduplication and upload preparation.
+- `PUT /v1/uploads/:sha`: streamed verified upload up to 64 MiB.
+- `PUT /v1/uploads/:sha/parts/:number`: resumable 8 MiB parts for larger EPUBs.
+- `POST /v1/uploads/:sha/complete`: whole-object SHA and EPUB validation.
+- `GET /v1/sync` and `POST /v1/sync`: library membership, locators, cumulative
+  reading sessions and typography preferences.
+
+Maximum EPUB size is 512 MiB. The mobile app first saves and verifies an imported
+file locally; it never downloads that same imported file to make it readable.
+See [cloud sync](cloud-sync.md) for local persistence, lifecycle and conflicts.
