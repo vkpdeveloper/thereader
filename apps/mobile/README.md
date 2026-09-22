@@ -8,16 +8,17 @@ no accounts. See `docs/api-contract.md` at the repository root for the API.
 ```sh
 flutter pub get
 flutter run -d "iPhone 17"          # iOS simulator (preferred for review)
-flutter run -d chrome               # browser preview (sample mode, in-memory downloads)
+flutter run -d chrome               # browser preview (in-memory downloads)
 flutter build apk --debug           # Android
 flutter build apk --release --split-per-abi --target-platform android-arm64
 flutter build ios --release --no-codesign
 ```
 
-Sample mode is the default and is labelled everywhere. Switch to **Your API**
-in Settings and enter the Worker URL (`http://127.0.0.1:8787` on the
-simulator, `http://10.0.2.2:8787` on the Android emulator). The health check
-button calls `GET /health`.
+Fresh installs use **Your API** at `https://reader.ordinity.com`. Existing saved
+source choices and URLs are preserved. Bundled samples remain an explicit,
+clearly labelled choice in Settings. For local development, enter
+`http://127.0.0.1:8787` on the iOS simulator or `http://10.0.2.2:8787` on the
+Android emulator. The health check button calls `GET /health`.
 
 ## Layout
 

@@ -8,6 +8,8 @@ import 'package:flutter_readium/flutter_readium.dart' show ReadiumReaderWidget;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:thereader/main.dart' as app;
+import 'package:thereader/app_scope.dart';
+import 'package:thereader/data/models/settings.dart';
 
 /// Set with `--dart-define=THEREADER_ENGINE=dart` to exercise the built-in
 /// engine; by default the preferred engine (Readium on native) is used.
@@ -24,6 +26,9 @@ void main() {
   testWidgets('sample mode walkthrough', (tester) async {
     await app.main();
     await pause(tester, 3);
+    final services = AppScope.of(tester.element(find.byType(Scaffold).first));
+    await services.settings.setMode(AppMode.sample);
+    await pause(tester, 1);
 
     await tester.tap(find.text('Browse'));
     await pause(tester, 3);

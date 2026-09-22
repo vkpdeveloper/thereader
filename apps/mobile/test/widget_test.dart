@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:thereader/app.dart';
 import 'package:thereader/app_scope.dart';
 import 'package:thereader/data/api/catalog_source.dart';
+import 'package:thereader/data/models/settings.dart';
 import 'package:thereader/data/repositories/library_repository.dart';
 import 'package:thereader/data/repositories/settings_repository.dart';
 import 'package:thereader/data/storage/book_store_web.dart';
@@ -15,6 +16,7 @@ Future<AppServices> makeServices() async {
   final kv = MemoryKeyValueStore();
   final settings = SettingsRepository(kv);
   await settings.load();
+  await settings.setMode(AppMode.sample);
   final library = LibraryRepository(store: kv, bookStore: MemoryBookStore());
   await library.load();
   return AppServices(

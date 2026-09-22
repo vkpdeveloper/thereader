@@ -7,10 +7,12 @@ enum AppMode { sample, api }
 @immutable
 class AppSettings {
   const AppSettings({
-    this.mode = AppMode.sample,
-    this.apiBaseUrl = 'http://127.0.0.1:8787',
+    this.mode = AppMode.api,
+    this.apiBaseUrl = defaultApiBaseUrl,
     this.preferredEngine = 'readium',
   });
+
+  static const defaultApiBaseUrl = 'https://reader.ordinity.com';
 
   final AppMode mode;
   final String apiBaseUrl;
@@ -29,6 +31,8 @@ class AppSettings {
   Map<String, dynamic> toJson() =>
       {'mode': mode.name, 'apiBaseUrl': apiBaseUrl, 'preferredEngine': preferredEngine};
 
+  // Existing records keep their original defaults even when a legacy field is
+  // absent. Only installs without a saved record adopt the production defaults.
   factory AppSettings.fromJson(Map<String, dynamic> json) => AppSettings(
         mode: AppMode.values.byName(json['mode'] as String? ?? 'sample'),
         apiBaseUrl: json['apiBaseUrl'] as String? ?? 'http://127.0.0.1:8787',
