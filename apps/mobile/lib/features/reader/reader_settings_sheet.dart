@@ -94,8 +94,7 @@ class ReaderSettingsSheet extends StatelessWidget {
                 const SizedBox(height: Space.sm),
                 const Divider(),
                 const SizedBox(height: Space.sm),
-                Text(engineName, style: text.labelMedium?.copyWith(color: Palette.fg)),
-                if (engineNote != null) Text(engineNote!, style: text.bodySmall),
+
               ],
             ),
           ),

@@ -10,6 +10,7 @@ import '../../data/models/library.dart';
 import '../../reader/engine/reader_engine.dart';
 import '../shared/states.dart';
 import 'reader_settings_sheet.dart';
+import 'reader_search_sheet.dart';
 
 /// The reading surface. Chrome is hidden by default and revealed with a tap;
 /// position is saved continuously and on exit.
@@ -32,8 +33,8 @@ class ReaderScreen extends StatefulWidget {
   State<ReaderScreen> createState() => _ReaderScreenState();
 }
 
-class _ReaderScreenState extends State<ReaderScreen> {
-  late final AppServices _services;
+class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver {
+  late AppServices _services;
   ReaderController? _controller;
   ReaderEngine? _engine;
   String? _error;
@@ -44,6 +45,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     WidgetsBinding.instance.addPostFrameCallback((_) => _open());
   }
@@ -85,6 +87,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
       if (engine == null || controller == null) throw firstError ?? StateError('No engine could open the book.');
       if (engine.id != candidates.first.id) {
         _fallbackNote = '${candidates.first.availability.name} could not open this book; using ${engine.availability.name}.';
+      }
+      if (!mounted) {
+        controller.dispose();
+        return;
       }
       controller.locator.addListener(_onLocator);
       controller.controlsToggle?.addListener(_onEngineControls);
@@ -130,7 +136,16 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) {
+      _saveDebounce?.cancel();
+      _saveNow();
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _saveDebounce?.cancel();
     final loc = _controller?.locator.value;
     if (loc != null) {
@@ -271,6 +286,9 @@ class _TopChrome extends StatelessWidget {
                   child: Text(title, style: text.titleSmall?.copyWith(color: Palette.muted), maxLines: 1, overflow: TextOverflow.ellipsis),
                 ),
                 QuietIconButton(icon: Icons.format_list_bulleted, label: 'Contents', onPressed: () => _openContents(context)),
+                if (controller is ReaderSearch)
+                  QuietIconButton(icon: Icons.search, label: 'Search book', onPressed: () => showModalBottomSheet<void>(
+                    context: context, isScrollControlled: true, builder: (_) => ReaderSearchSheet(controller: controller))),
                 QuietIconButton(icon: Icons.text_fields, label: 'Typography', onPressed: onSettings),
               ],
             ),
@@ -358,7 +376,7 @@ class _BottomChrome extends StatelessWidget {
                 final pct = ((loc?.totalProgression ?? 0) * 100).round();
                 return Row(
                   children: [
-                    QuietIconButton(icon: Icons.chevron_left, label: 'Previous chapter', onPressed: controller.previous),
+                    QuietIconButton(icon: Icons.chevron_left, label: 'Previous page', onPressed: controller.previous),
                     Expanded(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -374,7 +392,7 @@ class _BottomChrome extends StatelessWidget {
                         ],
                       ),
                     ),
-                    QuietIconButton(icon: Icons.chevron_right, label: 'Next chapter', onPressed: controller.next),
+                    QuietIconButton(icon: Icons.chevron_right, label: 'Next page', onPressed: controller.next),
                   ],
                 );
               },

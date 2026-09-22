@@ -32,6 +32,12 @@ android {
         versionName = flutter.versionName
     }
 
+    packaging {
+        // PDF parsing is disabled in the local wrapper. Keep EPUB builds free
+        // of the unused PDFium native binaries for every ABI.
+        jniLibs.excludes += setOf("**/libpdfium.cr.so", "**/libpdfiumandroid.so")
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.

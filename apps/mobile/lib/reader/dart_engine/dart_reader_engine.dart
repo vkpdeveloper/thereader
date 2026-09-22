@@ -147,5 +147,6 @@ class DartReaderController implements ReaderController {
     prefs.dispose();
     _chapter.dispose();
     _locator.dispose();
+    unawaited(package.close());
   }
 }

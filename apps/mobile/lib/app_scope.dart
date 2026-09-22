@@ -33,7 +33,13 @@ class AppServices {
 
   CatalogSource sourceFor(AppSettings s) {
     if (s.mode == AppMode.sample) return _sample;
-    final uri = ApiClient.normalizeBaseUrl(s.apiBaseUrl);
+    Uri uri;
+    try {
+      uri = ApiClient.normalizeBaseUrl(s.apiBaseUrl);
+    } on ApiException {
+      // A corrupt/legacy saved URL must not prevent access to offline books.
+      uri = Uri.parse('http://invalid.invalid/');
+    }
     return _apis.putIfAbsent(
       uri.toString(),
       () => ApiCatalogSource(ApiClient(baseUrl: uri.toString())),

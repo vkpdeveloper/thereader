@@ -83,8 +83,7 @@ class BookDetailScreen extends StatelessWidget {
               const SizedBox(height: Space.sm),
               _Fact('Version', current.version),
               _Fact('Updated', current.updatedAt.toLocal().toString().split(' ').first),
-              _Fact('SHA-256', current.sha256, mono: true),
-              if (d.isReady && d.path != null) _Fact('Stored at', d.path!, mono: true),
+
             ],
           );
         },
@@ -94,10 +93,9 @@ class BookDetailScreen extends StatelessWidget {
 }
 
 class _Fact extends StatelessWidget {
-  const _Fact(this.label, this.value, {this.mono = false});
+  const _Fact(this.label, this.value);
   final String label;
   final String value;
-  final bool mono;
 
   @override
   Widget build(BuildContext context) {
@@ -113,8 +111,8 @@ class _Fact extends StatelessWidget {
               value,
               style: text.bodySmall?.copyWith(
                 color: Palette.fg,
-                fontFamily: mono ? 'monospace' : null,
-                fontSize: mono ? 11.5 : null,
+                
+                
               ),
             ),
           ),
@@ -187,7 +185,7 @@ class _DownloadPanel extends StatelessWidget {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    outdated ? 'Downloaded (an older edition). ' : 'Downloaded and verified. ',
+                    d.error ?? (outdated ? 'Downloaded (an older edition). ' : 'Downloaded and verified. '),
                     style: text.bodySmall?.copyWith(
                       color: outdated ? Palette.orange : Palette.muted,
                     ),

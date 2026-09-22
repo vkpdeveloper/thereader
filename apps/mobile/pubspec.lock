@@ -166,10 +166,9 @@ packages:
   flutter_readium:
     dependency: "direct main"
     description:
-      name: flutter_readium
-      sha256: "29fa698f124e1e79d0ee85960e0805a9cdb840f38deca80f478c577d8d608658"
-      url: "https://pub.dev"
-    source: hosted
+      path: "vendor/flutter_readium"
+      relative: true
+    source: path
     version: "0.3.3"
   flutter_readium_platform_interface:
     dependency: transitive

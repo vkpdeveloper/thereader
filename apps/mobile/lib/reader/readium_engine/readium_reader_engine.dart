@@ -17,6 +17,8 @@ import '../engine/reader_engine.dart';
 class ReadiumReaderEngine implements ReaderEngine {
   const ReadiumReaderEngine();
 
+  static Future<void> _closing = Future.value();
+
   static const String engineId = 'readium';
 
   @override
@@ -38,11 +40,13 @@ class ReadiumReaderEngine implements ReaderEngine {
     required ReaderPreferences prefs,
     ReadingLocator? initialLocator,
   }) async {
+    await _closing;
     final path = file.path;
     if (path == null) throw UnsupportedError('Readium needs an on-disk file.');
     final readium = rd.FlutterReadium();
     readium.setDefaultPreferences(ReadiumReaderController.toEpubPreferences(prefs));
     final publication = await readium.openPublication(path);
+    await file.close();
     return ReadiumReaderController(
       readium: readium,
       publication: publication,
@@ -56,7 +60,7 @@ class ReadiumReaderEngine implements ReaderEngine {
       _ReadiumView(controller: controller as ReadiumReaderController);
 }
 
-class ReadiumReaderController implements ReaderController {
+class ReadiumReaderController implements ReaderController, ReaderSearch {
   ReadiumReaderController({
     required this.readium,
     required this.publication,
@@ -154,6 +158,22 @@ class ReadiumReaderController implements ReaderController {
   }
 
   @override
+  Future<List<ReaderSearchMatch>> search(String query) async {
+    final results = await readium.searchInPublication(query.trim());
+    return results.map((r) {
+      final l = r.locator;
+      return ReaderSearchMatch(
+        excerpt: [l.text?.before, l.text?.highlight, l.text?.after]
+            .whereType<String>().join().trim(),
+        locator: ReadingLocator(href: l.href,
+          progression: l.locations?.progression ?? 0,
+          totalProgression: l.locations?.totalProgression,
+          title: r.chapterTitle, engine: ReadiumReaderEngine.engineId, raw: l.toJson()),
+      );
+    }).toList();
+  }
+
+  @override
   Future<void> goTo(ReadingLocator locator) async {
     final l = _toReadium(locator);
     if (l != null) await readium.goToLocator(l);
@@ -188,11 +208,11 @@ class ReadiumReaderController implements ReaderController {
   static rd.EPUBPreferences toEpubPreferences(ReaderPreferences p) => rd.EPUBPreferences(
         backgroundColor: Palette.bg,
         textColor: Palette.fg,
-        // Bundled app fonts are not registered inside the native WebView; fall
-        // back through good system faces so the choice still reads as intended.
+        // Native WebViews use their platform serif/sans families; a comma-separated
+        // string is treated by Readium as one (nonexistent) font family.
         fontFamily: p.font == ReaderFont.serif
-            ? 'Literata, Charter, Georgia, serif'
-            : 'Inter, -apple-system, Roboto, Helvetica Neue, sans-serif',
+            ? 'serif'
+            : 'sans-serif',
         fontSize: p.fontSize / 16.0,
         lineHeight: p.lineHeight,
         pageMargins: 0.8 + p.marginScale * 0.6,
@@ -208,8 +228,10 @@ class ReadiumReaderController implements ReaderController {
     _statusSub?.cancel();
     showControls.dispose();
     _locator.dispose();
-    // Let the native view tear down before closing the publication.
-    Future<void>.delayed(const Duration(milliseconds: 300), readium.closePublication);
+    // Complete close before the next open; no delayed close may target a new book.
+    ReadiumReaderEngine._closing = readium.closePublication().catchError((Object error) {
+      debugPrint('[readium] close failed: $error');
+    });
   }
 }
 

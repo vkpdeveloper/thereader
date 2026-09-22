@@ -89,3 +89,14 @@ class ReaderService {
 
   List<EngineAvailability> get report => engines.map((e) => e.availability).toList();
 }
+
+/// Optional native publication search capability.
+abstract interface class ReaderSearch {
+  Future<List<ReaderSearchMatch>> search(String query);
+}
+
+class ReaderSearchMatch {
+  const ReaderSearchMatch({required this.excerpt, required this.locator});
+  final String excerpt;
+  final ReadingLocator locator;
+}

@@ -132,23 +132,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: Space.sm),
             Text(services.library.bookStore.description, style: text.bodyMedium?.copyWith(color: Palette.muted)),
             const SizedBox(height: Space.xl),
-            const Eyebrow('Reader engine'),
-            const SizedBox(height: Space.sm),
-            for (final engine in services.readerService.engines) ...[
-              _ModeTile(
-                title: engine.availability.name,
-                body: engine.availability.note ?? '',
-                selected: s.preferredEngine == engine.id,
-                accent: engine.availability.available ? Palette.blue : Palette.subtle,
-                onTap: engine.availability.available ? () => services.settings.setPreferredEngine(engine.id) : null,
-              ),
-              const SizedBox(height: Space.sm),
-            ],
-            Text(
-              'The preferred engine opens books first; if it cannot, the other one is used and the reader tells you.',
-              style: text.bodySmall,
-            ),
-            const SizedBox(height: Space.xl),
             const Eyebrow('About'),
             const SizedBox(height: Space.sm),
             Text('The Reader · personal EPUB reader. Reading progress and preferences stay on this device.',
