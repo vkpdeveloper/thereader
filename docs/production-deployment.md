@@ -106,16 +106,19 @@ The fix is committed as `7301beb` and verified by the fresh release walkthrough.
 
 Private, Git-ignored recordings are under `artifacts/recordings/`:
 
-- `reader-production-test.mp4` — 152.92 seconds, 13,616,165 bytes. Complete successful
+- `reader-production-test.mp4` — 152.93 seconds, 6,787,548 bytes. Complete successful
   Android production and offline walkthrough, concatenated from the two clips below
-  without cutting their content.
+  without cutting their timeline and encoded as H.264 at 30 fps for reliable playback.
+  This playback frame rate is not an app performance measurement. The original
+  concatenation is retained as `reader-production-test-source.mp4`.
 - `android-production-final-online.mp4` — 94.58 seconds. Production connection,
   catalog, cover, fresh download, verification, native content and saved location.
 - `android-production-final-offline.mp4` — 58.34 seconds. No active network, failed
   health check, process restart and repeated cached native opens.
 
 The coordinator inspected decoded online/offline video frames showing actual
-readable EPUB body text, in addition to checking the recordings with ffprobe.
+readable EPUB body text, checked the recordings with ffprobe, and decoded the final
+30 fps deliverable completely without errors.
 Earlier `first-pass`, `remote-offline` and `offline-supplement` recordings include
 the lifecycle failure and must not be presented as the final passing run.
 
