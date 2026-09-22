@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -5,6 +7,9 @@ import 'app.dart';
 import 'app_scope.dart';
 import 'core/theme/app_theme.dart';
 import 'data/api/catalog_source.dart';
+import 'data/api/api_client.dart';
+import 'data/import/epub_import_service.dart';
+import 'data/repositories/sync_repository.dart';
 import 'data/repositories/library_repository.dart';
 import 'data/repositories/settings_repository.dart';
 import 'data/storage/book_store.dart';
@@ -26,20 +31,58 @@ Future<void> main() async {
   // `--dart-define=THEREADER_ENGINE=dart|readium` forces the preferred engine
   // (used by the integration walkthrough; never silently in production).
   const forcedEngine = String.fromEnvironment('THEREADER_ENGINE');
-  if (forcedEngine.isNotEmpty && settings.settings.preferredEngine != forcedEngine) {
+  if (forcedEngine.isNotEmpty &&
+      settings.settings.preferredEngine != forcedEngine) {
     await settings.setPreferredEngine(forcedEngine);
   }
   // `--dart-define=THEREADER_BUNDLED_CATALOG=true` swaps the API for the
   // bundled fixture catalog. Only the integration walkthrough sets it; there is
   // no runtime switch, so shipping builds always browse the configured API.
   const bundledCatalog = bool.fromEnvironment('THEREADER_BUNDLED_CATALOG');
+  final importClients = <String, ApiClient>{};
+  final imports = bundledCatalog
+      ? null
+      : EpubImportService(
+          bookStore: bookStore,
+          library: library,
+          store: kv,
+          clientForCurrentOrigin: () {
+            final origin = ApiClient.normalizeBaseUrl(
+              settings.settings.apiBaseUrl,
+            ).toString();
+            return importClients.putIfAbsent(
+              origin,
+              () => ApiClient(baseUrl: origin),
+            );
+          },
+        );
+  final sync = bundledCatalog
+      ? null
+      : SyncRepository(
+          store: kv,
+          library: library,
+          settings: settings,
+          isUploadPending: (id) => imports?.isPending(id) ?? false,
+          retryUploads: () => unawaited(imports?.retryPending()),
+        );
+  if (sync != null) imports?.addListener(sync.uploadsChanged);
   final services = AppServices(
     settings: settings,
     library: library,
-    readerService: ReaderService(engines: const [ReadiumReaderEngine(), DartReaderEngine()]),
+    imports: imports,
+    sync: sync,
+    readerService: ReaderService(
+      engines: const [ReadiumReaderEngine(), DartReaderEngine()],
+    ),
     catalogSource: bundledCatalog ? SampleCatalogSource() : null,
   );
   // Library loads in the background; the screen shows a quiet line meanwhile.
-  library.load();
+  Future<void> loadPersonalLibrary() async {
+    await library.load();
+    await imports?.load();
+    await sync?.load();
+  }
+
+  loadPersonalLibrary();
   runApp(TheReaderApp(services: services));
 }

@@ -107,6 +107,49 @@ class ApiClient {
     return BookPage(items: items, nextCursor: json['nextCursor'] as String?);
   }
 
+  Future<Map<String, dynamic>> syncState({
+    required String deviceId,
+    required List<Map<String, dynamic>> changes,
+  }) async {
+    final uri = resolve('/v1/sync');
+    final http.Response response;
+    try {
+      response = await _client
+          .post(
+            uri,
+            headers: const {
+              'content-type': 'application/json',
+              'accept': 'application/json',
+            },
+            body: jsonEncode({'deviceId': deviceId, 'changes': changes}),
+          )
+          .timeout(timeout);
+    } on TimeoutException {
+      throw ApiException(
+        'Sync timed out. Changes are saved on this device.',
+        code: 'TIMEOUT',
+        isNetwork: true,
+      );
+    } on http.ClientException catch (e) {
+      throw ApiException(
+        _friendlyNetwork(e.message, uri),
+        code: 'NETWORK',
+        isNetwork: true,
+      );
+    }
+    if (response.statusCode != 200) {
+      throw _errorFrom(response.statusCode, response.body);
+    }
+    try {
+      return (jsonDecode(response.body) as Map).cast<String, dynamic>();
+    } catch (_) {
+      throw ApiException(
+        'The server returned an invalid sync response.',
+        code: 'BAD_RESPONSE',
+      );
+    }
+  }
+
   Future<Book> getBook(String id) async {
     final json = await _getJson(
       resolve('/v1/books/${Uri.encodeComponent(id)}'),

@@ -14,6 +14,9 @@ class SettingsRepository extends ChangeNotifier {
   AppSettings _settings = const AppSettings();
   ReaderPreferences _reader = const ReaderPreferences();
   bool _loaded = false;
+  Future<void> _readerWrites = Future.value();
+  DateTime? _readerUpdatedAt;
+  DateTime? get readerUpdatedAt => _readerUpdatedAt;
 
   AppSettings get settings => _settings;
   ReaderPreferences get reader => _reader;
@@ -23,14 +26,19 @@ class SettingsRepository extends ChangeNotifier {
     final s = await _store.readJson(_settingsKey);
     if (s != null) _settings = AppSettings.fromJson(s);
     final r = await _store.readJson(_readerKey);
-    if (r != null) _reader = ReaderPreferences.fromJson(r);
+    if (r != null) {
+      _reader = ReaderPreferences.fromJson(r);
+      _readerUpdatedAt = DateTime.tryParse(r['_updatedAt'] as String? ?? '');
+    }
     _loaded = true;
     notifyListeners();
   }
 
-  Future<void> setApiBaseUrl(String url) => _update(_settings.copyWith(apiBaseUrl: url.trim()));
+  Future<void> setApiBaseUrl(String url) =>
+      _update(_settings.copyWith(apiBaseUrl: url.trim()));
 
-  Future<void> setPreferredEngine(String id) => _update(_settings.copyWith(preferredEngine: id));
+  Future<void> setPreferredEngine(String id) =>
+      _update(_settings.copyWith(preferredEngine: id));
 
   Future<void> _update(AppSettings next) async {
     _settings = next;
@@ -38,9 +46,39 @@ class SettingsRepository extends ChangeNotifier {
     await _store.writeJson(_settingsKey, next.toJson());
   }
 
-  Future<void> updateReader(ReaderPreferences Function(ReaderPreferences) change) async {
+  Future<void> updateReader(
+    ReaderPreferences Function(ReaderPreferences) change,
+  ) async {
     _reader = change(_reader);
+    _readerUpdatedAt = DateTime.now().toUtc();
     notifyListeners();
-    await _store.writeJson(_readerKey, _reader.toJson());
+    await _persistReader();
+  }
+
+  Future<void> applyCloudReader(
+    ReaderPreferences value,
+    DateTime updatedAt,
+  ) async {
+    if (_readerUpdatedAt != null && !updatedAt.isAfter(_readerUpdatedAt!)) {
+      return;
+    }
+    _reader = value;
+    _readerUpdatedAt = updatedAt;
+    notifyListeners();
+    await _persistReader();
+  }
+
+  Future<void> _persistReader() {
+    final snapshot = {
+      ..._reader.toJson(),
+      '_updatedAt': _readerUpdatedAt?.toUtc().toIso8601String(),
+    };
+    final write = _readerWrites.then(
+      (_) => _store.writeJson(_readerKey, snapshot),
+    );
+    _readerWrites = write.catchError(
+      (Object e) => debugPrint('Preferences persistence failed: $e'),
+    );
+    return write;
   }
 }

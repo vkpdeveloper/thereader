@@ -76,7 +76,7 @@ void main() {
     await tester.tap(find.textContaining('Download ·'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Downloaded and verified. '), findsOneWidget);
+    expect(find.text('Saved and verified. '), findsOneWidget);
     final entry = services.library.entries.singleWhere((e) => e.book.id == 'the-quiet-hour');
     final detailContext = tester.element(find.text('Read'));
     final firstOpen = ReaderScreen.open(detailContext, entry);

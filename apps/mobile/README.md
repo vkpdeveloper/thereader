@@ -31,7 +31,9 @@ lib/
     storage/         KeyValueStore (SharedPreferences | memory),
                      BookStore (durable app-support dir | in-memory on web)
     download/        Downloader: streamed write + chunked SHA-256 + size check
-    repositories/    SettingsRepository, LibraryRepository, CatalogRepository
+    import/          native file picker, bounded EPUB metadata, resumable R2 upload
+    repositories/    SettingsRepository, LibraryRepository, CatalogRepository,
+                     SyncRepository (durable outbox and foreground reading sessions)
   reader/
     engine/          ReaderEngine / ReaderController / ReaderService boundary
     dart_engine/     built-in EPUB engine (package parser + renderer)
@@ -64,3 +66,6 @@ tracked beside the upstream license. Private books and recordings stay ignored.
 See [progressive reading](../../docs/progressive-reading.md) for early native
 opening while bytes continue downloading. Partial publications require a
 connection; only complete, verified files are marked downloaded.
+
+See [import and cloud sync](../../docs/cloud-sync.md) for native EPUB picking,
+local reading during upload, D1 state, offline retry and cross-device behavior.

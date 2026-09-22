@@ -1,6 +1,8 @@
 import 'package:flutter/widgets.dart';
 
 import 'data/api/api_client.dart';
+import 'data/import/epub_import_service.dart';
+import 'data/repositories/sync_repository.dart';
 import 'data/api/catalog_source.dart';
 import 'data/models/settings.dart';
 import 'data/models/library.dart';
@@ -19,11 +21,15 @@ class AppServices {
     required this.library,
     required this.readerService,
     CatalogSource? catalogSource,
+    this.imports,
+    this.sync,
   }) : _fixed = catalogSource {
     catalog = CatalogRepository(sourceFor(settings.settings));
     settings.addListener(_onSettings);
   }
 
+  final EpubImportService? imports;
+  final SyncRepository? sync;
   final SettingsRepository settings;
   final LibraryRepository library;
   final ReaderService readerService;
@@ -61,7 +67,10 @@ class AppServices {
       if (fixed != null && fixed.source == BookSource.sample) return fixed;
       return _legacySamples ??= SampleCatalogSource();
     }
-    return _apis.putIfAbsent(entry.origin, () => ApiCatalogSource(ApiClient(baseUrl: entry.origin)));
+    return _apis.putIfAbsent(
+      entry.origin,
+      () => ApiCatalogSource(ApiClient(baseUrl: entry.origin)),
+    );
   }
 
   CatalogSource get currentSource => sourceFor(settings.settings);
@@ -69,6 +78,8 @@ class AppServices {
   void _onSettings() => catalog.replaceSource(sourceFor(settings.settings));
 
   void dispose() {
+    imports?.dispose();
+    sync?.dispose();
     settings.removeListener(_onSettings);
     catalog.dispose();
     for (final source in _apis.values) {

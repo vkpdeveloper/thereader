@@ -6,6 +6,7 @@ import '../../data/models/book.dart';
 import '../../data/models/library.dart';
 import '../book/book_detail_screen.dart';
 import '../reader/reader_screen.dart';
+import '../shared/cloud_status.dart';
 import '../shared/cover_art.dart';
 import '../shared/states.dart';
 
@@ -24,16 +25,52 @@ class LibraryScreen extends StatefulWidget {
 
 class _LibraryScreenState extends State<LibraryScreen> {
   _Filter _filter = _Filter.all;
+  bool _importing = false;
+
+  /// Native picker, local copy, then straight to the book page. The pick
+  /// returns as soon as the file is readable here; the upload is queued and
+  /// reported by the import service, not awaited.
+  Future<void> _import() async {
+    final services = AppScope.of(context);
+    final imports = services.imports;
+    if (imports == null || _importing) return;
+    setState(() => _importing = true);
+    LibraryEntry? entry;
+    String? failure;
+    try {
+      entry = await imports.pickAndImport();
+    } catch (e) {
+      failure = e.toString();
+    } finally {
+      if (mounted) setState(() => _importing = false);
+    }
+    if (!mounted) return;
+    if (entry != null) {
+      await BookDetailScreen.open(context, entry.book, entry: entry);
+    } else if (failure != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not import that file. $failure')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final services = AppScope.of(context);
+    final imports = services.imports;
+    final sync = services.sync;
     return ListenableBuilder(
-      listenable: Listenable.merge([services.library, services.settings]),
+      listenable: Listenable.merge([
+        services.library,
+        services.settings,
+        ?imports,
+        ?sync,
+      ]),
       builder: (context, _) {
         final lib = services.library;
         final text = Theme.of(context).textTheme;
         if (!lib.loaded) return const LoadingLine();
+        final canImport = imports != null && imports.isSupported;
         final current = lib.continueReading.firstOrNull;
         final all = lib.entries.toList()..sort((a, b) => b.addedAt.compareTo(a.addedAt));
         final shown = switch (_filter) {
@@ -61,16 +98,43 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Expanded(child: Text('Library', style: text.displayLarge)),
+                    if (canImport)
+                      _importing
+                          ? Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: Semantics(
+                                  label: 'Importing EPUB',
+                                  child: CircularProgressIndicator(strokeWidth: 1.5),
+                                ),
+                              ),
+                            )
+                          : QuietIconButton(
+                              icon: Icons.file_upload_outlined,
+                              label: 'Import EPUB',
+                              // Uploads run in the background; only the pick
+                              // and local copy block a second import.
+                              onPressed: _import,
+                            ),
                   ],
                 ),
               ),
             ),
+            if (canImport || sync != null)
+              const SliverPadding(
+                padding: EdgeInsets.fromLTRB(Space.gutter, Space.sm, Space.gutter, 0),
+                sliver: SliverToBoxAdapter(child: CloudSummaryLine()),
+              ),
             if (all.isEmpty)
               SliverFillRemaining(
                 hasScrollBody: false,
                 child: StateMessage(
                   title: 'Nothing here yet.',
-                  body: 'Browse the library and download a book. Downloads are kept on this device for offline reading.',
+                  body: canImport
+                      ? 'Browse the library and download a book, or import an EPUB from your files with the button above. Books are kept on this device for offline reading.'
+                      : 'Browse the library and download a book. Downloads are kept on this device for offline reading.',
                   actionLabel: 'Browse books',
                   onAction: widget.onBrowse,
                 ),
@@ -320,6 +384,8 @@ class _GridItem extends StatelessWidget {
               Row(
                 children: [
                   Expanded(child: status),
+                  const SizedBox(width: 6),
+                  UploadGlyph(entry: entry),
                 ],
               ),
             ],

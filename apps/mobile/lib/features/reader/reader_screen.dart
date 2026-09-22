@@ -173,6 +173,7 @@ class _ReaderScreenState extends State<ReaderScreen>
           SnackBar(content: Text(note), duration: const Duration(seconds: 5)),
         );
       }
+      services.sync?.beginReading(widget.entry);
       // Record the opening position so "Continue reading" appears immediately.
       _onLocator();
     } catch (e) {
@@ -193,6 +194,7 @@ class _ReaderScreenState extends State<ReaderScreen>
       return;
     }
     _provisional = false;
+    _services.sync?.endReading();
     _saveNow();
     _controller?.locator.removeListener(_onLocator);
     _controller?.controlsToggle?.removeListener(_onEngineControls);
@@ -236,6 +238,8 @@ class _ReaderScreenState extends State<ReaderScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    final sync = _services.sync;
+    Future.microtask(() => sync?.endReading());
     _saveDebounce?.cancel();
     final loc = _controller?.locator.value;
     if (loc != null) {

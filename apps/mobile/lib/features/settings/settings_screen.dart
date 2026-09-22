@@ -4,10 +4,11 @@ import '../../app_scope.dart';
 import '../../core/theme/tokens.dart';
 import '../../data/api/api_client.dart';
 import '../../data/models/settings.dart';
+import '../shared/cloud_status.dart';
 import '../shared/states.dart';
 
-/// Library API address, storage facts, and a short note on privacy.
-/// No accounts, no tokens: the API URL is the only configuration.
+/// Library API address, cloud sync status, storage facts, and a short note
+/// on privacy. No accounts, no tokens: the API URL is the only configuration.
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -21,6 +22,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Color _checkColor = Palette.muted;
   bool _checking = false;
   bool _seeded = false;
+  bool _syncing = false;
+  bool _retrying = false;
 
   @override
   void didChangeDependencies() {
@@ -67,6 +70,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  Future<void> _syncNow() async {
+    final sync = AppScope.of(context).sync;
+    if (sync == null || _syncing) return;
+    setState(() => _syncing = true);
+    try {
+      await sync.syncNow();
+    } finally {
+      if (mounted) setState(() => _syncing = false);
+    }
+  }
+
+  Future<void> _retryUploads() async {
+    final imports = AppScope.of(context).imports;
+    if (imports == null || _retrying) return;
+    setState(() => _retrying = true);
+    try {
+      await imports.retryPending();
+    } finally {
+      if (mounted) setState(() => _retrying = false);
+    }
+  }
+
   Future<void> _useDefault() async {
     _url.text = AppSettings.defaultApiBaseUrl;
     setState(() => _checkResult = null);
@@ -79,11 +104,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final services = AppScope.of(context);
     final text = Theme.of(context).textTheme;
+    final imports = services.imports;
+    final sync = services.sync;
     return ListenableBuilder(
-      listenable: services.settings,
+      listenable: Listenable.merge([
+        services.settings,
+        ?imports,
+        ?sync,
+      ]),
       builder: (context, _) {
         final s = services.settings.settings;
         final isDefault = s.apiBaseUrl == AppSettings.defaultApiBaseUrl;
+        final syncing = sync != null && (sync.isSyncing || _syncing);
+        // Uploads continue after `busy` clears; find the active one by entry.
+        final activeUpload = imports == null
+            ? null
+            : services.library.entries.where((e) => imports.isUploading(e.id)).firstOrNull;
+        final failedUploads = imports == null
+            ? const <String>[]
+            : [for (final e in services.library.entries) ?imports.errorFor(e.id)];
+        final uploading = imports != null && (imports.busy || activeUpload != null || _retrying);
         return ListView(
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(
@@ -143,6 +183,85 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 style: text.bodySmall?.copyWith(color: _checkColor),
               ),
             ],
+            if (sync != null || imports != null) ...[
+              const SizedBox(height: Space.xl),
+              const Eyebrow('Cloud sync'),
+              const SizedBox(height: Space.sm),
+              Text(
+                sync != null
+                    ? 'Reading position, reading time and reader preferences sync through your Reader API, so your other devices pick up where you left off.'
+                    : 'Imported books upload to your Reader API so they are available on your other devices.',
+                style: text.bodySmall,
+              ),
+              const SizedBox(height: Space.md),
+              if (sync != null) ...[
+                _StatusRow(
+                  'Last sync',
+                  sync.isSyncing
+                      ? 'Syncing now'
+                      : sync.lastSyncedAt == null
+                      ? 'Never'
+                      : formatRelativeTime(sync.lastSyncedAt!),
+                ),
+                _StatusRow(
+                  'Waiting',
+                  sync.pendingCount == 0
+                      ? 'Nothing. Everything is in sync.'
+                      : sync.pendingCount == 1
+                      ? '1 change not yet synced'
+                      : '${sync.pendingCount} changes not yet synced',
+                  color: sync.pendingCount == 0 ? Palette.fg : Palette.orange,
+                ),
+                _StatusRow('Reading time', formatReadingTime(sync.totalReadingMilliseconds)),
+                if (sync.error != null)
+                  _StatusRow('Problem', sync.error!, color: Palette.error),
+              ],
+              if (imports != null) ...[
+                _StatusRow(
+                  'Uploads',
+                  activeUpload != null
+                      ? imports.uploadFraction == null
+                            ? 'Uploading ${activeUpload.book.title}'
+                            : 'Uploading ${activeUpload.book.title} · ${(imports.uploadFraction! * 100).round()}%'
+                      : imports.busy
+                      ? 'Importing'
+                      : imports.pendingCount == 0
+                      ? 'All imported books are in the cloud.'
+                      : imports.pendingCount == 1
+                      ? '1 book waiting to upload. It is readable here and retries automatically.'
+                      : '${imports.pendingCount} books waiting to upload. They are readable here and retry automatically.',
+                  color: imports.pendingCount == 0 || imports.busy ? Palette.fg : Palette.orange,
+                ),
+                if (imports.error != null)
+                  _StatusRow('Import problem', imports.error!, color: Palette.error),
+                if (failedUploads.isNotEmpty)
+                  _StatusRow(
+                    'Upload problem',
+                    failedUploads.length == 1
+                        ? failedUploads.first
+                        : '${failedUploads.first} (${failedUploads.length} books affected)',
+                    color: Palette.error,
+                  ),
+              ],
+              const SizedBox(height: Space.sm),
+              Wrap(
+                spacing: Space.sm,
+                runSpacing: Space.sm,
+                children: [
+                  if (sync != null)
+                    QuietButton(
+                      label: syncing ? 'Syncing' : 'Sync now',
+                      icon: Icons.cloud_sync_outlined,
+                      onPressed: syncing ? null : _syncNow,
+                    ),
+                  if (imports != null && (imports.pendingCount > 0 || failedUploads.isNotEmpty))
+                    QuietButton(
+                      label: uploading ? 'Uploading' : 'Retry uploads',
+                      onPressed: uploading ? null : _retryUploads,
+                    ),
+                ],
+              ),
+            ],
             const SizedBox(height: Space.xl),
             const Eyebrow('Storage'),
             const SizedBox(height: Space.sm),
@@ -154,12 +273,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const Eyebrow('About'),
             const SizedBox(height: Space.sm),
             Text(
-              'The Reader · personal EPUB reader. Reading progress and preferences stay on this device.',
+              sync != null
+                  ? 'The Reader · personal EPUB reader. Downloaded files stay on this device. Reading position, reading time and preferences sync through your Reader API.'
+                  : 'The Reader · personal EPUB reader. Reading progress and preferences stay on this device.',
               style: text.bodySmall,
             ),
           ],
         );
       },
+    );
+  }
+}
+
+class _StatusRow extends StatelessWidget {
+  const _StatusRow(this.label, this.value, {this.color = Palette.fg});
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Space.sm),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(width: 110, child: Text(label, style: text.bodySmall)),
+          Expanded(child: Text(value, style: text.bodySmall?.copyWith(color: color))),
+        ],
+      ),
     );
   }
 }

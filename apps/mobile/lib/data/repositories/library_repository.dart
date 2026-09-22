@@ -29,6 +29,7 @@ class LibraryRepository extends ChangeNotifier {
   final Downloader _downloader;
   final Map<String, LibraryEntry> _entries = {};
   final Set<String> _cancelRequests = {};
+  final Map<String, String> _aliases = {};
   final Map<String, ProgressiveDownload> _progressive = {};
   final Map<String, LibraryEntry> _verifiedBeforeUpdate = {};
   bool _loaded = false;
@@ -40,7 +41,15 @@ class LibraryRepository extends ChangeNotifier {
   UnmodifiableListView<LibraryEntry> get entries =>
       UnmodifiableListView(_entries.values);
 
-  LibraryEntry? entry(String id) => _entries[id];
+  String _resolveId(String id) {
+    final seen = <String>{};
+    while (_aliases.containsKey(id) && seen.add(id)) {
+      id = _aliases[id]!;
+    }
+    return id;
+  }
+
+  LibraryEntry? entry(String id) => _entries[_resolveId(id)];
 
   LibraryEntry? entryFor(Book book, CatalogSource source) =>
       entry(LibraryEntry.identity(book.id, source.source, source.origin));
@@ -56,12 +65,15 @@ class LibraryRepository extends ChangeNotifier {
   }
 
   /// Partial publications stay online-only until their final SHA is verified.
-  bool canRead(String id) =>
-      _entries[id]?.download.isReady == true ||
-      (_entries[id]?.download.isActive == true &&
-          _progressive[id]?.canRead == true);
+  bool canRead(String id) {
+    id = _resolveId(id);
+    return _entries[id]?.download.isReady == true ||
+        (_entries[id]?.download.isActive == true &&
+            _progressive[id]?.canRead == true);
+  }
 
   Future<BookFile> openForReading(String id) async {
+    id = _resolveId(id);
     final entry = _entries[id];
     if (entry?.download.isReady == true) {
       return _bookStore.open(entry!.download.path!);
@@ -269,6 +281,7 @@ class LibraryRepository extends ChangeNotifier {
   }
 
   void cancelDownload(String bookId) {
+    bookId = _resolveId(bookId);
     final e = _entries[bookId];
     if (e != null && e.download.isActive) {
       _cancelRequests.add(bookId);
@@ -276,13 +289,141 @@ class LibraryRepository extends ChangeNotifier {
     }
   }
 
-  Future<void> remove(String bookId) async {
+  Future<void> remove(String bookId, {bool keepMetadata = false}) async {
+    bookId = _resolveId(bookId);
     if (_entries[bookId]?.download.isActive == true) return;
     final e = _entries.remove(bookId);
+    if (keepMetadata && e != null) {
+      _entries[bookId] = e.copyWith(download: const DownloadState());
+    }
     notifyListeners();
     if (e?.download.path != null) await _bookStore.delete(e!.download.path!);
     if (e != null) await _bookStore.deleteBook(bookId);
     await _persist();
+  }
+
+  /// Adopt already validated local bytes; no HTTP download is involved.
+  Future<LibraryEntry> importLocal({
+    required Book book,
+    required String origin,
+    required String path,
+  }) async {
+    final id = LibraryEntry.identity(book.id, BookSource.api, origin);
+    final old = _entries[id];
+    if (old?.download.isActive == true) {
+      throw StateError('A download of this book is already running.');
+    }
+    final next =
+        (old ??
+                LibraryEntry(
+                  book: book,
+                  source: BookSource.api,
+                  origin: origin,
+                  addedAt: DateTime.now(),
+                ))
+            .copyWith(
+              book: book,
+              clearProgress: old != null && old.book.sha256 != book.sha256,
+              download: DownloadState(
+                status: DownloadStatus.ready,
+                path: path,
+                receivedBytes: book.fileSize,
+                totalBytes: book.fileSize,
+              ),
+            );
+    _put(next);
+    await flush();
+    return next;
+  }
+
+  /// Deduplication can map an imported SHA to an existing server book ID.
+  /// Keep the local file and alias the old ID until active readers are closed.
+  Future<LibraryEntry> adoptCanonical({
+    required String entryId,
+    required Book book,
+    required String origin,
+  }) async {
+    final local = entry(entryId);
+    if (local == null ||
+        local.book.sha256 != book.sha256 ||
+        local.origin != origin) {
+      throw StateError('The imported book is no longer available.');
+    }
+    final id = LibraryEntry.identity(book.id, BookSource.api, origin);
+    if (_entries[id]?.download.isActive == true) {
+      final settled = Completer<void>();
+      void check() {
+        if (_entries[id]?.download.isActive != true && !settled.isCompleted) {
+          settled.complete();
+        }
+      }
+
+      addListener(check);
+      try {
+        cancelDownload(id);
+        check();
+        await settled.future;
+      } finally {
+        removeListener(check);
+      }
+    }
+    final latest = entry(entryId);
+    if (latest == null) throw StateError('The imported book was removed.');
+    final existing = _entries[id];
+    final otherProgress = existing?.book.sha256 == book.sha256
+        ? existing?.progress
+        : null;
+    final progress =
+        otherProgress != null &&
+            (latest.progress == null ||
+                otherProgress.updatedAt.isAfter(latest.progress!.updatedAt))
+        ? otherProgress
+        : latest.progress;
+    final next = latest.copyWith(book: book, progress: progress);
+    if (latest.id != next.id) {
+      _entries.remove(latest.id);
+      _aliases[latest.id] = next.id;
+    }
+    _put(next);
+    await flush();
+    return next;
+  }
+
+  /// Cloud membership/progress never implies that bytes exist on this device.
+  Future<void> applyCloudEntry({
+    required Book book,
+    required String origin,
+    required DateTime addedAt,
+    ReadingProgress? progress,
+    DateTime? lastOpenedAt,
+  }) async {
+    final id = LibraryEntry.identity(book.id, BookSource.api, origin);
+    final current = _entries[id];
+    // A local replacement may still be downloading. Do not attach an older
+    // cloud edition's locator or metadata to it.
+    if (current != null && current.book.sha256 != book.sha256) return;
+    var next =
+        current ??
+        LibraryEntry(
+          book: book,
+          source: BookSource.api,
+          origin: origin,
+          addedAt: addedAt,
+        );
+    if (progress != null &&
+        (next.progress == null ||
+            progress.updatedAt.isAfter(next.progress!.updatedAt))) {
+      next = next.copyWith(progress: progress);
+    }
+    if (lastOpenedAt != null &&
+        (next.lastOpenedAt == null ||
+            lastOpenedAt.isAfter(next.lastOpenedAt!))) {
+      next = next.copyWith(lastOpenedAt: lastOpenedAt);
+    }
+    if (current == null || !identical(current, next)) {
+      _put(next);
+      await flush();
+    }
   }
 
   Future<void> markOpened(String bookId, {String? expectedSha256}) async {
@@ -315,6 +456,7 @@ class LibraryRepository extends ChangeNotifier {
     required String? expectedSha256,
     required LibraryEntry Function(LibraryEntry entry) update,
   }) async {
+    bookId = _resolveId(bookId);
     final current = _entries[bookId];
     if (current == null) return;
     if (expectedSha256 == null || current.book.sha256 == expectedSha256) {
