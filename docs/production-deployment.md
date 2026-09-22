@@ -51,18 +51,75 @@ NXDOMAIN response. Initial HTTP checks used curl's `--resolve` with the actual
 public DNS address, retaining the real HTTPS hostname and certificate validation.
 This distinction matters for interpreting the initial local DNS failure.
 
+A small production HTTP timing sample used 12 catalog requests at concurrency four
+and three sequential complete downloads from the Mac, each with a fresh curl
+connection and the same verified HTTPS hostname. All returned 200. Catalog total
+time: median 291 ms, maximum 751 ms. The 4,995,997-byte download: median 1,052 ms,
+maximum 1,249 ms; median time to first byte 276 ms. These are WAN diagnostic samples
+through the Singapore edge, not a stress test, phone benchmark or latency guarantee.
+DNS time was excluded by the explicit address resolution. Raw samples are in
+`artifacts/private/production-seed/http-timings.json`.
+
 Private inputs, downloaded copies, response headers and structured verification
 results are under ignored `artifacts/private/production-seed/`. No real EPUB,
 extracted cover, credential or private input manifest was committed. Original
 generated sample EPUBs remain intentionally tracked as development fixtures.
+The final tracked-file check found no private input/env files, private-key or token
+assignment patterns, or real-book copies matching the uploaded SHA-256. This is a
+focused repository check, not a claim of comprehensive secret scanning.
 
 ## App verification
 
 Fresh installs default to API mode at `https://reader.ordinity.com`. Existing saved
 sample mode, local endpoints and custom URLs are preserved. Flutter analysis and
-28 tests pass, including five settings/default/migration cases. The Worker has
+29 tests pass, including five settings/default/migration cases and reader-lifecycle
+regression coverage. The Worker has
 20 passing tests and passing typechecks and production deployment dry run.
 
-Native remote-rendering and recording results will be recorded after the normal
-installed applications complete the production walkthrough. The earlier complete
-three-book native/local/offline results remain in `native-verification.md`.
+Android API 36 emulator, normal ARM64 release build 2002: production health and
+catalog succeeded, the real cover loaded, and removing/re-downloading the test book
+produced a verified local EPUB with the same SHA-256 as the original. Native Readium
+rendered the TOC and Introduction; scrolling and reopening preserved the paragraph.
+With airplane mode enabled and Wi-Fi disabled, Android reported no active default
+network and production health failed. Force-stop/relaunch retained the book, and
+three successive native opens rendered the saved paragraph. Wi-Fi was restored,
+airplane mode disabled and production health rechecked afterward. The emulator was
+returned to non-root adb operation after the read-only file-checksum inspection.
+
+Android's emulator was started with public DNS `1.1.1.1` to avoid the host's stale
+negative cache; the app used the unmodified production HTTPS hostname with normal
+certificate validation. No host DNS/VPN settings were changed. These are functional
+emulator checks, not physical-phone performance measurements.
+
+The production walkthrough exposed an Android blank-reader regression on a repeated
+offline reopen. Inspection showed an empty native view container, with the saved
+EPUB checksum still intact. Native widget teardown could run twice and an old
+widget could close the new global navigator. Cleanup is now idempotent and checks
+ownership. The Flutter route guard spans both exit animation and unfinished async
+publication opens, so a late abandoned controller cannot close the next book.
+Regression coverage includes duplicate opens, reopening during pop, and backing out
+during a delayed open followed by a successful later reopen. Failed recordings are
+retained privately for diagnosis and are not labeled as passing evidence.
+The fix is committed as `7301beb` and verified by the fresh release walkthrough.
+
+## Recordings
+
+Private, Git-ignored recordings are under `artifacts/recordings/`:
+
+- `reader-production-test.mp4` — 152.92 seconds, 13,616,165 bytes. Complete successful
+  Android production and offline walkthrough, concatenated from the two clips below
+  without cutting their content.
+- `android-production-final-online.mp4` — 94.58 seconds. Production connection,
+  catalog, cover, fresh download, verification, native content and saved location.
+- `android-production-final-offline.mp4` — 58.34 seconds. No active network, failed
+  health check, process restart and repeated cached native opens.
+
+The coordinator inspected decoded online/offline video frames showing actual
+readable EPUB body text, in addition to checking the recordings with ffprobe.
+Earlier `first-pass`, `remote-offline` and `offline-supplement` recordings include
+the lifecycle failure and must not be presented as the final passing run.
+
+The initial iOS production attempt is separately retained as
+`ios-production-dns-pending.mp4`; it shows the real local DNS failure, not a passed
+remote reading test. Earlier successful three-book iOS native/local/offline results
+remain in `native-verification.md`.
