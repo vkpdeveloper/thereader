@@ -30,6 +30,9 @@ The coordinator serializes Git operations. Application deployment is separate.
 
 ## Performance evidence rules
 
+- User prefers the local iOS simulator for primary app testing and previews.
+  Validate Android separately; an iOS simulator cannot establish Android behavior.
+  Physical-device setup is not a prerequisite for initial functional verification.
 - Use physical-device release/profile measurements for device-performance claims.
 - Simulator tests establish correctness and provide diagnostic observations; they
   are not proof of phone latency, energy use, or sustained frame rate.
