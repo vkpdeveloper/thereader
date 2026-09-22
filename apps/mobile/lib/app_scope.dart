@@ -3,6 +3,8 @@ import 'package:flutter/widgets.dart';
 import 'data/api/api_client.dart';
 import 'data/api/catalog_source.dart';
 import 'data/models/settings.dart';
+import 'data/models/library.dart';
+import 'data/models/book.dart';
 import 'data/repositories/catalog_repository.dart';
 import 'data/repositories/library_repository.dart';
 import 'data/repositories/settings_repository.dart';
@@ -27,22 +29,20 @@ class AppServices {
   final ReaderService readerService;
   late final CatalogRepository catalog;
   final SampleCatalogSource _sample;
-  ApiCatalogSource? _api;
+  final Map<String, ApiCatalogSource> _apis = {};
 
   CatalogSource sourceFor(AppSettings s) {
     if (s.mode == AppMode.sample) return _sample;
-    final current = _api;
-    Uri? want;
-    try {
-      want = ApiClient.normalizeBaseUrl(s.apiBaseUrl);
-    } on ApiException {
-      want = null;
-    }
-    if (current != null && want != null && current.client.baseUri == want) return current;
-    current?.client.close();
-    _api = ApiCatalogSource(ApiClient(baseUrl: want?.toString() ?? 'http://invalid.invalid'));
-    return _api!;
+    final uri = ApiClient.normalizeBaseUrl(s.apiBaseUrl);
+    return _apis.putIfAbsent(
+      uri.toString(),
+      () => ApiCatalogSource(ApiClient(baseUrl: uri.toString())),
+    );
   }
+
+  CatalogSource sourceForEntry(LibraryEntry entry) => entry.source == BookSource.sample
+      ? _sample
+      : _apis.putIfAbsent(entry.origin, () => ApiCatalogSource(ApiClient(baseUrl: entry.origin)));
 
   /// Source for an already-added library entry (so re-downloads use the
   /// origin the entry came from when possible).
@@ -53,7 +53,9 @@ class AppServices {
   void dispose() {
     settings.removeListener(_onSettings);
     catalog.dispose();
-    _api?.client.close();
+    for (final source in _apis.values) {
+      source.client.close();
+    }
   }
 }
 

@@ -43,6 +43,9 @@ class CatalogRepository extends ChangeNotifier {
 
   void replaceSource(CatalogSource source) {
     if (identical(source, _source)) return;
+    _requestId++;
+    _debounce?.cancel();
+    _loadingMore = false;
     _source = source;
     _items.clear();
     _nextCursor = null;
@@ -83,6 +86,7 @@ class CatalogRepository extends ChangeNotifier {
 
   Future<void> _load({required bool reset}) async {
     final id = ++_requestId;
+    _loadingMore = false;
     _status = CatalogStatus.loading;
     _error = null;
     if (reset) {

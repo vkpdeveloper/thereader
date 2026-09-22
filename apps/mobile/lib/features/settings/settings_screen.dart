@@ -45,14 +45,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
     ApiClient? client;
     try {
-      await services.settings.setApiBaseUrl(_url.text);
       client = ApiClient(baseUrl: _url.text);
+      await services.settings.setApiBaseUrl(client.baseUri.toString());
       final h = await client.health();
+      if (!mounted) return;
       setState(() {
         _checkResult = h.ok ? 'Connected · ${h.service}' : 'Responded, but status was not ok.';
         _checkColor = h.ok ? Palette.green : Palette.orange;
       });
     } on ApiException catch (e) {
+      if (!mounted) return;
       setState(() {
         _checkResult = e.message;
         _checkColor = Palette.error;

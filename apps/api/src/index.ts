@@ -75,7 +75,7 @@ async function getCover(env: Env, book: CatalogBook): Promise<Response> {
   }
   return new Response(object.body, {
     headers: {
-      "Cache-Control": "public, max-age=3600, immutable",
+      "Cache-Control": "public, no-cache",
       "Content-Length": String(object.size),
       "Content-Type": book.cover.contentType,
       ETag: object.httpEtag,

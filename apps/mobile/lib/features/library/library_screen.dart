@@ -44,7 +44,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
             all.where((e) => e.progress != null && e.progress!.percent < 0.995).toList(),
         };
         final width = MediaQuery.sizeOf(context).width;
-        final columns = width >= 900 ? 5 : width >= 600 ? 4 : width >= 420 ? 3 : 2;
+        final columns = width >= 900
+            ? 5
+            : width >= 600
+            ? 4
+            : width >= 420
+            ? 3
+            : 2;
 
         return CustomScrollView(
           physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
@@ -119,7 +125,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 )
               else
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(Space.gutter, Space.lg, Space.gutter, Space.xxl),
+                  padding: const EdgeInsets.fromLTRB(
+                    Space.gutter,
+                    Space.lg,
+                    Space.gutter,
+                    Space.xxl,
+                  ),
                   sliver: SliverGrid.builder(
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: columns,
@@ -157,7 +168,9 @@ class _FilterLink extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 10),
           child: AnimatedDefaultTextStyle(
             duration: Motion.of(context, Motion.fast),
-            style: Theme.of(context).textTheme.labelLarge!.copyWith(color: selected ? Palette.fg : Palette.muted),
+            style: Theme.of(
+              context,
+            ).textTheme.labelLarge!.copyWith(color: selected ? Palette.fg : Palette.muted),
             child: Text(label),
           ),
         ),
@@ -200,7 +213,12 @@ class _ContinueReading extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(entry.book.title, style: text.headlineMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
+                      Text(
+                        entry.book.title,
+                        style: text.headlineMedium,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       const SizedBox(height: 2),
                       Text(
                         chapter == null ? entry.book.author : '${entry.book.author} · $chapter',
@@ -251,18 +269,27 @@ class _GridItem extends StatelessWidget {
       status = percent == null
           ? Text('Downloaded', style: text.labelSmall?.copyWith(letterSpacing: 0))
           : percent >= 0.995
-              ? Text('Finished', style: text.labelSmall?.copyWith(letterSpacing: 0, color: Palette.green))
-              : ClipRRect(
-                  borderRadius: BorderRadius.circular(1),
-                  child: LinearProgressIndicator(value: percent, minHeight: 2),
-                );
+          ? Text(
+              'Finished',
+              style: text.labelSmall?.copyWith(letterSpacing: 0, color: Palette.green),
+            )
+          : ClipRRect(
+              borderRadius: BorderRadius.circular(1),
+              child: LinearProgressIndicator(value: percent, minHeight: 2),
+            );
     } else if (d.isActive) {
       status = ClipRRect(
         borderRadius: BorderRadius.circular(1),
-        child: LinearProgressIndicator(value: d.status == DownloadStatus.verifying ? null : d.fraction, minHeight: 2),
+        child: LinearProgressIndicator(
+          value: d.status == DownloadStatus.verifying ? null : d.fraction,
+          minHeight: 2,
+        ),
       );
     } else if (d.status == DownloadStatus.failed) {
-      status = Text('Download failed', style: text.labelSmall?.copyWith(letterSpacing: 0, color: Palette.error));
+      status = Text(
+        'Download failed',
+        style: text.labelSmall?.copyWith(letterSpacing: 0, color: Palette.error),
+      );
     } else {
       status = Text('Not downloaded', style: text.labelSmall?.copyWith(letterSpacing: 0));
     }
@@ -271,8 +298,10 @@ class _GridItem extends StatelessWidget {
       button: true,
       label: '${entry.book.title} by ${entry.book.author}',
       child: InkWell(
-        onTap: () => d.isReady ? ReaderScreen.open(context, entry) : BookDetailScreen.open(context, entry.book),
-        onLongPress: () => BookDetailScreen.open(context, entry.book),
+        onTap: () => d.isReady
+            ? ReaderScreen.open(context, entry)
+            : BookDetailScreen.open(context, entry.book, entry: entry),
+        onLongPress: () => BookDetailScreen.open(context, entry.book, entry: entry),
         borderRadius: const BorderRadius.all(Radii.md),
         child: LayoutBuilder(
           builder: (context, c) => Column(
@@ -280,9 +309,19 @@ class _GridItem extends StatelessWidget {
             children: [
               CoverArt(book: entry.book, width: c.maxWidth, imageUri: _cover(services, entry)),
               const SizedBox(height: Space.sm),
-              Text(entry.book.title, style: text.titleSmall, maxLines: 2, overflow: TextOverflow.ellipsis),
+              Text(
+                entry.book.title,
+                style: text.titleSmall,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
               const SizedBox(height: 2),
-              Text(entry.book.author, style: text.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+              Text(
+                entry.book.author,
+                style: text.bodySmall,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
               const SizedBox(height: 6),
               Row(
                 children: [

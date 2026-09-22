@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 
 import 'book.dart';
@@ -41,22 +44,21 @@ class DownloadState {
     String? path,
     String? error,
     bool clearError = false,
-  }) =>
-      DownloadState(
-        status: status ?? this.status,
-        receivedBytes: receivedBytes ?? this.receivedBytes,
-        totalBytes: totalBytes ?? this.totalBytes,
-        path: path ?? this.path,
-        error: clearError ? null : (error ?? this.error),
-      );
+  }) => DownloadState(
+    status: status ?? this.status,
+    receivedBytes: receivedBytes ?? this.receivedBytes,
+    totalBytes: totalBytes ?? this.totalBytes,
+    path: path ?? this.path,
+    error: clearError ? null : (error ?? this.error),
+  );
 
   Map<String, dynamic> toJson() => {
-        'status': status.name,
-        'receivedBytes': receivedBytes,
-        'totalBytes': totalBytes,
-        'path': path,
-        'error': error,
-      };
+    'status': status.name,
+    'receivedBytes': receivedBytes,
+    'totalBytes': totalBytes,
+    'path': path,
+    'error': error,
+  };
 
   factory DownloadState.fromJson(Map<String, dynamic> json) {
     var status = DownloadStatus.values.byName(json['status'] as String? ?? 'none');
@@ -109,22 +111,22 @@ class ReadingLocator {
   final Map<String, dynamic>? raw;
 
   Map<String, dynamic> toJson() => {
-        'href': href,
-        'progression': progression,
-        'totalProgression': totalProgression,
-        'title': title,
-        'engine': engine,
-        'raw': raw,
-      };
+    'href': href,
+    'progression': progression,
+    'totalProgression': totalProgression,
+    'title': title,
+    'engine': engine,
+    'raw': raw,
+  };
 
   factory ReadingLocator.fromJson(Map<String, dynamic> json) => ReadingLocator(
-        href: json['href'] as String,
-        progression: (json['progression'] as num?)?.toDouble() ?? 0,
-        totalProgression: (json['totalProgression'] as num?)?.toDouble(),
-        title: json['title'] as String?,
-        engine: json['engine'] as String? ?? 'dart',
-        raw: (json['raw'] as Map?)?.cast<String, dynamic>(),
-      );
+    href: json['href'] as String,
+    progression: (json['progression'] as num?)?.toDouble() ?? 0,
+    totalProgression: (json['totalProgression'] as num?)?.toDouble(),
+    title: json['title'] as String?,
+    engine: json['engine'] as String? ?? 'dart',
+    raw: (json['raw'] as Map?)?.cast<String, dynamic>(),
+  );
 }
 
 @immutable
@@ -136,13 +138,15 @@ class ReadingProgress {
 
   double get percent => (locator.totalProgression ?? 0).clamp(0, 1).toDouble();
 
-  Map<String, dynamic> toJson() =>
-      {'locator': locator.toJson(), 'updatedAt': updatedAt.toUtc().toIso8601String()};
+  Map<String, dynamic> toJson() => {
+    'locator': locator.toJson(),
+    'updatedAt': updatedAt.toUtc().toIso8601String(),
+  };
 
   factory ReadingProgress.fromJson(Map<String, dynamic> json) => ReadingProgress(
-        locator: ReadingLocator.fromJson((json['locator'] as Map).cast<String, dynamic>()),
-        updatedAt: DateTime.parse(json['updatedAt'] as String),
-      );
+    locator: ReadingLocator.fromJson((json['locator'] as Map).cast<String, dynamic>()),
+    updatedAt: DateTime.parse(json['updatedAt'] as String),
+  );
 }
 
 /// A book the user has added to their library, with local download and
@@ -169,7 +173,11 @@ class LibraryEntry {
   final ReadingProgress? progress;
   final DateTime? lastOpenedAt;
 
-  String get id => book.id;
+  /// Namespaces the catalog id by source and origin, including on disk.
+  static String identity(String bookId, BookSource source, String origin) =>
+      sha256.convert(utf8.encode('${source.name}\n$origin\n$bookId')).toString();
+
+  String get id => identity(book.id, source, origin);
 
   LibraryEntry copyWith({
     Book? book,
@@ -177,39 +185,39 @@ class LibraryEntry {
     ReadingProgress? progress,
     DateTime? lastOpenedAt,
     bool clearProgress = false,
-  }) =>
-      LibraryEntry(
-        book: book ?? this.book,
-        source: source,
-        origin: origin,
-        addedAt: addedAt,
-        download: download ?? this.download,
-        progress: clearProgress ? null : (progress ?? this.progress),
-        lastOpenedAt: lastOpenedAt ?? this.lastOpenedAt,
-      );
+  }) => LibraryEntry(
+    book: book ?? this.book,
+    source: source,
+    origin: origin,
+    addedAt: addedAt,
+    download: download ?? this.download,
+    progress: clearProgress ? null : (progress ?? this.progress),
+    lastOpenedAt: lastOpenedAt ?? this.lastOpenedAt,
+  );
 
   Map<String, dynamic> toJson() => {
-        'book': book.toJson(),
-        'source': source.name,
-        'origin': origin,
-        'addedAt': addedAt.toUtc().toIso8601String(),
-        'download': download.toJson(),
-        'progress': progress?.toJson(),
-        'lastOpenedAt': lastOpenedAt?.toUtc().toIso8601String(),
-      };
+    'book': book.toJson(),
+    'source': source.name,
+    'origin': origin,
+    'addedAt': addedAt.toUtc().toIso8601String(),
+    'download': download.toJson(),
+    'progress': progress?.toJson(),
+    'lastOpenedAt': lastOpenedAt?.toUtc().toIso8601String(),
+  };
 
   factory LibraryEntry.fromJson(Map<String, dynamic> json) => LibraryEntry(
-        book: Book.fromJson((json['book'] as Map).cast<String, dynamic>()),
-        source: BookSource.values.byName(json['source'] as String? ?? 'api'),
-        origin: json['origin'] as String? ?? '',
-        addedAt: DateTime.parse(json['addedAt'] as String),
-        download: json['download'] == null
-            ? const DownloadState()
-            : DownloadState.fromJson((json['download'] as Map).cast<String, dynamic>()),
-        progress: json['progress'] == null
-            ? null
-            : ReadingProgress.fromJson((json['progress'] as Map).cast<String, dynamic>()),
-        lastOpenedAt:
-            json['lastOpenedAt'] == null ? null : DateTime.parse(json['lastOpenedAt'] as String),
-      );
+    book: Book.fromJson((json['book'] as Map).cast<String, dynamic>()),
+    source: BookSource.values.byName(json['source'] as String? ?? 'api'),
+    origin: json['origin'] as String? ?? '',
+    addedAt: DateTime.parse(json['addedAt'] as String),
+    download: json['download'] == null
+        ? const DownloadState()
+        : DownloadState.fromJson((json['download'] as Map).cast<String, dynamic>()),
+    progress: json['progress'] == null
+        ? null
+        : ReadingProgress.fromJson((json['progress'] as Map).cast<String, dynamic>()),
+    lastOpenedAt: json['lastOpenedAt'] == null
+        ? null
+        : DateTime.parse(json['lastOpenedAt'] as String),
+  );
 }

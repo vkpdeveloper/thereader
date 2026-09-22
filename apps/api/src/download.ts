@@ -58,7 +58,7 @@ function contentDisposition(title: string, id: string): string {
 function baseHeaders(book: CatalogBook): Headers {
   const headers = new Headers({
     "Accept-Ranges": "bytes",
-    "Cache-Control": "public, max-age=3600, immutable",
+    "Cache-Control": "public, no-cache",
     "Content-Disposition": contentDisposition(book.title, book.id),
     "Content-Type": "application/epub+zip",
     ETag: `"${book.sha256}"`,

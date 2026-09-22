@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app_scope.dart';
 import '../../core/theme/tokens.dart';
 import '../../data/models/book.dart';
+import '../../data/api/catalog_source.dart';
 import '../../data/models/library.dart';
 import '../reader/reader_screen.dart';
 import '../shared/cover_art.dart';
@@ -10,12 +11,22 @@ import '../shared/states.dart';
 
 /// Book page: description, edition facts, and one honest download control.
 class BookDetailScreen extends StatelessWidget {
-  const BookDetailScreen({super.key, required this.book});
+  const BookDetailScreen({super.key, required this.book, required this.source});
 
   final Book book;
+  final CatalogSource source;
 
-  static Future<void> open(BuildContext context, Book book) =>
-      Navigator.of(context).push(MaterialPageRoute(builder: (_) => BookDetailScreen(book: book)));
+  static Future<void> open(BuildContext context, Book book, {LibraryEntry? entry}) =>
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => BookDetailScreen(
+            book: book,
+            source: entry == null
+                ? AppScope.of(context).currentSource
+                : AppScope.of(context).sourceForEntry(entry),
+          ),
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -25,11 +36,11 @@ class BookDetailScreen extends StatelessWidget {
       body: ListenableBuilder(
         listenable: services.library,
         builder: (context, _) {
-          final entry = services.library.entry(book.id);
+          final entry = services.library.entryFor(book, source);
           final current = entry?.book ?? book;
           final text = Theme.of(context).textTheme;
           final d = entry?.download ?? const DownloadState();
-          final coverUri = services.currentSource.coverUri(current);
+          final coverUri = source.coverUri(current);
           final outdated = entry != null && entry.book.sha256 != book.sha256 && d.isReady;
 
           return ListView(
@@ -49,17 +60,23 @@ class BookDetailScreen extends StatelessWidget {
                   for (final s in current.subjects) Tag(s),
                   Tag(current.language.toUpperCase()),
                   Tag(formatBytes(current.fileSize)),
-                  if (entry != null) Tag(entry.source.label, color: entry.source == BookSource.sample ? Palette.orange : Palette.green),
+                  if (entry != null)
+                    Tag(
+                      entry.source.label,
+                      color: entry.source == BookSource.sample ? Palette.orange : Palette.green,
+                    ),
                 ],
               ),
               const SizedBox(height: Space.lg),
-              _DownloadPanel(book: book, entry: entry, outdated: outdated),
+              _DownloadPanel(book: book, entry: entry, outdated: outdated, source: source),
               const SizedBox(height: Space.xl),
               if (current.description.isNotEmpty) ...[
                 const Eyebrow('About'),
                 const SizedBox(height: Space.sm),
-                Text(current.description,
-                    style: text.bodyLarge?.copyWith(fontFamily: Fonts.serif, height: 1.55)),
+                Text(
+                  current.description,
+                  style: text.bodyLarge?.copyWith(fontFamily: Fonts.serif, height: 1.55),
+                ),
                 const SizedBox(height: Space.xl),
               ],
               const Eyebrow('Edition'),
@@ -108,10 +125,16 @@ class _Fact extends StatelessWidget {
 }
 
 class _DownloadPanel extends StatelessWidget {
-  const _DownloadPanel({required this.book, required this.entry, required this.outdated});
+  const _DownloadPanel({
+    required this.book,
+    required this.entry,
+    required this.outdated,
+    required this.source,
+  });
   final Book book;
   final LibraryEntry? entry;
   final bool outdated;
+  final CatalogSource source;
 
   @override
   Widget build(BuildContext context) {
@@ -128,8 +151,8 @@ class _DownloadPanel extends StatelessWidget {
         final label = d.status == DownloadStatus.verifying
             ? 'Verifying SHA-256'
             : d.status == DownloadStatus.queued
-                ? 'Connecting'
-                : '${formatBytes(d.receivedBytes)} of ${formatBytes(d.totalBytes ?? book.fileSize)}';
+            ? 'Connecting'
+            : '${formatBytes(d.receivedBytes)} of ${formatBytes(d.totalBytes ?? book.fileSize)}';
         inner = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -137,13 +160,20 @@ class _DownloadPanel extends StatelessWidget {
               children: [
                 Expanded(child: Text(label, style: text.bodyMedium)),
                 if (d.status != DownloadStatus.verifying)
-                  QuietIconButton(icon: Icons.close, label: 'Cancel download', onPressed: () => lib.cancelDownload(book.id)),
+                  QuietIconButton(
+                    icon: Icons.close,
+                    label: 'Cancel download',
+                    onPressed: () => lib.cancelDownload(entry!.id),
+                  ),
               ],
             ),
             const SizedBox(height: Space.sm),
             ClipRRect(
               borderRadius: BorderRadius.circular(1),
-              child: LinearProgressIndicator(value: d.status == DownloadStatus.verifying ? null : d.fraction, minHeight: 2),
+              child: LinearProgressIndicator(
+                value: d.status == DownloadStatus.verifying ? null : d.fraction,
+                minHeight: 2,
+              ),
             ),
           ],
         );
@@ -158,7 +188,9 @@ class _DownloadPanel extends StatelessWidget {
                 Expanded(
                   child: Text(
                     outdated ? 'Downloaded (an older edition). ' : 'Downloaded and verified. ',
-                    style: text.bodySmall?.copyWith(color: outdated ? Palette.orange : Palette.muted),
+                    style: text.bodySmall?.copyWith(
+                      color: outdated ? Palette.orange : Palette.muted,
+                    ),
                   ),
                 ),
               ],
@@ -176,7 +208,7 @@ class _DownloadPanel extends StatelessWidget {
                 ),
                 const SizedBox(width: Space.sm),
                 if (outdated)
-                  QuietButton(label: 'Update', onPressed: () => lib.download(book, services.currentSource)),
+                  QuietButton(label: 'Update', onPressed: () => lib.download(book, source)),
                 if (outdated) const SizedBox(width: Space.sm),
                 QuietIconButton(
                   icon: Icons.delete_outline,
@@ -192,7 +224,10 @@ class _DownloadPanel extends StatelessWidget {
         inner = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(d.error ?? 'Download failed.', style: text.bodyMedium?.copyWith(color: Palette.error)),
+            Text(
+              d.error ?? 'Download failed.',
+              style: text.bodyMedium?.copyWith(color: Palette.error),
+            ),
             const SizedBox(height: Space.md),
             Row(
               children: [
@@ -201,7 +236,7 @@ class _DownloadPanel extends StatelessWidget {
                     label: 'Try again',
                     emphasis: true,
                     expand: true,
-                    onPressed: () => lib.download(book, services.currentSource),
+                    onPressed: () => lib.download(book, source),
                   ),
                 ),
                 const SizedBox(width: Space.sm),
@@ -209,7 +244,7 @@ class _DownloadPanel extends StatelessWidget {
                   icon: Icons.delete_outline,
                   label: 'Remove from library',
                   color: Palette.muted,
-                  onPressed: () => lib.remove(book.id),
+                  onPressed: () => lib.remove(entry!.id),
                 ),
               ],
             ),
@@ -231,7 +266,7 @@ class _DownloadPanel extends StatelessWidget {
               emphasis: true,
               expand: true,
               icon: Icons.arrow_downward,
-              onPressed: () => lib.download(book, services.currentSource),
+              onPressed: () => lib.download(book, source),
             ),
           ],
         );
@@ -259,13 +294,21 @@ class _DownloadPanel extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Remove download?'),
-        content: const Text('The file and your reading position for this book will be deleted from this device.'),
+        content: const Text(
+          'The file and your reading position for this book will be deleted from this device.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Keep', style: TextStyle(color: Palette.muted))),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Remove', style: TextStyle(color: Palette.error))),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep', style: TextStyle(color: Palette.muted)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Remove', style: TextStyle(color: Palette.error)),
+          ),
         ],
       ),
     );
-    if (ok == true) await lib.remove(book.id);
+    if (ok == true) await lib.remove(entry!.id);
   }
 }

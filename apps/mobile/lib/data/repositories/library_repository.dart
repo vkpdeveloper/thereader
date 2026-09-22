@@ -15,9 +15,9 @@ import '../storage/key_value_store.dart';
 /// state and reading progress. This is the source of truth for offline use.
 class LibraryRepository extends ChangeNotifier {
   LibraryRepository({required KeyValueStore store, required BookStore bookStore})
-      : _store = store,
-        _bookStore = bookStore,
-        _downloader = Downloader(store: bookStore);
+    : _store = store,
+      _bookStore = bookStore,
+      _downloader = Downloader(store: bookStore);
 
   static const _key = 'library.v1';
 
@@ -27,19 +27,21 @@ class LibraryRepository extends ChangeNotifier {
   final Map<String, LibraryEntry> _entries = {};
   final Set<String> _cancelRequests = {};
   bool _loaded = false;
+  Future<void> _writes = Future.value();
 
   BookStore get bookStore => _bookStore;
   bool get loaded => _loaded;
 
   UnmodifiableListView<LibraryEntry> get entries => UnmodifiableListView(_entries.values);
 
-  LibraryEntry? entry(String bookId) => _entries[bookId];
+  LibraryEntry? entry(String id) => _entries[id];
+
+  LibraryEntry? entryFor(Book book, CatalogSource source) =>
+      entry(LibraryEntry.identity(book.id, source.source, source.origin));
 
   /// Ready books, most recently opened first.
   List<LibraryEntry> get continueReading {
-    final list = _entries.values
-        .where((e) => e.download.isReady && e.lastOpenedAt != null)
-        .toList()
+    final list = _entries.values.where((e) => e.download.isReady && e.lastOpenedAt != null).toList()
       ..sort((a, b) => b.lastOpenedAt!.compareTo(a.lastOpenedAt!));
     return list;
   }
@@ -62,7 +64,9 @@ class LibraryRepository extends ChangeNotifier {
       if (e.download.isReady && (path == null || !await _bookStore.exists(path))) {
         _entries[e.id] = e.copyWith(
           download: const DownloadState(
-              status: DownloadStatus.failed, error: 'The file is missing from storage.'),
+            status: DownloadStatus.failed,
+            error: 'The file is missing from storage.',
+          ),
         );
       }
     }
@@ -71,8 +75,17 @@ class LibraryRepository extends ChangeNotifier {
     await _persist();
   }
 
-  Future<void> _persist() =>
-      _store.writeJson(_key, {'entries': _entries.values.map((e) => e.toJson()).toList()});
+  Future<void> _persist() {
+    final snapshot = {'entries': _entries.values.map((e) => e.toJson()).toList()};
+    // Serialize snapshots: a slower old write must never replace newer progress.
+    final next = _writes.then((_) => _store.writeJson(_key, snapshot));
+    _writes = next.catchError((Object error) {
+      debugPrint('Library persistence failed: $error');
+    });
+    return next;
+  }
+
+  Future<void> flush() => _writes;
 
   void _put(LibraryEntry e, {bool persist = true}) {
     _entries[e.id] = e;
@@ -84,28 +97,37 @@ class LibraryRepository extends ChangeNotifier {
   /// Returns when the download finishes or fails; state is observable
   /// through [entry] while it runs.
   Future<void> download(Book book, CatalogSource source) async {
-    final existing = _entries[book.id];
+    final id = LibraryEntry.identity(book.id, source.source, source.origin);
+    final existing = _entries[id];
     if (existing != null && existing.download.isActive) return;
 
     var e = existing == null
         ? LibraryEntry(
-            book: book, source: source.source, origin: source.origin, addedAt: DateTime.now())
-        : existing.copyWith(book: book);
+            book: book,
+            source: source.source,
+            origin: source.origin,
+            addedAt: DateTime.now(),
+          )
+        : existing.copyWith(book: book, clearProgress: existing.book.sha256 != book.sha256);
     e = e.copyWith(
       download: DownloadState(status: DownloadStatus.queued, totalBytes: book.fileSize),
     );
-    _cancelRequests.remove(book.id);
+    _cancelRequests.remove(id);
     _put(e);
 
     try {
       final stream = await source.openDownload(book);
-      _put(e = e.copyWith(
-          download: e.download.copyWith(status: DownloadStatus.downloading, clearError: true)));
+      _put(
+        e = e.copyWith(
+          download: e.download.copyWith(status: DownloadStatus.downloading, clearError: true),
+        ),
+      );
       var lastPaint = DateTime.now();
       final path = await _downloader.download(
         book: book,
+        storageId: id,
         source: stream,
-        isCancelled: () => _cancelRequests.contains(book.id),
+        isCancelled: () => _cancelRequests.contains(id),
         onProgress: (received, total) {
           final now = DateTime.now();
           final done = total != null && received >= total;
@@ -124,13 +146,16 @@ class LibraryRepository extends ChangeNotifier {
           }
         },
       );
-      _put(e.copyWith(
-        download: DownloadState(
+      _put(
+        e.copyWith(
+          download: DownloadState(
             status: DownloadStatus.ready,
             receivedBytes: book.fileSize,
             totalBytes: book.fileSize,
-            path: path),
-      ));
+            path: path,
+          ),
+        ),
+      );
     } on DownloadCancelled {
       _put(e.copyWith(download: DownloadState(totalBytes: book.fileSize)));
     } catch (err) {
@@ -139,12 +164,18 @@ class LibraryRepository extends ChangeNotifier {
         ApiException a => a.message,
         _ => 'Download failed: $err',
       };
-      _put(e.copyWith(
-        download: DownloadState(
-            status: DownloadStatus.failed, totalBytes: book.fileSize, error: message),
-      ));
+      _put(
+        e.copyWith(
+          download: DownloadState(
+            status: DownloadStatus.failed,
+            totalBytes: book.fileSize,
+            error: message,
+          ),
+        ),
+      );
     } finally {
-      _cancelRequests.remove(book.id);
+      await flush();
+      _cancelRequests.remove(id);
     }
   }
 
@@ -154,8 +185,10 @@ class LibraryRepository extends ChangeNotifier {
   }
 
   Future<void> remove(String bookId) async {
+    if (_entries[bookId]?.download.isActive == true) return;
     final e = _entries.remove(bookId);
     notifyListeners();
+    if (e?.download.path != null) await _bookStore.delete(e!.download.path!);
     if (e != null) await _bookStore.deleteBook(bookId);
     await _persist();
   }
@@ -164,14 +197,18 @@ class LibraryRepository extends ChangeNotifier {
     final e = _entries[bookId];
     if (e == null) return;
     _put(e.copyWith(lastOpenedAt: DateTime.now()));
+    await flush();
   }
 
   Future<void> saveProgress(String bookId, ReadingLocator locator) async {
     final e = _entries[bookId];
     if (e == null) return;
-    _put(e.copyWith(
-      progress: ReadingProgress(locator: locator, updatedAt: DateTime.now()),
-      lastOpenedAt: DateTime.now(),
-    ));
+    _put(
+      e.copyWith(
+        progress: ReadingProgress(locator: locator, updatedAt: DateTime.now()),
+        lastOpenedAt: DateTime.now(),
+      ),
+    );
+    await flush();
   }
 }

@@ -60,7 +60,12 @@ class _CatalogScreenState extends State<CatalogScreen> {
         var items = catalog.items;
         if (_subject != null) items = items.where((b) => b.subjects.contains(_subject)).toList();
         if (_onlyDownloaded) {
-          items = items.where((b) => services.library.entry(b.id)?.download.isReady == true).toList();
+          items = items
+              .where(
+                (b) =>
+                    services.library.entryFor(b, services.currentSource)?.download.isReady == true,
+              )
+              .toList();
         }
         final subjects = catalog.subjects;
 
@@ -139,12 +144,19 @@ class _CatalogScreenState extends State<CatalogScreen> {
     );
   }
 
-  List<Widget> _body(BuildContext context, CatalogRepository catalog, List<Book> items, AppMode mode) {
+  List<Widget> _body(
+    BuildContext context,
+    CatalogRepository catalog,
+    List<Book> items,
+    AppMode mode,
+  ) {
     if (catalog.status == CatalogStatus.loading || catalog.status == CatalogStatus.idle) {
       return [
         SliverToBoxAdapter(
           child: LoadingLine(
-            label: mode == AppMode.sample ? 'Loading bundled samples' : 'Contacting ${catalog.source.origin}',
+            label: mode == AppMode.sample
+                ? 'Loading bundled samples'
+                : 'Contacting ${catalog.source.origin}',
           ),
         ),
       ];
@@ -156,7 +168,8 @@ class _CatalogScreenState extends State<CatalogScreen> {
           hasScrollBody: false,
           child: StateMessage(
             title: err.isNetwork ? "Can't reach the API." : 'The API returned an error.',
-            body: '${err.message}\n${catalog.source.origin}${err.isNetwork ? '\n\nBooks already downloaded stay readable from Library.' : ''}',
+            body:
+                '${err.message}\n${catalog.source.origin}${err.isNetwork ? '\n\nBooks already downloaded stay readable from Library.' : ''}',
             tone: Palette.error,
             actionLabel: 'Try again',
             onAction: catalog.refresh,
@@ -169,7 +182,9 @@ class _CatalogScreenState extends State<CatalogScreen> {
         SliverFillRemaining(
           hasScrollBody: false,
           child: StateMessage(
-            title: catalog.query.isEmpty && _subject == null && !_onlyDownloaded ? 'The catalog is empty.' : 'No matches.',
+            title: catalog.query.isEmpty && _subject == null && !_onlyDownloaded
+                ? 'The catalog is empty.'
+                : 'No matches.',
             body: catalog.query.isEmpty && _subject == null && !_onlyDownloaded
                 ? (mode == AppMode.api ? 'Seed the Worker catalog and pull to refresh.' : null)
                 : 'Try a different search or clear the filters.',
@@ -193,11 +208,11 @@ class _CatalogScreenState extends State<CatalogScreen> {
         child: catalog.isLoadingMore
             ? const LoadingLine()
             : catalog.hasMore
-                ? Padding(
-                    padding: const EdgeInsets.all(Space.gutter),
-                    child: QuietButton(label: 'Load more', onPressed: catalog.loadMore),
-                  )
-                : const SizedBox(height: Space.xxl),
+            ? Padding(
+                padding: const EdgeInsets.all(Space.gutter),
+                child: QuietButton(label: 'Load more', onPressed: catalog.loadMore),
+              )
+            : const SizedBox(height: Space.xxl),
       ),
     ];
   }
@@ -251,7 +266,9 @@ class _Chip extends StatelessWidget {
             ),
             child: Text(
               label,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(color: selected ? Palette.bg : Palette.fg),
+              style: Theme.of(
+                context,
+              ).textTheme.labelMedium?.copyWith(color: selected ? Palette.bg : Palette.fg),
             ),
           ),
         ),
@@ -267,7 +284,7 @@ class _CatalogRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final services = AppScope.of(context);
-    final entry = services.library.entry(book.id);
+    final entry = services.library.entryFor(book, services.currentSource);
     final text = Theme.of(context).textTheme;
     final d = entry?.download;
     Widget trailing;
@@ -275,7 +292,10 @@ class _CatalogRow extends StatelessWidget {
       trailing = SizedBox(
         width: 22,
         height: 22,
-        child: CircularProgressIndicator(strokeWidth: 2, value: d.status == DownloadStatus.verifying ? null : d.fraction),
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          value: d.status == DownloadStatus.verifying ? null : d.fraction,
+        ),
       );
     } else if (d != null && d.isReady) {
       trailing = const Icon(Icons.check, size: 18, color: Palette.green);
@@ -289,7 +309,11 @@ class _CatalogRow extends StatelessWidget {
       leading: CoverArt(book: book, width: 40, imageUri: services.catalog.source.coverUri(book)),
       title: Text(book.title, maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: Text(
-        [book.author, if (book.subjects.isNotEmpty) book.subjects.first, formatBytes(book.fileSize)].join(' · '),
+        [
+          book.author,
+          if (book.subjects.isNotEmpty) book.subjects.first,
+          formatBytes(book.fileSize),
+        ].join(' · '),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: text.bodySmall,

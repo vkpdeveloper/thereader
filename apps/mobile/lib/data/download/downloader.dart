@@ -27,6 +27,7 @@ class Downloader {
 
   Future<String> download({
     required Book book,
+    String? storageId,
     required DownloadStream source,
     required ProgressCallback onProgress,
     required bool Function() isCancelled,
@@ -40,7 +41,10 @@ class Downloader {
       );
     }
 
-    final sink = await store.openSink(bookId: book.id, version: book.version);
+    final sink = await store.openSink(
+      bookId: storageId ?? book.id,
+      version: '${book.version}-${book.sha256}',
+    );
     final digestSink = _DigestSink();
     final hasher = sha256.startChunkedConversion(digestSink);
     var received = 0;
@@ -50,8 +54,10 @@ class Downloader {
         if (isCancelled()) throw DownloadCancelled();
         received += chunk.length;
         if (received > expectedSize) {
-          throw DownloadFailure('Received more data than the catalog size ($expectedSize bytes).',
-              code: 'SIZE_MISMATCH');
+          throw DownloadFailure(
+            'Received more data than the catalog size ($expectedSize bytes).',
+            code: 'SIZE_MISMATCH',
+          );
         }
         hasher.add(chunk);
         await sink.add(chunk);
@@ -62,14 +68,19 @@ class Downloader {
       }
       hasher.close();
       if (received != expectedSize) {
-        throw DownloadFailure('Download ended early: $received of $expectedSize bytes.',
-            code: 'SIZE_MISMATCH');
+        throw DownloadFailure(
+          'Download ended early: $received of $expectedSize bytes.',
+          code: 'SIZE_MISMATCH',
+        );
       }
       final actual = digestSink.digest!.toString();
       if (actual != book.sha256) {
-        throw DownloadFailure('Checksum did not match the catalog. The file was discarded.',
-            code: 'CHECKSUM_MISMATCH');
+        throw DownloadFailure(
+          'Checksum did not match the catalog. The file was discarded.',
+          code: 'CHECKSUM_MISMATCH',
+        );
       }
+      if (isCancelled()) throw DownloadCancelled();
       return await sink.commit();
     } catch (e) {
       await sink.abort();

@@ -68,7 +68,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('There is an hour before the house wakes', findRichText: true), findsOneWidget);
-    final entry = services.library.entry('the-quiet-hour')!;
+    final entry = services.library.entries.singleWhere((e) => e.book.id == 'the-quiet-hour');
     expect(entry.lastOpenedAt, isNotNull);
 
     // Leaving the reader flushes the position save and cancels its timers.
@@ -76,7 +76,7 @@ void main() {
     await tester.pump();
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(seconds: 1));
-    expect(services.library.entry('the-quiet-hour')!.progress, isNotNull);
+    expect(services.library.entries.singleWhere((e) => e.book.id == 'the-quiet-hour').progress, isNotNull);
   });
 
   testWidgets('scaffold background is pure black', (tester) async {

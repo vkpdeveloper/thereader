@@ -35,28 +35,36 @@ class IoBookStore implements BookStore {
     final part = File(partPath);
     if (await part.exists()) await part.delete();
     final sink = part.openWrite();
-    return _IoSink(part, File(finalPath), sink);
+    return _IoSink(part, File(finalPath), sink, p.relative(finalPath, from: root.path));
+  }
+
+  File _resolve(String key) {
+    // Migrate absolute paths from older installs when iOS moves the container.
+    final relative = p.isAbsolute(key) ? p.join(p.basename(p.dirname(key)), p.basename(key)) : key;
+    final path = p.normalize(p.join(root.path, relative));
+    if (!p.isWithin(root.path, path)) throw ArgumentError('Invalid storage key');
+    return File(path);
   }
 
   @override
-  Future<bool> exists(String pathOrKey) => File(pathOrKey).exists();
+  Future<bool> exists(String pathOrKey) => _resolve(pathOrKey).exists();
 
   @override
   Future<int?> sizeOf(String pathOrKey) async {
-    final f = File(pathOrKey);
+    final f = _resolve(pathOrKey);
     return await f.exists() ? f.length() : null;
   }
 
   @override
   Future<BookFile> open(String pathOrKey) async {
-    final f = File(pathOrKey);
+    final f = _resolve(pathOrKey);
     final raf = await f.open();
     return _IoBookFile(raf, await raf.length(), f.path);
   }
 
   @override
   Future<void> delete(String pathOrKey) async {
-    final f = File(pathOrKey);
+    final f = _resolve(pathOrKey);
     if (await f.exists()) await f.delete();
   }
 
@@ -68,22 +76,28 @@ class IoBookStore implements BookStore {
 }
 
 class _IoSink implements BookSink {
-  _IoSink(this.part, this.target, this.sink);
+  _IoSink(this.part, this.target, this.sink, this.key);
+
+  final String key;
 
   final File part;
   final File target;
   final IOSink sink;
 
   @override
-  Future<void> add(List<int> chunk) async => sink.add(chunk);
+  Future<void> add(List<int> chunk) async {
+    sink.add(chunk);
+    // Apply disk backpressure instead of allowing a large HTTP response to queue
+    // the complete publication in IOSink's in-memory write buffer.
+    await sink.flush();
+  }
 
   @override
   Future<String> commit() async {
     await sink.flush();
     await sink.close();
-    if (await target.exists()) await target.delete();
     await part.rename(target.path);
-    return target.path;
+    return key;
   }
 
   @override
