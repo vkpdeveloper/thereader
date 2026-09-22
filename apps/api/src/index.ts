@@ -69,20 +69,29 @@ async function listBooks(request: Request, env: Env): Promise<Response> {
   });
 }
 
-async function getCover(env: Env, book: CatalogBook): Promise<Response> {
+async function getCover(request: Request, env: Env, book: CatalogBook): Promise<Response> {
   if (book.cover === null) throw new ApiError(404, "NOT_FOUND", "Book cover not found.");
-  const object = await env.BOOKS.get(book.cover.objectKey);
-  if (object === null || object.size !== book.cover.fileSize) {
+  const object = request.method === "HEAD"
+    ? await env.BOOKS.head(book.cover.objectKey)
+    : await env.BOOKS.get(book.cover.objectKey);
+  if (object === null || object.size !== book.cover.fileSize || (book.cover.etag !== null && object.httpEtag !== book.cover.etag)) {
     throw new ApiError(404, "NOT_FOUND", "Book cover not found.");
   }
-  return new Response(object.body, {
-    headers: {
-      "Cache-Control": "public, no-cache",
-      "Content-Length": String(object.size),
-      "Content-Type": book.cover.contentType,
-      ETag: object.httpEtag,
-    },
+  const headers = new Headers({
+    "Cache-Control": "public, max-age=31536000, immutable",
+    "Content-Length": String(object.size),
+    "Content-Type": book.cover.contentType,
+    "Content-Security-Policy": "default-src 'none'; img-src data:; style-src 'unsafe-inline'",
+    ETag: object.httpEtag,
+    "X-Content-Type-Options": "nosniff",
   });
+  const ifNoneMatch = request.headers.get("If-None-Match");
+  if (ifNoneMatch === "*" || ifNoneMatch?.split(",").some((value) => value.trim() === object.httpEtag)) {
+    headers.delete("Content-Length");
+    return new Response(null, { status: 304, headers });
+  }
+  const body = request.method === "HEAD" || !("body" in object) ? null : (object as R2ObjectBody).body;
+  return new Response(body, { headers });
 }
 
 async function route(request: Request, env: Env): Promise<Response> {
@@ -149,7 +158,8 @@ async function route(request: Request, env: Env): Promise<Response> {
     const id = decodeBookId(match[1]!);
     const action = match[2];
     const isDownload = action === "download";
-    const allowed = isDownload ? ["GET", "HEAD"] : ["GET"];
+    const isCover = action === "cover";
+    const allowed = isDownload || isCover ? ["GET", "HEAD"] : ["GET"];
     if (!allowed.includes(request.method)) {
       throw new ApiError(405, "METHOD_NOT_ALLOWED", "Method not allowed.", {
         Allow: `${allowed.join(", ")}, OPTIONS`,
@@ -158,7 +168,7 @@ async function route(request: Request, env: Env): Promise<Response> {
     const catalog = await loadCatalog(env);
     const book = findBook(catalog.books, id);
     if (isDownload) return downloadBook(request, env, book);
-    if (action === "cover") return getCover(env, book);
+    if (action === "cover") return getCover(request, env, book);
     return json({ book: toPublicBook(book) });
   }
 

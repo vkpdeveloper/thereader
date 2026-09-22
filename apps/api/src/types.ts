@@ -6,6 +6,7 @@ export interface Book {
   description: string;
   language: string;
   subjects: string[];
+  coverId: string | null;
   coverUrl: string | null;
   downloadUrl: string;
   fileSize: number;
@@ -19,6 +20,7 @@ export interface CatalogBook extends Book {
     objectKey: string;
     contentType: string;
     fileSize: number;
+    etag: string | null;
   } | null;
 }
 

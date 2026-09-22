@@ -44,6 +44,9 @@ bunx wrangler deploy --dry-run
   treat as immutable.
 - `uploads/<sha256>.epub` contains device uploads verified by R2 SHA-256 and a
   bounded EPUB ZIP structure check before their D1 catalog row is published.
+- `covers/<sha256>.<ext>` contains immutable embedded cover bytes extracted from
+  a verified uploaded edition. D1 records the cover ID, object key, MIME type,
+  byte length and R2 ETag.
 - D1 stores uploaded catalog rows, pending upload metadata, and the shared sync
   state. Apply `migrations/*.sql` before starting the Worker.
 
@@ -78,6 +81,19 @@ never treated as a whole-file checksum. R2 automatically aborts incomplete
 multipart sessions after seven days; pending D1 rows stop counting against the
 100-session application queue after 24 hours.
 
+Before an upload becomes visible, the Worker resolves embedded artwork in EPUB
+3 `cover-image` properties, EPUB 2 `meta name="cover"`, guide cover documents,
+and conventional cover manifest entries. JPEG, PNG, WebP and GIF covers are
+signature/dimension checked up to 4 MiB. Standalone SVG covers are limited to 2
+MiB and rejected if they contain active content or external resources. Books
+with no embedded image return `coverId:null` and `coverUrl:null`; a declared but
+invalid cover rejects publication instead of being silently marked missing.
+Extracted covers use `cover-<book-sha256>` and the canonical
+`/v1/books/:id/cover` URL with immutable caching, ETag revalidation, GET and
+HEAD. Repeating prepare for a published pre-migration D1 upload performs the
+same bounded extraction once and records `cover_checked_at`, which is the
+operator backfill path and requires no public maintenance endpoint.
+
 `GET /v1/sync` returns the full shared state. `POST /v1/sync` accepts up to 100
 edition-pinned changes in `{deviceId,changes}` and returns the merged state plus
 `acceptedChangeIds`. Progress, library membership, and preferences use
@@ -92,9 +108,12 @@ Progress payloads are Flutter `ReadingLocator` JSON: a non-empty `href` up to
 payloads are `{value:{...}}`; known fields are checked against the app's reader
 settings (`fontSize` 14–28, `lineHeight` 1.2–2.2, `marginScale` 0.5–2,
 `font` serif/sans, `flow` scrolled/paginated, and Boolean `justify` and
-`keepAwake`). Settings may be omitted to use client defaults. Unknown preference
+`keepAwake`). Optional `themeId` accepts `default`, `dracula`, `nord`,
+`tokyo-night`, `catppuccin-mocha`, or `gruvbox`. Settings may be omitted to use client defaults. Unknown preference
 fields are retained so newer clients can add settings without breaking older
-Workers.
+Workers. Accepted preference changes merge supplied fields into the current
+value, so an older client that changes typography without a `themeId` does not
+erase a theme selected by a newer client.
 
 Sync changes are keyed by the supplied `(bookId,sha256)` and do not require the
 edition to be present in the catalog. This keeps a cancelled or still-pending

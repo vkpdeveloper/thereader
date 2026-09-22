@@ -27,7 +27,7 @@ for (const item of manifest.selected) {
   await put(key, source, "application/epub+zip");
   base.books.push({ id, version: "1", title: `Corpus · ${item.role}`, author: "Local private corpus",
     description: "Locally imported EPUB for native verification.", language: "en", subjects: ["Corpus"],
-    coverUrl: null, downloadUrl: `/v1/books/${id}/download`, fileSize, sha256: checksum,
+    coverId: null, coverUrl: null, downloadUrl: `/v1/books/${id}/download`, fileSize, sha256: checksum,
     updatedAt: new Date().toISOString(), objectKey: key, cover: null });
   console.log(JSON.stringify({ role: item.role, fileSize, sha256: checksum }));
 }

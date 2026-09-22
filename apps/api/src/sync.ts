@@ -14,7 +14,8 @@ const CLIENT_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const PREFERENCES_BOOK_ID = "_preferences";
 const PREFERENCES_SHA = "0".repeat(64);
 const LOCATOR_KEYS = new Set(["href", "progression", "totalProgression", "title", "engine", "raw"]);
-const PREFERENCE_KEYS = new Set(["fontSize", "lineHeight", "font", "flow", "marginScale", "justify", "keepAwake"]);
+const PREFERENCE_KEYS = new Set(["fontSize", "lineHeight", "font", "flow", "marginScale", "justify", "keepAwake", "themeId"]);
+const READER_THEME_IDS = new Set(["default", "dracula", "nord", "tokyo-night", "catppuccin-mocha", "gruvbox"]);
 
 type ChangeKind = "progress" | "session" | "preferences" | "library";
 
@@ -104,6 +105,7 @@ function validPreferences(value: Record<string, unknown>): boolean {
   if (value.flow !== undefined && value.flow !== "scrolled" && value.flow !== "paginated") return false;
   if (value.justify !== undefined && typeof value.justify !== "boolean") return false;
   if (value.keepAwake !== undefined && typeof value.keepAwake !== "boolean") return false;
+  if (value.themeId !== undefined && (typeof value.themeId !== "string" || !READER_THEME_IDS.has(value.themeId))) return false;
   for (const key of PREFERENCE_KEYS) {
     if (key in value && value[key] === null) return false;
   }
@@ -225,7 +227,8 @@ function statementForChange(env: Env, deviceId: string, change: SyncChange): D1P
          VALUES ('default', ?, ?, ?, ?)
          ON CONFLICT(slot) DO UPDATE SET
            change_id = excluded.change_id, updated_at = excluded.updated_at,
-           updated_ms = excluded.updated_ms, value_json = excluded.value_json
+           updated_ms = excluded.updated_ms,
+           value_json = json_patch(sync_preferences.value_json, excluded.value_json)
          WHERE excluded.updated_ms > sync_preferences.updated_ms
             OR (excluded.updated_ms = sync_preferences.updated_ms AND excluded.change_id > sync_preferences.change_id)`,
       ).bind(change.id, change.updatedAt, change.updatedMs, JSON.stringify(change.payload.value));

@@ -65,6 +65,17 @@ interface ZipEntry {
   localOffset: number;
 }
 
+interface ExtractedCover {
+  bytes: Uint8Array;
+  contentType: string;
+  extension: string;
+}
+
+const MAX_RASTER_COVER_BYTES = 4 * 1024 * 1024;
+const MAX_SVG_COVER_BYTES = 2 * 1024 * 1024;
+const MAX_COVER_DIMENSION = 12_000;
+const MAX_COVER_PIXELS = 40_000_000;
+
 function invalidUpload(message: string): ApiError {
   return new ApiError(400, "INVALID_UPLOAD", message);
 }
@@ -114,6 +125,7 @@ function uploadedBook(metadata: UploadMetadata, updatedAt: string): CatalogBook 
     description: metadata.description,
     language: metadata.language,
     subjects: metadata.subjects,
+    coverId: null,
     coverUrl: null,
     downloadUrl: `/v1/books/${id}/download`,
     fileSize: metadata.fileSize,
@@ -145,7 +157,8 @@ export async function prepareUpload(request: Request, env: Env): Promise<Prepare
   const published = await findPublishedBookBySha(env, metadata.sha256);
   if (published !== null) {
     if (await hasPublishedObject(env, published)) {
-      return { book: toPublicBook(published), uploaded: true, uploadUrl: null, multipart: null };
+      const inspected = await ensureUploadedCover(env, published);
+      return { book: toPublicBook(inspected), uploaded: true, uploadUrl: null, multipart: null };
     }
     throw new ApiError(409, "PUBLISHED_OBJECT_MISSING", "The published EPUB object is unavailable.");
   }
@@ -406,11 +419,228 @@ async function readEntry(env: Env, book: CatalogBook, entry: ZipEntry, maximum: 
   return output;
 }
 
-function decodeXmlPath(value: string): string {
-  return value.replace(/&(amp|quot|apos|lt|gt);/g, (_, entity: string) => ({ amp: "&", quot: '"', apos: "'", lt: "<", gt: ">" })[entity]!);
+function xmlAttributes(tag: string): Map<string, string> {
+  const attributes = new Map<string, string>();
+  for (const match of tag.matchAll(/([A-Za-z_][A-Za-z0-9_.:-]*)\s*=\s*(?:"([^"]*)"|'([^']*)')/g)) {
+    attributes.set(match[1]!.toLowerCase(), decodeXmlPath(match[2] ?? match[3] ?? ""));
+  }
+  return attributes;
 }
 
-async function validateEpub(env: Env, book: CatalogBook): Promise<void> {
+function resolveZipPath(baseFile: string, rawHref: string): string | null {
+  let href = rawHref.split("#", 1)[0]!.split("?", 1)[0]!;
+  try {
+    href = decodeURIComponent(href);
+  } catch {
+    return null;
+  }
+  if (href.length === 0 || href.startsWith("/") || href.includes("\\") || /^[A-Za-z][A-Za-z0-9+.-]*:/.test(href)) return null;
+  const segments = [...baseFile.split("/").slice(0, -1), ...href.split("/")];
+  const normalized: string[] = [];
+  for (const segment of segments) {
+    if (segment === "" || segment === ".") continue;
+    if (segment === "..") {
+      if (normalized.length === 0) return null;
+      normalized.pop();
+    } else {
+      normalized.push(segment);
+    }
+  }
+  const path = normalized.join("/");
+  return safeZipName(path) ? path : null;
+}
+
+function validRasterDimensions(width: number, height: number): boolean {
+  return (
+    Number.isSafeInteger(width) && Number.isSafeInteger(height) &&
+    width > 0 && height > 0 && width <= MAX_COVER_DIMENSION && height <= MAX_COVER_DIMENSION &&
+    width * height <= MAX_COVER_PIXELS
+  );
+}
+
+function jpegDimensions(bytes: Uint8Array): [number, number] | null {
+  if (bytes.length < 4 || bytes[0] !== 0xff || bytes[1] !== 0xd8) return null;
+  let offset = 2;
+  while (offset + 4 <= bytes.length) {
+    if (bytes[offset] !== 0xff) return null;
+    while (offset < bytes.length && bytes[offset] === 0xff) offset += 1;
+    const marker = bytes[offset++]!;
+    if (marker === 0xd9 || marker === 0xda) break;
+    if (marker >= 0xd0 && marker <= 0xd7) continue;
+    if (offset + 2 > bytes.length) return null;
+    const length = (bytes[offset]! << 8) | bytes[offset + 1]!;
+    if (length < 2 || offset + length > bytes.length) return null;
+    if ([0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf].includes(marker)) {
+      if (length < 7) return null;
+      return [
+        (bytes[offset + 5]! << 8) | bytes[offset + 6]!,
+        (bytes[offset + 3]! << 8) | bytes[offset + 4]!,
+      ];
+    }
+    offset += length;
+  }
+  return null;
+}
+
+function u24(bytes: Uint8Array, offset: number): number {
+  return bytes[offset]! | (bytes[offset + 1]! << 8) | (bytes[offset + 2]! << 16);
+}
+
+function detectCover(bytes: Uint8Array): Omit<ExtractedCover, "bytes"> | null {
+  let dimensions: [number, number] | null = null;
+  let contentType: string | null = null;
+  let extension: string | null = null;
+  if (bytes.length >= 24 && bytes.subarray(0, 8).every((value, index) => value === [137, 80, 78, 71, 13, 10, 26, 10][index])) {
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    if (new TextDecoder().decode(bytes.subarray(12, 16)) !== "IHDR") return null;
+    dimensions = [view.getUint32(16), view.getUint32(20)];
+    contentType = "image/png";
+    extension = "png";
+  } else if (bytes.length >= 10 && (new TextDecoder().decode(bytes.subarray(0, 6)) === "GIF87a" || new TextDecoder().decode(bytes.subarray(0, 6)) === "GIF89a")) {
+    dimensions = [u16(bytes, 6), u16(bytes, 8)];
+    contentType = "image/gif";
+    extension = "gif";
+  } else if (bytes.length >= 30 && new TextDecoder().decode(bytes.subarray(0, 4)) === "RIFF" && new TextDecoder().decode(bytes.subarray(8, 12)) === "WEBP") {
+    const kind = new TextDecoder().decode(bytes.subarray(12, 16));
+    if (kind === "VP8X" && bytes.length >= 30) dimensions = [u24(bytes, 24) + 1, u24(bytes, 27) + 1];
+    else if (kind === "VP8 " && bytes.length >= 30 && bytes[23] === 0x9d && bytes[24] === 0x01 && bytes[25] === 0x2a) {
+      dimensions = [u16(bytes, 26) & 0x3fff, u16(bytes, 28) & 0x3fff];
+    } else if (kind === "VP8L" && bytes.length >= 25 && bytes[20] === 0x2f) {
+      const bits = bytes[21]! | (bytes[22]! << 8) | (bytes[23]! << 16) | (bytes[24]! << 24);
+      dimensions = [(bits & 0x3fff) + 1, ((bits >>> 14) & 0x3fff) + 1];
+    }
+    contentType = "image/webp";
+    extension = "webp";
+  } else {
+    dimensions = jpegDimensions(bytes);
+    if (dimensions !== null) {
+      contentType = "image/jpeg";
+      extension = "jpg";
+    }
+  }
+  if (contentType !== null && extension !== null) {
+    return dimensions !== null && validRasterDimensions(...dimensions) ? { contentType, extension } : null;
+  }
+  if (bytes.length > MAX_SVG_COVER_BYTES) return null;
+  let svg: string;
+  try {
+    svg = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    return null;
+  }
+  if (!/<svg\b/i.test(svg)) return null;
+  if (
+    /<!DOCTYPE|<!ENTITY|<script\b|<foreignObject\b|<iframe\b|<object\b|<embed\b|<audio\b|<video\b/i.test(svg) ||
+    /\son[A-Za-z]+\s*=/i.test(svg) ||
+    /@import|url\s*\(\s*(?!["']?#)/i.test(svg) ||
+    /\b(?:href|xlink:href)\s*=\s*["'](?!#|data:image\/(?:png|jpeg|webp|gif);base64,)/i.test(svg)
+  ) return null;
+  return { contentType: "image/svg+xml", extension: "svg" };
+}
+
+async function extractCover(
+  env: Env,
+  book: CatalogBook,
+  entries: Map<string, ZipEntry>,
+  packagePath: string,
+  packageXml: string,
+): Promise<ExtractedCover | null> {
+  const items = [...packageXml.matchAll(/<(?:[A-Za-z_][\w.-]*:)?item\b[^>]*>/gi)].map((match) => {
+    const attrs = xmlAttributes(match[0]);
+    return { id: attrs.get("id") ?? "", href: attrs.get("href") ?? "", mediaType: attrs.get("media-type") ?? "", properties: attrs.get("properties") ?? "" };
+  });
+  const supportedMedia = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"]);
+  const imageItem = (item: (typeof items)[number] | undefined): string | null => item === undefined ? null : resolveZipPath(packagePath, item.href);
+  const likelyImage = (item: (typeof items)[number]): boolean => (
+    supportedMedia.has(item.mediaType.toLowerCase()) || /\.(?:jpe?g|png|webp|gif|svg)(?:[?#]|$)/i.test(item.href)
+  );
+
+  let declared = false;
+  let coverPath: string | null = null;
+  const epub3 = items.find((item) => item.properties.split(/\s+/).includes("cover-image"));
+  if (epub3 !== undefined) {
+    declared = true;
+    coverPath = imageItem(epub3);
+  }
+  if (!declared) {
+    for (const match of packageXml.matchAll(/<(?:[A-Za-z_][\w.-]*:)?meta\b[^>]*>/gi)) {
+      const attrs = xmlAttributes(match[0]);
+      if (attrs.get("name")?.toLowerCase() === "cover") {
+        declared = true;
+        const id = attrs.get("content") ?? "";
+        coverPath = imageItem(items.find((item) => item.id === id));
+        break;
+      }
+    }
+  }
+  if (!declared) {
+    for (const match of packageXml.matchAll(/<(?:[A-Za-z_][\w.-]*:)?reference\b[^>]*>/gi)) {
+      const attrs = xmlAttributes(match[0]);
+      if (!attrs.get("type")?.toLowerCase().split(/\s+/).includes("cover")) continue;
+      declared = true;
+      const guidePath = resolveZipPath(packagePath, attrs.get("href") ?? "");
+      if (guidePath !== null && entries.has(guidePath)) {
+        const guideItem = items.find((item) => resolveZipPath(packagePath, item.href) === guidePath);
+        if (guideItem !== undefined && likelyImage(guideItem)) {
+          coverPath = guidePath;
+        } else {
+          const guide = new TextDecoder("utf-8", { fatal: true }).decode(await readEntry(env, book, entries.get(guidePath)!, 512 * 1024));
+          const imageTag = /<(?:(?:[A-Za-z_][\w.-]*:)?(?:img|image|object))\b[^>]*>/i.exec(guide)?.[0];
+          if (imageTag !== undefined) {
+            const imageAttrs = xmlAttributes(imageTag);
+            coverPath = resolveZipPath(guidePath, imageAttrs.get("src") ?? imageAttrs.get("href") ?? imageAttrs.get("xlink:href") ?? imageAttrs.get("data") ?? "");
+          }
+        }
+      }
+      break;
+    }
+  }
+  if (!declared) {
+    const conventionallyNamed = (item: (typeof items)[number]): boolean => (
+      /(^|[-_.])cover/i.test(`${item.id} ${item.href.split("/").pop() ?? ""}`)
+    );
+    const conventional = items.find((item) => likelyImage(item) && conventionallyNamed(item));
+    coverPath = imageItem(conventional);
+    if (coverPath === null) {
+      const coverDocument = items.find((item) => !likelyImage(item) && conventionallyNamed(item));
+      const documentPath = imageItem(coverDocument);
+      const documentEntry = documentPath === null ? undefined : entries.get(documentPath);
+      if (documentPath !== null && documentEntry !== undefined) {
+        const document = new TextDecoder("utf-8", { fatal: true }).decode(await readEntry(env, book, documentEntry, 512 * 1024));
+        const imageTag = /<(?:(?:[A-Za-z_][\w.-]*:)?(?:img|image|object))\b[^>]*>/i.exec(document)?.[0];
+        if (imageTag !== undefined) {
+          const imageAttrs = xmlAttributes(imageTag);
+          coverPath = resolveZipPath(documentPath, imageAttrs.get("src") ?? imageAttrs.get("href") ?? imageAttrs.get("xlink:href") ?? imageAttrs.get("data") ?? "");
+        }
+      }
+    }
+    if (coverPath === null) {
+      coverPath = [...entries.keys()].find((name) => /(?:^|\/)cover(?:[-_.][^/]*)?\.(?:jpe?g|png|webp|gif|svg)$/i.test(name)) ?? null;
+    }
+  }
+  if (coverPath === null) {
+    if (declared) throw new Error("declared cover is invalid");
+    return null;
+  }
+  const entry = entries.get(coverPath);
+  if (entry === undefined) throw new Error("cover entry is missing");
+  const bytes = await readEntry(env, book, entry, MAX_RASTER_COVER_BYTES);
+  const detected = detectCover(bytes);
+  if (detected === null) throw new Error("cover image is invalid");
+  return { bytes, ...detected };
+}
+
+function decodeXmlPath(value: string): string {
+  return value
+    .replace(/&#(x[0-9a-f]+|[0-9]+);/gi, (_, encoded: string) => {
+      const hexadecimal = encoded[0]?.toLowerCase() === "x";
+      const codePoint = Number.parseInt(hexadecimal ? encoded.slice(1) : encoded, hexadecimal ? 16 : 10);
+      return Number.isSafeInteger(codePoint) && codePoint > 0 && codePoint <= 0x10ffff ? String.fromCodePoint(codePoint) : "";
+    })
+    .replace(/&(amp|quot|apos|lt|gt);/g, (_, entity: string) => ({ amp: "&", quot: '"', apos: "'", lt: "<", gt: ">" })[entity]!);
+}
+
+async function validateEpub(env: Env, book: CatalogBook): Promise<ExtractedCover | null> {
   try {
     if (book.fileSize < 80) throw new Error();
     const first = await r2Range(env, book.objectKey, 0, Math.min(book.fileSize, 80));
@@ -432,16 +662,22 @@ async function validateEpub(env: Env, book: CatalogBook): Promise<void> {
     const container = entries.get("META-INF/container.xml");
     if (mimetype?.localOffset !== 0 || mimetype.method !== 0 || container === undefined) throw new Error();
     const xml = new TextDecoder("utf-8", { fatal: true }).decode(await readEntry(env, book, container, 256 * 1024));
-    const rootfile = /<rootfile\b[^>]*\bfull-path\s*=\s*(?:"([^"]+)"|'([^']+)')[^>]*>/i.exec(xml);
-    if (!/<container\b/i.test(xml) || rootfile === null) throw new Error();
+    const rootfile = /<(?:[A-Za-z_][\w.-]*:)?rootfile\b[^>]*\bfull-path\s*=\s*(?:"([^"]+)"|'([^']+)')[^>]*>/i.exec(xml);
+    if (!/<(?:[A-Za-z_][\w.-]*:)?container\b/i.test(xml) || rootfile === null) throw new Error();
     const packagePath = decodeXmlPath(rootfile[1] ?? rootfile[2] ?? "");
     if (!safeZipName(packagePath)) throw new Error();
     const packageEntry = entries.get(packagePath);
     if (packageEntry === undefined) throw new Error();
     const packageXml = new TextDecoder("utf-8", { fatal: true }).decode(await readEntry(env, book, packageEntry, 2 * 1024 * 1024));
-    if (!/<package\b/i.test(packageXml) || !/<metadata\b/i.test(packageXml) || !/<manifest\b/i.test(packageXml) || !/<spine\b/i.test(packageXml)) {
+    if (
+      !/<(?:[A-Za-z_][\w.-]*:)?package\b/i.test(packageXml) ||
+      !/<(?:[A-Za-z_][\w.-]*:)?metadata\b/i.test(packageXml) ||
+      !/<(?:[A-Za-z_][\w.-]*:)?manifest\b/i.test(packageXml) ||
+      !/<(?:[A-Za-z_][\w.-]*:)?spine\b/i.test(packageXml)
+    ) {
       throw new Error();
     }
+    return await extractCover(env, book, entries, packagePath, packageXml);
   } catch (error) {
     if (error instanceof ApiError) throw error;
     throw new ApiError(422, "INVALID_EPUB", "The uploaded file is not a valid EPUB.");
@@ -559,13 +795,66 @@ async function objectSha256(env: Env, book: CatalogBook): Promise<string> {
   return digestHex(digest);
 }
 
+async function storeExtractedCover(env: Env, book: CatalogBook, extracted: ExtractedCover | null): Promise<CatalogBook> {
+  if (extracted === null) return book;
+  const objectKey = `covers/${book.sha256}.${extracted.extension}`;
+  const digest = await crypto.subtle.digest("SHA-256", new Uint8Array(extracted.bytes).buffer);
+  const stored = await env.BOOKS.put(objectKey, extracted.bytes, {
+    sha256: digest,
+    httpMetadata: { contentType: extracted.contentType, cacheControl: "public, max-age=31536000, immutable" },
+    customMetadata: { bookSha256: book.sha256 },
+  });
+  if (stored.size !== extracted.bytes.byteLength) {
+    await env.BOOKS.delete(objectKey);
+    throw new ApiError(502, "COVER_STORE_FAILED", "The embedded cover could not be stored.");
+  }
+  return {
+    ...book,
+    coverId: `cover-${book.sha256}`,
+    coverUrl: `/v1/books/${book.id}/cover`,
+    cover: {
+      objectKey,
+      contentType: extracted.contentType,
+      fileSize: extracted.bytes.byteLength,
+      etag: stored.httpEtag,
+    },
+  };
+}
+
+async function ensureUploadedCover(env: Env, book: CatalogBook): Promise<CatalogBook> {
+  const state = await env.DB.prepare("SELECT cover_checked_at FROM uploaded_books WHERE sha256 = ?")
+    .bind(book.sha256)
+    .first<{ cover_checked_at: string | null }>();
+  if (state === null || state.cover_checked_at !== null) return book;
+  const extracted = await validateEpub(env, book);
+  const inspected = await storeExtractedCover(env, book, extracted);
+  const checkedAt = new Date().toISOString();
+  await env.DB.prepare(
+    `UPDATE uploaded_books SET
+       cover_id = ?, cover_object_key = ?, cover_content_type = ?,
+       cover_file_size = ?, cover_etag = ?, cover_checked_at = ?
+     WHERE sha256 = ?`,
+  ).bind(
+    inspected.coverId,
+    inspected.cover?.objectKey ?? null,
+    inspected.cover?.contentType ?? null,
+    inspected.cover?.fileSize ?? null,
+    inspected.cover?.etag ?? null,
+    checkedAt,
+    book.sha256,
+  ).run();
+  return (await findPublishedBookBySha(env, book.sha256)) ?? inspected;
+}
+
 async function publishBook(env: Env, book: CatalogBook): Promise<{ status: number; body: { book: Book; uploaded: true } }> {
   const publishedAt = new Date().toISOString();
   const publishResults = await env.DB.batch([
     env.DB.prepare(
       `INSERT INTO uploaded_books
-         (id, sha256, version, title, author, description, language, subjects_json, file_size, object_key, updated_at)
-       VALUES (?, ?, '1', ?, ?, ?, ?, ?, ?, ?, ?)
+         (id, sha256, version, title, author, description, language, subjects_json,
+          file_size, object_key, updated_at, cover_id, cover_object_key,
+          cover_content_type, cover_file_size, cover_etag, cover_checked_at)
+       VALUES (?, ?, '1', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(sha256) DO NOTHING`,
     ).bind(
       book.id,
@@ -577,6 +866,12 @@ async function publishBook(env: Env, book: CatalogBook): Promise<{ status: numbe
       JSON.stringify(book.subjects),
       book.fileSize,
       book.objectKey,
+      publishedAt,
+      book.coverId,
+      book.cover?.objectKey ?? null,
+      book.cover?.contentType ?? null,
+      book.cover?.fileSize ?? null,
+      book.cover?.etag ?? null,
       publishedAt,
     ),
     env.DB.prepare("DELETE FROM upload_parts WHERE sha256 = ?").bind(book.sha256),
@@ -631,16 +926,17 @@ export async function completeMultipartUpload(
       throw new ApiError(409, "MULTIPART_SESSION_EXPIRED", "The multipart upload session is unavailable. Prepare the upload again.");
     }
   }
+  let extractedCover: ExtractedCover | null;
   try {
     if (await objectSha256(env, book) !== book.sha256) {
       throw new ApiError(422, "CHECKSUM_MISMATCH", "The uploaded bytes do not match sha256.");
     }
-    await validateEpub(env, book);
+    extractedCover = await validateEpub(env, book);
   } catch (error) {
     await resetMultipart(env, row);
     throw error;
   }
-  return publishBook(env, book);
+  return publishBook(env, await storeExtractedCover(env, book, extractedCover));
 }
 
 export async function uploadEpub(request: Request, env: Env, sha256: string): Promise<{ status: number; body: { book: Book; uploaded: true } }> {
@@ -684,12 +980,13 @@ export async function uploadEpub(request: Request, env: Env, sha256: string): Pr
   if (stored.size !== book.fileSize || stored.checksums.sha256 === undefined || digestHex(stored.checksums.sha256) !== book.sha256) {
     throw new ApiError(422, "CHECKSUM_MISMATCH", "The uploaded bytes do not match sha256.");
   }
+  let extractedCover: ExtractedCover | null;
   try {
-    await validateEpub(env, book);
+    extractedCover = await validateEpub(env, book);
   } catch (error) {
     await env.BOOKS.delete(book.objectKey);
     throw error;
   }
 
-  return publishBook(env, book);
+  return publishBook(env, await storeExtractedCover(env, book, extractedCover));
 }

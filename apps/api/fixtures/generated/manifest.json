@@ -12,6 +12,7 @@
       "subjects": [
         "Essays"
       ],
+      "coverId": null,
       "coverUrl": null,
       "downloadUrl": "/v1/books/the-quiet-hour/download",
       "fileSize": 2851,
@@ -30,6 +31,7 @@
       "subjects": [
         "Short Fiction"
       ],
+      "coverId": null,
       "coverUrl": null,
       "downloadUrl": "/v1/books/a-walk-in-the-rain/download",
       "fileSize": 2883,
@@ -48,6 +50,7 @@
       "subjects": [
         "Mindfulness"
       ],
+      "coverId": null,
       "coverUrl": null,
       "downloadUrl": "/v1/books/notes-on-attention/download",
       "fileSize": 2772,

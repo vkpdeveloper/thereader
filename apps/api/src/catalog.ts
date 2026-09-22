@@ -51,6 +51,7 @@ function parseBook(value: unknown): CatalogBook | null {
     description,
     language,
     subjects,
+    coverId,
     coverUrl,
     downloadUrl,
     fileSize,
@@ -73,6 +74,7 @@ function parseBook(value: unknown): CatalogBook | null {
     !Array.isArray(subjects) ||
     subjects.length > 32 ||
     !subjects.every((subject) => isNonEmptyString(subject, 100)) ||
+    (coverId !== undefined && coverId !== null && coverId !== `cover-${sha256}`) ||
     (coverUrl !== null && coverUrl !== `/v1/books/${id}/cover`) ||
     downloadUrl !== `/v1/books/${id}/download` ||
     !Number.isSafeInteger(fileSize) ||
@@ -95,7 +97,8 @@ function parseBook(value: unknown): CatalogBook | null {
       !cover.contentType.startsWith("image/") ||
       !Number.isSafeInteger(cover.fileSize) ||
       (cover.fileSize as number) <= 0 ||
-      (cover.fileSize as number) > 10_000_000
+      (cover.fileSize as number) > 10_000_000 ||
+      (cover.etag !== undefined && cover.etag !== null && !isNonEmptyString(cover.etag, 512))
     ) {
       return null;
     }
@@ -103,10 +106,13 @@ function parseBook(value: unknown): CatalogBook | null {
       objectKey: cover.objectKey,
       contentType: cover.contentType,
       fileSize: cover.fileSize as number,
+      etag: typeof cover.etag === "string" ? cover.etag : null,
     };
   }
 
   if ((coverUrl === null) !== (parsedCover === null)) return null;
+  const parsedCoverId = parsedCover === null ? null : `cover-${sha256}`;
+  if (coverId !== undefined && coverId !== parsedCoverId) return null;
 
   return {
     id,
@@ -116,6 +122,7 @@ function parseBook(value: unknown): CatalogBook | null {
     description,
     language,
     subjects: [...subjects],
+    coverId: parsedCoverId,
     coverUrl,
     downloadUrl,
     fileSize: fileSize as number,
@@ -138,6 +145,11 @@ interface UploadedBookRow {
   file_size: number;
   object_key: string;
   updated_at: string;
+  cover_id: string | null;
+  cover_object_key: string | null;
+  cover_content_type: string | null;
+  cover_file_size: number | null;
+  cover_etag: string | null;
 }
 
 function uploadedRowToBook(row: UploadedBookRow): CatalogBook {
@@ -155,13 +167,19 @@ function uploadedRowToBook(row: UploadedBookRow): CatalogBook {
     description: row.description,
     language: row.language,
     subjects,
-    coverUrl: null,
+    coverId: row.cover_id,
+    coverUrl: row.cover_id === null ? null : `/v1/books/${row.id}/cover`,
     downloadUrl: `/v1/books/${row.id}/download`,
     fileSize: row.file_size,
     sha256: row.sha256,
     updatedAt: row.updated_at,
     objectKey: row.object_key,
-    cover: null,
+    cover: row.cover_id === null ? null : {
+      objectKey: row.cover_object_key,
+      contentType: row.cover_content_type,
+      fileSize: row.cover_file_size,
+      etag: row.cover_etag,
+    },
   });
   if (parsed === null) throw new ApiError(500, "CATALOG_INVALID", "Catalog data is invalid.");
   return parsed;
@@ -170,7 +188,8 @@ function uploadedRowToBook(row: UploadedBookRow): CatalogBook {
 async function loadUploadedBooks(env: Env): Promise<CatalogBook[]> {
   const result = await env.DB.prepare(
     `SELECT id, sha256, version, title, author, description, language,
-            subjects_json, file_size, object_key, updated_at
+            subjects_json, file_size, object_key, updated_at,
+            cover_id, cover_object_key, cover_content_type, cover_file_size, cover_etag
        FROM uploaded_books
       ORDER BY updated_at, id
       LIMIT ?`,
@@ -249,7 +268,8 @@ export async function findPublishedBookBySha(env: Env, sha256: string): Promise<
   if (legacyBook !== undefined) return legacyBook;
   const row = await env.DB.prepare(
     `SELECT id, sha256, version, title, author, description, language,
-            subjects_json, file_size, object_key, updated_at
+            subjects_json, file_size, object_key, updated_at,
+            cover_id, cover_object_key, cover_content_type, cover_file_size, cover_etag
        FROM uploaded_books WHERE sha256 = ?`,
   )
     .bind(sha256)

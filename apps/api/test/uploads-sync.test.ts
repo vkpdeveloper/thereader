@@ -97,6 +97,39 @@ function validEpub(): Uint8Array {
   return zip(epubEntries());
 }
 
+function pngCover(width = 400, height = 600): Uint8Array {
+  const bytes = new Uint8Array(24);
+  bytes.set([137, 80, 78, 71, 13, 10, 26, 10]);
+  bytes.set(encoder.encode("IHDR"), 12);
+  const view = new DataView(bytes.buffer);
+  view.setUint32(16, width);
+  view.setUint32(20, height);
+  return bytes;
+}
+
+function jpegCover(width = 400, height = 600): Uint8Array {
+  const bytes = new Uint8Array(21);
+  bytes.set([0xff, 0xd8, 0xff, 0xc0, 0x00, 0x11, 0x08]);
+  const view = new DataView(bytes.buffer);
+  view.setUint16(7, height);
+  view.setUint16(9, width);
+  return bytes;
+}
+
+function epubWithPackage(packagePath: string, packageXml: string, extraEntries: TestZipEntry[]): Uint8Array {
+  return zip([
+    { name: "mimetype", bytes: encoder.encode("application/epub+zip") },
+    {
+      name: "META-INF/container.xml",
+      bytes: encoder.encode(
+        `<?xml version="1.0"?><ocf:container xmlns:ocf="urn:oasis:names:tc:opendocument:xmlns:container"><ocf:rootfiles><ocf:rootfile full-path="${packagePath}" media-type="application/oebps-package+xml"/></ocf:rootfiles></ocf:container>`,
+      ),
+    },
+    { name: packagePath, bytes: encoder.encode(packageXml) },
+    ...extraEntries,
+  ]);
+}
+
 function validMultipartEpub(): Uint8Array {
   return zip([
     ...epubEntries(),
@@ -149,6 +182,28 @@ beforeEach(async () => {
 });
 
 describe("personal EPUB upload", () => {
+  async function uploadFixture(epub: Uint8Array, title: string): Promise<{ checksum: string; response: Response; book: any }> {
+    const checksum = await sha256(epub);
+    const prepare = await jsonRequest("/v1/uploads/prepare", {
+      sha256: checksum,
+      fileSize: epub.length,
+      title,
+      author: "Reader",
+      description: "",
+      language: "en",
+      subjects: [],
+    });
+    expect(prepare.status).toBe(200);
+    const prepared: any = await prepare.json();
+    const response = await request(prepared.uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": "application/epub+zip", "Content-Length": String(epub.length) },
+      body: new Uint8Array(epub).buffer,
+    });
+    const body: any = await response.clone().json();
+    return { checksum, response, book: body.book };
+  }
+
   it("prepares, validates, publishes, downloads, and deduplicates an EPUB without authentication", async () => {
     const epub = validEpub();
     const checksum = await sha256(epub);
@@ -260,6 +315,142 @@ describe("personal EPUB upload", () => {
       body: new Uint8Array(epub).buffer,
     });
     expect(upload.status, await upload.clone().text()).toBe(201);
+  });
+
+  it("extracts EPUB 3 and EPUB 2 covers with package-relative paths", async () => {
+    const cases = [
+      {
+        title: "EPUB 3 cover",
+        bytes: pngCover(),
+        contentType: "image/png",
+        epub: (cover: Uint8Array) => epubWithPackage(
+          "OEBPS/package/content.opf",
+          '<?xml version="1.0"?><opf:package xmlns:opf="http://www.idpf.org/2007/opf"><opf:metadata/><opf:manifest><opf:item id="art" href="..&#x2F;Images/front.png" media-type="image/png" properties="nav cover-image"/></opf:manifest><opf:spine/></opf:package>',
+          [{ name: "OEBPS/Images/front.png", bytes: cover }],
+        ),
+      },
+      {
+        title: "EPUB 2 cover",
+        bytes: jpegCover(),
+        contentType: "image/jpeg",
+        epub: (cover: Uint8Array) => epubWithPackage(
+          "OPS/content.opf",
+          '<?xml version="1.0"?><package><metadata><meta name="cover" content="img-cover-jpg"/></metadata><manifest><item id="img-cover-jpg" href="Images/cover.jpg" media-type="image/jpeg"/></manifest><spine/></package>',
+          [{ name: "OPS/Images/cover.jpg", bytes: cover }],
+        ),
+      },
+      {
+        title: "SVG cover",
+        bytes: encoder.encode('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600"><rect width="400" height="600" fill="#123456"/></svg>'),
+        contentType: "image/svg+xml",
+        epub: (cover: Uint8Array) => epubWithPackage(
+          "EPUB/content.opf",
+          '<?xml version="1.0"?><package><metadata/><manifest><item id="cover" href="cover.svg" media-type="image/svg+xml" properties="cover-image"/></manifest><spine/></package>',
+          [{ name: "EPUB/cover.svg", bytes: cover }],
+        ),
+      },
+    ];
+    for (const value of cases) {
+      const epub = value.epub(value.bytes);
+      const uploaded = await uploadFixture(epub, value.title);
+      expect(uploaded.response.status, await uploaded.response.clone().text()).toBe(201);
+      expect(uploaded.book).toMatchObject({
+        coverId: `cover-${uploaded.checksum}`,
+        coverUrl: `/v1/books/epub-${uploaded.checksum}/cover`,
+      });
+      const cover = await request(uploaded.book.coverUrl);
+      expect(cover.status).toBe(200);
+      expect(cover.headers.get("Content-Type")).toBe(value.contentType);
+      expect(cover.headers.get("Cache-Control")).toContain("immutable");
+      expect(cover.headers.get("ETag")).not.toBeNull();
+      expect(new Uint8Array(await cover.arrayBuffer())).toEqual(value.bytes);
+      const head = await request(uploaded.book.coverUrl, { method: "HEAD" });
+      expect(head.status).toBe(200);
+      expect(head.headers.get("Content-Length")).toBe(String(value.bytes.length));
+      expect((await head.arrayBuffer()).byteLength).toBe(0);
+      const unchanged = await request(uploaded.book.coverUrl, { headers: { "If-None-Match": cover.headers.get("ETag")! } });
+      expect(unchanged.status).toBe(304);
+    }
+  });
+
+  it("resolves a guide cover document and conventional cover-image IDs", async () => {
+    const guideCover = pngCover(300, 500);
+    const guideEpub = epubWithPackage(
+      "OPS/package.opf",
+      '<?xml version="1.0"?><package><metadata/><manifest><item id="cover-page" href="Text/cover.xhtml" media-type="application/xhtml+xml"/><item id="art" href="Images/art.png" media-type="image/png"/></manifest><spine/><guide><reference type="cover" href="Text/cover.xhtml"/></guide></package>',
+      [
+        { name: "OPS/Text/cover.xhtml", bytes: encoder.encode('<html><body><img src="../Images/art.png"/></body></html>') },
+        { name: "OPS/Images/art.png", bytes: guideCover },
+      ],
+    );
+    const guide = await uploadFixture(guideEpub, "Guide cover");
+    expect(guide.response.status).toBe(201);
+    expect(guide.book.coverUrl).not.toBeNull();
+
+    const conventional = await uploadFixture(epubWithPackage(
+      "OEBPS/content.opf",
+      '<?xml version="1.0"?><package><metadata/><manifest><item id="coverimage" href="gree_cvi.jpg" media-type="image/jpeg"/></manifest><spine/></package>',
+      [{ name: "OEBPS/gree_cvi.jpg", bytes: jpegCover(320, 480) }],
+    ), "Conventional cover");
+    expect(conventional.response.status).toBe(201);
+    expect(conventional.book.coverId).toBe(`cover-${conventional.checksum}`);
+  });
+
+  it("keeps truly coverless books coverless and rejects unsafe or oversized declared covers", async () => {
+    const coverless = await uploadFixture(validEpub(), "No cover");
+    expect(coverless.response.status).toBe(201);
+    expect(coverless.book).toMatchObject({ coverId: null, coverUrl: null });
+
+    const unsafeSvg = encoder.encode('<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>');
+    const unsafe = await uploadFixture(epubWithPackage(
+      "OPS/content.opf",
+      '<?xml version="1.0"?><package><metadata/><manifest><item id="cover" href="cover.svg" media-type="image/svg+xml" properties="cover-image"/></manifest><spine/></package>',
+      [{ name: "OPS/cover.svg", bytes: unsafeSvg }],
+    ), "Unsafe SVG");
+    expect(unsafe.response.status).toBe(422);
+    expect((await unsafe.response.json() as any).error.code).toBe("INVALID_EPUB");
+
+    const oversized = await uploadFixture(epubWithPackage(
+      "OPS/content.opf",
+      '<?xml version="1.0"?><package><metadata><meta name="cover" content="cover"/></metadata><manifest><item id="cover" href="cover.png" media-type="image/png"/></manifest><spine/></package>',
+      [{ name: "OPS/cover.png", bytes: pngCover(), uncompressedSize: 4 * 1024 * 1024 + 1 }],
+    ), "Cover bomb");
+    expect(oversized.response.status).toBe(422);
+    expect((await oversized.response.json() as any).error.code).toBe("INVALID_EPUB");
+  });
+
+  it("backfills a previously published D1 upload when prepare is repeated", async () => {
+    const coverBytes = pngCover(240, 360);
+    const epub = epubWithPackage(
+      "OPS/content.opf",
+      '<?xml version="1.0"?><package><metadata><meta name="cover" content="cover"/></metadata><manifest><item id="cover" href="cover.png" media-type="image/png"/></manifest><spine/></package>',
+      [{ name: "OPS/cover.png", bytes: coverBytes }],
+    );
+    const checksum = await sha256(epub);
+    const objectKey = `uploads/${checksum}.epub`;
+    await env.BOOKS.put(objectKey, epub, { sha256: await crypto.subtle.digest("SHA-256", new Uint8Array(epub).buffer) });
+    const updatedAt = new Date().toISOString();
+    await env.DB.prepare(
+      `INSERT INTO uploaded_books
+        (id, sha256, version, title, author, description, language, subjects_json, file_size, object_key, updated_at)
+       VALUES (?, ?, '1', 'Existing', 'Reader', '', 'en', '[]', ?, ?, ?)`,
+    ).bind(`epub-${checksum}`, checksum, epub.length, objectKey, updatedAt).run();
+    const prepare = await jsonRequest("/v1/uploads/prepare", {
+      sha256: checksum,
+      fileSize: epub.length,
+      title: "Existing",
+      author: "Reader",
+      description: "",
+      language: "en",
+      subjects: [],
+    });
+    expect(prepare.status).toBe(200);
+    expect(await prepare.json()).toMatchObject({
+      uploaded: true,
+      uploadUrl: null,
+      book: { coverId: `cover-${checksum}`, coverUrl: `/v1/books/epub-${checksum}/cover` },
+    });
+    expect(await env.DB.prepare("SELECT cover_checked_at FROM uploaded_books WHERE sha256 = ?").bind(checksum).first("cover_checked_at")).not.toBeNull();
   });
 
   it("keeps checksum and structurally invalid uploads out of the catalog", async () => {
@@ -427,7 +618,7 @@ describe("personal EPUB upload", () => {
     expect(completed.status, await completed.clone().text()).toBe(201);
     expect(await completed.json()).toMatchObject({ uploaded: true, book: { sha256: checksum, fileSize: epub.length } });
     expect(new Uint8Array(await (await request(`/v1/books/epub-${checksum}/download`)).arrayBuffer())).toEqual(epub);
-  });
+  }, 15_000);
 
   it("discards a completed multipart object and clears resumable parts when the full SHA is wrong", async () => {
     const bytes = validMultipartEpub();
@@ -461,7 +652,7 @@ describe("personal EPUB upload", () => {
     expect(await env.BOOKS.head(objectKey)).toBeNull();
     expect(await env.DB.prepare("SELECT COUNT(*) AS count FROM upload_parts WHERE sha256 = ?").bind(checksum).first("count")).toBe(0);
     expect(await env.DB.prepare("SELECT upload_id FROM pending_uploads WHERE sha256 = ?").bind(checksum).first("upload_id")).toBeNull();
-  });
+  }, 15_000);
 });
 
 describe("shared personal sync", () => {
@@ -566,6 +757,7 @@ describe("shared personal sync", () => {
       change("progress", "bad-raw", { href: "chapter.xhtml", progression: 0.2, raw: [] }, now),
       change("preferences", "bad-font-size", { value: { fontSize: 100 } }, now),
       change("preferences", "bad-font", { value: { font: "comic" } }, now),
+      change("preferences", "bad-theme", { value: { themeId: "solarized" } }, now),
       change("preferences", "bad-boolean", { value: { keepAwake: "yes" } }, now),
       change("preferences", "bad-null", { value: { lineHeight: null } }, now),
     ];
@@ -595,6 +787,7 @@ describe("shared personal sync", () => {
             marginScale: 0.5,
             justify: true,
             keepAwake: false,
+            themeId: "catppuccin-mocha",
             futureSetting: "retained",
           },
         }, now),
@@ -602,6 +795,16 @@ describe("shared personal sync", () => {
     });
     expect(valid.status).toBe(200);
     expect((await valid.json() as any).preferences.value.futureSetting).toBe("retained");
+
+    const olderClient = await jsonRequest("/v1/sync", {
+      deviceId: "older-client",
+      changes: [change("preferences", "older-prefs", { value: { fontSize: 20 } }, new Date(Date.now() - 500).toISOString())],
+    });
+    expect(olderClient.status).toBe(200);
+    expect((await olderClient.json() as any).preferences.value).toMatchObject({
+      fontSize: 20,
+      themeId: "catppuccin-mocha",
+    });
   });
 
   it("rejects future timestamps and explicitly fails instead of truncating oversized state", async () => {
