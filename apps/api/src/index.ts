@@ -4,13 +4,13 @@ import { ApiError, errorResponse } from "./errors";
 import { encodeCursor, parseListQuery } from "./query";
 import { getSyncState, pushSync } from "./sync";
 import type { CatalogBook, Env } from "./types";
-import { prepareUpload, uploadEpub } from "./upload";
+import { completeMultipartUpload, prepareUpload, uploadEpub, uploadEpubPart } from "./upload";
 
 const METHODS = "GET, HEAD, POST, PUT, OPTIONS";
 
 function corsHeaders(): Headers {
   return new Headers({
-    "Access-Control-Allow-Headers": "Content-Type, Range, If-None-Match, If-Range",
+    "Access-Control-Allow-Headers": "Content-Type, Range, If-None-Match, If-Range, X-Upload-Id",
     "Access-Control-Allow-Methods": METHODS,
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Expose-Headers": "Accept-Ranges, Content-Disposition, Content-Length, Content-Range, ETag, Last-Modified",
@@ -109,6 +109,24 @@ async function route(request: Request, env: Env): Promise<Response> {
       throw new ApiError(405, "METHOD_NOT_ALLOWED", "Method not allowed.", { Allow: "POST, OPTIONS" });
     }
     return json(await prepareUpload(request, env), { headers: { "Cache-Control": "no-store" } });
+  }
+
+  const uploadPartMatch = /^\/v1\/uploads\/([a-f0-9]{64})\/parts\/([1-9][0-9]{0,3})$/.exec(url.pathname);
+  if (uploadPartMatch !== null) {
+    if (request.method !== "PUT") {
+      throw new ApiError(405, "METHOD_NOT_ALLOWED", "Method not allowed.", { Allow: "PUT, OPTIONS" });
+    }
+    const body = await uploadEpubPart(request, env, uploadPartMatch[1]!, Number(uploadPartMatch[2]));
+    return json(body, { headers: { "Cache-Control": "no-store" } });
+  }
+
+  const uploadCompleteMatch = /^\/v1\/uploads\/([a-f0-9]{64})\/complete$/.exec(url.pathname);
+  if (uploadCompleteMatch !== null) {
+    if (request.method !== "POST") {
+      throw new ApiError(405, "METHOD_NOT_ALLOWED", "Method not allowed.", { Allow: "POST, OPTIONS" });
+    }
+    const result = await completeMultipartUpload(request, env, uploadCompleteMatch[1]!);
+    return json(result.body, { status: result.status, headers: { "Cache-Control": "no-store" } });
   }
 
   const uploadMatch = /^\/v1\/uploads\/([a-f0-9]{64})$/.exec(url.pathname);

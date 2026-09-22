@@ -40,7 +40,7 @@ function epubEntries(): TestZipEntry[] {
     {
       name: "META-INF/container.xml",
       bytes: encoder.encode(
-        '<?xml version="1.0"?><container xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>',
+        '<?xml version="1.0"?><!DOCTYPE container PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd"><container xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>',
       ),
     },
     {
@@ -95,6 +95,13 @@ function zip(entries: TestZipEntry[]): Uint8Array {
 
 function validEpub(): Uint8Array {
   return zip(epubEntries());
+}
+
+function validMultipartEpub(): Uint8Array {
+  return zip([
+    ...epubEntries(),
+    { name: "OEBPS/padding.bin", bytes: new Uint8Array(5 * 1024 * 1024) },
+  ]);
 }
 
 async function validDeflatedEpub(): Promise<Uint8Array> {
@@ -300,7 +307,7 @@ describe("personal EPUB upload", () => {
     expect(unprepared.status).toBe(404);
     const oversized = await jsonRequest("/v1/uploads/prepare", {
       sha256: checksum,
-      fileSize: 64 * 1024 * 1024 + 1,
+      fileSize: 512 * 1024 * 1024 + 1,
       title: "Large",
       author: "Reader",
       description: "",
@@ -333,6 +340,127 @@ describe("personal EPUB upload", () => {
     });
     expect(wrongLength.status).toBe(400);
     expect(await env.BOOKS.head(`uploads/${actualChecksum}.epub`)).toBeNull();
+  });
+
+  it("prepares and resumes a bounded multipart session for a large EPUB", async () => {
+    const checksum = "d".repeat(64);
+    const metadata = {
+      sha256: checksum,
+      fileSize: 64 * 1024 * 1024 + 1,
+      title: "Large EPUB",
+      author: "Reader",
+      description: "",
+      language: "en",
+      subjects: [],
+    };
+    const first = await jsonRequest("/v1/uploads/prepare", metadata);
+    expect(first.status, await first.clone().text()).toBe(200);
+    const prepared: any = await first.json();
+    expect(prepared).toMatchObject({
+      uploaded: false,
+      uploadUrl: null,
+      multipart: { partSize: 8 * 1024 * 1024, parts: [] },
+    });
+    expect(prepared.multipart.uploadId).toEqual(expect.any(String));
+
+    const resumed = await jsonRequest("/v1/uploads/prepare", metadata);
+    expect(await resumed.json()).toMatchObject({ multipart: { uploadId: prepared.multipart.uploadId, parts: [] } });
+    await env.BOOKS.resumeMultipartUpload(`uploads/${checksum}.epub`, prepared.multipart.uploadId).abort();
+    const expiredPart = await request(`/v1/uploads/${checksum}/parts/1`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/octet-stream",
+        "Content-Length": String(8 * 1024 * 1024),
+        "X-Upload-Id": prepared.multipart.uploadId,
+      },
+      body: new Uint8Array(8 * 1024 * 1024),
+    });
+    expect(expiredPart.status).toBe(409);
+    const restarted: any = await (await jsonRequest("/v1/uploads/prepare", metadata)).json();
+    expect(restarted.multipart.uploadId).not.toBe(prepared.multipart.uploadId);
+    await env.BOOKS.resumeMultipartUpload(`uploads/${checksum}.epub`, restarted.multipart.uploadId).abort();
+  });
+
+  it("uploads multipart bytes, requires every exact part, verifies the full SHA, and publishes", async () => {
+    const epub = validMultipartEpub();
+    const checksum = await sha256(epub);
+    const objectKey = `uploads/${checksum}.epub`;
+    const partSize = 5 * 1024 * 1024;
+    const multipart = await env.BOOKS.createMultipartUpload(objectKey, {
+      httpMetadata: { contentType: "application/epub+zip" },
+      customMetadata: { sha256: checksum },
+    });
+    const preparedAt = new Date().toISOString();
+    await env.DB.prepare(
+      `INSERT INTO pending_uploads
+        (sha256, title, author, description, language, subjects_json, file_size,
+         object_key, prepared_at, upload_id, part_size)
+       VALUES (?, 'Multipart EPUB', 'Reader', '', 'en', '[]', ?, ?, ?, ?, ?)`,
+    ).bind(checksum, epub.length, objectKey, preparedAt, multipart.uploadId, partSize).run();
+
+    const uploadPart = (partNumber: number, bytes: Uint8Array, uploadId = multipart.uploadId) => request(
+      `/v1/uploads/${checksum}/parts/${partNumber}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/octet-stream",
+          "Content-Length": String(bytes.length),
+          "X-Upload-Id": uploadId,
+        },
+        body: new Uint8Array(bytes).buffer,
+      },
+    );
+    const firstBytes = epub.slice(0, partSize);
+    const stale = await uploadPart(1, firstBytes, "stale-session");
+    expect(stale.status).toBe(409);
+    const first = await uploadPart(1, firstBytes);
+    expect(first.status, await first.clone().text()).toBe(200);
+    expect(await first.json()).toMatchObject({ partNumber: 1, etag: expect.any(String) });
+
+    const incomplete = await jsonRequest(`/v1/uploads/${checksum}/complete`, { uploadId: multipart.uploadId });
+    expect(incomplete.status).toBe(409);
+    expect((await incomplete.json() as any).error.code).toBe("MULTIPART_INCOMPLETE");
+
+    const last = await uploadPart(2, epub.slice(partSize));
+    expect(last.status).toBe(200);
+    const completed = await jsonRequest(`/v1/uploads/${checksum}/complete`, { uploadId: multipart.uploadId });
+    expect(completed.status, await completed.clone().text()).toBe(201);
+    expect(await completed.json()).toMatchObject({ uploaded: true, book: { sha256: checksum, fileSize: epub.length } });
+    expect(new Uint8Array(await (await request(`/v1/books/epub-${checksum}/download`)).arrayBuffer())).toEqual(epub);
+  });
+
+  it("discards a completed multipart object and clears resumable parts when the full SHA is wrong", async () => {
+    const bytes = validMultipartEpub();
+    const actual = await sha256(bytes);
+    const checksum = `${actual[0] === "0" ? "1" : "0"}${actual.slice(1)}`;
+    const objectKey = `uploads/${checksum}.epub`;
+    const partSize = 5 * 1024 * 1024;
+    const multipart = await env.BOOKS.createMultipartUpload(objectKey);
+    await env.DB.prepare(
+      `INSERT INTO pending_uploads
+        (sha256, title, author, description, language, subjects_json, file_size,
+         object_key, prepared_at, upload_id, part_size)
+       VALUES (?, 'Wrong hash', 'Reader', '', 'en', '[]', ?, ?, ?, ?, ?)`,
+    ).bind(checksum, bytes.length, objectKey, new Date().toISOString(), multipart.uploadId, partSize).run();
+    for (let partNumber = 1; partNumber <= 2; partNumber += 1) {
+      const part = partNumber === 1 ? bytes.slice(0, partSize) : bytes.slice(partSize);
+      const response = await request(`/v1/uploads/${checksum}/parts/${partNumber}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/octet-stream",
+          "Content-Length": String(part.length),
+          "X-Upload-Id": multipart.uploadId,
+        },
+        body: new Uint8Array(part).buffer,
+      });
+      expect(response.status).toBe(200);
+    }
+    const completed = await jsonRequest(`/v1/uploads/${checksum}/complete`, { uploadId: multipart.uploadId });
+    expect(completed.status).toBe(422);
+    expect((await completed.json() as any).error.code).toBe("CHECKSUM_MISMATCH");
+    expect(await env.BOOKS.head(objectKey)).toBeNull();
+    expect(await env.DB.prepare("SELECT COUNT(*) AS count FROM upload_parts WHERE sha256 = ?").bind(checksum).first("count")).toBe(0);
+    expect(await env.DB.prepare("SELECT upload_id FROM pending_uploads WHERE sha256 = ?").bind(checksum).first("upload_id")).toBeNull();
   });
 });
 

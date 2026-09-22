@@ -50,17 +50,33 @@ bunx wrangler deploy --dry-run
 The manifest includes the public book metadata, the private R2 object key, and
 the real byte length and SHA-256 checksum generated from each EPUB. The Worker
 never exposes R2 credentials. Uploads stream through the server-side R2 binding
-with a 64 MiB application limit.
+with a 512 MiB application limit.
 
 ## Upload and sync contract
 
 `POST /v1/uploads/prepare` accepts
 `{sha256,fileSize,title,author,description,language,subjects}` and returns
-`{book,uploaded,uploadUrl}`. New IDs are `epub-<full-sha256>`; a matching legacy
-manifest object keeps its legacy ID. When `uploaded` is false, send the exact raw
-EPUB to the relative `uploadUrl` with `PUT`, `Content-Type:
-application/epub+zip`, and the prepared `Content-Length`. Publishing is
-idempotent by SHA and only happens after checksum and EPUB structure validation.
+`{book,uploaded,uploadUrl,multipart}`. New IDs are `epub-<full-sha256>`; a
+matching legacy manifest object keeps its legacy ID. Files up to 64 MiB use the
+relative `uploadUrl`: send the exact raw EPUB with `PUT`, `Content-Type:
+application/epub+zip`, and the prepared `Content-Length`.
+
+Larger files use the returned `{uploadId,partSize,parts}` multipart state. The
+production part size is 8 MiB and the final part carries the exact remainder.
+Upload missing parts with `PUT /v1/uploads/:sha256/parts/:partNumber`, raw
+`application/octet-stream`, the exact part `Content-Length`, and
+`X-Upload-Id`. Each successful part returns `{partNumber,etag}`. Repeating
+prepare returns the same current session and its saved parts, so a client can
+resume after restarting. Finish with `POST /v1/uploads/:sha256/complete` and
+`{"uploadId":"..."}`. The Worker completes R2, streams the complete object
+through native SHA-256, checks its bounded EPUB structure, and only then
+publishes the D1 catalog row. A checksum or EPUB failure deletes the completed
+object and clears saved parts so prepare can create a clean session.
+
+Publishing is idempotent by SHA. Multipart ETags only identify R2 parts and are
+never treated as a whole-file checksum. R2 automatically aborts incomplete
+multipart sessions after seven days; pending D1 rows stop counting against the
+100-session application queue after 24 hours.
 
 `GET /v1/sync` returns the full shared state. `POST /v1/sync` accepts up to 100
 edition-pinned changes in `{deviceId,changes}` and returns the merged state plus
