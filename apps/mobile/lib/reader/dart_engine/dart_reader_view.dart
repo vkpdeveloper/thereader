@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/tokens.dart';
 import '../../data/models/settings.dart';
 import 'dart_reader_engine.dart';
@@ -17,6 +18,51 @@ class DartReaderView extends StatefulWidget {
 
   @override
   State<DartReaderView> createState() => _DartReaderViewState();
+
+  /// Element styles for the active preset. Visible for tests.
+  @visibleForTesting
+  static Map<String, String>? stylesFor(String tag, ReaderPreferences prefs, AppColors colors) {
+    final ink = colors.ink.toCssHex();
+    final muted = colors.muted.toCssHex();
+    final link = colors.primary.toCssHex();
+    final panel = colors.panel.toCssHex();
+    final border = colors.border.toCssHex();
+    final justify = prefs.justify ? {'text-align': 'justify'} : <String, String>{};
+    switch (tag) {
+      case 'h1':
+        return {'font-size': '1.55em', 'font-weight': '500', 'line-height': '1.2', 'margin': '0 0 1.2em', 'color': ink};
+      case 'h2':
+        return {'font-size': '1.25em', 'font-weight': '500', 'line-height': '1.25', 'margin': '1.6em 0 0.7em', 'color': ink};
+      case 'h3':
+      case 'h4':
+        return {'font-size': '1.05em', 'font-weight': '600', 'margin': '1.4em 0 0.5em', 'color': ink};
+      case 'p':
+        return {'margin': '0 0 1em', ...justify};
+      case 'blockquote':
+        return {'margin': '1.2em 1.2em', 'color': muted, 'font-style': 'italic'};
+      case 'a':
+        return {'color': link, 'text-decoration': 'none'};
+      case 'pre':
+        return {'font-family': 'monospace', 'font-size': '0.82em', 'background-color': panel, 'padding': '12px', 'margin': '1em 0', 'white-space': 'pre-wrap', 'color': ink};
+      case 'code':
+        return {'font-family': 'monospace', 'font-size': '0.9em', 'color': ink};
+      case 'hr':
+        return {'border-color': border, 'margin': '1.6em 0'};
+      case 'img':
+      case 'image':
+      case 'svg':
+        return {'max-width': '100%', 'margin': '1em auto', 'display': 'block'};
+      case 'table':
+        return {'border-color': border, 'font-size': '0.9em'};
+      case 'body':
+      case 'section':
+      case 'div':
+        return {'background-color': 'transparent', 'color': ink};
+      case 'li':
+        return {'margin': '0 0 0.4em'};
+    }
+    return null;
+  }
 }
 
 class _DartReaderViewState extends State<DartReaderView> {
@@ -96,12 +142,13 @@ class _DartReaderViewState extends State<DartReaderView> {
     return ValueListenableBuilder<ReaderPreferences>(
       valueListenable: controller.prefs,
       builder: (context, prefs, _) {
+        final colors = context.colors;
         final family = prefs.font == ReaderFont.serif ? Fonts.serif : Fonts.sans;
         final base = TextStyle(
           fontFamily: family,
           fontSize: prefs.fontSize,
           height: prefs.lineHeight,
-          color: Palette.fg,
+          color: colors.ink,
           fontWeight: FontWeight.w400,
         );
         final gutter = (Space.gutter + 8) * prefs.marginScale;
@@ -109,19 +156,19 @@ class _DartReaderViewState extends State<DartReaderView> {
         final content = _error != null
             ? Padding(
                 padding: EdgeInsets.symmetric(horizontal: gutter, vertical: Space.xxl),
-                child: Text(_error!, style: base.copyWith(color: Palette.muted)),
+                child: Text(_error!, style: base.copyWith(color: colors.muted)),
               )
             : HtmlWidget(
                 _html ?? '',
-                key: ValueKey('${item.href}#${prefs.font}'),
+                key: ValueKey('${item.href}#${prefs.font}#${colors.hashCode}'),
                 textStyle: base,
                 baseUrl: Uri.parse('epub:///${item.href}'),
                 factoryBuilder: () => _EpubWidgetFactory(controller.package, item.href),
-                customStylesBuilder: (element) => _styles(element, prefs),
+                customStylesBuilder: (element) => _styles(element, prefs, colors),
                 renderMode: RenderMode.column,
               );
         return ColoredBox(
-          color: Palette.bg,
+          color: colors.paper,
           child: Scrollbar(
             controller: _scroll,
             child: SingleChildScrollView(
@@ -146,44 +193,8 @@ class _DartReaderViewState extends State<DartReaderView> {
     );
   }
 
-  static Map<String, String>? _styles(dynamic element, ReaderPreferences prefs) {
-    final tag = (element.localName as String?) ?? '';
-    final justify = prefs.justify ? {'text-align': 'justify'} : <String, String>{};
-    switch (tag) {
-      case 'h1':
-        return {'font-size': '1.55em', 'font-weight': '500', 'line-height': '1.2', 'margin': '0 0 1.2em', 'color': '#ededed'};
-      case 'h2':
-        return {'font-size': '1.25em', 'font-weight': '500', 'line-height': '1.25', 'margin': '1.6em 0 0.7em', 'color': '#ededed'};
-      case 'h3':
-      case 'h4':
-        return {'font-size': '1.05em', 'font-weight': '600', 'margin': '1.4em 0 0.5em', 'color': '#ededed'};
-      case 'p':
-        return {'margin': '0 0 1em', ...justify};
-      case 'blockquote':
-        return {'margin': '1.2em 1.2em', 'color': '#a1a1a1', 'font-style': 'italic'};
-      case 'a':
-        return {'color': '#52a8ff', 'text-decoration': 'none'};
-      case 'pre':
-        return {'font-family': 'monospace', 'font-size': '0.82em', 'background-color': '#101010', 'padding': '12px', 'margin': '1em 0', 'white-space': 'pre-wrap', 'color': '#ededed'};
-      case 'code':
-        return {'font-family': 'monospace', 'font-size': '0.9em', 'color': '#ededed'};
-      case 'hr':
-        return {'border-color': '#1f1f1f', 'margin': '1.6em 0'};
-      case 'img':
-      case 'image':
-      case 'svg':
-        return {'max-width': '100%', 'margin': '1em auto', 'display': 'block'};
-      case 'table':
-        return {'border-color': '#1f1f1f', 'font-size': '0.9em'};
-      case 'body':
-      case 'section':
-      case 'div':
-        return {'background-color': 'transparent', 'color': '#ededed'};
-      case 'li':
-        return {'margin': '0 0 0.4em'};
-    }
-    return null;
-  }
+  static Map<String, String>? _styles(dynamic element, ReaderPreferences prefs, AppColors colors) =>
+      DartReaderView.stylesFor((element.localName as String?) ?? '', prefs, colors);
 }
 
 class _EpubWidgetFactory extends WidgetFactory {

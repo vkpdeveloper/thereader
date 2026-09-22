@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
@@ -410,6 +411,12 @@ class LibraryRepository extends ChangeNotifier {
           origin: origin,
           addedAt: addedAt,
         );
+    // Metadata can gain an extracted cover without changing EPUB bytes.
+    // Keep the verified local path and reading state for this same edition.
+    if (current != null &&
+        jsonEncode(current.book.toJson()) != jsonEncode(book.toJson())) {
+      next = next.copyWith(book: book);
+    }
     if (progress != null &&
         (next.progress == null ||
             progress.updatedAt.isAfter(next.progress!.updatedAt))) {

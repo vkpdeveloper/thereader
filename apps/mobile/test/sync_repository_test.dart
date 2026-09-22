@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
@@ -24,6 +25,9 @@ final book = Book.fromJson({
 const origin = 'https://reader.ordinity.com';
 
 class Cloud {
+  Book catalogBook = book;
+  int metadataRequests = 0;
+  bool metadataOffline = false;
   final Map<String, dynamic> row = {
     'bookId': book.id,
     'sha256': book.sha256,
@@ -40,13 +44,17 @@ class Cloud {
   bool offline = false;
   bool loseResponse = false;
   Future<void> Function()? duringRequest;
+  Future<void> Function()? duringMetadataRequest;
   final List<List<dynamic>> batches = [];
   ApiClient client(String url) =>
       ApiClient(baseUrl: url, client: MockClient(handle));
   Future<http.Response> handle(http.Request request) async {
     if (offline) throw http.ClientException('Offline');
     if (request.url.path.startsWith('/v1/books/')) {
-      return http.Response(jsonEncode({'book': book.toJson()}), 200);
+      metadataRequests++;
+      if (metadataOffline) throw http.ClientException('Metadata offline');
+      await duringMetadataRequest?.call();
+      return http.Response(jsonEncode({'book': catalogBook.toJson()}), 200);
     }
     final input = jsonDecode(request.body) as Map;
     final changes = input['changes'] as List;
@@ -133,6 +141,126 @@ class Device {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  test(
+    'metadata failure retains cached book and backs off independently of sync',
+    () async {
+      final cloud = Cloud()..metadataOffline = true;
+      final a = await Device.create(cloud);
+      addTearDown(a.dispose);
+      for (var i = 0; i < 3; i++) {
+        await a.sync.syncNow();
+      }
+      expect(cloud.metadataRequests, 1);
+      expect(a.entry.book.sha256, book.sha256);
+      expect(a.entry.download.path, 'local.epub');
+      expect(a.sync.error, isNull);
+    },
+  );
+
+  test(
+    'same-edition cover refresh preserves local bytes and progress, then throttles',
+    () async {
+      final cloud = Cloud();
+      final a = await Device.create(cloud);
+      addTearDown(a.dispose);
+      await a.library.saveProgress(
+        a.entry.id,
+        const ReadingLocator(href: 'kept.xhtml', progression: .6),
+      );
+      final path = a.entry.download.path;
+      final progress = a.entry.progress;
+      cloud.catalogBook = Book.fromJson({
+        ...book.toJson(),
+        'coverUrl': '/v1/books/test-book/cover',
+      });
+      final refreshed = Completer<void>();
+      void observeCover() {
+        if (a.entry.book.coverUrl != null && !refreshed.isCompleted) {
+          refreshed.complete();
+        }
+      }
+
+      a.library.addListener(observeCover);
+      addTearDown(() => a.library.removeListener(observeCover));
+      await a.sync.syncNow();
+      await refreshed.future;
+      expect(a.entry.book.coverUrl, '/v1/books/test-book/cover');
+      expect(a.entry.download.path, path);
+      expect(a.entry.download.isReady, isTrue);
+      expect(identical(a.entry.progress, progress), isTrue);
+      for (var i = 0; i < 3; i++) {
+        await a.sync.syncNow();
+      }
+      expect(cloud.metadataRequests, 1);
+    },
+  );
+
+  test('confirmed coverless metadata is not fetched each poll', () async {
+    final cloud = Cloud();
+    final a = await Device.create(cloud);
+    addTearDown(a.dispose);
+    for (var i = 0; i < 4; i++) {
+      await a.sync.syncNow();
+    }
+    expect(cloud.metadataRequests, 1);
+    expect(a.entry.book.coverUrl, isNull);
+  });
+
+  test(
+    'slow existing-book metadata refresh does not block preferences or sync completion',
+    () async {
+      final cloud = Cloud();
+      final metadataStarted = Completer<void>();
+      final releaseMetadata = Completer<void>();
+      cloud.duringMetadataRequest = () {
+        if (!metadataStarted.isCompleted) metadataStarted.complete();
+        return releaseMetadata.future;
+      };
+      final a = await Device.create(cloud);
+      addTearDown(a.dispose);
+      await a.settings.updateReader((p) => p.copyWith(fontSize: 22));
+
+      await a.sync.syncNow();
+      await metadataStarted.future;
+
+      expect(metadataStarted.isCompleted, isTrue);
+      expect(releaseMetadata.isCompleted, isFalse);
+      expect(cloud.preferences?['value']['fontSize'], 22);
+      expect(a.settings.reader.fontSize, 22);
+      expect(a.sync.lastSyncedAt, isNotNull);
+      expect(a.sync.isSyncing, isFalse);
+      releaseMetadata.complete();
+    },
+  );
+
+  test(
+    'remote replacement metadata cannot relabel existing EPUB bytes',
+    () async {
+      final cloud = Cloud();
+      final metadataStarted = Completer<void>();
+      final releaseMetadata = Completer<void>();
+      cloud.duringMetadataRequest = () {
+        if (!metadataStarted.isCompleted) metadataStarted.complete();
+        return releaseMetadata.future;
+      };
+      final a = await Device.create(cloud);
+      addTearDown(a.dispose);
+      cloud.catalogBook = Book.fromJson({
+        ...book.toJson(),
+        'sha256': 'b' * 64,
+        'coverUrl': '/new',
+      });
+      await a.sync.syncNow();
+      await metadataStarted.future;
+      expect(cloud.metadataRequests, 1);
+      releaseMetadata.complete();
+      await pumpEventQueue(times: 20);
+      expect(a.entry.book.sha256, book.sha256);
+      expect(a.entry.book.coverUrl, isNull);
+      expect(a.entry.download.path, 'local.epub');
+    },
+  );
+
   test(
     'normalized server locator does not requeue acknowledged progress',
     () async {

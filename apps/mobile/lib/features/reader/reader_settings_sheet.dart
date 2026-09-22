@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/tokens.dart';
 import '../../data/models/settings.dart';
 import '../../data/repositories/settings_repository.dart';
@@ -17,6 +18,7 @@ class ReaderSettingsSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final colors = context.colors;
     return ListenableBuilder(
       listenable: settings,
       builder: (context, _) {
@@ -34,7 +36,7 @@ class ReaderSettingsSheet extends StatelessWidget {
                     width: 36,
                     height: 4,
                     margin: const EdgeInsets.only(bottom: Space.md),
-                    decoration: const BoxDecoration(color: Palette.element, borderRadius: BorderRadius.all(Radius.circular(2))),
+                    decoration: BoxDecoration(color: colors.element, borderRadius: const BorderRadius.all(Radius.circular(2))),
                   ),
                 ),
                 const Eyebrow('Typography'),
@@ -52,7 +54,7 @@ class ReaderSettingsSheet extends StatelessWidget {
                   label: 'Size',
                   child: Row(
                     children: [
-                      Text('A', style: text.bodySmall?.copyWith(fontFamily: Fonts.serif, fontSize: 13, color: Palette.muted)),
+                      Text('A', style: text.bodySmall?.copyWith(fontFamily: Fonts.serif, fontSize: 13, color: colors.muted)),
                       Expanded(
                         child: Semantics(
                           label: 'Text size',
@@ -66,7 +68,7 @@ class ReaderSettingsSheet extends StatelessWidget {
                           ),
                         ),
                       ),
-                      Text('A', style: text.bodyLarge?.copyWith(fontFamily: Fonts.serif, fontSize: 22, color: Palette.fg)),
+                      Text('A', style: text.bodyLarge?.copyWith(fontFamily: Fonts.serif, fontSize: 22, color: colors.fg)),
                       SizedBox(width: 34, child: Text('${p.fontSize.round()}', textAlign: TextAlign.right, style: text.labelMedium)),
                     ],
                   ),
@@ -115,7 +117,7 @@ class _Row extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: Space.sm),
       child: Row(
         children: [
-          SizedBox(width: 84, child: Text(label, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Palette.muted))),
+          SizedBox(width: 84, child: Text(label, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: context.colors.muted))),
           Expanded(child: Align(alignment: Alignment.centerRight, child: child)),
         ],
       ),
@@ -133,9 +135,10 @@ class _Segmented<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final colors = context.colors;
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Palette.border),
+        border: Border.all(color: colors.border),
         borderRadius: const BorderRadius.all(Radii.md),
       ),
       child: Row(
@@ -154,14 +157,14 @@ class _Segmented<T> extends StatelessWidget {
                   alignment: Alignment.center,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
-                    color: e.key == value ? Palette.element : Colors.transparent,
+                    color: e.key == value ? colors.element : Colors.transparent,
                     borderRadius: const BorderRadius.all(Radii.md),
                   ),
                   child: Text(
                     e.value,
                     style: (text.labelLarge ?? const TextStyle())
                         .merge(labelStyle?.call(e.key))
-                        .copyWith(color: e.key == value ? Palette.fg : Palette.muted),
+                        .copyWith(color: e.key == value ? colors.fg : colors.muted),
                   ),
                 ),
               ),

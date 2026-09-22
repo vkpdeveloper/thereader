@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../../app_scope.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/tokens.dart';
 import '../../data/models/library.dart';
 import '../../data/storage/book_store.dart';
@@ -84,9 +85,14 @@ class _ReaderScreenState extends State<ReaderScreen>
     });
   }
 
+  /// Captured on every dependency change so dispose can restore the system
+  /// bars for the active preset without touching an unmounted context.
+  AppColors _colors = AppColors.defaults;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _colors = AppColors.of(context);
     _services = AppScope.of(context);
     if (!_listeningLibrary) {
       _services.library.addListener(_onDownloadChange);
@@ -261,7 +267,7 @@ class _ReaderScreenState extends State<ReaderScreen>
     _controller?.controlsToggle?.removeListener(_onEngineControls);
     _controller?.dispose();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    SystemChrome.setSystemUIOverlayStyle(AppTheme.overlay);
+    SystemChrome.setSystemUIOverlayStyle(AppTheme.overlayFor(_colors));
     super.dispose();
   }
 
@@ -274,13 +280,14 @@ class _ReaderScreenState extends State<ReaderScreen>
   @override
   Widget build(BuildContext context) {
     final controller = _controller;
+    final colors = context.colors;
     Widget body;
     if (_error != null) {
       body = SafeArea(
         child: StateMessage(
           title: "Couldn't open this book.",
           body: _error,
-          tone: Palette.error,
+          error: true,
           actionLabel: 'Back',
           onAction: () => Navigator.of(context).maybePop(),
         ),
@@ -324,14 +331,14 @@ class _ReaderScreenState extends State<ReaderScreen>
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Palette.bg.withValues(alpha: .96),
+                        color: colors.bg.withValues(alpha: .96),
                         borderRadius: const BorderRadius.all(Radii.sm),
                       ),
                       child: Text(
                         'Downloading · ${((download?.fraction ?? 0) * 100).floor()}%',
                         style: Theme.of(
                           context,
-                        ).textTheme.labelSmall?.copyWith(color: Palette.muted),
+                        ).textTheme.labelSmall?.copyWith(color: colors.muted),
                       ),
                     );
                   },
@@ -342,9 +349,9 @@ class _ReaderScreenState extends State<ReaderScreen>
       );
     }
     return Scaffold(
-      backgroundColor: Palette.bg,
+      backgroundColor: colors.paper,
       body: AnnotatedRegion<SystemUiOverlayStyle>(
-        value: AppTheme.overlay,
+        value: AppTheme.overlayFor(colors),
         child: body,
       ),
     );
@@ -385,7 +392,7 @@ class _EdgeProgress extends StatelessWidget {
             builder: (context, loc, _) => Text(
               '${((loc?.totalProgression ?? 0) * 100).round()}%',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: Palette.subtle,
+                color: context.colors.subtle,
                 fontFeatures: const [FontFeature.tabularFigures()],
               ),
             ),
@@ -413,6 +420,7 @@ class _TopChrome extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final colors = context.colors;
     return Positioned(
       left: 0,
       right: 0,
@@ -424,7 +432,7 @@ class _TopChrome extends StatelessWidget {
           curve: Motion.curve,
           opacity: visible ? 1 : 0,
           child: Container(
-            color: Palette.bg.withValues(alpha: 0.92),
+            color: colors.bg.withValues(alpha: 0.92),
             padding: EdgeInsets.only(top: MediaQuery.paddingOf(context).top),
             child: Row(
               children: [
@@ -436,7 +444,7 @@ class _TopChrome extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title,
-                    style: text.titleSmall?.copyWith(color: Palette.muted),
+                    style: text.titleSmall?.copyWith(color: colors.muted),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -472,6 +480,7 @@ class _TopChrome extends StatelessWidget {
   Future<void> _openContents(BuildContext context) async {
     final toc = controller.info.toc;
     final current = controller.locator.value?.href;
+    final colors = context.colors;
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -510,7 +519,7 @@ class _TopChrome extends StatelessWidget {
                       t.title,
                       style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
                         fontFamily: Fonts.serif,
-                        color: active ? Palette.fg : Palette.muted,
+                        color: active ? colors.fg : colors.muted,
                         fontWeight: active ? FontWeight.w600 : FontWeight.w400,
                       ),
                     ),
@@ -537,6 +546,7 @@ class _BottomChrome extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final colors = context.colors;
     return Positioned(
       left: 0,
       right: 0,
@@ -548,7 +558,7 @@ class _BottomChrome extends StatelessWidget {
           curve: Motion.curve,
           opacity: visible ? 1 : 0,
           child: Container(
-            color: Palette.bg.withValues(alpha: 0.92),
+            color: colors.bg.withValues(alpha: 0.92),
             padding: EdgeInsets.fromLTRB(
               Space.sm,
               Space.sm,

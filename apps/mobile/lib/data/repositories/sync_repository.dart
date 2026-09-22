@@ -51,6 +51,9 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
   Future<void>? _syncFuture;
   _ReadingSession? _reading;
   final Set<String> _activeEditions = {};
+  final Map<String, DateTime> _metadataNextRefresh = {};
+  final Set<String> _metadataRefreshInFlight = {};
+  final Set<ApiClient> _metadataClients = {};
 
   bool get isSyncing => _isSyncing;
   String? get error => _error;
@@ -257,6 +260,83 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
     return _syncFuture ??= _sync().whenComplete(() => _syncFuture = null);
   }
 
+  void _scheduleMetadataRefresh(String origin, Iterable<LibraryEntry> entries) {
+    if (_disposed ||
+        !_appActive ||
+        _origin != origin ||
+        _metadataClients.isNotEmpty) {
+      return;
+    }
+    final now = DateTime.now();
+    final candidates = <_MetadataRefresh>[];
+    for (final entry in entries) {
+      final key = '$origin\n${entry.book.id}';
+      if (_metadataRefreshInFlight.contains(key) ||
+          _metadataNextRefresh[key]?.isAfter(now) == true) {
+        continue;
+      }
+      _metadataRefreshInFlight.add(key);
+      _metadataNextRefresh[key] = now.add(const Duration(minutes: 5));
+      candidates.add(
+        _MetadataRefresh(
+          key: key,
+          entryId: entry.id,
+          bookId: entry.book.id,
+          sha256: entry.book.sha256,
+        ),
+      );
+    }
+    if (candidates.isNotEmpty) {
+      unawaited(_refreshMetadata(origin, candidates));
+    }
+  }
+
+  Future<void> _refreshMetadata(
+    String origin,
+    List<_MetadataRefresh> candidates,
+  ) async {
+    ApiClient? client;
+    try {
+      client = _clientFactory(origin);
+      _metadataClients.add(client);
+      for (final candidate in candidates) {
+        if (_disposed || !_appActive || _origin != origin) break;
+        Book refreshed;
+        try {
+          refreshed = await client.getBook(candidate.bookId);
+        } on ApiException {
+          continue;
+        }
+        if (_disposed || !_appActive || _origin != origin) break;
+        // A successful response is throttled even if the server now points the
+        // ID at another edition; never relabel already verified local bytes.
+        _metadataNextRefresh[candidate.key] = DateTime.now().add(
+          const Duration(hours: 6),
+        );
+        final current = library.entry(candidate.entryId);
+        if (current == null ||
+            current.origin != origin ||
+            current.book.sha256 != candidate.sha256 ||
+            refreshed.sha256 != candidate.sha256) {
+          continue;
+        }
+        await library.applyCloudEntry(
+          book: refreshed,
+          origin: origin,
+          addedAt: current.addedAt,
+        );
+      }
+    } catch (_) {
+      // Metadata refresh is best effort and must never fail the durable sync.
+    } finally {
+      client?.close();
+      if (client != null) _metadataClients.remove(client);
+      for (final candidate in candidates) {
+        _metadataRefreshInFlight.remove(candidate.key);
+      }
+    }
+  }
+
   Future<void> _sync() async {
     _checkpointReading();
     _capture();
@@ -326,6 +406,7 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
       // Commit ack + counters before awaiting metadata fetches. A process exit
       // can replay a session safely; it must never acknowledge unsaved changes.
       await _persist();
+      final metadataRefresh = <LibraryEntry>[];
       _applying = true;
       try {
         for (final raw in rows) {
@@ -338,7 +419,21 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
           if (local == null && row['inLibrary'] != true) continue;
           Book book;
           try {
-            book = local?.book ?? await client.getBook(id);
+            if (local == null) {
+              final metadataKey = '$origin\n$id';
+              final refreshAt = _metadataNextRefresh[metadataKey];
+              if (refreshAt?.isAfter(DateTime.now()) == true) continue;
+              _metadataNextRefresh[metadataKey] = DateTime.now().add(
+                const Duration(minutes: 5),
+              );
+              book = await client.getBook(id);
+              _metadataNextRefresh[metadataKey] = DateTime.now().add(
+                const Duration(hours: 6),
+              );
+            } else {
+              book = local.book;
+              metadataRefresh.add(local);
+            }
           } on ApiException {
             continue;
           }
@@ -403,6 +498,7 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
       _capture();
       state.lastSyncedAt = DateTime.now().toUtc();
       await _persist();
+      _scheduleMetadataRefresh(origin, metadataRefresh);
       // Drain further batches without treating a blocked import as an error.
       if (submitted.length == 100 || bytes > 200 * 1024) _schedule();
     } on ApiException catch (e) {
@@ -516,8 +612,25 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     _poll?.cancel();
     _debounce?.cancel();
+    for (final client in _metadataClients.toList()) {
+      client.close();
+    }
+    _metadataClients.clear();
     super.dispose();
   }
+}
+
+class _MetadataRefresh {
+  const _MetadataRefresh({
+    required this.key,
+    required this.entryId,
+    required this.bookId,
+    required this.sha256,
+  });
+  final String key;
+  final String entryId;
+  final String bookId;
+  final String sha256;
 }
 
 class _ReadingSession {

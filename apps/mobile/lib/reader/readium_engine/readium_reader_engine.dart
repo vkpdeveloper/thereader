@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_readium/flutter_readium.dart' as rd;
 
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/theme_presets.dart';
 import '../../core/theme/tokens.dart';
 import '../../data/models/library.dart';
 import '../../data/models/settings.dart';
@@ -44,6 +46,7 @@ class ReadiumReaderEngine implements ReaderEngine {
     ReadingLocator? initialLocator,
   }) async {
     await _closing;
+    final colors = ThemePreset.byId(prefs.themeId).colors;
     final path = file.path;
     if (path == null) {
       throw UnsupportedError(
@@ -53,7 +56,7 @@ class ReadiumReaderEngine implements ReaderEngine {
     final readium = rd.FlutterReadium();
     try {
       readium.setDefaultPreferences(
-        ReadiumReaderController.toEpubPreferences(prefs),
+        ReadiumReaderController.toEpubPreferences(prefs, colors),
       );
       final publication = await readium.openPublication(path);
       return ReadiumReaderController(
@@ -117,10 +120,11 @@ class ReadiumReaderController implements ReaderController, ReaderSearch {
     _statusSub = readium.onReaderStatusChanged.listen((s) {
       if (!_ready && s == rd.ReadiumReaderStatus.ready) {
         _ready = true;
-        unawaited(readium.setEPUBPreferences(toEpubPreferences(_prefs)));
+        unawaited(readium.setEPUBPreferences(toEpubPreferences(_prefs, _colors)));
       }
     });
     _prefs = prefs;
+    _colors = ThemePreset.byId(prefs.themeId).colors;
   }
 
   final rd.FlutterReadium readium;
@@ -132,6 +136,10 @@ class ReadiumReaderController implements ReaderController, ReaderSearch {
   late final PublicationInfo _info;
   late final ValueNotifier<ReadingLocator?> _locator;
   late ReaderPreferences _prefs;
+  late AppColors _colors;
+
+  /// Colours last pushed to the native view; tests read this.
+  AppColors get colors => _colors;
   StreamSubscription<rd.Locator>? _sub;
   StreamSubscription<rd.ReadiumError>? _errSub;
   StreamSubscription<rd.ReadiumReaderStatus>? _statusSub;
@@ -251,16 +259,19 @@ class ReadiumReaderController implements ReaderController, ReaderSearch {
   @override
   void applyPreferences(ReaderPreferences prefs) {
     _prefs = prefs;
-    unawaited(readium.setEPUBPreferences(toEpubPreferences(prefs)));
+    _colors = ThemePreset.byId(prefs.themeId).colors;
+    unawaited(readium.setEPUBPreferences(toEpubPreferences(prefs, _colors)));
   }
 
-  /// Maps app preferences onto Readium's. Colors are pinned to the app palette
-  /// so the native surface never flashes white.
+  /// Maps app preferences onto Readium's. Colours are pinned to the active
+  /// preset's paper/ink so the native surface never flashes white and follows
+  /// a theme change immediately.
   static rd.EPUBPreferences toEpubPreferences(
     ReaderPreferences p,
+    AppColors colors,
   ) => rd.EPUBPreferences(
-    backgroundColor: Palette.bg,
-    textColor: Palette.fg,
+    backgroundColor: colors.paper,
+    textColor: colors.ink,
     // Native WebViews use their platform serif/sans families; a comma-separated
     // string is treated by Readium as one (nonexistent) font family.
     fontFamily: p.font == ReaderFont.serif ? 'serif' : 'sans-serif',
@@ -298,8 +309,9 @@ class _ReadiumView extends StatelessWidget {
     // Keep the native page clear of the status bar and home indicator; the
     // margins inside the page come from EPUBPreferences.pageMargins.
     final insets = MediaQuery.paddingOf(context);
+    final paper = context.colors.paper;
     return ColoredBox(
-      color: Palette.bg,
+      color: paper,
       child: Padding(
         // The status bar is hidden while reading, so guarantee a top breath
         // even when the safe-area inset collapses to zero.
@@ -315,7 +327,7 @@ class _ReadiumView extends StatelessWidget {
           preloadNextPositionCount: controller.file.isProvisional ? 0 : 6,
           initialLocator: controller.initialLocator,
           shouldShowControls: controller.showControls,
-          loadingWidget: const ColoredBox(color: Palette.bg),
+          loadingWidget: ColoredBox(color: paper),
           allowedDefaultActions: const {rd.DefaultSelectionAction.copy},
         ),
       ),

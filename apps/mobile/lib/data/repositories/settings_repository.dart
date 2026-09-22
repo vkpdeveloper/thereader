@@ -46,6 +46,10 @@ class SettingsRepository extends ChangeNotifier {
     await _store.writeJson(_settingsKey, next.toJson());
   }
 
+  /// Chooses a colour preset. Stored on the reader preferences so it syncs
+  /// with the rest of them.
+  Future<void> setThemeId(String id) => updateReader((r) => r.copyWith(themeId: id));
+
   Future<void> updateReader(
     ReaderPreferences Function(ReaderPreferences) change,
   ) async {

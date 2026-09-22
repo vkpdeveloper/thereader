@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/tokens.dart';
 
 /// Quiet loading indicator: a single thin line, no spinner clutter.
@@ -36,18 +37,25 @@ class StateMessage extends StatelessWidget {
     this.body,
     this.actionLabel,
     this.onAction,
-    this.tone = Palette.muted,
+    this.tone,
+    this.error = false,
   });
 
   final String title;
   final String? body;
   final String? actionLabel;
   final VoidCallback? onAction;
-  final Color tone;
+
+  /// Explicit accent for the rule above the title; defaults to muted, or the
+  /// theme's error colour when [error] is set.
+  final Color? tone;
+  final bool error;
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final colors = context.colors;
+    final tone = this.tone ?? (error ? colors.error : colors.muted);
     return Padding(
       padding: const EdgeInsets.fromLTRB(Space.gutter, Space.xxl, Space.gutter, Space.xl),
       child: Column(
@@ -57,7 +65,7 @@ class StateMessage extends StatelessWidget {
           Text(title, style: text.headlineMedium),
           if (body != null) ...[
             const SizedBox(height: Space.sm),
-            Text(body!, style: text.bodyMedium?.copyWith(color: Palette.muted)),
+            Text(body!, style: text.bodyMedium?.copyWith(color: colors.muted)),
           ],
           if (actionLabel != null && onAction != null) ...[
             const SizedBox(height: Space.lg),
@@ -89,8 +97,9 @@ class QuietButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = onPressed != null;
-    final bg = emphasis ? Palette.fg : Palette.element;
-    final fg = emphasis ? Palette.bg : Palette.fg;
+    final colors = context.colors;
+    final bg = emphasis ? colors.fg : colors.element;
+    final fg = emphasis ? colors.bg : colors.fg;
     final child = Row(
       mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
@@ -113,7 +122,7 @@ class QuietButton extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
               borderRadius: const BorderRadius.all(Radii.md),
-              border: Border.all(color: emphasis ? Palette.fg : Palette.border),
+              border: Border.all(color: emphasis ? colors.fg : colors.border),
             ),
             child: child,
           ),
@@ -133,12 +142,13 @@ class QuietIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fg = context.colors.fg;
     return IconButton(
       onPressed: onPressed,
       tooltip: label,
-      icon: Icon(icon, size: 20, color: color ?? Palette.fg),
+      icon: Icon(icon, size: 20, color: color ?? fg),
       constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-      style: IconButton.styleFrom(foregroundColor: Palette.fg),
+      style: IconButton.styleFrom(foregroundColor: fg),
     );
   }
 }
@@ -152,24 +162,27 @@ class Eyebrow extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
         text.toUpperCase(),
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(color: color ?? Palette.muted),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(color: color ?? context.colors.muted),
       );
 }
 
 /// Tiny pill for mode/source badges.
 class Tag extends StatelessWidget {
-  const Tag(this.text, {super.key, this.color = Palette.muted, this.filled = false});
+  const Tag(this.text, {super.key, this.color, this.filled = false});
   final String text;
-  final Color color;
+
+  /// Defaults to the theme's muted text colour.
+  final Color? color;
   final bool filled;
 
   @override
   Widget build(BuildContext context) {
+    final color = this.color ?? context.colors.muted;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
         color: filled ? color.withValues(alpha: 0.14) : Colors.transparent,
-        border: Border.all(color: filled ? Colors.transparent : Palette.border),
+        border: Border.all(color: filled ? Colors.transparent : context.colors.border),
         borderRadius: const BorderRadius.all(Radius.circular(4)),
       ),
       child: Text(

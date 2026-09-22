@@ -4,6 +4,7 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 
 import '../api/api_client.dart';
+import '../covers/cover_cache.dart';
 import '../models/book.dart';
 import '../models/library.dart';
 import '../repositories/library_repository.dart';
@@ -165,6 +166,10 @@ class EpubImportService extends ChangeNotifier {
     // Origin was captured before picker/file work; never close its shared client.
     final metadata = await platform.inspectEpub(sourcePath);
     final sha = metadata['sha256'] as String;
+    final cover = metadata.remove('coverBytes') as Uint8List?;
+    if (cover != null) {
+      await (await CoverCache.shared).storeEmbedded(sha, cover);
+    }
     final book = Book.fromJson({
       ...metadata,
       'id': 'epub-$sha',

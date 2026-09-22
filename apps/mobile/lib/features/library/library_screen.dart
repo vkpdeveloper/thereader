@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../../app_scope.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/tokens.dart';
 import '../../data/models/book.dart';
 import '../../data/models/library.dart';
 import '../book/book_detail_screen.dart';
 import '../reader/reader_screen.dart';
-import '../shared/cloud_status.dart';
 import '../shared/cover_art.dart';
 import '../shared/states.dart';
 
@@ -58,17 +58,14 @@ class _LibraryScreenState extends State<LibraryScreen> {
   Widget build(BuildContext context) {
     final services = AppScope.of(context);
     final imports = services.imports;
-    final sync = services.sync;
+    // Upload and sync progress are deliberately not observed here: the
+    // library stays quiet and Settings is the one place that reports them.
     return ListenableBuilder(
-      listenable: Listenable.merge([
-        services.library,
-        services.settings,
-        ?imports,
-        ?sync,
-      ]),
+      listenable: Listenable.merge([services.library, services.settings]),
       builder: (context, _) {
         final lib = services.library;
         final text = Theme.of(context).textTheme;
+        final colors = context.colors;
         if (!lib.loaded) return const LoadingLine();
         final canImport = imports != null && imports.isSupported;
         final current = lib.continueReading.firstOrNull;
@@ -122,11 +119,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 ),
               ),
             ),
-            if (canImport || sync != null)
-              const SliverPadding(
-                padding: EdgeInsets.fromLTRB(Space.gutter, Space.sm, Space.gutter, 0),
-                sliver: SliverToBoxAdapter(child: CloudSummaryLine()),
-              ),
             if (all.isEmpty)
               SliverFillRemaining(
                 hasScrollBody: false,
@@ -164,7 +156,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       ],
                       const Spacer(),
                       if (!lib.bookStore.isDurable)
-                        const Tag('Session only', color: Palette.orange)
+                        Tag('Session only', color: colors.orange)
                       else
                         Text('${shown.length}', style: text.labelSmall),
                     ],
@@ -228,7 +220,7 @@ class _FilterLink extends StatelessWidget {
             duration: Motion.of(context, Motion.fast),
             style: Theme.of(
               context,
-            ).textTheme.labelLarge!.copyWith(color: selected ? Palette.fg : Palette.muted),
+            ).textTheme.labelLarge!.copyWith(color: selected ? context.colors.fg : context.colors.muted),
             child: Text(label),
           ),
         ),
@@ -301,7 +293,7 @@ class _ContinueReading extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: Space.sm),
-                Icon(Icons.chevron_right, size: 18, color: Palette.subtle),
+                Icon(Icons.chevron_right, size: 18, color: context.colors.subtle),
               ],
             ),
           ],
@@ -319,6 +311,7 @@ class _GridItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final services = AppScope.of(context);
     final text = Theme.of(context).textTheme;
+    final colors = context.colors;
     final d = entry.download;
     final percent = entry.progress?.percent;
 
@@ -329,7 +322,7 @@ class _GridItem extends StatelessWidget {
           : percent >= 0.995
           ? Text(
               'Finished',
-              style: text.labelSmall?.copyWith(letterSpacing: 0, color: Palette.green),
+              style: text.labelSmall?.copyWith(letterSpacing: 0, color: colors.green),
             )
           : ClipRRect(
               borderRadius: BorderRadius.circular(1),
@@ -346,7 +339,7 @@ class _GridItem extends StatelessWidget {
     } else if (d.status == DownloadStatus.failed) {
       status = Text(
         'Download failed',
-        style: text.labelSmall?.copyWith(letterSpacing: 0, color: Palette.error),
+        style: text.labelSmall?.copyWith(letterSpacing: 0, color: colors.error),
       );
     } else {
       status = Text('Not downloaded', style: text.labelSmall?.copyWith(letterSpacing: 0));
@@ -381,13 +374,7 @@ class _GridItem extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 6),
-              Row(
-                children: [
-                  Expanded(child: status),
-                  const SizedBox(width: 6),
-                  UploadGlyph(entry: entry),
-                ],
-              ),
+              status,
             ],
           ),
         ),

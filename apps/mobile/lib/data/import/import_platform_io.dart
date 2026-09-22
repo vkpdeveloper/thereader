@@ -8,6 +8,7 @@ import 'package:crypto/crypto.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:xml/xml.dart';
+import '../covers/cover_validation.dart';
 
 const maxImportBytes = 512 * 1024 * 1024;
 bool get importSupported => true;
@@ -247,8 +248,100 @@ Future<Map<String, dynamic>> _inspect(String path) async {
       return result.isEmpty ? fallback : result;
     }
 
+    final coverCandidates = <String>[];
+    final items = package.descendants
+        .whereType<XmlElement>()
+        .where((e) => e.name.local == 'item')
+        .toList();
+    for (final item in items) {
+      if ((item.getAttribute('properties') ?? '')
+          .split(RegExp(r'\s+'))
+          .contains('cover-image')) {
+        if (item.getAttribute('href') case final String href) {
+          coverCandidates.add(href);
+        }
+      }
+    }
+    for (final meta in metadata?.childElements ?? <XmlElement>[]) {
+      if (meta.name.local == 'meta' && meta.getAttribute('name') == 'cover') {
+        final href = manifest[meta.getAttribute('content')];
+        if (href != null) coverCandidates.add(href);
+      }
+    }
+    for (final ref in package.descendants.whereType<XmlElement>().where(
+      (e) => e.name.local == 'reference',
+    )) {
+      if ((ref.getAttribute('type') ?? '').split(' ').contains('cover')) {
+        if (ref.getAttribute('href') case final String href) {
+          coverCandidates.add(href);
+        }
+      }
+    }
+    for (final item in items) {
+      final id = (item.getAttribute('id') ?? '').toLowerCase();
+      final href = item.getAttribute('href');
+      if (href != null &&
+          (id.startsWith('cover') ||
+              RegExp(
+                r'(^|[/_])cover([._/]|$)',
+                caseSensitive: false,
+              ).hasMatch(href))) {
+        coverCandidates.add(href);
+      }
+    }
+    Uint8List? cover;
+    String? resolveCover(String base, String href) {
+      final uri = Uri(path: base).resolve(href);
+      if (uri.hasScheme || uri.hasAuthority || uri.path.startsWith('/')) {
+        return null;
+      }
+      final name = Uri.decodeComponent(uri.path);
+      return headers.containsKey(name) ? name : null;
+    }
+
+    for (final href in coverCandidates.toSet()) {
+      try {
+        final name = resolveCover(packagePath, href);
+        if (name == null) continue;
+        if (RegExp(
+          r'\.(xhtml|html|htm)$',
+          caseSensitive: false,
+        ).hasMatch(name)) {
+          final page = xml(name, 512 * 1024);
+          for (final image in page.descendants.whereType<XmlElement>().where(
+            (e) => e.name.local == 'img' || e.name.local == 'image',
+          )) {
+            final ref =
+                image.getAttribute('src') ??
+                image.attributes
+                    .where((a) => a.name.local == 'href')
+                    .firstOrNull
+                    ?.value;
+            final imageName = ref == null ? null : resolveCover(name, ref);
+            if (imageName == null) continue;
+            final bytes = read(imageName, 4 * 1024 * 1024);
+            if (validCoverBytes(bytes)) {
+              cover = bytes;
+              break;
+            }
+          }
+        } else {
+          final bytes = read(name, 4 * 1024 * 1024);
+          if (validCoverBytes(bytes)) cover = bytes;
+        }
+        if (cover != null) break;
+      } on FormatException {
+        /* Try another declared cover candidate. */
+      }
+    }
+    if (coverCandidates.isNotEmpty && cover == null) {
+      throw const FormatException(
+        'The embedded cover is damaged, unsupported or larger than 4 MiB.',
+      );
+    }
     final language = value('language', 'und', 32);
     return {
+      'coverBytes': ?cover,
       'sha256': digest.toString(),
       'fileSize': size,
       'title': value('title', 'Untitled', 300),

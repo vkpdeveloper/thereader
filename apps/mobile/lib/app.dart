@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'app_scope.dart';
+import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_presets.dart';
 import 'core/theme/tokens.dart';
 import 'features/catalog/catalog_screen.dart';
 import 'features/library/library_screen.dart';
@@ -17,13 +19,24 @@ class TheReaderApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppScope(
       services: services,
-      child: MaterialApp(
-        title: 'The Reader',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.dark,
-        darkTheme: AppTheme.dark,
-        themeMode: ThemeMode.dark,
-        home: const HomeShell(),
+      // The theme follows the saved preset; rebuilding MaterialApp's theme
+      // re-themes every open route, sheet and dialog at once.
+      child: ListenableBuilder(
+        listenable: services.settings,
+        builder: (context, _) {
+          final preset = ThemePreset.byId(services.settings.reader.themeId);
+          final theme = AppTheme.build(preset.colors);
+          return MaterialApp(
+            title: 'The Reader',
+            debugShowCheckedModeBanner: false,
+            theme: theme,
+            darkTheme: theme,
+            themeMode: ThemeMode.dark,
+            themeAnimationDuration: Motion.base,
+            themeAnimationCurve: Motion.curve,
+            home: const HomeShell(),
+          );
+        },
       ),
     );
   }
@@ -49,7 +62,7 @@ class _HomeShellState extends State<HomeShell> {
       const SettingsScreen(),
     ];
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: AppTheme.overlay,
+      value: AppTheme.overlayOf(context),
       child: Scaffold(
         body: SafeArea(
           bottom: false,
@@ -76,8 +89,9 @@ class _TabRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final colors = context.colors;
     return Container(
-      decoration: const BoxDecoration(color: Palette.bg, border: Border(top: BorderSide(color: Palette.border))),
+      decoration: BoxDecoration(color: colors.bg, border: Border(top: BorderSide(color: colors.border))),
       padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
       child: Row(
         children: [
@@ -94,7 +108,7 @@ class _TabRow extends StatelessWidget {
                     child: Center(
                       child: AnimatedDefaultTextStyle(
                         duration: Motion.of(context, Motion.fast),
-                        style: text.labelLarge!.copyWith(color: i == index ? Palette.fg : Palette.subtle),
+                        style: text.labelLarge!.copyWith(color: i == index ? colors.fg : colors.subtle),
                         child: Text(_labels[i]),
                       ),
                     ),

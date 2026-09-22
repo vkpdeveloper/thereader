@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 
 import '../../app_scope.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/tokens.dart';
 import '../../data/api/api_client.dart';
 import '../../data/models/settings.dart';
 import '../shared/cloud_status.dart';
 import '../shared/states.dart';
+import 'theme_section.dart';
 
-/// Library API address, cloud sync status, storage facts, and a short note
-/// on privacy. No accounts, no tokens: the API URL is the only configuration.
+/// Library API address, theme, cloud sync status, storage facts, and a short
+/// note on privacy. No accounts, no tokens: the API URL is the only
+/// configuration. This is the only screen that reports upload or sync state.
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -19,7 +22,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final TextEditingController _url = TextEditingController();
   String? _checkResult;
-  Color _checkColor = Palette.muted;
+  _Tone _checkTone = _Tone.neutral;
   bool _checking = false;
   bool _seeded = false;
   bool _syncing = false;
@@ -56,13 +59,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _checkResult = h.ok
             ? 'Connected · ${h.service}'
             : 'Responded, but status was not ok.';
-        _checkColor = h.ok ? Palette.green : Palette.orange;
+        _checkTone = h.ok ? _Tone.good : _Tone.warn;
       });
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() {
         _checkResult = e.message;
-        _checkColor = Palette.error;
+        _checkTone = _Tone.bad;
       });
     } finally {
       client?.close();
@@ -114,6 +117,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ]),
       builder: (context, _) {
         final s = services.settings.settings;
+        final colors = context.colors;
         final isDefault = s.apiBaseUrl == AppSettings.defaultApiBaseUrl;
         final syncing = sync != null && (sync.isSyncing || _syncing);
         // Uploads continue after `busy` clears; find the active one by entry.
@@ -180,9 +184,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: Space.sm),
               Text(
                 _checkResult!,
-                style: text.bodySmall?.copyWith(color: _checkColor),
+                style: text.bodySmall?.copyWith(color: _checkTone.color(colors)),
               ),
             ],
+            const SizedBox(height: Space.xl),
+            ThemeSection(
+              selectedId: services.settings.reader.themeId,
+              onSelect: services.settings.setThemeId,
+            ),
             if (sync != null || imports != null) ...[
               const SizedBox(height: Space.xl),
               const Eyebrow('Cloud sync'),
@@ -210,11 +219,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       : sync.pendingCount == 1
                       ? '1 change not yet synced'
                       : '${sync.pendingCount} changes not yet synced',
-                  color: sync.pendingCount == 0 ? Palette.fg : Palette.orange,
+                  tone: sync.pendingCount == 0 ? _Tone.plain : _Tone.warn,
                 ),
                 _StatusRow('Reading time', formatReadingTime(sync.totalReadingMilliseconds)),
                 if (sync.error != null)
-                  _StatusRow('Problem', sync.error!, color: Palette.error),
+                  _StatusRow('Problem', sync.error!, tone: _Tone.bad),
               ],
               if (imports != null) ...[
                 _StatusRow(
@@ -230,17 +239,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       : imports.pendingCount == 1
                       ? '1 book waiting to upload. It is readable here and retries automatically.'
                       : '${imports.pendingCount} books waiting to upload. They are readable here and retry automatically.',
-                  color: imports.pendingCount == 0 || imports.busy ? Palette.fg : Palette.orange,
+                  tone: imports.pendingCount == 0 || imports.busy ? _Tone.plain : _Tone.warn,
                 ),
                 if (imports.error != null)
-                  _StatusRow('Import problem', imports.error!, color: Palette.error),
+                  _StatusRow('Import problem', imports.error!, tone: _Tone.bad),
                 if (failedUploads.isNotEmpty)
                   _StatusRow(
                     'Upload problem',
                     failedUploads.length == 1
                         ? failedUploads.first
                         : '${failedUploads.first} (${failedUploads.length} books affected)',
-                    color: Palette.error,
+                    tone: _Tone.bad,
                   ),
               ],
               const SizedBox(height: Space.sm),
@@ -267,7 +276,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: Space.sm),
             Text(
               services.library.bookStore.description,
-              style: text.bodyMedium?.copyWith(color: Palette.muted),
+              style: text.bodyMedium?.copyWith(color: colors.muted),
             ),
             const SizedBox(height: Space.xl),
             const Eyebrow('About'),
@@ -285,15 +294,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 }
 
+/// Status colouring resolved against the active theme at build time.
+enum _Tone {
+  neutral,
+  plain,
+  good,
+  warn,
+  bad;
+
+  Color color(AppColors c) => switch (this) {
+        neutral => c.muted,
+        plain => c.fg,
+        good => c.green,
+        warn => c.orange,
+        bad => c.error,
+      };
+}
+
 class _StatusRow extends StatelessWidget {
-  const _StatusRow(this.label, this.value, {this.color = Palette.fg});
+  const _StatusRow(this.label, this.value, {this.tone = _Tone.plain});
   final String label;
   final String value;
-  final Color color;
+  final _Tone tone;
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final color = tone.color(context.colors);
     return Padding(
       padding: const EdgeInsets.only(bottom: Space.sm),
       child: Row(

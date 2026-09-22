@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app_scope.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/tokens.dart';
 import '../../data/models/book.dart';
 import '../../data/api/catalog_source.dart';
@@ -10,9 +11,10 @@ import '../shared/cloud_status.dart';
 import '../shared/cover_art.dart';
 import '../shared/states.dart';
 
-/// Book page: description, edition facts, one honest download control, and
-/// a separate cloud panel (upload state, reading time). Removing a book lives
-/// in the app bar, away from the reading action, and always asks first.
+/// Book page: description, edition facts and one honest download control.
+/// Cloud upload and sync state are reported only in Settings; this page stays
+/// quiet about them. Removing a book lives in the app bar, away from the
+/// reading action, and always asks first.
 class BookDetailScreen extends StatelessWidget {
   const BookDetailScreen({super.key, required this.book, required this.source});
 
@@ -40,11 +42,14 @@ class BookDetailScreen extends StatelessWidget {
     final imports = services.imports;
     final sync = services.sync;
     return ListenableBuilder(
-      listenable: Listenable.merge([services.library, ?imports, ?sync]),
+      // The import service is observed only so "Remove" can tell whether a
+      // cancelled upload is at stake; nothing about uploads is displayed.
+      listenable: Listenable.merge([services.library, ?imports]),
       builder: (context, _) {
         final entry = services.library.entryFor(book, source);
         final current = entry?.book ?? book;
         final text = Theme.of(context).textTheme;
+        final colors = context.colors;
         final d = entry?.download ?? const DownloadState();
         final coverUri = source.coverUri(current);
         final outdated =
@@ -70,7 +75,7 @@ class BookDetailScreen extends StatelessWidget {
                     label: d.isReady || sync != null
                         ? 'Remove download'
                         : 'Remove from library',
-                    color: Palette.muted,
+                    color: colors.muted,
                     onPressed: () => _confirmRemove(context, entry, d),
                   ),
                 ),
@@ -91,7 +96,7 @@ class BookDetailScreen extends StatelessWidget {
               const SizedBox(height: Space.xs),
               Text(
                 current.author,
-                style: text.bodyLarge?.copyWith(color: Palette.muted),
+                style: text.bodyLarge?.copyWith(color: colors.muted),
               ),
               const SizedBox(height: Space.md),
               Wrap(
@@ -110,10 +115,6 @@ class BookDetailScreen extends StatelessWidget {
                 outdated: outdated,
                 source: source,
               ),
-              if (entry != null && (imports != null || sync != null)) ...[
-                const SizedBox(height: Space.md),
-                _CloudPanel(entry: entry),
-              ],
               const SizedBox(height: Space.xl),
               if (current.description.isNotEmpty) ...[
                 const Eyebrow('About'),
@@ -158,6 +159,7 @@ class BookDetailScreen extends StatelessWidget {
       UploadPhase.pending || UploadPhase.failed =>
         ' The waiting upload will be cancelled, so this book will not reach your other devices.',
     };
+    final colors = context.colors;
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -177,11 +179,11 @@ class BookDetailScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Keep', style: TextStyle(color: Palette.muted)),
+            child: Text('Keep', style: TextStyle(color: colors.muted)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Remove', style: TextStyle(color: Palette.error)),
+            child: Text('Remove', style: TextStyle(color: colors.error)),
           ),
         ],
       ),
@@ -191,144 +193,6 @@ class BookDetailScreen extends StatelessWidget {
     // that were never queued.
     await services.imports?.cancelPending(entry.id);
     await lib.remove(entry.id, keepMetadata: keepMetadata);
-  }
-}
-
-/// Cloud facts for a book that is in the library, kept apart from the
-/// download and read controls: is the file in the cloud yet, and how long
-/// has it been read across devices.
-class _CloudPanel extends StatefulWidget {
-  const _CloudPanel({required this.entry});
-  final LibraryEntry entry;
-
-  @override
-  State<_CloudPanel> createState() => _CloudPanelState();
-}
-
-class _CloudPanelState extends State<_CloudPanel> {
-  bool _retrying = false;
-
-  Future<void> _retry() async {
-    final imports = AppScope.of(context).imports;
-    if (imports == null || _retrying) return;
-    setState(() => _retrying = true);
-    try {
-      await imports.retryPending();
-    } finally {
-      if (mounted) setState(() => _retrying = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final services = AppScope.of(context);
-    final imports = services.imports;
-    final sync = services.sync;
-    final entry = widget.entry;
-    final text = Theme.of(context).textTheme;
-    final phase = uploadPhaseFor(services, entry);
-
-    // Upload line: only the import service knows whether the bytes are up.
-    IconData icon;
-    Color color;
-    String line;
-    double? fraction;
-    switch (phase) {
-      case UploadPhase.uploading:
-        icon = Icons.cloud_upload_outlined;
-        color = Palette.muted;
-        fraction = imports?.uploadFraction;
-        line = fraction == null
-            ? 'Uploading to the cloud. Readable here now.'
-            : 'Uploading to the cloud · ${(fraction * 100).round()}%. Readable here now.';
-      case UploadPhase.pending:
-        icon = Icons.cloud_queue_outlined;
-        color = Palette.orange;
-        line =
-            'Readable here. Upload waiting; it retries when the app is open and online.';
-      case UploadPhase.failed:
-        icon = Icons.cloud_off_outlined;
-        color = Palette.error;
-        line =
-            'Readable here, but the upload failed. ${imports?.errorFor(entry.id) ?? ''}'
-                .trim();
-      case UploadPhase.none:
-        icon = Icons.cloud_done_outlined;
-        color = Palette.green;
-        line = entry.download.isReady
-            ? 'In the cloud and on this device.'
-            : 'In the cloud. Save a full copy for offline reading.';
-    }
-
-    final readingMs = sync?.readingMillisecondsFor(entry);
-
-    return Container(
-      padding: const EdgeInsets.all(Space.md),
-      decoration: BoxDecoration(
-        border: Border.all(color: Palette.border),
-        borderRadius: const BorderRadius.all(Radii.lg),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Eyebrow('Cloud'),
-          const SizedBox(height: Space.sm),
-          if (imports != null) ...[
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 1),
-                  child: Icon(icon, size: 16, color: color),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    line,
-                    style: text.bodySmall?.copyWith(color: Palette.muted),
-                  ),
-                ),
-                if (phase == UploadPhase.pending ||
-                    phase == UploadPhase.failed) ...[
-                  const SizedBox(width: Space.sm),
-                  QuietButton(
-                    label: _retrying || imports.busy ? 'Retrying' : 'Retry',
-                    onPressed: _retrying || imports.busy ? null : _retry,
-                  ),
-                ],
-              ],
-            ),
-            if (phase == UploadPhase.uploading) ...[
-              const SizedBox(height: Space.sm),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(1),
-                child: LinearProgressIndicator(value: fraction, minHeight: 2),
-              ),
-            ],
-          ],
-          if (imports != null && sync != null) const SizedBox(height: Space.sm),
-          if (sync != null)
-            Row(
-              children: [
-                const Icon(
-                  Icons.schedule_outlined,
-                  size: 16,
-                  color: Palette.muted,
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    readingMs == null || readingMs <= 0
-                        ? 'No reading time recorded yet.'
-                        : 'Read for ${formatReadingTime(readingMs)} across your devices.',
-                    style: text.bodySmall?.copyWith(color: Palette.muted),
-                  ),
-                ),
-              ],
-            ),
-        ],
-      ),
-    );
   }
 }
 
@@ -349,7 +213,7 @@ class _Fact extends StatelessWidget {
           Expanded(
             child: SelectableText(
               value,
-              style: text.bodySmall?.copyWith(color: Palette.fg),
+              style: text.bodySmall?.copyWith(color: context.colors.fg),
             ),
           ),
         ],
@@ -374,6 +238,7 @@ class _DownloadPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final services = AppScope.of(context);
     final text = Theme.of(context).textTheme;
+    final colors = context.colors;
     final d = entry?.download ?? const DownloadState();
     final lib = services.library;
 
@@ -431,7 +296,7 @@ class _DownloadPanel extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.check, size: 16, color: Palette.green),
+                Icon(Icons.check, size: 16, color: colors.green),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
@@ -440,7 +305,7 @@ class _DownloadPanel extends StatelessWidget {
                             ? 'Downloaded (an older edition). '
                             : 'Saved and verified. '),
                     style: text.bodySmall?.copyWith(
-                      color: outdated ? Palette.orange : Palette.muted,
+                      color: outdated ? colors.orange : colors.muted,
                     ),
                   ),
                 ),
@@ -476,7 +341,7 @@ class _DownloadPanel extends StatelessWidget {
           children: [
             Text(
               d.error ?? 'Download failed.',
-              style: text.bodyMedium?.copyWith(color: Palette.error),
+              style: text.bodyMedium?.copyWith(color: colors.error),
             ),
             const SizedBox(height: Space.md),
             QuietButton(
@@ -516,8 +381,8 @@ class _DownloadPanel extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(Space.md),
         decoration: BoxDecoration(
-          color: Palette.panel,
-          border: Border.all(color: Palette.border),
+          color: colors.panel,
+          border: Border.all(color: colors.border),
           borderRadius: const BorderRadius.all(Radii.lg),
         ),
         child: inner,

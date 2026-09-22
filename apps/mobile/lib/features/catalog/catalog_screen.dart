@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app_scope.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/tokens.dart';
 import '../../data/models/book.dart';
 import '../../data/models/library.dart';
@@ -55,6 +56,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
           WidgetsBinding.instance.addPostFrameCallback((_) => catalog.refresh());
         }
         final text = Theme.of(context).textTheme;
+        final colors = context.colors;
         var items = catalog.items;
         if (_subject != null) items = items.where((b) => b.subjects.contains(_subject)).toList();
         if (_onlyDownloaded) {
@@ -84,7 +86,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                         QuietIconButton(
                           icon: Icons.tune,
                           label: 'Library API settings',
-                          color: Palette.muted,
+                          color: colors.muted,
                           onPressed: widget.onOpenSettings,
                         ),
                       ],
@@ -97,13 +99,13 @@ class _CatalogScreenState extends State<CatalogScreen> {
                       style: text.bodyMedium,
                       decoration: InputDecoration(
                         hintText: 'Search title, author or subject',
-                        prefixIcon: const Icon(Icons.search, size: 18, color: Palette.muted),
+                        prefixIcon: Icon(Icons.search, size: 18, color: colors.muted),
                         suffixIcon: _search.text.isEmpty
                             ? null
                             : QuietIconButton(
                                 icon: Icons.close,
                                 label: 'Clear search',
-                                color: Palette.muted,
+                                color: colors.muted,
                                 onPressed: () {
                                   _search.clear();
                                   catalog.search('');
@@ -165,7 +167,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
             title: err.isNetwork ? "Can't reach the API." : 'The API returned an error.',
             body:
                 '${err.message}\n${catalog.source.origin}${err.isNetwork ? '\n\nBooks already downloaded stay readable from Library.' : ''}',
-            tone: Palette.error,
+            error: true,
             actionLabel: 'Try again',
             onAction: catalog.refresh,
           ),
@@ -221,6 +223,7 @@ class _Chip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Padding(
       padding: const EdgeInsets.only(right: Space.sm),
       child: Semantics(
@@ -234,15 +237,15 @@ class _Chip extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: selected ? Palette.fg : Colors.transparent,
-              border: Border.all(color: selected ? Palette.fg : Palette.border),
+              color: selected ? colors.fg : Colors.transparent,
+              border: Border.all(color: selected ? colors.fg : colors.border),
               borderRadius: const BorderRadius.all(Radius.circular(18)),
             ),
             child: Text(
               label,
               style: Theme.of(
                 context,
-              ).textTheme.labelMedium?.copyWith(color: selected ? Palette.bg : Palette.fg),
+              ).textTheme.labelMedium?.copyWith(color: selected ? colors.bg : colors.fg),
             ),
           ),
         ),
@@ -260,6 +263,7 @@ class _CatalogRow extends StatelessWidget {
     final services = AppScope.of(context);
     final entry = services.library.entryFor(book, services.currentSource);
     final text = Theme.of(context).textTheme;
+    final colors = context.colors;
     final d = entry?.download;
     Widget trailing;
     if (d != null && d.isActive) {
@@ -272,11 +276,11 @@ class _CatalogRow extends StatelessWidget {
         ),
       );
     } else if (d != null && d.isReady) {
-      trailing = const Icon(Icons.check, size: 18, color: Palette.green);
+      trailing = Icon(Icons.check, size: 18, color: colors.green);
     } else if (d != null && d.status == DownloadStatus.failed) {
-      trailing = const Icon(Icons.error_outline, size: 18, color: Palette.error);
+      trailing = Icon(Icons.error_outline, size: 18, color: colors.error);
     } else {
-      trailing = Icon(Icons.chevron_right, size: 18, color: Palette.subtle);
+      trailing = Icon(Icons.chevron_right, size: 18, color: colors.subtle);
     }
     return ListTile(
       onTap: () => BookDetailScreen.open(context, book),

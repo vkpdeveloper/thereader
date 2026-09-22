@@ -21,8 +21,9 @@ import 'package:thereader/reader/dart_engine/dart_reader_engine.dart';
 import 'package:thereader/reader/engine/reader_engine.dart';
 
 /// UI-only coverage for the cloud additions: the import action, the quiet
-/// status lines, the settings section, and the detail page's cloud panel.
-/// The services are hand-rolled fakes driven directly by each test.
+/// library and book page, and the Settings section that is the one place
+/// upload and sync state appear. The services are hand-rolled fakes driven
+/// directly by each test.
 
 LibraryEntry _entry({String id = 'imported', bool ready = true}) => LibraryEntry(
   book: Book.fromJson({
@@ -68,10 +69,26 @@ Future<AppServices> makeServices({
   );
 }
 
-/// The icon the single grid tile's cloud glyph shows, or null when hidden.
-IconData? glyphIcon(WidgetTester tester) {
-  final icons = find.descendant(of: find.byType(UploadGlyph), matching: find.byType(Icon));
-  return icons.evaluate().isEmpty ? null : tester.widget<Icon>(icons).icon;
+/// Any cloud glyph anywhere on screen. The library and book page must never
+/// show one; only Settings speaks about uploads and sync.
+const _cloudGlyphs = [
+  Icons.cloud_outlined,
+  Icons.cloud_off_outlined,
+  Icons.cloud_upload_outlined,
+  Icons.cloud_queue_outlined,
+  Icons.cloud_done_outlined,
+];
+
+Finder cloudIcons() => find.byWidgetPredicate((w) => w is Icon && _cloudGlyphs.contains(w.icon));
+
+/// Settings grew a theme grid; a tall test surface keeps its later sections
+/// on screen without scrolling choreography.
+Future<void> pumpApp(WidgetTester tester, AppServices services) async {
+  tester.view.physicalSize = const Size(800, 2000);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
+  await tester.pumpWidget(TheReaderApp(services: services));
+  await tester.pumpAndSettle();
 }
 
 void main() {
@@ -98,10 +115,9 @@ void main() {
 
   testWidgets('without services the cloud UI is absent everywhere', (tester) async {
     final services = await makeServices(existing: _entry());
-    await tester.pumpWidget(TheReaderApp(services: services));
-    await tester.pumpAndSettle();
+    await pumpApp(tester, services);
     expect(find.byTooltip('Import EPUB'), findsNothing);
-    expect(find.byType(CloudSummaryLine), findsNothing);
+    expect(cloudIcons(), findsNothing);
 
     await tester.tap(find.text('Settings'));
     await tester.pumpAndSettle();
@@ -114,8 +130,7 @@ void main() {
       (tester) async {
     final imports = FakeImports()..result = _entry();
     final services = await makeServices(imports: imports);
-    await tester.pumpWidget(TheReaderApp(services: services));
-    await tester.pumpAndSettle();
+    await pumpApp(tester, services);
 
     final button = find.byTooltip('Import EPUB');
     expect(button, findsOneWidget);
@@ -137,8 +152,7 @@ void main() {
   testWidgets('a cancelled pick stays on the library without noise', (tester) async {
     final imports = FakeImports()..result = null;
     final services = await makeServices(imports: imports);
-    await tester.pumpWidget(TheReaderApp(services: services));
-    await tester.pumpAndSettle();
+    await pumpApp(tester, services);
     await tester.tap(find.byTooltip('Import EPUB'));
     imports.completePick();
     await tester.pumpAndSettle();
@@ -147,46 +161,74 @@ void main() {
     expect(find.byTooltip('Import EPUB'), findsOneWidget);
   });
 
-  testWidgets('upload state is quiet when done and honest when waiting or failed',
+  testWidgets('the library stays quiet through waiting, uploading and failed uploads',
       (tester) async {
     final entry = _entry();
     final imports = FakeImports();
-    final services = await makeServices(imports: imports, existing: entry);
-    await tester.pumpWidget(TheReaderApp(services: services));
-    await tester.pumpAndSettle();
-    // Nothing pending: no status line, no glyph.
-    expect(find.textContaining('waiting'), findsNothing);
-    expect(find.byType(UploadGlyph), findsOneWidget);
-    expect(glyphIcon(tester), isNull);
+    final sync = FakeSync()..pendingCount = 3;
+    final services = await makeServices(imports: imports, sync: sync, existing: entry);
+    await pumpApp(tester, services);
 
+    void expectQuiet() {
+      expect(cloudIcons(), findsNothing);
+      expect(find.textContaining('waiting'), findsNothing);
+      expect(find.textContaining('Uploading'), findsNothing);
+      expect(find.textContaining('failed'), findsNothing);
+      expect(find.textContaining('Syncing'), findsNothing);
+      expect(find.textContaining('synced'), findsNothing);
+      expect(find.text('Retry'), findsNothing);
+      expect(find.byType(SnackBar), findsNothing);
+    }
+
+    expectQuiet();
     imports
       ..pending.add(entry.id)
       ..notify();
     await tester.pumpAndSettle();
-    expect(find.text('1 upload waiting'), findsOneWidget);
-    expect(glyphIcon(tester), Icons.cloud_queue_outlined);
-    expect(find.bySemanticsLabel(RegExp('Upload waiting')), findsOneWidget);
-    await tester.tap(find.text('Retry'));
-    await tester.pumpAndSettle();
-    expect(imports.retries, 1);
+    expectQuiet();
 
     imports
       ..uploading = entry.id
       ..uploadFraction = 0.4
       ..notify();
     await tester.pumpAndSettle();
-    expect(find.text('Uploading Imported Book · 40%'), findsOneWidget);
-    expect(find.text('1 upload waiting'), findsNothing);
-    expect(glyphIcon(tester), Icons.cloud_upload_outlined);
+    expectQuiet();
 
     imports
       ..uploading = null
       ..uploadFraction = null
       ..errors[entry.id] = 'Server said no.'
+      ..error = 'Import failed badly.'
+      ..notify();
+    sync
+      ..error = 'Could not reach the API.'
       ..notify();
     await tester.pumpAndSettle();
-    expect(find.text('Upload failed for Imported Book. Server said no.'), findsOneWidget);
-    expect(glyphIcon(tester), Icons.cloud_off_outlined);
+    expectQuiet();
+    // The book itself is still presented normally.
+    expect(find.text('Imported Book'), findsOneWidget);
+    // Filter link and tile status both say "Downloaded"; nothing about clouds.
+    expect(find.text('Downloaded'), findsNWidgets(2));
+
+    // Settings is where the same state is reported, with the failures.
+    await tester.tap(find.text('Settings'));
+    await tester.pumpAndSettle();
+    expect(find.text('Server said no.'), findsOneWidget);
+    expect(find.text('Import failed badly.'), findsOneWidget);
+    expect(find.text('Could not reach the API.'), findsOneWidget);
+    expect(find.text('3 changes not yet synced'), findsOneWidget);
+  });
+
+  testWidgets('a failed pick is reported at once with a snackbar', (tester) async {
+    final imports = FakeImports()..pickError = StateError('not an EPUB');
+    final services = await makeServices(imports: imports);
+    await pumpApp(tester, services);
+    await tester.tap(find.byTooltip('Import EPUB'));
+    imports.completePick();
+    await tester.pumpAndSettle();
+    expect(find.byType(SnackBar), findsOneWidget);
+    expect(find.textContaining('Could not import that file.'), findsOneWidget);
+    expect(find.byTooltip('Import EPUB'), findsOneWidget);
   });
 
   testWidgets('settings shows a Cloud sync section with last sync, pending, error and Sync now',
@@ -197,8 +239,7 @@ void main() {
       ..totalReadingMilliseconds = 3 * 3600000 + 12 * 60000;
     final imports = FakeImports()..pending.add('x');
     final services = await makeServices(sync: sync, imports: imports);
-    await tester.pumpWidget(TheReaderApp(services: services));
-    await tester.pumpAndSettle();
+    await pumpApp(tester, services);
     await tester.tap(find.text('Settings'));
     await tester.pumpAndSettle();
 
@@ -234,7 +275,7 @@ void main() {
     expect(find.text('Could not reach the API.'), findsOneWidget);
   });
 
-  testWidgets('book detail separates cloud facts from download controls and cancels the upload before removing',
+  testWidgets('book detail shows no cloud state but still cancels the upload before removing',
       (tester) async {
     final entry = _entry();
     final imports = FakeImports()..pending.add(entry.id);
@@ -242,21 +283,19 @@ void main() {
     final services = await makeServices(imports: imports, sync: sync, existing: entry);
     // The upload must be cancelled while the entry (and its file) still exist.
     imports.onCancel = () => expect(services.library.entries, hasLength(1));
-    await tester.pumpWidget(TheReaderApp(services: services));
-    await tester.pumpAndSettle();
+    await pumpApp(tester, services);
     await tester.longPress(
       find.byWidgetPredicate((w) => w is Text && w.data == 'Imported Book' && w.maxLines == 2),
     );
     await tester.pumpAndSettle();
     expect(find.byType(BookDetailScreen), findsOneWidget);
 
-    expect(find.text('CLOUD'), findsOneWidget);
-    expect(find.textContaining('Read for 45 min across your devices.'), findsOneWidget);
-    expect(find.textContaining('Upload waiting'), findsOneWidget);
-    // The cloud panel sits below the read control, not inside it.
-    final read = tester.getRect(find.text('Read'));
-    final cloud = tester.getRect(find.text('CLOUD'));
-    expect(cloud.top, greaterThan(read.bottom));
+    expect(find.text('CLOUD'), findsNothing);
+    expect(cloudIcons(), findsNothing);
+    expect(find.textContaining('across your devices'), findsNothing);
+    expect(find.textContaining('Upload waiting'), findsNothing);
+    expect(find.textContaining('waiting'), findsNothing);
+    expect(find.text('Read'), findsOneWidget);
 
     final remove = find.byTooltip('Remove download');
     expect(find.descendant(of: find.byType(AppBar), matching: remove), findsOneWidget);
@@ -274,6 +313,7 @@ void main() {
 /// if the real class grows members this UI does not use.
 class FakeImports extends ChangeNotifier implements EpubImportService {
   LibraryEntry? result;
+  Object? pickError;
   final pending = <String>{};
   final errors = <String, String>{};
   final cancelled = <String>[];
@@ -313,6 +353,8 @@ class FakeImports extends ChangeNotifier implements EpubImportService {
     await _pick!.future;
     _busy = false;
     notifyListeners();
+    final error = pickError;
+    if (error != null) throw error;
     return result;
   }
 

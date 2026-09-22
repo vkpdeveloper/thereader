@@ -60,6 +60,7 @@ class ReaderPreferences {
     this.marginScale = 1.0,
     this.justify = false,
     this.keepAwake = true,
+    this.themeId,
   });
 
   final double fontSize;
@@ -69,6 +70,12 @@ class ReaderPreferences {
   final double marginScale;
   final bool justify;
   final bool keepAwake;
+
+  /// Colour preset id (`default`, `dracula`, ...). Null means no choice has
+  /// been made and the Default preset applies. Unknown ids are kept as
+  /// written so a newer device's choice survives a round trip through an
+  /// older build, which simply renders Default for them.
+  final String? themeId;
 
   static const double minFontSize = 14;
   static const double maxFontSize = 28;
@@ -81,6 +88,7 @@ class ReaderPreferences {
     double? marginScale,
     bool? justify,
     bool? keepAwake,
+    String? themeId,
   }) =>
       ReaderPreferences(
         fontSize: (fontSize ?? this.fontSize).clamp(minFontSize, maxFontSize),
@@ -90,6 +98,7 @@ class ReaderPreferences {
         marginScale: marginScale ?? this.marginScale,
         justify: justify ?? this.justify,
         keepAwake: keepAwake ?? this.keepAwake,
+        themeId: themeId ?? this.themeId,
       );
 
   Map<String, dynamic> toJson() => {
@@ -100,6 +109,7 @@ class ReaderPreferences {
         'marginScale': marginScale,
         'justify': justify,
         'keepAwake': keepAwake,
+        if (themeId != null) 'themeId': themeId,
       };
 
   factory ReaderPreferences.fromJson(Map<String, dynamic> json) => ReaderPreferences(
@@ -110,5 +120,6 @@ class ReaderPreferences {
         marginScale: (json['marginScale'] as num?)?.toDouble() ?? 1.0,
         justify: json['justify'] as bool? ?? false,
         keepAwake: json['keepAwake'] as bool? ?? true,
+        themeId: json['themeId'] as String?,
       );
 }
