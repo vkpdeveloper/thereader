@@ -32,6 +32,13 @@ EPUB only. One dark theme. A quiet library, search, downloads, reading controls,
 typography preferences, and locally saved reading position. No PDF, audiobook,
 social, purchase, user-account, or cloud-progress features.
 
-See the application READMEs for completed features, verification, and any remaining
-platform setup. Cloudflare provisioning and deployment are separate from local
-development and have not been performed by the initial build tasks.
+## Production API
+
+The API is deployed at `https://reader.ordinity.com`. Check
+[/health](https://reader.ordinity.com/health) or the
+[catalog](https://reader.ordinity.com/v1/books). Fresh mobile installs use this API;
+existing saved endpoint and sample-mode preferences are preserved.
+
+See [deployment verification](docs/production-deployment.md), the application
+READMEs, and [native verification](docs/native-verification.md) for evidence and
+remaining platform limits.

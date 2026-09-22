@@ -1,7 +1,9 @@
 # Native integration and verification — 2026-09-22
 
-All corpus data and videos are local and Git-ignored. Nothing was deployed to
-Cloudflare or uploaded publicly. The Worker ran against local R2 on port 8787.
+This report covers the initial local verification: corpus data and videos are
+Git-ignored, and the Worker ran against local R2 on port 8787. The subsequently
+authorized deployment and one-book remote test are documented in
+[production deployment](production-deployment.md).
 
 ## Environment and workload
 

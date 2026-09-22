@@ -35,7 +35,9 @@ The user authorized loading a few real EPUBs from the separately supplied local
 books directory, including large files. Use those for realistic end-to-end reading
 and performance workloads in addition to the small original development fixtures.
 Select representative large/image-heavy and long-text books after inspecting the
-corpus. Import only into local test storage, not remote R2. Do not commit the books
+corpus. Initial verification used local test storage. The user subsequently
+authorized remote deployment and uploading one EPUB to a new R2 bucket; that
+deployment is documented separately. Do not commit the books
 or extracted contents. Record the simulator test session (download, open, navigate,
 search, typography, close/reopen, offline reading) and save the video outside Git.
 Provide the recording to the user; do not publicly publish private corpus content.
@@ -50,7 +52,8 @@ process restart with the Worker stopped was verified separately. Release builds,
 recordings, measured lookup/retention improvements, reproduction commands and
 remaining limits are recorded in [native verification](native-verification.md).
 Physical-device energy/latency and native Copy-menu behavior are not signed off.
-No Cloudflare deployment has occurred.
+The subsequently authorized Cloudflare deployment and one-book remote verification
+are recorded in [production deployment](production-deployment.md).
 
 ## Performance evidence rules
 
