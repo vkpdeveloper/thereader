@@ -56,6 +56,7 @@ class ReadiumReaderWidget(
     var hasSentReady = false
 
     private val layout: ViewGroup
+    private var disposed = false
 
     // Source the host activity from the plugin's ActivityAware binding (via ReadiumReader),
     // not the PlatformView's view context. The view context is the Activity only under
@@ -76,10 +77,15 @@ class ReadiumReaderWidget(
     }
 
     override fun dispose() {
+        if (disposed) return
+        disposed = true
         PluginLog.d(TAG, "::dispose")
-        ReadiumReader.visualClose()
-
-        ReadiumReader.emitReaderStatusUpdate(ReadiumReaderStatus.Closed)
+        // Dart channel teardown and PlatformView teardown can both arrive,
+        // including after another widget has taken ownership of the navigator.
+        if (ReadiumReader.currentReaderWidget === this) {
+            ReadiumReader.visualClose()
+            ReadiumReader.emitReaderStatusUpdate(ReadiumReaderStatus.Closed)
+        }
         hasSentReady = false
 
         channel.setMethodCallHandler(null)

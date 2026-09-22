@@ -15,22 +15,42 @@ import 'reader_search_sheet.dart';
 /// The reading surface. Chrome is hidden by default and revealed with a tap;
 /// position is saved continuously and on exit.
 class ReaderScreen extends StatefulWidget {
-  const ReaderScreen({super.key, required this.entry});
+  const ReaderScreen({super.key, required this.entry}) : _session = null;
+  const ReaderScreen._(this.entry, this._session);
 
   final LibraryEntry entry;
+  final _ReaderSession? _session;
+  static bool _routeActive = false;
 
-  static Future<void> open(BuildContext context, LibraryEntry entry) => Navigator.of(context).push(
-        PageRouteBuilder(
+  static Future<void> open(BuildContext context, LibraryEntry entry) async {
+    if (_routeActive) return;
+    _routeActive = true;
+    final session = _ReaderSession();
+    try {
+      final route = PageRouteBuilder<void>(
           transitionDuration: Motion.of(context, Motion.slow),
           reverseTransitionDuration: Motion.of(context, Motion.base),
-          pageBuilder: (_, _, _) => ReaderScreen(entry: entry),
+          pageBuilder: (_, _, _) => ReaderScreen._(entry, session),
           transitionsBuilder: (_, anim, _, child) =>
               FadeTransition(opacity: CurvedAnimation(parent: anim, curve: Motion.curve), child: child),
-        ),
       );
+      Navigator.of(context).push(route);
+      // pop() completes before the exit animation disposes the old native view.
+      await route.completed;
+      // Back can also happen while the publication is still opening. Its late
+      // unmounted-controller cleanup must finish before another owner starts.
+      await session.opening;
+    } finally {
+      _routeActive = false;
+    }
+  }
 
   @override
   State<ReaderScreen> createState() => _ReaderScreenState();
+}
+
+class _ReaderSession {
+  Future<void> opening = Future<void>.value();
 }
 
 class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver {
@@ -47,7 +67,15 @@ class _ReaderScreenState extends State<ReaderScreen> with WidgetsBindingObserver
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _open());
+    final opened = Completer<void>();
+    widget._session?.opening = opened.future;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        if (mounted) await _open();
+      } finally {
+        opened.complete();
+      }
+    });
   }
 
   @override

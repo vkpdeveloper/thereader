@@ -4,6 +4,8 @@ Source: flutter_readium 0.3.3 from pub.dev, copied from the resolved package.
 The upstream license is in LICENSE. This app uses native EPUB reading only.
 
 Local changes:
+- Android platform-view disposal is idempotent and closes the shared navigator
+  only while that view still owns it; late teardown cannot remove a newer reader.
 - Android publication parser disables PDF support; the app excludes PDFium
   native libraries. Kotlin adapter classes remain compile dependencies; no PDF
   parsing or PDF navigation is exposed by the EPUB-only app.
