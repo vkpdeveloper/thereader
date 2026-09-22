@@ -23,7 +23,9 @@ Centralize Flutter tokens, apply the same palette to native launch surfaces and
 system bars, and set EPUB background/text through the reader adapter. Avoid white
 flashes during startup or chapter changes. Publisher images should remain legible
 without indiscriminate inversion. Use color sparingly for meaningful states and
-interactions. Do not introduce sepia, warm theme variants, or a light-mode toggle.
+interactions. This remains the exact Default preset. The user subsequently requested optional
+editor-inspired themes; the app now supports additional dark presets and keeps
+Default selected on fresh installs. See [covers and themes](covers-themes.md).
 
 The code/syntax/diff roles are preserved as supplied data; they do not expand this
 EPUB-only app into a code editor or Markdown reader.

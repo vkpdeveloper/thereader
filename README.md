@@ -30,7 +30,8 @@ explicit test fixtures only; there is no Sample mode in the interface.
 
 ## Scope
 
-EPUB only. One dark theme. A quiet library, search, downloads, reading controls,
+EPUB only. A pure-black Default theme plus optional dark editor-inspired themes.
+A quiet library, search, downloads, reading controls,
 typography preferences, EPUB imports, and cloud reading-state sync. No PDF,
 audiobook, social, purchase, or user-account features.
 
@@ -48,3 +49,6 @@ remaining platform limits. [Progressive reading](docs/progressive-reading.md)
 describes early opening, background caching and offline verification.
 [Import and cloud sync](docs/cloud-sync.md) covers D1, resumable uploads and
 conflict handling.
+
+[EPUB covers and themes](docs/covers-themes.md) documents cover extraction, offline
+image caching, the quiet Library, and selectable theme previews.

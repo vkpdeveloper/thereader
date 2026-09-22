@@ -19,8 +19,8 @@ Uploads run independently while the app is open. Files up to 64 MiB use one
 streamed request; larger files, up to 512 MiB, use resumable 8 MiB R2 parts. The
 client streams disk ranges in 64 KiB chunks and skips acknowledged parts on retry.
 The Worker verifies the full object's SHA-256 and EPUB structure before publishing
-it. Existing SHA-256 editions reuse their canonical catalog entry. Imported books
-currently use a generated cover fallback rather than extracting/uploading covers.
+it. Existing SHA-256 editions reuse their canonical catalog entry. Imported books now extract embedded covers into separate R2 objects and retain
+local cover images for offline use; see [covers and themes](covers-themes.md).
 
 The queue survives app restart and network failure. Retry runs on launch, resume,
 foreground polling, or the visible Retry action. This is foreground application
