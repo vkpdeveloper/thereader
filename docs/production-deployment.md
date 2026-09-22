@@ -123,3 +123,14 @@ The initial iOS production attempt is separately retained as
 `ios-production-dns-pending.mp4`; it shows the real local DNS failure, not a passed
 remote reading test. Earlier successful three-book iOS native/local/offline results
 remain in `native-verification.md`.
+
+The final iOS simulator build includes `7301beb` and successfully reads a cached
+native EPUB. A normal production health check still failed hostname resolution at
+17:25 UTC, even though public DNS and the configured upstream DNS then returned the
+correct records. Consequently, production download/native rendering on iOS is
+**not qualified by this deployment run**. No DNS override, host network change,
+certificate bypass or substituted endpoint was used to manufacture an iOS pass.
+
+Final Android APK: `artifacts/private/android-production-lifecycle-arm64.apk`,
+25,018,059 bytes, build 2002. The API URL and API mode remain saved on both installed
+apps. Builds and recordings are local artifacts and were not committed to Git.
