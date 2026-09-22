@@ -7,7 +7,8 @@ uploading one EPUB from the supplied local library for an actual app test.
 
 - API: `https://reader.ordinity.com`.
 - Worker: `thereader-api`; production version
-  `f89cb1ae-98f0-4a07-a675-4313fc1b2efd`, deployed at 100% traffic.
+  `55735203-1a70-41f8-8144-b1fa4d05fe71`, deployed at 100% traffic.
+  This supersedes the initial deployment `f89cb1ae-98f0-4a07-a675-4313fc1b2efd`.
 - R2: `thereader-books`, Standard storage, APAC placement.
 - Native Worker binding: `BOOKS`. No R2 S3 keys or Worker runtime secrets.
 - Workers custom domain provides DNS and TLS. workers.dev and version previews
@@ -70,11 +71,18 @@ focused repository check, not a claim of comprehensive secret scanning.
 
 ## App verification
 
-Fresh installs default to API mode at `https://reader.ordinity.com`. Existing saved
-sample mode, local endpoints and custom URLs are preserved. Flutter analysis and
-29 tests pass, including five settings/default/migration cases and reader-lifecycle
-regression coverage. The Worker has
-20 passing tests and passing typechecks and production deployment dry run.
+Fresh installs use `https://reader.ordinity.com`; existing custom API URLs remain
+preserved. Runtime Sample mode has been removed, including migration of the old
+sample-mode preference to the API. Bundled original EPUB fixtures are available
+only through the explicit compile-time integration-test configuration documented
+in [native verification](native-verification.md).
+
+The progressive/polish checkpoint has 49 passing Flutter tests, 26 API tests,
+three iOS native tests and two Kotlin native tests. Final Flutter analysis is
+clean; iOS simulator and Android ARM64 rebuilds succeeded, and both installed
+final builds passed their settings/cached-native-reading smoke checks. The earlier deployment run had clean
+Flutter analysis, 29 passing Flutter tests and 20 API tests; those historical
+counts are not the current suite size.
 
 Android API 36 emulator, normal ARM64 release build 2002: production health and
 catalog succeeded, the real cover loaded, and removing/re-downloading the test book
@@ -127,13 +135,39 @@ The initial iOS production attempt is separately retained as
 remote reading test. Earlier successful three-book iOS native/local/offline results
 remain in `native-verification.md`.
 
-The final iOS simulator build includes `7301beb` and successfully reads a cached
-native EPUB. A normal production health check still failed hostname resolution at
-17:25 UTC, even though public DNS and the configured upstream DNS then returned the
-correct records. Consequently, production download/native rendering on iOS is
-**not qualified by this deployment run**. No DNS override, host network change,
-certificate bypass or substituted endpoint was used to manufacture an iOS pass.
+At the end of the initial deployment run, the iOS simulator included `7301beb`
+and read cached native EPUBs, but production health still failed local hostname
+resolution at 17:25 UTC. That initial recording therefore did not qualify iOS
+remote reading. The DNS cache subsequently expired: the later normal-app iPhone
+17 simulator run successfully connected to the unchanged production HTTPS URL,
+loaded the real catalog/cover, downloaded and verified the EPUB, and rendered
+actual Introduction text through native Readium. No DNS override, host network
+change or certificate bypass was used for this successful iOS run.
 
-Final Android APK: `artifacts/private/android-production-lifecycle-arm64.apk`,
-25,018,059 bytes, build 2002. The API URL and API mode remain saved on both installed
-apps. Builds and recordings are local artifacts and were not committed to Git.
+The later iOS session also tested two throttled local real-EPUB transfers, native
+reading before completion and cached reading after an API-unavailable process
+restart. Both local files matched full-file SHA-256; the production EPUB on disk
+matched the original SHA above. See [progressive reading](progressive-reading.md)
+for the exact threshold/content observations and their limits. The continuous
+recording is `artifacts/recordings/ios-progressive-final.mp4` (581.175 seconds,
+34,671,502 bytes, HEVC 1206×2622). It preserves loading states as well as actual
+readable content. Screenshots and file hashes are under ignored
+`artifacts/private/ios-progressive-*`. The API was restored to production and its
+health check passed at the end.
+
+Initial deployment Android APK: `artifacts/private/android-production-lifecycle-arm64.apk`,
+25,018,059 bytes, build 2002. The production API URL remains saved on both installed
+apps; the later polish build removes the runtime mode selector. Builds and
+recordings are local artifacts and were not committed to Git.
+
+The final iOS polish build repeated a fresh throttled typical-book transfer with
+provisional preloading disabled: Read unlocked at 5.55%, and native Introduction
+text was captured while the badge showed 17%. Completion, API-unavailable process
+restart, saved native reading and production-health restoration passed. The
+supplemental `ios-progressive-final-polish.mp4` is 118.981667 seconds,
+21,584,206 bytes, H.264. Android build 2004 also passed production health, corrected
+health-error layout and cached native Introduction rendering; its final smoke is
+`android-final-polish.mp4`. The combined Android early-reading/offline evidence is
+`android-progressive-verification.mp4` (201.966667 seconds, 5,174,912 bytes).
+All paths are under ignored `artifacts/recordings/`; see the progressive-reading
+report for complete observations and measurement caveats.

@@ -89,14 +89,27 @@ simulator's host network was disconnected. The production API URL was restored
 and health rechecked after the iOS session.
 
 The above measurements precede the final iOS provisional-preload reduction and
-cosmetic download-badge/health-message adjustments. They must not be represented
-as a before/after benchmark of those changes. The final build's smoke verification
-is recorded separately when completed.
+cosmetic download-badge/health-message adjustments. A fresh typical-book transfer
+on the final rebuilt iOS app repeated the test with zero adjacent-position
+preloading: Read enabled at **5.55% / 3.27 s**, tapped at **3.35 s**; the first
+native screenshot showed the title page at **5.91 s / 12.11%** server coverage.
+TOC navigation produced readable Introduction text at **8.64 s**, with the opaque
+badge showing **Downloading 17%** (server coverage 17.36%). These are screenshot
+observations after automated actions, not exact first-paint measurements or a
+controlled before/after speedup; the earlier manual TOC action occurred later.
 
-At this checkpoint, 49 Flutter tests pass. The preceding native suites passed
-three iOS tests and two Kotlin tests, and the API suite passed 26 tests. Final
-analysis/build verification is tracked separately; simulator recordings do not
-establish physical-device frame rate, battery use or universal latency bounds.
+The final iOS smoke also confirmed the cached heavy chapter and equations,
+full-width settings health errors, completed/verified typical download, then a
+successful saved Introduction reopen after stopping the API and restarting the
+process. Production health was restored afterward. Android build 2004 separately
+passed production health, corrected settings layout and cached native Introduction
+rendering. Its measured cold activity startup of 785 ms is an emulator diagnostic,
+not first-readable-content or physical-device latency.
+
+Final Flutter analysis is clean and 49 Flutter tests pass. The native suites
+passed three iOS tests and two Kotlin tests, and the API suite passed 26 tests.
+Final iOS simulator and Android ARM64 builds succeeded. Simulator recordings do
+not establish physical-device frame rate, battery use or universal latency bounds.
 
 Private evidence, intentionally absent from Git:
 
@@ -112,3 +125,20 @@ Private evidence, intentionally absent from Git:
   `ios-progressive-offline-restarted-long.png`: body content after process restart.
 - `artifacts/private/android-five-percent-events.json`: controlled Android
   threshold, tap and readable-content observations.
+
+Final-build supplemental evidence:
+
+- `artifacts/recordings/ios-progressive-final-polish.mp4`: 118.981667 seconds,
+  21,584,206 bytes, H.264 1206×2622. Cached math chapter, corrected health error,
+  fresh early-reading transfer, verification, API-unavailable process restart and
+  restoration of production health.
+- `artifacts/private/ios-final-polish-events.json`: threshold/tap and screenshot
+  observations; `ios-final-polish-early-title.png`, `ios-final-polish-early-body.png`,
+  `ios-final-polish-health-error.png` and `ios-final-polish-offline.png` show the
+  actual final-build results.
+- `artifacts/recordings/android-progressive-verification.mp4`: 201.966667 seconds,
+  5,174,912 bytes, H.264 at 30 fps, joined early-reading, offline and final-polish evidence with
+  original timing retained. Playback encoding is not an app frame-rate result.
+- `artifacts/recordings/android-final-polish.mp4`: final Android 2004 smoke;
+  `artifacts/private/android-final-health-error.png` and `android-final-native-body.png`
+  show corrected settings and readable cached body text.

@@ -28,6 +28,12 @@ and SHA-256 verified before the ready state and atomic rename.
 
 ## Checks completed
 
+These counts and measurements describe the initial local corpus run. Later
+production/progressive suites and recordings are reported in
+[production deployment](production-deployment.md) and
+[progressive reading](progressive-reading.md); do not treat the historical test
+counts below as the current suite size.
+
 - Worker: 20 tests, TypeScript checks, deployment dry run (no deployment).
 - Flutter: analysis clean, 23 tests; includes origin isolation, interrupted download
   recovery, serialized persistence, container path relocation, failed update keeping
@@ -143,6 +149,10 @@ From `apps/mobile`, with one Flutter build/test process at a time:
 flutter pub get
 flutter analyze
 flutter test
+# Original bundled EPUB fixtures only; no runtime Sample mode:
+flutter test integration_test/walkthrough_test.dart -d <ios-simulator-id> --dart-define=THEREADER_BUNDLED_CATALOG=true
+# Optional reduced-fidelity Dart engine fixture check:
+flutter test integration_test/walkthrough_test.dart -d <ios-simulator-id> --dart-define=THEREADER_BUNDLED_CATALOG=true --dart-define=THEREADER_ENGINE=dart
 flutter test integration_test/live_corpus_test.dart -d <ios-simulator-id> --dart-define=RESET_CORPUS=true
 flutter test integration_test/live_corpus_test.dart -d emulator-5554 --dart-define=TEST_API=http://10.0.2.2:8787 --dart-define=RESET_CORPUS=true
 flutter build apk --release --split-per-abi --target-platform android-arm64
