@@ -26,7 +26,21 @@ The coordinator serializes Git operations. Application deployment is separate.
    long-session memory, and energy where hardware permits. Commit improvements
    separately with before/after evidence and retain benchmark scripts/results.
 7. **Final verification and handoff.** Check regressions, confirm pushed commits,
-   summarize measured results and remaining hardware/platform limitations.
+   summarize measured results and remaining hardware/platform limitations. Record
+   the test session and deliver the video to the user alongside results.
+
+## Real EPUB corpus and recording
+
+The user authorized loading a few real EPUBs from the separately supplied local
+books directory, including large files. Use those for realistic end-to-end reading
+and performance workloads in addition to the small original development fixtures.
+Select representative large/image-heavy and long-text books after inspecting the
+corpus. Import only into local test storage, not remote R2. Do not commit the books
+or extracted contents. Record the simulator test session (download, open, navigate,
+search, typography, close/reopen, offline reading) and save the video outside Git.
+Provide the recording to the user; do not publicly publish private corpus content.
+Document file sizes, workload and observed timings without claiming that file size
+alone predicts rendering cost. Keep screen recordings and benchmark traces distinct.
 
 ## Performance evidence rules
 

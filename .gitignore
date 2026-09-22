@@ -15,4 +15,6 @@ coverage/
 *.log
 .idea/
 *.iml
-
+test-corpus/
+artifacts/recordings/
+artifacts/private/
