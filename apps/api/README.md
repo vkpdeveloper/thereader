@@ -33,9 +33,19 @@ bunx wrangler deploy --dry-run
 ## Storage layout
 
 - `catalog/v1/manifest.json` is a bounded, runtime-validated manifest.
-- `books/<id>/v<version>.epub` contains immutable EPUB editions.
+- `books/<id>/<edition>.epub` contains EPUB editions that publishing tools must
+  treat as immutable.
 
 The manifest includes the public book metadata, the private R2 object key, and the real byte length and SHA-256 checksum generated from each EPUB. The Worker never exposes R2 credentials and has no public write endpoint.
+
+When R2 exposes an object SHA-256 checksum, the Worker verifies it against the
+catalog before serving bytes. Objects uploaded by existing Wrangler workflows may
+only expose an MD5 checksum; those remain compatible, but their sparse ranges
+cannot be checked cryptographically by the Worker. For those objects, correctness
+depends on treating the edition key as immutable, using the catalog checksum as
+the HTTP ETag, pinning resumed reads to the observed R2 ETag, and verifying the
+complete SHA-256 in the client. A hash-like object name is a convention and does
+not prevent an R2 key from being overwritten.
 
 ## Production deployment
 

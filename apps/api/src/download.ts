@@ -67,27 +67,54 @@ function baseHeaders(book: CatalogBook): Headers {
   return headers;
 }
 
-export async function downloadBook(request: Request, env: Env, book: CatalogBook): Promise<Response> {
-  const head = request.method === "HEAD";
+function toHex(bytes: ArrayBuffer): string {
+  return Array.from(new Uint8Array(bytes), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function validateObjectMetadata(object: R2Object, book: CatalogBook): void {
+  if (object.size !== book.fileSize) {
+    throw new ApiError(500, "BOOK_FILE_INVALID", "Book file metadata is invalid.");
+  }
+  const storedSha256 = object.checksums.sha256;
+  if (storedSha256 !== undefined && toHex(storedSha256) !== book.sha256) {
+    throw new ApiError(500, "BOOK_FILE_INVALID", "Book file metadata is invalid.");
+  }
+}
+
+async function headBook(env: Env, book: CatalogBook): Promise<R2Object> {
   const metadata = await env.BOOKS.head(book.objectKey);
   if (metadata === null) {
     throw new ApiError(404, "NOT_FOUND", "Book file not found.");
   }
-  if (metadata.size !== book.fileSize) {
-    throw new ApiError(500, "BOOK_FILE_INVALID", "Book file metadata is invalid.");
-  }
+  validateObjectMetadata(metadata, book);
+  return metadata;
+}
 
+export async function downloadBook(request: Request, env: Env, book: CatalogBook): Promise<Response> {
+  const head = request.method === "HEAD";
   const headers = baseHeaders(book);
   const etag = headers.get("ETag")!;
+
   if (matchesEtag(request.headers.get("If-None-Match"), etag)) {
+    await headBook(env, book);
     return new Response(null, { status: 304, headers });
   }
 
+  if (head) {
+    await headBook(env, book);
+    headers.set("Content-Length", String(book.fileSize));
+    return new Response(null, { status: 200, headers });
+  }
+
   let range: ByteRange | null = null;
+  let pinnedMetadata: R2Object | null = null;
   const rangeHeader = request.headers.get("Range");
   const ifRange = request.headers.get("If-Range");
   if (rangeHeader !== null && (ifRange === null || ifRange === etag)) {
     range = parseRange(rangeHeader, book.fileSize);
+    // Pin resumptions to the exact R2 object observed before the read. The
+    // public validator remains the edition SHA-256 from the catalog.
+    if (ifRange === etag) pinnedMetadata = await headBook(env, book);
   }
 
   if (range !== null) {
@@ -96,19 +123,21 @@ export async function downloadBook(request: Request, env: Env, book: CatalogBook
   } else {
     headers.set("Content-Length", String(book.fileSize));
   }
-  if (head) {
-    return new Response(null, { status: range === null ? 200 : 206, headers });
+  const getOptions: R2GetOptions = {};
+  if (range !== null) {
+    getOptions.range = { offset: range.offset, length: range.length };
+  }
+  if (pinnedMetadata !== null) {
+    getOptions.onlyIf = { etagMatches: pinnedMetadata.etag };
   }
 
-  const object = await env.BOOKS.get(
-    book.objectKey,
-    range === null ? undefined : { range: { offset: range.offset, length: range.length } },
-  );
-  if (object === null || !("body" in object)) {
+  const object = await env.BOOKS.get(book.objectKey, getOptions);
+  if (object === null) {
     throw new ApiError(404, "NOT_FOUND", "Book file not found.");
   }
-  if (object.size !== book.fileSize) {
-    throw new ApiError(500, "BOOK_FILE_INVALID", "Book file metadata is invalid.");
+  if (!("body" in object)) {
+    throw new ApiError(409, "BOOK_FILE_CHANGED", "Book file changed during the request.");
   }
+  validateObjectMetadata(object, book);
   return new Response(object.body, { status: range === null ? 200 : 206, headers });
 }
