@@ -91,12 +91,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(Space.gutter, Space.md, Space.gutter, 0),
               sliver: SliverToBoxAdapter(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Expanded(child: Text('Library', style: text.displayLarge)),
-                    if (canImport)
-                      _importing
+                child: ScreenHeader(
+                  title: 'Library',
+                  style: text.displayLarge,
+                  trailing: !canImport
+                      ? null
+                      : _importing
                           ? Padding(
                               padding: const EdgeInsets.all(12),
                               child: SizedBox(
@@ -115,7 +115,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
                               // and local copy block a second import.
                               onPressed: _import,
                             ),
-                  ],
                 ),
               ),
             ),

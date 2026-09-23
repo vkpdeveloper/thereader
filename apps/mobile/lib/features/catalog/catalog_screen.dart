@@ -79,17 +79,15 @@ class _CatalogScreenState extends State<CatalogScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Expanded(child: Text('Browse', style: text.displaySmall)),
-                        QuietIconButton(
-                          icon: Icons.tune,
-                          label: 'Library API settings',
-                          color: colors.muted,
-                          onPressed: widget.onOpenSettings,
-                        ),
-                      ],
+                    ScreenHeader(
+                      title: 'Browse',
+                      style: text.displaySmall,
+                      trailing: QuietIconButton(
+                        icon: Icons.tune,
+                        label: 'Library API settings',
+                        color: colors.muted,
+                        onPressed: widget.onOpenSettings,
+                      ),
                     ),
                     const SizedBox(height: Space.md),
                     TextField(

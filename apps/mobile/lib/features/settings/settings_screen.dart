@@ -137,7 +137,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Space.xxl,
           ),
           children: [
-            Text('Settings', style: text.displaySmall),
+            ScreenHeader(title: 'Settings', style: text.displaySmall),
             const SizedBox(height: Space.xl),
             const Eyebrow('Library API'),
             const SizedBox(height: Space.sm),
