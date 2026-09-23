@@ -21,7 +21,10 @@ class CoverArt extends StatefulWidget {
   final Book book;
   final Uri? imageUri;
   final double width;
-  static const double ratio = 2 / 3;
+
+  /// Frame is 3:4, the median of real EPUB covers (~0.76; range ~0.63–0.82).
+  /// Artwork is cover-fitted and centre-cropped, so no ratio leaves bands.
+  static const double ratio = 3 / 4;
   @override
   State<CoverArt> createState() => _CoverArtState();
 }
@@ -130,24 +133,27 @@ class _CoverArtState extends State<CoverArt> {
                     bytes,
                     width: width,
                     height: height,
-                    fit: BoxFit.contain,
+                    fit: BoxFit.cover,
                     errorBuilder: (_, _, _) => _decodeError(),
                   );
                 }
+                // Decode into a square of the frame's long side: any cover
+                // between 3:4 and square keeps enough pixels to fill the
+                // frame after cropping, without decoding the full original.
+                final side = (height * MediaQuery.devicePixelRatioOf(context))
+                    .round()
+                    .clamp(1, 1536);
                 return Image(
                   image: ResizeImage(
                     MemoryImage(bytes),
-                    width: (width * MediaQuery.devicePixelRatioOf(context))
-                        .round()
-                        .clamp(1, 1024),
-                    height: (height * MediaQuery.devicePixelRatioOf(context))
-                        .round()
-                        .clamp(1, 1536),
+                    width: side,
+                    height: side,
                     policy: ResizeImagePolicy.fit,
                   ),
                   width: width,
                   height: height,
-                  fit: BoxFit.contain,
+                  fit: BoxFit.cover,
+                  alignment: Alignment.center,
                   filterQuality: FilterQuality.medium,
                   errorBuilder: (_, _, _) => _decodeError(),
                 );
