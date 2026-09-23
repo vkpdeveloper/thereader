@@ -314,7 +314,8 @@ class _ReaderScreenState extends State<ReaderScreen>
           if (_provisional)
             Positioned(
               left: Space.gutter,
-              bottom: MediaQuery.paddingOf(context).bottom + 62,
+              // Floats just above the bottom chrome (~65dp) and its hairline.
+              bottom: MediaQuery.paddingOf(context).bottom + 65 + Space.sm,
               child: IgnorePointer(
                 child: AnimatedBuilder(
                   animation: _services.library,
@@ -331,7 +332,7 @@ class _ReaderScreenState extends State<ReaderScreen>
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: colors.bg.withValues(alpha: .96),
+                        color: colors.bg,
                         borderRadius: const BorderRadius.all(Radii.sm),
                       ),
                       child: Text(
@@ -431,8 +432,12 @@ class _TopChrome extends StatelessWidget {
           duration: Motion.of(context, Motion.base),
           curve: Motion.curve,
           opacity: visible ? 1 : 0,
+          // Opaque: even 8% of the page's text stays legible on pure black.
           child: Container(
-            color: colors.bg.withValues(alpha: 0.92),
+            decoration: BoxDecoration(
+              color: colors.bg,
+              border: Border(bottom: BorderSide(color: colors.border)),
+            ),
             padding: EdgeInsets.only(top: MediaQuery.paddingOf(context).top),
             child: Row(
               children: [
@@ -558,7 +563,10 @@ class _BottomChrome extends StatelessWidget {
           curve: Motion.curve,
           opacity: visible ? 1 : 0,
           child: Container(
-            color: colors.bg.withValues(alpha: 0.92),
+            decoration: BoxDecoration(
+              color: colors.bg,
+              border: Border(top: BorderSide(color: colors.border)),
+            ),
             padding: EdgeInsets.fromLTRB(
               Space.sm,
               Space.sm,
