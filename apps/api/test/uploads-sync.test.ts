@@ -760,6 +760,10 @@ describe("shared personal sync", () => {
       change("preferences", "bad-theme", { value: { themeId: "solarized" } }, now),
       change("preferences", "bad-boolean", { value: { keepAwake: "yes" } }, now),
       change("preferences", "bad-null", { value: { lineHeight: null } }, now),
+      change("preferences", "bad-font-family-id", { value: { fontFamilyId: "Comic Sans!" } }, now),
+      change("preferences", "bad-font-family-type", { value: { fontFamilyId: 7 } }, now),
+      change("preferences", "null-font-family-id", { value: { fontFamilyId: null } }, now),
+      change("preferences", "font-class-still-legacy", { value: { font: "literata", fontFamilyId: "literata" } }, now),
     ];
     for (const invalidChange of invalidPayloads) {
       const response = await jsonRequest("/v1/sync", { deviceId, changes: [invalidChange] });
@@ -788,6 +792,7 @@ describe("shared personal sync", () => {
             justify: true,
             keepAwake: false,
             themeId: "catppuccin-mocha",
+            fontFamilyId: "atkinson-hyperlegible-next",
             futureSetting: "retained",
           },
         }, now),
@@ -804,7 +809,17 @@ describe("shared personal sync", () => {
     expect((await olderClient.json() as any).preferences.value).toMatchObject({
       fontSize: 20,
       themeId: "catppuccin-mocha",
+      // An older client that never sends fontFamilyId keeps the newer choice.
+      fontFamilyId: "atkinson-hyperlegible-next",
     });
+
+    // An id this server has never heard of (a newer client's family) is kept.
+    const newerClient = await jsonRequest("/v1/sync", {
+      deviceId: "newer-client",
+      changes: [change("preferences", "newer-prefs", { value: { font: "serif", fontFamilyId: "future-serif-2" } }, new Date(Date.now() - 250).toISOString())],
+    });
+    expect(newerClient.status).toBe(200);
+    expect((await newerClient.json() as any).preferences.value).toMatchObject({ font: "serif", fontFamilyId: "future-serif-2", fontSize: 20 });
   });
 
   it("rejects future timestamps and explicitly fails instead of truncating oversized state", async () => {

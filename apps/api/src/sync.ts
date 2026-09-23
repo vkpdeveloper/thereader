@@ -14,8 +14,11 @@ const CLIENT_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const PREFERENCES_BOOK_ID = "_preferences";
 const PREFERENCES_SHA = "0".repeat(64);
 const LOCATOR_KEYS = new Set(["href", "progression", "totalProgression", "title", "engine", "raw"]);
-const PREFERENCE_KEYS = new Set(["fontSize", "lineHeight", "font", "flow", "marginScale", "justify", "keepAwake", "themeId"]);
+const PREFERENCE_KEYS = new Set(["fontSize", "lineHeight", "font", "flow", "marginScale", "justify", "keepAwake", "themeId", "fontFamilyId"]);
 const READER_THEME_IDS = new Set(["default", "dracula", "nord", "tokyo-night", "catppuccin-mocha", "gruvbox"]);
+// A slug rather than an enum: newer clients may add families, and every client
+// falls back to the legacy `font` class for ids it does not know.
+const FONT_FAMILY_ID = /^[a-z0-9][a-z0-9-]{0,63}$/;
 
 type ChangeKind = "progress" | "session" | "preferences" | "library";
 
@@ -106,6 +109,7 @@ function validPreferences(value: Record<string, unknown>): boolean {
   if (value.justify !== undefined && typeof value.justify !== "boolean") return false;
   if (value.keepAwake !== undefined && typeof value.keepAwake !== "boolean") return false;
   if (value.themeId !== undefined && (typeof value.themeId !== "string" || !READER_THEME_IDS.has(value.themeId))) return false;
+  if (value.fontFamilyId !== undefined && (typeof value.fontFamilyId !== "string" || !FONT_FAMILY_ID.test(value.fontFamilyId))) return false;
   for (const key of PREFERENCE_KEYS) {
     if (key in value && value[key] === null) return false;
   }
