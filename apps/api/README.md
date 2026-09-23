@@ -113,7 +113,22 @@ settings (`fontSize` 14–28, `lineHeight` 1.2–2.2, `marginScale` 0.5–2,
 fields are retained so newer clients can add settings without breaking older
 Workers. Accepted preference changes merge supplied fields into the current
 value, so an older client that changes typography without a `themeId` does not
-erase a theme selected by a newer client.
+erase a theme selected by a newer client. Optional `highlightColor` is a
+lowercase colour key (`yellow`, `green`, …) up to 16 letters.
+
+Highlights ride on the same request. A `highlight` change carries
+`{highlightId,locator,text,color,note?,createdAt,deleted}`: `highlightId` is the
+client UUID, `locator` is the Readium locator JSON (non-empty `href`, at most
+16 KB), `text` is at most 4,000 characters, `color` is a semantic key the client
+resolves per theme, and `deleted:true` writes a tombstone. Writes are
+last-write-wins by `(updatedAt,id)` and cannot move a highlight to another
+edition. Every accepted write takes a new server `rev`. To pull, add
+`highlightsSince` to the request body (`null` for the full set, or the last
+`cursor` seen). The response then includes
+`highlights:{items,cursor,more}`: only rows changed since that rev, tombstones
+included, at most 500 per response. When `more` is true, the client pulls again
+from `cursor`. Requests without `highlightsSince` get the old response shape and
+cost no extra reads.
 
 Sync changes are keyed by the supplied `(bookId,sha256)` and do not require the
 edition to be present in the catalog. This keeps a cancelled or still-pending

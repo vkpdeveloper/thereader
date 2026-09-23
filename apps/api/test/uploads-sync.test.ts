@@ -859,4 +859,151 @@ describe("shared personal sync", () => {
     expect(progress.status).toBe(500);
     expect((await progress.json() as any).error.code).toBe("SYNC_STATE_INVALID");
   });
+
+  describe("highlights", () => {
+    const locator = {
+      href: "chapter.xhtml",
+      type: "application/xhtml+xml",
+      locations: { progression: 0.25, cssSelector: "p:nth-child(3)" },
+      text: { before: "It was ", highlight: "a dark night", after: " and" },
+    };
+
+    function highlight(changeId: string, highlightId: string, updatedAt: string, overrides: Record<string, unknown> = {}) {
+      return change("highlight", changeId, {
+        highlightId,
+        locator,
+        text: "a dark night",
+        color: "yellow",
+        createdAt: "2026-01-23T12:00:00.000Z",
+        deleted: false,
+        ...overrides,
+      }, updatedAt);
+    }
+
+    it("leaves the response unchanged for clients that never ask for highlights", async () => {
+      const now = new Date(Date.now() - 1_000).toISOString();
+      const created = await jsonRequest("/v1/sync", { deviceId, changes: [highlight("h-1", "uuid-1", now)] });
+      expect(created.status).toBe(200);
+      const body: any = await created.json();
+      expect(body.acceptedChangeIds).toEqual(["h-1"]);
+      expect(body).not.toHaveProperty("highlights");
+      expect((await request("/v1/sync").then((value) => value.json()) as any)).not.toHaveProperty("highlights");
+    });
+
+    it("piggybacks pushes and pulls on one request with LWW, tombstones and a rev cursor", async () => {
+      const t0 = "2026-01-23T12:00:00.000000Z";
+      const t1 = "2026-01-23T12:00:01.000000Z";
+      const t2 = "2026-01-23T12:00:02.000000Z";
+      const first = await jsonRequest("/v1/sync", {
+        deviceId,
+        highlightsSince: null,
+        changes: [
+          highlight("a", "uuid-1", t0, { note: "remember" }),
+          highlight("b", "uuid-2", t0, { color: "blue" }),
+        ],
+      });
+      expect(first.status).toBe(200);
+      const full: any = (await first.json() as any).highlights;
+      expect(full.more).toBe(false);
+      expect(full.items).toEqual([
+        {
+          id: "uuid-1", bookId, sha256: edition, locator, text: "a dark night", color: "yellow", note: "remember",
+          createdAt: "2026-01-23T12:00:00.000Z", updatedAt: t0, deleted: false,
+        },
+        expect.objectContaining({ id: "uuid-2", color: "blue", note: null }),
+      ]);
+
+      // Nothing changed: the cursor holds and no rows come back.
+      const idle: any = await jsonRequest("/v1/sync", { deviceId, highlightsSince: full.cursor, changes: [] }).then((r) => r.json());
+      expect(idle.highlights).toEqual({ items: [], cursor: full.cursor, more: false });
+
+      // Another device recolours one and deletes the other.
+      const other = await jsonRequest("/v1/sync", {
+        deviceId: "android-device",
+        highlightsSince: full.cursor,
+        changes: [
+          highlight("c", "uuid-1", t1, { color: "green", note: "remember" }),
+          highlight("d", "uuid-2", t2, { color: "blue", deleted: true }),
+        ],
+      });
+      const delta: any = (await other.json() as any).highlights;
+      expect(delta.items.map((item: any) => [item.id, item.color, item.deleted])).toEqual([
+        ["uuid-1", "green", false],
+        ["uuid-2", "blue", true],
+      ]);
+      expect(delta.cursor).toBeGreaterThan(full.cursor);
+
+      // A stale edit arriving late loses and does not bump the rev.
+      const stale: any = await jsonRequest("/v1/sync", {
+        deviceId,
+        highlightsSince: delta.cursor,
+        changes: [highlight("e", "uuid-2", t1, { color: "pink" })],
+      }).then((r) => r.json());
+      expect(stale.acceptedChangeIds).toEqual(["e"]);
+      expect(stale.highlights.items).toEqual([]);
+
+      const everything: any = await jsonRequest("/v1/sync", { deviceId, highlightsSince: 0, changes: [] }).then((r) => r.json());
+      expect(everything.highlights.items).toEqual([
+        expect.objectContaining({ id: "uuid-1", color: "green" }),
+        expect.objectContaining({ id: "uuid-2", color: "blue", deleted: true }),
+      ]);
+    });
+
+    it("pages large pulls instead of returning every row at once", async () => {
+      await env.DB.prepare(
+        `WITH RECURSIVE n(x) AS (SELECT 1 UNION ALL SELECT x + 1 FROM n WHERE x < 501)
+         INSERT INTO sync_highlights (id, book_id, sha256, locator_json, text, color, note, created_at,
+                                      updated_at, updated_ms, deleted_at, change_id, rev)
+         SELECT 'id-' || x, '${bookId}', '${edition}', '{"href":"c.xhtml"}', 't', 'yellow', NULL,
+                '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z', 1767225600000000, NULL, 'c-' || x, x FROM n`,
+      ).run();
+      const page: any = await jsonRequest("/v1/sync", { deviceId, highlightsSince: null, changes: [] }).then((r) => r.json());
+      expect(page.highlights.items).toHaveLength(500);
+      expect(page.highlights).toMatchObject({ cursor: 500, more: true });
+      const rest: any = await jsonRequest("/v1/sync", { deviceId, highlightsSince: 500, changes: [] }).then((r) => r.json());
+      expect(rest.highlights).toMatchObject({ cursor: 501, more: false });
+      expect(rest.highlights.items).toHaveLength(1);
+    });
+
+    it("rejects malformed highlights, cursors and colour preferences", async () => {
+      const now = new Date(Date.now() - 1_000).toISOString();
+      const invalid = [
+        { deviceId, changes: [highlight("x", "uuid-x", now, { color: "#ff0" })] },
+        { deviceId, changes: [highlight("x", "uuid-x", now, { locator: { locations: {} } })] },
+        { deviceId, changes: [highlight("x", "uuid-x", now, { text: "x".repeat(4_001) })] },
+        { deviceId, changes: [highlight("x", "uuid-x", now, { deleted: "no" })] },
+        { deviceId, changes: [highlight("x", "not a uuid!", now)] },
+        { deviceId, changes: [highlight("x", "uuid-x", now, { createdAt: "yesterday" })] },
+        { deviceId, changes: [highlight("x", "uuid-x", now, { extra: 1 })] },
+        { deviceId, changes: [change("preferences", "p", { value: { highlightColor: "Yellow" } }, now)] },
+        { deviceId, changes: [change("preferences", "p", { value: { highlightColor: null } }, now)] },
+        { deviceId, highlightsSince: -1, changes: [] },
+        { deviceId, highlightsSince: "0", changes: [] },
+        { deviceId, highlightsSince: 1.5, changes: [] },
+      ];
+      for (const body of invalid) {
+        const response = await jsonRequest("/v1/sync", body);
+        expect(response.status).toBe(400);
+        expect((await response.json() as any).error.code).toBe("INVALID_SYNC");
+      }
+
+      const colour = await jsonRequest("/v1/sync", {
+        deviceId,
+        changes: [change("preferences", "p", { value: { highlightColor: "purple" } }, now)],
+      });
+      expect(colour.status).toBe(200);
+      expect((await colour.json() as any).preferences.value).toEqual({ highlightColor: "purple" });
+    });
+
+    it("refuses to move a highlight to another book", async () => {
+      const t0 = "2026-01-23T12:00:00.000000Z";
+      const t1 = "2026-01-23T12:00:01.000000Z";
+      await jsonRequest("/v1/sync", { deviceId, changes: [highlight("a", "uuid-1", t0)] });
+      const moved = change("highlight", "b", {
+        highlightId: "uuid-1", locator, text: "x", color: "pink", createdAt: t0, deleted: false,
+      }, t1, "c".repeat(64));
+      const after: any = await jsonRequest("/v1/sync", { deviceId, highlightsSince: 0, changes: [moved] }).then((r) => r.json());
+      expect(after.highlights.items).toEqual([expect.objectContaining({ id: "uuid-1", sha256: edition, color: "yellow" })]);
+    });
+  });
 });

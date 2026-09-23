@@ -14,13 +14,22 @@ const CLIENT_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const PREFERENCES_BOOK_ID = "_preferences";
 const PREFERENCES_SHA = "0".repeat(64);
 const LOCATOR_KEYS = new Set(["href", "progression", "totalProgression", "title", "engine", "raw"]);
-const PREFERENCE_KEYS = new Set(["fontSize", "lineHeight", "font", "flow", "marginScale", "justify", "keepAwake", "themeId", "fontFamilyId"]);
+const PREFERENCE_KEYS = new Set(["fontSize", "lineHeight", "font", "flow", "marginScale", "justify", "keepAwake", "themeId", "fontFamilyId", "highlightColor"]);
 const READER_THEME_IDS = new Set(["default", "dracula", "nord", "tokyo-night", "catppuccin-mocha", "gruvbox"]);
 // A slug rather than an enum: newer clients may add families, and every client
 // falls back to the legacy `font` class for ids it does not know.
 const FONT_FAMILY_ID = /^[a-z0-9][a-z0-9-]{0,63}$/;
+// Semantic colour keys (yellow, green, ...), resolved per theme by clients.
+// A slug so newer clients can add colours without a server release.
+const HIGHLIGHT_COLOR = /^[a-z]{1,16}$/;
+const HIGHLIGHT_KEYS = new Set(["highlightId", "locator", "text", "color", "note", "createdAt", "deleted"]);
+const MAX_HIGHLIGHT_TEXT = 4_000;
+const MAX_HIGHLIGHT_NOTE = 4_000;
+const MAX_HIGHLIGHT_LOCATOR_BYTES = 16 * 1024;
+const MAX_HIGHLIGHTS_PAGE = 500;
+const CHANGE_KINDS = ["progress", "session", "preferences", "library", "highlight"];
 
-type ChangeKind = "progress" | "session" | "preferences" | "library";
+type ChangeKind = "progress" | "session" | "preferences" | "library" | "highlight";
 
 interface SyncChange {
   id: string;
@@ -66,6 +75,40 @@ export interface SyncState {
   }>;
   preferences: { value: unknown; updatedAt: string } | null;
   acceptedChangeIds?: string[];
+  // Present only when the request asked for it via `highlightsSince`, so
+  // older clients see an unchanged response and cost no extra D1 reads.
+  highlights?: {
+    items: SyncHighlight[];
+    cursor: number;
+    more: boolean;
+  };
+}
+
+export interface SyncHighlight {
+  id: string;
+  bookId: string;
+  sha256: string;
+  locator: Record<string, unknown>;
+  text: string;
+  color: string;
+  note: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deleted: boolean;
+}
+
+interface HighlightRow {
+  id: string;
+  book_id: string;
+  sha256: string;
+  locator_json: string;
+  text: string;
+  color: string;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  rev: number;
 }
 
 function invalidSync(message = "Sync request is invalid."): ApiError {
@@ -110,10 +153,30 @@ function validPreferences(value: Record<string, unknown>): boolean {
   if (value.keepAwake !== undefined && typeof value.keepAwake !== "boolean") return false;
   if (value.themeId !== undefined && (typeof value.themeId !== "string" || !READER_THEME_IDS.has(value.themeId))) return false;
   if (value.fontFamilyId !== undefined && (typeof value.fontFamilyId !== "string" || !FONT_FAMILY_ID.test(value.fontFamilyId))) return false;
+  if (value.highlightColor !== undefined && (typeof value.highlightColor !== "string" || !HIGHLIGHT_COLOR.test(value.highlightColor))) return false;
   for (const key of PREFERENCE_KEYS) {
     if (key in value && value[key] === null) return false;
   }
   return true;
+}
+
+// Readium locators carry href plus free-form `locations` and `text` objects;
+// only the href is required, and the whole thing is size-bounded.
+function validHighlightLocator(value: unknown): value is Record<string, unknown> {
+  if (!isRecord(value)) return false;
+  if (typeof value.href !== "string" || value.href.length === 0 || value.href.length > 4_096) return false;
+  return payloadSize(value) <= MAX_HIGHLIGHT_LOCATOR_BYTES;
+}
+
+function validHighlightPayload(value: Record<string, unknown>, futureLimit: number): boolean {
+  if (Object.keys(value).some((key) => !HIGHLIGHT_KEYS.has(key))) return false;
+  if (!validClientId(value.highlightId)) return false;
+  if (typeof value.deleted !== "boolean") return false;
+  if (!validHighlightLocator(value.locator)) return false;
+  if (typeof value.text !== "string" || value.text.length > MAX_HIGHLIGHT_TEXT) return false;
+  if (typeof value.color !== "string" || !HIGHLIGHT_COLOR.test(value.color)) return false;
+  if (!validOptionalBoundedString(value.note, MAX_HIGHLIGHT_NOTE)) return false;
+  return canonicalIsoDate(value.createdAt, futureLimit) !== null;
 }
 
 function parseChange(value: unknown, futureLimit: number): SyncChange {
@@ -121,7 +184,7 @@ function parseChange(value: unknown, futureLimit: number): SyncChange {
   const allowed = new Set(["id", "bookId", "sha256", "kind", "updatedAt", "payload"]);
   if (Object.keys(value).some((key) => !allowed.has(key))) throw invalidSync();
   if (!validClientId(value.id)) throw invalidSync("Change ID is invalid.");
-  if (typeof value.kind !== "string" || !["progress", "session", "preferences", "library"].includes(value.kind)) {
+  if (typeof value.kind !== "string" || !CHANGE_KINDS.includes(value.kind)) {
     throw invalidSync("Change kind is invalid.");
   }
   const kind = value.kind as ChangeKind;
@@ -154,6 +217,9 @@ function parseChange(value: unknown, futureLimit: number): SyncChange {
       }
       const elapsed = value.payload.readingMilliseconds as number;
       if (elapsed < 0 || elapsed > MAX_SESSION_MS) throw invalidSync("Session duration is invalid.");
+    }
+    if (kind === "highlight" && !validHighlightPayload(value.payload, futureLimit)) {
+      throw invalidSync("Highlight payload is invalid.");
     }
     if (kind === "library") {
       if (Object.keys(value.payload).some((key) => key !== "present" && key !== "addedAt") || typeof value.payload.present !== "boolean") {
@@ -236,6 +302,42 @@ function statementForChange(env: Env, deviceId: string, change: SyncChange): D1P
          WHERE excluded.updated_ms > sync_preferences.updated_ms
             OR (excluded.updated_ms = sync_preferences.updated_ms AND excluded.change_id > sync_preferences.change_id)`,
       ).bind(change.id, change.updatedAt, change.updatedMs, JSON.stringify(change.payload.value));
+    case "highlight": {
+      // Batched statements run sequentially in one transaction, so MAX(rev)+1
+      // hands out a unique, increasing rev per accepted write. A rejected
+      // (older) write keeps the row and its rev untouched.
+      const payload = change.payload;
+      return env.DB.prepare(
+        `INSERT INTO sync_highlights
+           (id, book_id, sha256, locator_json, text, color, note, created_at,
+            updated_at, updated_ms, deleted_at, change_id, rev)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                 (SELECT COALESCE(MAX(rev), 0) + 1 FROM sync_highlights))
+         ON CONFLICT(id) DO UPDATE SET
+           locator_json = excluded.locator_json, text = excluded.text,
+           color = excluded.color, note = excluded.note,
+           updated_at = excluded.updated_at, updated_ms = excluded.updated_ms,
+           deleted_at = excluded.deleted_at, change_id = excluded.change_id,
+           rev = excluded.rev
+         WHERE (excluded.updated_ms > sync_highlights.updated_ms
+             OR (excluded.updated_ms = sync_highlights.updated_ms AND excluded.change_id > sync_highlights.change_id))
+           AND excluded.book_id = sync_highlights.book_id
+           AND excluded.sha256 = sync_highlights.sha256`,
+      ).bind(
+        payload.highlightId,
+        change.bookId,
+        change.sha256,
+        JSON.stringify(payload.locator),
+        payload.text,
+        payload.color,
+        typeof payload.note === "string" ? payload.note : null,
+        payload.createdAt,
+        change.updatedAt,
+        change.updatedMs,
+        payload.deleted ? change.updatedAt : null,
+        change.id,
+      );
+    }
   }
 }
 
@@ -330,16 +432,64 @@ export async function getSyncState(env: Env, acceptedChangeIds?: string[]): Prom
   return state;
 }
 
+function invalidState(): ApiError {
+  return new ApiError(500, "SYNC_STATE_INVALID", "Sync state is invalid.");
+}
+
+// Pulls highlight rows written after `since` (a server rev), tombstones
+// included, in rev order. Only changed rows are read; `more` asks the client
+// to page again on its next sync.
+async function highlightsSince(env: Env, since: number): Promise<NonNullable<SyncState["highlights"]>> {
+  const rows = await env.DB.prepare(
+    `SELECT id, book_id, sha256, locator_json, text, color, note, created_at,
+            updated_at, deleted_at, rev
+       FROM sync_highlights WHERE rev > ? ORDER BY rev LIMIT ?`,
+  )
+    .bind(since, MAX_HIGHLIGHTS_PAGE + 1)
+    .all<HighlightRow>();
+  const more = rows.results.length > MAX_HIGHLIGHTS_PAGE;
+  const page = more ? rows.results.slice(0, MAX_HIGHLIGHTS_PAGE) : rows.results;
+  const items = page.map((row): SyncHighlight => {
+    let locator: unknown;
+    try {
+      locator = JSON.parse(row.locator_json);
+    } catch {
+      throw invalidState();
+    }
+    if (!validHighlightLocator(locator) || !HIGHLIGHT_COLOR.test(row.color)) throw invalidState();
+    return {
+      id: row.id,
+      bookId: row.book_id,
+      sha256: row.sha256,
+      locator,
+      text: row.text,
+      color: row.color,
+      note: row.note,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      deleted: row.deleted_at !== null,
+    };
+  });
+  return { items, cursor: page.length === 0 ? since : page[page.length - 1]!.rev, more };
+}
+
 export async function pushSync(request: Request, env: Env): Promise<SyncState> {
   const raw = await readBoundedJson(request, MAX_SYNC_BYTES);
   if (!isRecord(raw) || !validClientId(raw.deviceId) || !Array.isArray(raw.changes) || raw.changes.length > MAX_CHANGES) {
     throw invalidSync();
   }
-  if (Object.keys(raw).some((key) => key !== "deviceId" && key !== "changes")) throw invalidSync();
+  if (Object.keys(raw).some((key) => key !== "deviceId" && key !== "changes" && key !== "highlightsSince")) throw invalidSync();
+  // Optional: absent means an older client that knows nothing of highlights;
+  // null means "send the full set"; a number is the last rev the client saw.
+  const wantsHighlights = "highlightsSince" in raw;
+  const since = raw.highlightsSince ?? 0;
+  if (wantsHighlights && (!Number.isSafeInteger(since) || (since as number) < 0)) throw invalidSync("highlightsSince is invalid.");
   const futureLimit = Date.now() + MAX_FUTURE_SKEW_MS;
   const changes = raw.changes.map((change) => parseChange(change, futureLimit));
   if (changes.length > 0) {
     await env.DB.batch(changes.map((change) => statementForChange(env, raw.deviceId as string, change)));
   }
-  return getSyncState(env, changes.map((change) => change.id));
+  const state = await getSyncState(env, changes.map((change) => change.id));
+  if (wantsHighlights) state.highlights = await highlightsSince(env, since as number);
+  return state;
 }
