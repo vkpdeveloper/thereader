@@ -9,8 +9,7 @@ import '../shared/cloud_status.dart';
 import '../shared/states.dart';
 import 'theme_section.dart';
 
-/// Library API address, theme, cloud sync status, storage facts, and a short
-/// note on privacy. No accounts, no tokens: the API URL is the only
+/// Library API address, theme, cloud sync status, storage and about. No accounts, no tokens: the API URL is the only
 /// configuration. This is the only screen that reports upload or sync state.
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -58,7 +57,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() {
         _checkResult = h.ok
             ? 'Connected · ${h.service}'
-            : 'Responded, but status was not ok.';
+            : 'Server is not healthy';
         _checkTone = h.ok ? _Tone.good : _Tone.warn;
       });
     } on ApiException catch (e) {
@@ -157,20 +156,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onSubmitted: (_) => _check(),
               onChanged: (_) => setState(() => _checkResult = null),
             ),
-            const SizedBox(height: Space.sm),
-            Text(
-              isDefault
-                  ? 'Books come from The Reader library. Enter another Reader API URL to use your own.'
-                  : 'Books come from this Reader API. Downloads already on this device stay readable.',
-              style: text.bodySmall,
-            ),
             const SizedBox(height: Space.md),
             Wrap(
               spacing: Space.sm,
               runSpacing: Space.sm,
               children: [
                 QuietButton(
-                  label: _checking ? 'Checking' : 'Save and check /health',
+                  label: _checking ? 'Checking' : 'Save and check',
                   onPressed: _checking ? null : _check,
                 ),
                 if (!isDefault)
@@ -195,13 +187,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             if (sync != null || imports != null) ...[
               const SizedBox(height: Space.xl),
               const Eyebrow('Cloud sync'),
-              const SizedBox(height: Space.sm),
-              Text(
-                sync != null
-                    ? 'Reading position, reading time and reader preferences sync through your Reader API, so your other devices pick up where you left off.'
-                    : 'Imported books upload to your Reader API so they are available on your other devices.',
-                style: text.bodySmall,
-              ),
               const SizedBox(height: Space.md),
               if (sync != null) ...[
                 _StatusRow(
@@ -215,7 +200,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _StatusRow(
                   'Waiting',
                   sync.pendingCount == 0
-                      ? 'Nothing. Everything is in sync.'
+                      ? 'Up to date'
                       : sync.pendingCount == 1
                       ? '1 change not yet synced'
                       : '${sync.pendingCount} changes not yet synced',
@@ -235,10 +220,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       : imports.busy
                       ? 'Importing'
                       : imports.pendingCount == 0
-                      ? 'All imported books are in the cloud.'
+                      ? 'All books uploaded'
                       : imports.pendingCount == 1
-                      ? '1 book waiting to upload. It is readable here and retries automatically.'
-                      : '${imports.pendingCount} books waiting to upload. They are readable here and retry automatically.',
+                      ? '1 book waiting to upload'
+                      : '${imports.pendingCount} books waiting to upload',
                   tone: imports.pendingCount == 0 || imports.busy ? _Tone.plain : _Tone.warn,
                 ),
                 if (imports.error != null)
@@ -248,7 +233,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     'Upload problem',
                     failedUploads.length == 1
                         ? failedUploads.first
-                        : '${failedUploads.first} (${failedUploads.length} books affected)',
+                        : '${failedUploads.first} (${failedUploads.length} books)',
                     tone: _Tone.bad,
                   ),
               ],
@@ -281,12 +266,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: Space.xl),
             const Eyebrow('About'),
             const SizedBox(height: Space.sm),
-            Text(
-              sync != null
-                  ? 'The Reader · personal EPUB reader. Downloaded files stay on this device. Reading position, reading time and preferences sync through your Reader API.'
-                  : 'The Reader · personal EPUB reader. Reading progress and preferences stay on this device.',
-              style: text.bodySmall,
-            ),
+            Text('The Reader · personal EPUB reader', style: text.bodySmall),
           ],
         );
       },

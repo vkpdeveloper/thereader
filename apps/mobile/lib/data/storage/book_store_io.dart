@@ -29,8 +29,7 @@ class IoBookStore implements BookStore {
   bool get isDurable => true;
 
   @override
-  String get description =>
-      'Application support storage (kept across launches, not a cache).';
+  String get description => 'Downloads are saved on this device';
 
   Directory _bookDir(String bookId) =>
       Directory(p.join(root.path, _safe(bookId)));

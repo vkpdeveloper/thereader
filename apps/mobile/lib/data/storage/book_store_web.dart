@@ -12,7 +12,7 @@ class MemoryBookStore implements BookStore {
   bool get isDurable => false;
 
   @override
-  String get description => 'In-memory (browser preview): downloads last for this session only.';
+  String get description => 'Downloads last for this session only';
 
   @override
   Future<BookSink> openSink({required String bookId, required String version}) async =>

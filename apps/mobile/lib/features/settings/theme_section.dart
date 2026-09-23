@@ -16,17 +16,11 @@ class ThemeSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
     final current = ThemePreset.byId(selectedId);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Eyebrow('Theme'),
-        const SizedBox(height: Space.sm),
-        Text(
-          'Colours for the whole app, including the reading page. All themes are dark.',
-          style: text.bodySmall,
-        ),
         const SizedBox(height: Space.md),
         LayoutBuilder(
           builder: (context, c) {

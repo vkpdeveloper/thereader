@@ -123,7 +123,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('CLOUD SYNC'), findsNothing);
     expect(find.text('Sync now'), findsNothing);
-    expect(find.textContaining('preferences stay on this device'), findsOneWidget);
+    expect(find.text('The Reader · personal EPUB reader'), findsOneWidget);
   });
 
   testWidgets('import action lives top-right, opens the picker and lands on the book page',
@@ -247,10 +247,7 @@ void main() {
     expect(find.text('3 min ago'), findsOneWidget);
     expect(find.text('2 changes not yet synced'), findsOneWidget);
     expect(find.text('3 h 12 min'), findsOneWidget);
-    expect(find.textContaining('1 book waiting to upload'), findsOneWidget);
-    // The About copy no longer claims everything stays on the device.
-    expect(find.textContaining('preferences stay on this device'), findsNothing);
-    expect(find.textContaining('sync through your Reader API'), findsWidgets);
+    expect(find.text('1 book waiting to upload'), findsOneWidget);
 
     await tester.ensureVisible(find.text('Sync now'));
     await tester.pumpAndSettle();
