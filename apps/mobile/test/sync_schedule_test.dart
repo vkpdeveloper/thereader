@@ -30,6 +30,10 @@ class Server {
   final List<List<dynamic>> syncs = [];
   bool offline = false;
   Completer<void>? hold;
+  int metadataRequests = 0;
+
+  /// Report the local book as a cloud library row (triggers metadata checks).
+  bool listBook = false;
   int inFlight = 0;
   int maxInFlight = 0;
 
@@ -38,6 +42,7 @@ class Server {
 
   Future<http.Response> _handle(http.Request request) async {
     if (request.url.path.startsWith('/v1/books/')) {
+      metadataRequests++;
       return http.Response(jsonEncode({'book': book.toJson()}), 200);
     }
     inFlight++;
@@ -46,7 +51,23 @@ class Server {
       syncs.add(jsonDecode(request.body)['changes'] as List);
       await hold?.future;
       if (offline) throw http.ClientException('Offline');
-      return http.Response(jsonEncode({'books': [], 'preferences': null}), 200);
+      final books = [
+        if (listBook)
+          {
+            'bookId': book.id,
+            'sha256': book.sha256,
+            'inLibrary': true,
+            'addedAt': '2026-01-01T00:00:00.000Z',
+            'progress': null,
+            'progressUpdatedAt': null,
+            'lastOpenedAt': null,
+            'readingMilliseconds': 0,
+          },
+      ];
+      return http.Response(
+        jsonEncode({'books': books, 'preferences': null}),
+        200,
+      );
     } finally {
       inFlight--;
     }
@@ -62,9 +83,14 @@ class Harness {
   int get requests => server.syncs.length;
   LibraryEntry get entry => library.entries.single;
 
-  static Harness start(FakeAsync async, Server server) {
-    final start = DateTime.utc(2026, 9, 23, 12);
-    final store = MemoryKeyValueStore();
+  static Harness start(
+    FakeAsync async,
+    Server server, {
+    MemoryKeyValueStore? store,
+    DateTime? start,
+  }) {
+    start ??= DateTime.utc(2026, 9, 23, 12);
+    store ??= MemoryKeyValueStore();
     final library = LibraryRepository(
       store: store,
       bookStore: MemoryBookStore(),
@@ -74,13 +100,15 @@ class Harness {
     () async {
       await library.load();
       await settings.load();
-      await library.importLocal(book: book, origin: origin, path: 'l.epub');
+      if (library.entries.isEmpty) {
+        await library.importLocal(book: book, origin: origin, path: 'l.epub');
+      }
       sync = SyncRepository(
-        store: store,
+        store: store!,
         library: library,
         settings: settings,
         clientFactory: server.client,
-        now: () => start.add(async.elapsed),
+        now: () => start!.add(async.elapsed),
       );
       await sync.load();
     }();
@@ -105,6 +133,7 @@ class Harness {
 
   void dispose() {
     sync.dispose();
+    unawaited(sync.flush());
     async.flushMicrotasks();
   }
 }
@@ -279,5 +308,55 @@ void main() {
       expect(h.requests, 2);
       expect(server.maxInFlight, 1);
     }, configure: (server) => server.hold = Completer<void>());
+  });
+
+  group('metadata refresh throttle survives restarts', () {
+    const key = 'cloud_sync.metadata_refresh.v1';
+
+    int coldStartMetadata(MemoryKeyValueStore store, {String? damage}) {
+      var requests = 0;
+      fakeAsync((async) {
+        final server = Server()..listBook = true;
+        // Persisted stamps use the real clock; start past the resume gap so
+        // every cold start really syncs.
+        final h = Harness.start(
+          async,
+          server,
+          store: store,
+          start: DateTime.now().add(const Duration(minutes: 5)),
+        );
+        async.elapse(const Duration(seconds: 1));
+        requests = server.metadataRequests;
+        h.dispose();
+      });
+      if (damage != null) store.write(key, damage);
+      return requests;
+    }
+
+    test('a cold start after a check does not re-fetch the book', () {
+      final store = MemoryKeyValueStore();
+      expect(coldStartMetadata(store), 1);
+      expect(coldStartMetadata(store), 0);
+      expect(coldStartMetadata(store), 0);
+    });
+
+    for (final damage in ['not json', '[1, 2]', '{"x": 3}']) {
+      test('unreadable throttle "$damage" allows a refresh', () {
+        final store = MemoryKeyValueStore();
+        expect(coldStartMetadata(store, damage: damage), 1);
+        expect(coldStartMetadata(store), 1);
+        expect(coldStartMetadata(store), 0);
+      });
+    }
+
+    test('stamps outside the refresh window are ignored', () {
+      final store = MemoryKeyValueStore();
+      final far = DateTime.now().add(const Duration(days: 30));
+      store.write(
+        key,
+        jsonEncode({'$origin\n${book.id}': far.toIso8601String()}),
+      );
+      expect(coldStartMetadata(store), 1);
+    });
   });
 }

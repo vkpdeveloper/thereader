@@ -64,6 +64,12 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
   final VoidCallback? retryUploads;
   final DateTime Function() _now;
   static const _key = 'cloud_sync.v1';
+
+  /// Metadata-refresh throttle, kept apart from the sync state so a cold start
+  /// does not re-fetch every library book and so the state format can evolve.
+  static const _metadataKey = 'cloud_sync.metadata_refresh.v1';
+  static const _metadataRetry = Duration(minutes: 5);
+  static const _metadataFresh = Duration(hours: 6);
   final Map<String, _OriginState> _origins = {};
   String _deviceId = '';
   bool _loaded = false;
@@ -86,6 +92,7 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
   final Map<String, DateTime> _metadataNextRefresh = {};
   final Set<String> _metadataRefreshInFlight = {};
   final Set<ApiClient> _metadataClients = {};
+  Future<void> _metadataWrites = Future.value();
 
   bool get isSyncing => _isSyncing;
   String? get error => _error;
@@ -155,6 +162,7 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
         /* Preserve other origins if one old state record is corrupt. */
       }
     }
+    await _loadMetadataThrottle();
     _loaded = true;
     library.addListener(_capture);
     settings.addListener(_capture);
@@ -265,7 +273,10 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
 
   bool _attemptedWithin(Duration gap) {
     final last = _lastAttemptAt ?? _current.lastSyncedAt;
-    return last != null && _now().difference(last) < gap;
+    if (last == null) return false;
+    // A stamp in the future (clock moved back) must not suppress syncing.
+    final since = _now().difference(last);
+    return since >= Duration.zero && since < gap;
   }
 
   void _scheduleNext(Duration delay, {bool replace = true}) {
@@ -328,7 +339,7 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
     return write;
   }
 
-  Future<void> flush() => _writes;
+  Future<void> flush() => Future.wait([_writes, _metadataWrites]);
 
   /// Syncs immediately (the Settings button and the schedule itself). Calls
   /// during a running sync join it instead of starting another request.
@@ -339,6 +350,37 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
       _lastAttemptAt = _now();
       _scheduleNext(_drainMore ? _drainDelay : _cycleDelay);
     });
+  }
+
+  Future<void> _loadMetadataThrottle() async {
+    try {
+      final saved = await _store.readJson(_metadataKey);
+      final now = DateTime.now();
+      for (final item in (saved ?? const {}).entries) {
+        final at = DateTime.tryParse(item.value as String? ?? '');
+        // Ignore stale or implausibly distant stamps (clock changes, damage).
+        if (at != null &&
+            at.isAfter(now) &&
+            !at.isAfter(now.add(_metadataFresh))) {
+          _metadataNextRefresh[item.key] = at;
+        }
+      }
+    } catch (_) {
+      /* Unreadable throttle only means metadata may be refreshed early. */
+    }
+  }
+
+  void _persistMetadataThrottle() {
+    final now = DateTime.now();
+    _metadataNextRefresh.removeWhere((_, at) => !at.isAfter(now));
+    final snapshot = jsonEncode(
+      _metadataNextRefresh.map(
+        (key, at) => MapEntry(key, at.toUtc().toIso8601String()),
+      ),
+    );
+    _metadataWrites = _metadataWrites
+        .then((_) => _store.write(_metadataKey, snapshot))
+        .catchError((Object _) {});
   }
 
   void _scheduleMetadataRefresh(String origin, Iterable<LibraryEntry> entries) {
@@ -357,7 +399,7 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
         continue;
       }
       _metadataRefreshInFlight.add(key);
-      _metadataNextRefresh[key] = now.add(const Duration(minutes: 5));
+      _metadataNextRefresh[key] = now.add(_metadataRetry);
       candidates.add(
         _MetadataRefresh(
           key: key,
@@ -368,6 +410,7 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
       );
     }
     if (candidates.isNotEmpty) {
+      _persistMetadataThrottle();
       unawaited(_refreshMetadata(origin, candidates));
     }
   }
@@ -392,7 +435,7 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
         // A successful response is throttled even if the server now points the
         // ID at another edition; never relabel already verified local bytes.
         _metadataNextRefresh[candidate.key] = DateTime.now().add(
-          const Duration(hours: 6),
+          _metadataFresh,
         );
         final current = library.entry(candidate.entryId);
         if (current == null ||
@@ -415,6 +458,7 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
       for (final candidate in candidates) {
         _metadataRefreshInFlight.remove(candidate.key);
       }
+      if (!_disposed) _persistMetadataThrottle();
     }
   }
 
@@ -506,12 +550,14 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
               final refreshAt = _metadataNextRefresh[metadataKey];
               if (refreshAt?.isAfter(DateTime.now()) == true) continue;
               _metadataNextRefresh[metadataKey] = DateTime.now().add(
-                const Duration(minutes: 5),
+                _metadataRetry,
               );
+              _persistMetadataThrottle();
               book = await client.getBook(id);
               _metadataNextRefresh[metadataKey] = DateTime.now().add(
-                const Duration(hours: 6),
+                _metadataFresh,
               );
+              _persistMetadataThrottle();
             } else {
               book = local.book;
               metadataRefresh.add(local);

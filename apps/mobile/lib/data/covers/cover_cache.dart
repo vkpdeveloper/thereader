@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
@@ -9,7 +10,18 @@ import 'cover_disk_stub.dart'
     if (dart.library.io) 'cover_disk_io.dart'
     as platform;
 
-class CoverUnavailable implements Exception {}
+class CoverUnavailable implements Exception {
+  CoverUnavailable({this.missing = false});
+
+  /// The server answered that this cover does not exist (404/410).
+  final bool missing;
+}
+
+class _Failure {
+  _Failure(this.until, this.attempts);
+  final DateTime? until;
+  final int attempts;
+}
 
 /// Encoded covers are bounded separately from Flutter's decoded image cache.
 class CoverCache {
@@ -19,7 +31,8 @@ class CoverCache {
     DateTime Function()? now,
     this.maxEntryBytes = 4 * 1024 * 1024,
     this.maxMemoryBytes = 12 * 1024 * 1024,
-    this.retryDelay = const Duration(seconds: 30),
+    this.retryDelay = const Duration(minutes: 1),
+    this.maxRetryDelay = const Duration(hours: 1),
   }) : _clientFactory = clientFactory ?? http.Client.new,
        _now = now ?? DateTime.now;
   static final Future<CoverCache> shared = () async {
@@ -33,10 +46,14 @@ class CoverCache {
   final http.Client Function() _clientFactory;
   final DateTime Function() _now;
   final int maxEntryBytes, maxMemoryBytes;
-  final Duration retryDelay;
+
+  /// Network retries after a failed fetch wait [retryDelay], doubling per
+  /// consecutive failure up to [maxRetryDelay]. A missing cover (404/410) is
+  /// not retried this session; new metadata brings a new cover URL and key.
+  final Duration retryDelay, maxRetryDelay;
   final _memory = <String, Uint8List>{};
   final _pending = <String, Future<Uint8List?>>{};
-  final _failed = <String, DateTime>{};
+  final _failed = <String, _Failure>{};
   int _memoryBytes = 0;
   int _requests = 0;
   final _waiters = <Completer<void>>[];
@@ -98,8 +115,26 @@ class CoverCache {
   Future<void> reject(String sha, Uri uri) async {
     final key = _key(sha, uri);
     _memoryBytes -= _memory.remove(key)?.length ?? 0;
-    _failed[key] = _now().add(retryDelay);
+    _fail(key);
     await disk.remove(key);
+  }
+
+  void _fail(String key, {bool missing = false}) {
+    final attempts = (_failed.remove(key)?.attempts ?? 0) + 1;
+    final delay = retryDelay * pow(2, min(attempts - 1, 20)).toInt();
+    _failed[key] = _Failure(
+      missing
+          ? null
+          : _now().add(delay < maxRetryDelay ? delay : maxRetryDelay),
+      attempts,
+    );
+    if (_failed.length > 256) _failed.remove(_failed.keys.first);
+  }
+
+  bool _backingOff(String key) {
+    final failure = _failed[key];
+    if (failure == null) return false;
+    return failure.until?.isAfter(_now()) ?? true;
   }
 
   Future<Uint8List?> load(String sha, Uri? uri) {
@@ -113,7 +148,7 @@ class CoverCache {
     final cached = await _cached(key);
     if (cached != null || uri == null) return cached;
     final embedded = await _cached(_key(sha, null));
-    if (_failed[key]?.isAfter(_now()) == true) {
+    if (_backingOff(key)) {
       if (embedded != null) return embedded;
       throw CoverUnavailable();
     }
@@ -124,6 +159,9 @@ class CoverCache {
       final response = await client
           .send(http.Request('GET', uri)..followRedirects = false)
           .timeout(const Duration(seconds: 15));
+      if (response.statusCode == 404 || response.statusCode == 410) {
+        throw CoverUnavailable(missing: true);
+      }
       if (response.statusCode != 200 ||
           (response.contentLength ?? 0) > maxEntryBytes) {
         throw CoverUnavailable();
@@ -157,9 +195,8 @@ class CoverCache {
       _remember(key, bytes);
       _failed.remove(key);
       return bytes;
-    } catch (_) {
-      _failed[key] = _now().add(retryDelay);
-      if (_failed.length > 256) _failed.remove(_failed.keys.first);
+    } catch (e) {
+      _fail(key, missing: e is CoverUnavailable && e.missing);
       if (embedded != null) return embedded;
       throw CoverUnavailable();
     } finally {

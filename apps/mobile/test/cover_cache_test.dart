@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -11,6 +12,50 @@ import 'package:thereader/data/covers/cover_validation.dart';
 
 final png = Uint8List.fromList([137, 80, 78, 71, 13, 10, 26, 10, 0, 0]);
 void main() {
+  test('failed covers back off 1 min doubling to 1 h; 404 is not retried', () {
+    fakeAsync((async) {
+      final start = DateTime.utc(2026);
+      final hits = <String, int>{};
+      var status = 503;
+      final cache = CoverCache(
+        disk: MemoryCoverDisk(),
+        now: () => start.add(async.elapsed),
+        clientFactory: () => MockClient((request) async {
+          hits.update(request.url.path, (n) => n + 1, ifAbsent: () => 1);
+          return http.Response('', request.url.path == '/gone' ? 404 : status);
+        }),
+      );
+      final failing = Uri.parse('https://example.test/failing');
+      final gone = Uri.parse('https://example.test/gone');
+      // Mirrors CoverArt asking again every 31 s while on screen.
+      void pollFor(Duration total) {
+        for (
+          var t = Duration.zero;
+          t < total;
+          t += const Duration(seconds: 31)
+        ) {
+          cache.load('a', failing).catchError((_) => null);
+          cache.load('b', gone).catchError((_) => null);
+          async.elapse(const Duration(seconds: 31));
+        }
+      }
+
+      pollFor(const Duration(hours: 3));
+      // Waits of 1, 2, 4, 8, 16, 32 min then 60 min; each attempt lands on
+      // the next 31 s poll: 0, 1, 3, 7, 15.5, 31.5, 63.5, 124 min.
+      expect(hits['/failing'], 8);
+      expect(hits['/gone'], 1);
+      status = 200;
+      pollFor(const Duration(hours: 1, minutes: 1));
+      expect(hits['/failing'], 9);
+      expect(hits['/gone'], 1, reason: 'missing cover waits for new metadata');
+      final moved = Uri.parse('https://example.test/moved');
+      cache.load('b', moved).catchError((_) => null);
+      async.flushMicrotasks();
+      expect(hits['/moved'], 1);
+    });
+  });
+
   test(
     'at most three bounded network responses are ingested concurrently',
     () async {
@@ -129,7 +174,7 @@ void main() {
       await expectLater(cache.load('a', url), throwsA(isA<CoverUnavailable>()));
       await expectLater(cache.load('a', url), throwsA(isA<CoverUnavailable>()));
       expect(requests, 1);
-      now = now.add(const Duration(seconds: 31));
+      now = now.add(const Duration(seconds: 61));
       expect(await cache.load('a', url), png);
       expect(requests, 2);
     },
