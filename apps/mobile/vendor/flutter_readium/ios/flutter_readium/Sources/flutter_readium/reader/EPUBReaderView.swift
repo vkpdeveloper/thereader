@@ -181,6 +181,10 @@ public class EPUBReaderView: NSObject, FlutterPlatformView, ReadiumReaderView, E
 
     config.editingActions = editingActions
 
+    // THEREADER PATCH: bundled host-app fonts selectable via EPUBPreferences.fontFamily.
+    config.fontFamilyDeclarations += HostFontFamilies.declarations(
+      from: creationParams["fontFamilies"] ?? nil, registrar: registrar)
+
     if let readiumPreferences = self.preferences?.readium {
       config.preferences = readiumPreferences
     }

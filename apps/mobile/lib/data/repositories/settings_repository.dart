@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../core/typography/reader_fonts.dart';
 import '../models/settings.dart';
 import '../storage/key_value_store.dart';
 
@@ -49,6 +50,9 @@ class SettingsRepository extends ChangeNotifier {
   /// Chooses a colour preset. Stored on the reader preferences so it syncs
   /// with the rest of them.
   Future<void> setThemeId(String id) => updateReader((r) => r.copyWith(themeId: id));
+
+  /// Writes the id plus its legacy serif/sans class; see [ReaderFonts.select].
+  Future<void> setFontFamily(ReaderFontFamily family) => updateReader((r) => ReaderFonts.select(r, family));
 
   Future<void> updateReader(
     ReaderPreferences Function(ReaderPreferences) change,

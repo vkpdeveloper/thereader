@@ -7,6 +7,7 @@ import 'package:flutter_readium/flutter_readium.dart' as rd;
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/theme_presets.dart';
 import '../../core/theme/tokens.dart';
+import '../../core/typography/reader_fonts.dart';
 import '../../data/models/library.dart';
 import '../../data/models/settings.dart';
 import '../../data/storage/book_store.dart';
@@ -272,9 +273,11 @@ class ReadiumReaderController implements ReaderController, ReaderSearch {
   ) => rd.EPUBPreferences(
     backgroundColor: colors.paper,
     textColor: colors.ink,
-    // Native WebViews use their platform serif/sans families; a comma-separated
-    // string is treated by Readium as one (nonexistent) font family.
-    fontFamily: p.font == ReaderFont.serif ? 'serif' : 'sans-serif',
+    // A single family name: Readium appends the declared fallback (serif or
+    // sans-serif) itself; a comma-separated string would be treated as one
+    // nonexistent family. Bundled names are declared natively at creation via
+    // `fontFamilies`, system choices use the platform generic.
+    fontFamily: ReaderFonts.resolve(p).readiumFamily,
     fontSize: p.fontSize / 16.0,
     lineHeight: p.lineHeight,
     pageMargins: 0.8 + p.marginScale * 0.6,
@@ -282,6 +285,12 @@ class ReadiumReaderController implements ReaderController, ReaderSearch {
     textAlign: p.justify ? TextAlign.justify : TextAlign.left,
     publisherStyles: false,
   );
+
+  /// Every bundled family, declared once per navigator so switching fonts
+  /// never recreates the view. Faces are served lazily from app assets.
+  static final List<Map<String, Object>> readiumFontFamilies = [
+    for (final f in ReaderFonts.bundled) f.toNativeJson(),
+  ];
 
   @override
   void dispose() {
@@ -329,6 +338,7 @@ class _ReadiumView extends StatelessWidget {
           shouldShowControls: controller.showControls,
           loadingWidget: ColoredBox(color: paper),
           allowedDefaultActions: const {rd.DefaultSelectionAction.copy},
+          fontFamilies: ReadiumReaderController.readiumFontFamilies,
         ),
       ),
     );

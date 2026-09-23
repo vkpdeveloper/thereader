@@ -185,6 +185,8 @@ fun Resource.injectScriptsAndStyles(
             listOf(
                 """<script type="text/javascript" src="$READIUM_FLUTTER_PATH_PREFIX/assets/helpers/flutterReadiumTools.js"></script>""",
                 """<link rel="stylesheet" type="text/css" href="$READIUM_FLUTTER_PATH_PREFIX/assets/helpers/flutterReadiumTools.css"></link>""",
+                // THEREADER PATCH: one-shot inline `!important` colour demotion.
+                """<script type="text/javascript" src="$READIUM_FLUTTER_PATH_PREFIX/assets/helpers/thereaderTheme.js"></script>""",
                 """<script type="text/javascript">
                 const isAndroid = true;
                 const isIos = false;

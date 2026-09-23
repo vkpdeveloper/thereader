@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/tokens.dart';
+import '../../core/typography/reader_fonts.dart';
 import '../../data/models/settings.dart';
 import '../../data/repositories/settings_repository.dart';
 import '../shared/states.dart';
+import 'reader_font_picker.dart';
 
 /// Typography controls. Every control here does something; the flow toggle is
 /// only offered when the active engine supports pagination.
@@ -43,12 +45,7 @@ class ReaderSettingsSheet extends StatelessWidget {
                 const SizedBox(height: Space.md),
                 _Row(
                   label: 'Font',
-                  child: _Segmented<ReaderFont>(
-                    value: p.font,
-                    options: const {ReaderFont.serif: 'Serif', ReaderFont.sans: 'Sans'},
-                    onChanged: (v) => settings.updateReader((r) => r.copyWith(font: v)),
-                    labelStyle: (v) => TextStyle(fontFamily: v == ReaderFont.serif ? Fonts.serif : Fonts.sans),
-                  ),
+                  child: _FontButton(family: ReaderFonts.resolve(p), onTap: () => showReaderFontPicker(context, settings)),
                 ),
                 _Row(
                   label: 'Size',
@@ -120,6 +117,52 @@ class _Row extends StatelessWidget {
           SizedBox(width: 84, child: Text(label, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: context.colors.muted))),
           Expanded(child: Align(alignment: Alignment.centerRight, child: child)),
         ],
+      ),
+    );
+  }
+}
+
+/// The current family's name set in its own face; opens the picker.
+class _FontButton extends StatelessWidget {
+  const _FontButton({required this.family, required this.onTap});
+  final ReaderFontFamily family;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Semantics(
+      button: true,
+      label: 'Font, ${family.label}',
+      excludeSemantics: true,
+      // excludeSemantics drops the InkWell's action, so expose it here.
+      onTap: onTap,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: const BorderRadius.all(Radii.md),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 40),
+          padding: const EdgeInsets.only(left: 12, right: 6),
+          decoration: BoxDecoration(
+            border: Border.all(color: colors.border),
+            borderRadius: const BorderRadius.all(Radii.md),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  family.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: ReaderFontPicker.familyStyle(family).copyWith(fontSize: 15, color: colors.fg),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(Icons.chevron_right, size: 18, color: colors.muted),
+            ],
+          ),
+        ),
       ),
     );
   }

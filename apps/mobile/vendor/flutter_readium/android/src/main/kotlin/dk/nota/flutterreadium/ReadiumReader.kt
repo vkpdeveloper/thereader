@@ -512,6 +512,9 @@ object ReadiumReader :
     /** Selection actions configured from Dart. Used by EpubReaderFragment to build ActionMode menu. */
     var selectionActions: List<SelectionActionConfig> = emptyList()
 
+    /** THEREADER PATCH: host-app fonts from the widget's `fontFamilies` creation param. */
+    var hostFontFamilies: List<HostFontFamily> = emptyList()
+
     private val context: Context
         get() = application.applicationContext
 
@@ -559,6 +562,8 @@ object ReadiumReader :
                 .open(asset, allowUserInteraction = true, onCreatePublication = {
                     container = transformingContainerFactory?.let { it(container) } ?: container
                     if (manifest.conformsTo(Publication.Profile.EPUB)) {
+                        // THEREADER PATCH: serve bundled host fonts on the package origin.
+                        container = HostFontContainer(container, context.assets) { hostFontFamilies }
                         val factory = PageBreakSkippingContentIteratorFactory()
                         pageBreakIteratorFactory = factory
                         servicesBuilder.contentServiceFactory =

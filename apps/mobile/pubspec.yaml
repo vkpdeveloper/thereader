@@ -34,6 +34,13 @@ flutter:
   uses-material-design: true
   assets:
     - assets/samples/
+    - assets/fonts/LiterataOFL.txt
+    - assets/fonts/SourceSerif4OFL.txt
+    - assets/fonts/AtkinsonHyperlegibleNextOFL.txt
+    - assets/fonts/LexendOFL.txt
+    - assets/fonts/InterOFL.txt
+  # Reading fonts. The native reader serves these same files into the EPUB
+  # web view (see lib/core/typography/reader_fonts.dart); keep paths in sync.
   fonts:
     - family: Literata
       fonts:
@@ -45,3 +52,16 @@ flutter:
         - asset: assets/fonts/Inter.ttf
         - asset: assets/fonts/Inter-Italic.ttf
           style: italic
+    - family: SourceSerif4
+      fonts:
+        - asset: assets/fonts/SourceSerif4.ttf
+        - asset: assets/fonts/SourceSerif4-Italic.ttf
+          style: italic
+    - family: AtkinsonHyperlegibleNext
+      fonts:
+        - asset: assets/fonts/AtkinsonHyperlegibleNext.ttf
+        - asset: assets/fonts/AtkinsonHyperlegibleNext-Italic.ttf
+          style: italic
+    - family: Lexend
+      fonts:
+        - asset: assets/fonts/Lexend.ttf

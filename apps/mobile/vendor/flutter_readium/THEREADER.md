@@ -23,6 +23,30 @@ Local changes:
   canvas, preserving their original colors. Explicit MathJax/inline/display math
   wrappers invert monochrome equation images so transparent black formulas remain
   readable; ordinary covers/photos are never inverted.
+- Theme enforcement (docs/reader-typography.md): a THEREADER PATCH block in
+  `assets/helpers/flutterReadiumTools.css` applies the reader theme's ink to
+  text, headings, captions and borders at three-ID specificity. It keys off
+  `--USER__textColor` / `--USER__backgroundColor`, so live preference changes
+  need no script. Decorations, the TTS spotlight and media are excluded. The
+  new tracked `assets/helpers/thereaderTheme.js` demotes inline `!important`
+  colours once per document. iOS injects it as a document-end user script in
+  `EPUBReaderView+JSBridge.swift`; Android injects it as a head `<script>` in
+  `ReadiumExtensions.kt`.
+- Host fonts: the `fontFamilies` creation param (accepted by all three
+  `ReadiumReaderWidget` variants) lists the app's bundled fonts.
+  `HostFontFamilies.kt` and `HostFontFamilies.swift` validate those entries
+  and declare them to the navigator as `@font-face` families.
+  - Android declares the fonts in the `EpubReaderFragment` configuration and
+    serves them on the publication origin, at
+    `https://readium_package/__thereader_fonts/<file>`. `HostFontContainer`
+    wraps EPUB containers in `ReadiumReader.assetToPublication` and answers
+    only files of currently declared faces, from `flutter_assets/assets/fonts/`.
+    Readium's `readium_assets` origin is not used: its asset loader sends no
+    CORS headers, so Chromium blocked the faces (`@font-face` status error).
+    WebView security settings are unchanged.
+  - iOS appends the declarations to `config.fontFamilyDeclarations` in
+    `EPUBReaderView.swift`.
+  - Faces load offline and only when used.
 
 The Readium Swift 3.9.0 resource lookup patch lives separately in ios/patches
 and is applied by the app's Podfile, with XCTest equivalence coverage.

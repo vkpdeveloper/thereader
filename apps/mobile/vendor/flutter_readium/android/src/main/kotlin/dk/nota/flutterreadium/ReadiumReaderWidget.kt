@@ -115,6 +115,8 @@ class ReadiumReaderWidget(
         val publication = ReadiumReader.currentPublication
         val locatorString = creationParams["initialLocator"] as String?
         val allowScreenReaderNavigation = creationParams["allowScreenReaderNavigation"] as Boolean?
+        // THEREADER PATCH: read before the navigator attaches, which declares them.
+        ReadiumReader.hostFontFamilies = HostFontFamilies.parse(creationParams["fontFamilies"])
 
         // Accepted for API parity with iOS but currently no-op: kotlin-toolkit's
         // EpubNavigatorFragment.Configuration does not expose preload-count fields

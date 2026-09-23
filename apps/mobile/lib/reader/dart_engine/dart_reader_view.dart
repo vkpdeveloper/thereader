@@ -5,6 +5,7 @@ import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/tokens.dart';
+import '../../core/typography/reader_fonts.dart';
 import '../../data/models/settings.dart';
 import 'dart_reader_engine.dart';
 import 'epub_package.dart';
@@ -36,6 +37,15 @@ class DartReaderView extends StatefulWidget {
       case 'h3':
       case 'h4':
         return {'font-size': '1.05em', 'font-weight': '600', 'margin': '1.4em 0 0.5em', 'color': ink};
+      case 'h5':
+      case 'h6':
+        return {'font-size': '1em', 'font-weight': '600', 'margin': '1.2em 0 0.4em', 'color': ink};
+      case 'figcaption':
+      case 'caption':
+        return {'font-size': '0.9em', 'margin': '0.6em 0 1.2em', 'color': ink};
+      case 'th':
+      case 'td':
+        return {'color': ink, 'border-color': border};
       case 'p':
         return {'margin': '0 0 1em', ...justify};
       case 'blockquote':
@@ -62,6 +72,32 @@ class DartReaderView extends StatefulWidget {
         return {'margin': '0 0 0.4em'};
     }
     return null;
+  }
+
+  static final _tag = RegExp(r'<[A-Za-z][^>]*>');
+  static final _artwork = RegExp(r'<(svg|math)\b[\s\S]*?</\1>', caseSensitive: false);
+  static final _colorAttrs = RegExp(
+    r'''\s(?:style|color|bgcolor|text|link|vlink|alink)\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)''',
+    caseSensitive: false,
+  );
+
+  /// Keeps only the body and removes every publisher colour source this
+  /// renderer honours: `<style>`, inline `style` (either quote style, which
+  /// also covers inline `!important`) and legacy colour attributes. Only
+  /// start tags are rewritten, so code samples such as `color="red"` in text
+  /// survive. Inline SVG and MathML are left untouched. Visible for tests.
+  @visibleForTesting
+  static String prepareHtml(String xhtml) {
+    var s = xhtml;
+    final body = RegExp(r'<body[^>]*>([\s\S]*?)</body>', caseSensitive: false).firstMatch(s);
+    if (body != null) s = body.group(1)!;
+    s = s.replaceAll(RegExp(r'<style[\s\S]*?</style>', caseSensitive: false), '');
+    s = s.replaceAll(RegExp(r'<script[\s\S]*?</script>', caseSensitive: false), '');
+    // Artwork keeps its own colours, as in the native readers.
+    return s.splitMapJoin(
+      _artwork,
+      onNonMatch: (text) => text.replaceAllMapped(_tag, (m) => m[0]!.replaceAll(_colorAttrs, '')),
+    );
   }
 }
 
@@ -126,15 +162,7 @@ class _DartReaderViewState extends State<DartReaderView> {
 
   /// Strips the document down to its body so page-level CSS cannot paint a
   /// white background or fight the reader's typography.
-  static String _prepare(String xhtml) {
-    var s = xhtml;
-    final body = RegExp(r'<body[^>]*>([\s\S]*?)</body>', caseSensitive: false).firstMatch(s);
-    if (body != null) s = body.group(1)!;
-    s = s.replaceAll(RegExp(r'<style[\s\S]*?</style>', caseSensitive: false), '');
-    s = s.replaceAll(RegExp(r'<script[\s\S]*?</script>', caseSensitive: false), '');
-    s = s.replaceAll(RegExp(r'\sstyle="[^"]*"', caseSensitive: false), '');
-    return s;
-  }
+  static String _prepare(String xhtml) => DartReaderView.prepareHtml(xhtml);
 
   @override
   Widget build(BuildContext context) {
@@ -143,9 +171,10 @@ class _DartReaderViewState extends State<DartReaderView> {
       valueListenable: controller.prefs,
       builder: (context, prefs, _) {
         final colors = context.colors;
-        final family = prefs.font == ReaderFont.serif ? Fonts.serif : Fonts.sans;
+        final family = ReaderFonts.resolve(prefs);
         final base = TextStyle(
-          fontFamily: family,
+          fontFamily: family.flutterFamily,
+          fontFamilyFallback: family.flutterFallback,
           fontSize: prefs.fontSize,
           height: prefs.lineHeight,
           color: colors.ink,
@@ -160,7 +189,7 @@ class _DartReaderViewState extends State<DartReaderView> {
               )
             : HtmlWidget(
                 _html ?? '',
-                key: ValueKey('${item.href}#${prefs.font}#${colors.hashCode}'),
+                key: ValueKey('${item.href}#${family.id}#${colors.hashCode}'),
                 textStyle: base,
                 baseUrl: Uri.parse('epub:///${item.href}'),
                 factoryBuilder: () => _EpubWidgetFactory(controller.package, item.href),

@@ -13,6 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:thereader/main.dart' as app;
 import 'package:thereader/app_scope.dart';
+import 'package:thereader/core/typography/reader_fonts.dart';
 
 /// Set with `--dart-define=THEREADER_ENGINE=dart` to exercise the built-in
 /// engine; by default the preferred engine (Readium on native) is used.
@@ -57,11 +58,17 @@ void main() {
     await pause(tester, 2);
     await tester.tap(find.byTooltip('Typography'));
     await pause(tester, 3);
-    await tester.tap(find.text('Sans'));
+    // The Font row shows the current family; it opens the picker, where a
+    // choice applies immediately. The sheet's tile is the last match.
+    await tester.tap(find.text(ReaderFonts.systemSerif.label));
     await pause(tester, 3);
-    await tester.tap(find.text('Serif'));
+    await tester.tap(find.text(ReaderFonts.atkinson.label));
+    await pause(tester, 3);
+    await tester.tap(find.text(ReaderFonts.systemSerif.label).last);
     await pause(tester, 1);
-    // Close the sheet and the book.
+    // Close the picker above its 85% height, then the sheet and the book.
+    await tester.tapAt(const Offset(200, 40));
+    await pause(tester, 2);
     await tester.tapAt(const Offset(200, 120));
     await pause(tester, 2);
     await tester.tap(find.byTooltip('Contents'));

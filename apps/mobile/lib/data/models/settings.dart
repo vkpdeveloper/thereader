@@ -44,6 +44,9 @@ class AppSettings {
   }
 }
 
+/// Broad typeface class. Always synced as `font` so builds that predate
+/// [ReaderPreferences.fontFamilyId] still render a sensible fallback; it must
+/// never gain values, because older builds parse it strictly.
 enum ReaderFont { serif, sans }
 
 enum ReaderFlow { scrolled, paginated }
@@ -61,6 +64,7 @@ class ReaderPreferences {
     this.justify = false,
     this.keepAwake = true,
     this.themeId,
+    this.fontFamilyId,
   });
 
   final double fontSize;
@@ -77,6 +81,13 @@ class ReaderPreferences {
   /// older build, which simply renders Default for them.
   final String? themeId;
 
+  /// Reading typeface id from `readerFontFamilies` (`literata`,
+  /// `system-sans`, ...). Null means no specific choice: [font] alone decides.
+  /// Unknown ids are kept, like [themeId]. The id only applies while its
+  /// class matches [font]; an older build that changes [font] cannot clear
+  /// the id, so a mismatch means the older build's class choice wins.
+  final String? fontFamilyId;
+
   static const double minFontSize = 14;
   static const double maxFontSize = 28;
 
@@ -89,6 +100,7 @@ class ReaderPreferences {
     bool? justify,
     bool? keepAwake,
     String? themeId,
+    String? fontFamilyId,
   }) =>
       ReaderPreferences(
         fontSize: (fontSize ?? this.fontSize).clamp(minFontSize, maxFontSize),
@@ -99,6 +111,7 @@ class ReaderPreferences {
         justify: justify ?? this.justify,
         keepAwake: keepAwake ?? this.keepAwake,
         themeId: themeId ?? this.themeId,
+        fontFamilyId: fontFamilyId ?? this.fontFamilyId,
       );
 
   Map<String, dynamic> toJson() => {
@@ -110,16 +123,27 @@ class ReaderPreferences {
         'justify': justify,
         'keepAwake': keepAwake,
         if (themeId != null) 'themeId': themeId,
+        if (fontFamilyId != null) 'fontFamilyId': fontFamilyId,
       };
 
   factory ReaderPreferences.fromJson(Map<String, dynamic> json) => ReaderPreferences(
         fontSize: (json['fontSize'] as num?)?.toDouble() ?? 18,
         lineHeight: (json['lineHeight'] as num?)?.toDouble() ?? 1.6,
-        font: ReaderFont.values.byName(json['font'] as String? ?? 'serif'),
-        flow: ReaderFlow.values.byName(json['flow'] as String? ?? 'scrolled'),
+        font: _byName(ReaderFont.values, json['font'], ReaderFont.serif),
+        flow: _byName(ReaderFlow.values, json['flow'], ReaderFlow.scrolled),
         marginScale: (json['marginScale'] as num?)?.toDouble() ?? 1.0,
         justify: json['justify'] as bool? ?? false,
         keepAwake: json['keepAwake'] as bool? ?? true,
         themeId: json['themeId'] as String?,
+        fontFamilyId: json['fontFamilyId'] is String ? json['fontFamilyId'] as String : null,
       );
+
+  /// Unknown or malformed values fall back instead of throwing, so a value
+  /// written by a future build cannot make preferences unreadable.
+  static T _byName<T extends Enum>(List<T> values, Object? name, T fallback) {
+    for (final v in values) {
+      if (v.name == name) return v;
+    }
+    return fallback;
+  }
 }

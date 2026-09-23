@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Synthetic regression fixture (no book content): reproduces the publisher
+     colour patterns that defeated the reader theme. Load it in a native
+     reader with any dark preset; every text run, border and box must follow
+     the preset ink/paper while the image, SVG and formula keep their colours.
+     Elements with an id are asserted by test/reader_typography_test.dart. -->
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" style="background-color: #fff !important">
+<head>
+<title>Publisher colours</title>
+<style>
+#content .chapter-heading { color: #005; }
+#content .figure-caption { color: #005; }
+#content .listing-caption { color: white !important; background: #020056; }
+#content pre { background: #f2f2f2; color: #111; }
+#content table td { border: 1px solid black; }
+#content .badge { color: white; background: black; }
+</style>
+</head>
+<body style="color: #001 !important; background-color: #fffff0 !important">
+<div id="content">
+<h1 class="chapter-heading">4 Implementing a model</h1>
+<h5 class="listing-caption">Listing 4.1 A placeholder class</h5>
+<pre><code>plt.plot(x, color="red")  # style="kept as code"</code></pre>
+<p>Plain paragraph with a <a href="#fig">cross reference</a>, <b>bold</b>,
+<i>italic</i>, <code>inline code</code> and a <span class="badge">1</span> badge.</p>
+<p id="inline-important" style="color: #003 !important; background-color: #fff !important; text-shadow: 0 0 2px #fff !important">Inline important colours.</p>
+<p style='color:#003'>Single-quoted inline colour.</p>
+<p><font color="#000080">Legacy font colour.</font></p>
+<figure id="fig"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="diagram"/>
+<figcaption class="figure-caption">Figure 4.1 A diagram caption</figcaption></figure>
+<table><tr><th>Name</th><td>Value</td></tr></table>
+<svg id="art" xmlns="http://www.w3.org/2000/svg" width="120" height="40" style="color: #c00 !important">
+<rect width="120" height="40" fill="currentColor"/>
+<text id="art-text" x="8" y="26" style="fill: #fff !important; color: #fff !important">Axis</text>
+</svg>
+<math id="formula" xmlns="http://www.w3.org/1998/Math/MathML"><mi id="formula-mi" style="color: #060 !important">x</mi></math>
+</div>
+</body>
+</html>

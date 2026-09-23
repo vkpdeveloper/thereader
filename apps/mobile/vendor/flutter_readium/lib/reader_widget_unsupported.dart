@@ -20,6 +20,7 @@ class ReadiumReaderWidget extends StatelessWidget {
     this.verticalScroll = false,
     this.preloadPreviousPositionCount = 2,
     this.preloadNextPositionCount = 6,
+    this.fontFamilies = const [],
     super.key,
   });
 
@@ -41,6 +42,9 @@ class ReadiumReaderWidget extends StatelessWidget {
   // API parity with the native widget; preloading is configured on iOS only.
   final int preloadPreviousPositionCount;
   final int preloadNextPositionCount;
+
+  /// THEREADER PATCH: see `reader_widget.dart`; unused on this platform.
+  final List<Map<String, Object>> fontFamilies;
 
   @override
   Widget build(final BuildContext context) =>

@@ -32,6 +32,7 @@ class ReadiumReaderWidget extends StatefulWidget {
     this.toggleShowControlsSemanticLabel = 'Toggle show controls',
     this.preloadPreviousPositionCount = 2,
     this.preloadNextPositionCount = 6,
+    this.fontFamilies = const [],
     super.key,
   });
 
@@ -80,6 +81,13 @@ class ReadiumReaderWidget extends StatefulWidget {
   /// Note: [DefaultSelectionAction.translate] is iOS-only; [DefaultSelectionAction.selectAll]
   /// is Android-only. Unsupported values for a platform are silently ignored.
   final Set<DefaultSelectionAction>? allowedDefaultActions;
+
+  /// THEREADER PATCH: bundled font families declared to the native navigator
+  /// at creation, so `EPUBPreferences.fontFamily` may name them. Each entry is
+  /// `{name, fallback: 'serif'|'sans-serif', faces: [{asset, style:
+  /// 'normal'|'italic', minWeight, maxWeight}]}` where `asset` is a Flutter
+  /// asset key of the host app. Files are served offline from the app bundle.
+  final List<Map<String, Object>> fontFamilies;
 
   /// Accessibility label for the backward navigation semantic region.
   final String goBackwardSemanticLabel;
@@ -304,6 +312,7 @@ class _ReadiumReaderWidgetState extends State<ReadiumReaderWidget> implements Re
         'selectionActions': widget.selectionActions.map((a) => a.toJson()).toList(),
       if (widget.allowedDefaultActions != null)
         'allowedDefaultActions': widget.allowedDefaultActions!.map((a) => a.serialized).toList(),
+      if (widget.fontFamilies.isNotEmpty) 'fontFamilies': widget.fontFamilies,
     };
 
     _log.d('creationParams=$creationParams');

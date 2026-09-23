@@ -9,6 +9,7 @@ import androidx.fragment.app.commitNow
 import androidx.lifecycle.lifecycleScope
 import dk.nota.flutterreadium.EpubImageTapBridge
 import dk.nota.flutterreadium.FlutterEpubPreferences
+import dk.nota.flutterreadium.HostFontFamilies
 import dk.nota.flutterreadium.NarrationSyncInterface
 import dk.nota.flutterreadium.PluginLog
 import dk.nota.flutterreadium.R
@@ -619,10 +620,9 @@ class EpubReaderFragment :
                     // Extra served asssets will be relative to your app's src/main/assets/ folder.
                     // To reference assets from other flutter packages use 'flutter_assets/packages/<package>/assets/.*'
                     // Readium uses WebViewAssetLoader.AssetsPathHandler under the surface.
-                    servedAssets =
-                        listOf(
-                            "flutter_assets/packages/flutter_readium/assets/.*",
-                        ),
+                    // THEREADER PATCH: host-app fonts are not served here. The assets origin
+                    // sends no CORS headers, so they are served same-origin (HostFontContainer).
+                    servedAssets = listOf("flutter_assets/packages/flutter_readium/assets/.*"),
                     // Use experimentalPositioning in decoration templates. It places highlights behind text, instead of on top.
                     decorationTemplates =
                         HtmlDecorationTemplates
@@ -640,6 +640,9 @@ class EpubReaderFragment :
                             null
                         },
                 ).apply {
+                    // THEREADER PATCH: bundled fonts selectable via EPUBPreferences.fontFamily.
+                    HostFontFamilies.declareIn(this, ReadiumReader.hostFontFamilies)
+
                     // Register JS→native bridge for window.updateNarrationSync(bool).
                     registerJavascriptInterface(NarrationSyncInterface.JS_NAME) { _ -> NarrationSyncInterface(ReadiumReader) }
 

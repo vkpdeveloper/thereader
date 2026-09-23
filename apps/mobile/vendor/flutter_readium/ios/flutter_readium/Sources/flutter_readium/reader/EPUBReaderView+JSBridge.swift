@@ -159,6 +159,13 @@ extension EPUBReaderView {
       userScripts.append(WKUserScript(source: addCssScript, injectionTime: .atDocumentEnd, forMainFrameOnly: false))
     }
 
+    /// THEREADER PATCH: one-shot inline `!important` colour demotion, once per
+    /// document after parsing (see assets/helpers/thereaderTheme.js).
+    let themeJsKey = registrar.lookupKey(forAsset: "assets/helpers/thereaderTheme.js", fromPackage: "flutter_readium")
+    if let data = loadBundledAsset(themeJsKey), let themeJs = String(data: data, encoding: .utf8) {
+      userScripts.append(WKUserScript(source: themeJs, injectionTime: .atDocumentEnd, forMainFrameOnly: false))
+    }
+
     // Set platform flags
     userScripts.append(WKUserScript(source: "const isAndroid=false,isIos=true;", injectionTime: .atDocumentStart, forMainFrameOnly: false))
 

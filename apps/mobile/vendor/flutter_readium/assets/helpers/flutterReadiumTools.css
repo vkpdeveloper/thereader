@@ -7,3 +7,44 @@ img, svg { background-color: #ededed; }
   background-color: transparent;
   filter: invert(1) brightness(0.9294);
 }
+
+/* THEREADER PATCH: theme enforcement, part 1 of 2 (part 2 is thereaderTheme.js).
+   ReadiumCSS forces `color: inherit !important` on everything except h1-h6
+   and pre, and only at specificity (0,2,7), so publisher heading/caption
+   colours and publisher `!important` rules survive the reader theme. These
+   rules extend the same forcing to every element at (3,4,x): above any
+   plausible publisher selector. They key off the --USER__ variables Readium
+   updates live, so already open and later chapters follow a theme change in
+   both paginated and scrolled modes without any script. Excluded: Readium
+   decoration layers, the TTS spotlight (its own dimming rules apply while
+   active), SVG artwork and media pixels. Text shadows are dropped because a
+   publisher glow or outline tuned for white paper smears on a dark preset.
+   Background images are kept: CSS cannot tell a gradient from artwork, and
+   a `url()` background may be content. Fonts, weights, styles and layout
+   are untouched. */
+:root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c) body:not(.flutter-readium-spotlight-active),
+:root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c) body:not(.flutter-readium-spotlight-active) :not([id^="r2-decoration-"], [id^="r2-decoration-"] *, svg, svg *) {
+  color: inherit !important;
+  -webkit-text-fill-color: currentColor !important;
+  border-color: currentColor !important;
+  border-color: color-mix(in srgb, currentColor 30%, transparent) !important;
+  text-shadow: none !important;
+}
+:root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c) body:not(.flutter-readium-spotlight-active) :not([id^="r2-decoration-"], [id^="r2-decoration-"] *, svg, svg *)::before,
+:root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c) body:not(.flutter-readium-spotlight-active) :not([id^="r2-decoration-"], [id^="r2-decoration-"] *, svg, svg *)::after {
+  color: inherit !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+:root[style*="--USER__backgroundColor"]:not(#tr-a):not(#tr-b):not(#tr-c) body,
+:root[style*="--USER__backgroundColor"]:not(#tr-a):not(#tr-b):not(#tr-c) body :not([id^="r2-decoration-"], [id^="r2-decoration-"] *, .flutter-readium-spotlight, .nota-comicbook-page-container, img, svg, svg *, video, canvas, picture, object, embed, iframe, math, math *) {
+  background-color: transparent !important;
+}
+/* Code blocks keep a subtle panel derived from the ink (no padding change). */
+:root[style*="--USER__backgroundColor"]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) body pre {
+  background-color: color-mix(in srgb, var(--USER__textColor, currentColor) 7%, transparent) !important;
+}
+/* Links are ink-coloured, so keep them identifiable with a muted underline. */
+:root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) body:not(.flutter-readium-spotlight-active) a[href] {
+  text-decoration-line: underline !important;
+  text-decoration-color: color-mix(in srgb, currentColor 45%, transparent) !important;
+}
