@@ -65,6 +65,7 @@ class ReaderPreferences {
     this.keepAwake = true,
     this.themeId,
     this.fontFamilyId,
+    this.highlightColor,
   });
 
   final double fontSize;
@@ -88,6 +89,10 @@ class ReaderPreferences {
   /// the id, so a mismatch means the older build's class choice wins.
   final String? fontFamilyId;
 
+  /// Default highlight colour key (`yellow`, `green`, ...). Null means
+  /// yellow. Unknown keys are kept, like [themeId].
+  final String? highlightColor;
+
   static const double minFontSize = 14;
   static const double maxFontSize = 28;
 
@@ -101,6 +106,7 @@ class ReaderPreferences {
     bool? keepAwake,
     String? themeId,
     String? fontFamilyId,
+    String? highlightColor,
   }) =>
       ReaderPreferences(
         fontSize: (fontSize ?? this.fontSize).clamp(minFontSize, maxFontSize),
@@ -112,6 +118,7 @@ class ReaderPreferences {
         keepAwake: keepAwake ?? this.keepAwake,
         themeId: themeId ?? this.themeId,
         fontFamilyId: fontFamilyId ?? this.fontFamilyId,
+        highlightColor: highlightColor ?? this.highlightColor,
       );
 
   Map<String, dynamic> toJson() => {
@@ -124,6 +131,7 @@ class ReaderPreferences {
         'keepAwake': keepAwake,
         if (themeId != null) 'themeId': themeId,
         if (fontFamilyId != null) 'fontFamilyId': fontFamilyId,
+        if (highlightColor != null) 'highlightColor': highlightColor,
       };
 
   factory ReaderPreferences.fromJson(Map<String, dynamic> json) => ReaderPreferences(
@@ -136,6 +144,7 @@ class ReaderPreferences {
         keepAwake: json['keepAwake'] as bool? ?? true,
         themeId: json['themeId'] as String?,
         fontFamilyId: json['fontFamilyId'] is String ? json['fontFamilyId'] as String : null,
+        highlightColor: json['highlightColor'] is String ? json['highlightColor'] as String : null,
       );
 
   /// Unknown or malformed values fall back instead of throwing, so a value

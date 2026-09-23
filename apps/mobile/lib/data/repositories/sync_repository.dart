@@ -6,9 +6,11 @@ import 'package:flutter/widgets.dart';
 
 import '../api/api_client.dart';
 import '../models/book.dart';
+import '../models/highlight.dart';
 import '../models/library.dart';
 import '../models/settings.dart';
 import '../storage/key_value_store.dart';
+import 'highlight_repository.dart';
 import 'library_repository.dart';
 import 'settings_repository.dart';
 
@@ -26,6 +28,7 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
     required KeyValueStore store,
     required this.library,
     required this.settings,
+    this.highlights,
     ApiClient Function(String)? clientFactory,
     bool Function(String)? isUploadPending,
     this.pollInterval = syncInterval,
@@ -55,9 +58,14 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
   /// Only used when a full batch left more of the outbox to send.
   static const _drainDelay = Duration(seconds: 5);
 
+  /// How long to stop sending highlights after a server rejected them (it
+  /// predates highlight sync), so the rest of the state keeps syncing.
+  static const highlightsRetry = Duration(hours: 6);
+
   final KeyValueStore _store;
   final LibraryRepository library;
   final SettingsRepository settings;
+  final HighlightRepository? highlights;
   final ApiClient Function(String) _clientFactory;
   final bool Function(String) _isUploadPending;
   final Duration pollInterval;
@@ -166,6 +174,7 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
     _loaded = true;
     library.addListener(_capture);
     settings.addListener(_capture);
+    highlights?.addListener(_capture);
     WidgetsBinding.instance.addObserver(this);
     _capture();
     await _persist();
@@ -212,6 +221,7 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
         }
       }
     }
+    if (_captureHighlights(origin, state)) changed = true;
     final updatedAt = settings.readerUpdatedAt;
     if (updatedAt != null &&
         state.seen['preferences'] != updatedAt.toUtc().toIso8601String()) {
@@ -231,6 +241,59 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
       requestSync();
       notifyListeners();
     }
+  }
+
+  /// Queues highlights of this origin's cloud books. Highlights on local-only
+  /// imports have no cloud edition and stay on this device.
+  bool _captureHighlights(String origin, _OriginState state) {
+    final store = highlights;
+    if (store == null || !store.loaded) return false;
+    var changed = false;
+    Map<String, LibraryEntry>? bySha;
+    for (final h in store.all) {
+      if (h.origin != origin) continue;
+      final key = 'highlight:${h.id}';
+      final stamp = h.updatedAt.toUtc().toIso8601String();
+      if (state.seen[key] == stamp) continue;
+      bySha ??= {
+        for (final e in library.entries)
+          if (e.source == BookSource.api && e.origin == origin)
+            e.book.sha256: e,
+      };
+      final entry = bySha[h.sha256];
+      if (entry == null) continue;
+      state.seen[key] = stamp;
+      _queue(state, key, entry, 'highlight', h.updatedAt, {
+        'highlightId': h.id,
+        'locator': _boundedHighlightLocator(h.locator),
+        'text': h.text,
+        'color': h.color,
+        if (h.note != null) 'note': h.note,
+        'createdAt': h.createdAt.toUtc().toIso8601String(),
+        'deleted': h.deleted,
+      });
+      changed = true;
+    }
+    return changed;
+  }
+
+  /// The API caps a highlight locator at 16 KB; long before/after context is
+  /// the only part that can grow, and the range still anchors without it.
+  static Map<String, dynamic> _boundedHighlightLocator(
+    Map<String, dynamic> locator,
+  ) {
+    if (utf8.encode(jsonEncode(locator)).length <= 15 * 1024) return locator;
+    final copy = Map<String, dynamic>.of(locator);
+    final text = copy['text'];
+    if (text is Map) {
+      copy['text'] = {
+        for (final e in text.entries)
+          if (e.key != 'before' && e.key != 'after') e.key: e.value,
+      };
+    }
+    if (utf8.encode(jsonEncode(copy)).length <= 15 * 1024) return copy;
+    copy.remove('text');
+    return copy;
   }
 
   static Map<String, dynamic> _boundedLocator(ReadingLocator locator) {
@@ -473,6 +536,9 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
     _drainMore = false;
     _error = null;
     notifyListeners();
+    var withHighlights =
+        highlights != null &&
+        state.highlightsUnsupportedUntil?.isAfter(_now()) != true;
     try {
       // Bound both count and encoded body; huge locator payloads must not block
       // every other queued change behind the API's request-size limit.
@@ -480,6 +546,7 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
       final submitted = <String, Map<String, dynamic>>{};
       for (final item in state.pending.entries) {
         final value = Map<String, dynamic>.from(item.value);
+        if (value['kind'] == 'highlight' && !withHighlights) continue;
         if (value['kind'] != 'preferences') {
           final entry = library.entries
               .where(
@@ -499,10 +566,30 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
       final before = {
         for (final key in submitted.keys) key: jsonEncode(state.pending[key]),
       };
-      final response = await client.syncState(
-        deviceId: _deviceId,
-        changes: submitted.values.toList(),
-      );
+      Map<String, dynamic> response;
+      try {
+        response = await client.syncState(
+          deviceId: _deviceId,
+          changes: submitted.values.toList(),
+          highlightsSince: withHighlights ? state.highlightCursor ?? 0 : null,
+        );
+      } on ApiException catch (e) {
+        if (!withHighlights ||
+            e.statusCode != 400 ||
+            e.code != 'INVALID_SYNC') {
+          rethrow;
+        }
+        // A server without highlight sync rejects the whole atomic batch.
+        // Keep everything else syncing and try highlights again later.
+        withHighlights = false;
+        state.highlightsUnsupportedUntil = _now().add(highlightsRetry);
+        submitted.removeWhere((_, v) => v['kind'] == 'highlight');
+        before.removeWhere((k, _) => !submitted.containsKey(k));
+        response = await client.syncState(
+          deviceId: _deviceId,
+          changes: submitted.values.toList(),
+        );
+      }
       if (_disposed) return;
       final rows = (response['books'] as List).cast<Map>();
       // Preserve local changes made while HTTP was in flight, even when their
@@ -609,6 +696,10 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
             }
           }
         }
+        final pulled = response['highlights'];
+        if (withHighlights && pulled is Map) {
+          await _applyHighlights(origin, state, pulled);
+        }
         final prefs = response['preferences'];
         if (prefs is Map && origin == _origin) {
           final updatedAt = DateTime.parse(prefs['updatedAt'] as String);
@@ -629,7 +720,10 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
       _failures = 0;
       _scheduleMetadataRefresh(origin, metadataRefresh);
       // Drain further batches without treating a blocked import as an error.
-      _drainMore = submitted.length == 100 || bytes > 200 * 1024;
+      _drainMore =
+          submitted.length == 100 ||
+          bytes > 200 * 1024 ||
+          (withHighlights && (response['highlights'] as Map?)?['more'] == true);
     } on ApiException catch (e) {
       _failures++;
       _error = '${e.message} Changes remain saved on this device.';
@@ -642,6 +736,51 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
       _isSyncing = false;
       if (!_disposed) notifyListeners();
     }
+  }
+
+  /// Stores rows changed on other devices and advances the pull cursor. Rows
+  /// that fail to parse are skipped; the cursor still moves past them.
+  Future<void> _applyHighlights(
+    String origin,
+    _OriginState state,
+    Map pulled,
+  ) async {
+    final store = highlights!;
+    final remote = <Highlight>[];
+    for (final raw in (pulled['items'] as List?) ?? const []) {
+      try {
+        final row = (raw as Map).cast<String, dynamic>();
+        remote.add(
+          Highlight(
+            id: row['id'] as String,
+            bookId: row['bookId'] as String,
+            sha256: row['sha256'] as String,
+            origin: origin,
+            locator: (row['locator'] as Map).cast<String, dynamic>(),
+            text: row['text'] as String? ?? '',
+            color: row['color'] as String,
+            note: row['note'] as String?,
+            createdAt: DateTime.parse(row['createdAt'] as String),
+            updatedAt: DateTime.parse(row['updatedAt'] as String),
+            deleted: row['deleted'] == true,
+          ),
+        );
+      } catch (_) {
+        continue;
+      }
+    }
+    await store.applyRemote(remote);
+    for (final h in remote) {
+      final local = store.byId(h.id);
+      // Matching copies need no upload; a newer local edit stays queued.
+      if (local != null && local.updatedAt == h.updatedAt) {
+        state.seen['highlight:${h.id}'] = local.updatedAt
+            .toUtc()
+            .toIso8601String();
+      }
+    }
+    final cursor = pulled['cursor'];
+    if (cursor is num) state.highlightCursor = cursor.toInt();
   }
 
   /// Time advances only while a successfully opened reader is foregrounded.
@@ -745,6 +884,7 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
     _disposed = true;
     library.removeListener(_capture);
     settings.removeListener(_capture);
+    highlights?.removeListener(_capture);
     WidgetsBinding.instance.removeObserver(this);
     _next?.cancel();
     _flushTimer?.cancel();
@@ -783,12 +923,23 @@ class _OriginState {
   final Map<String, int> totals = {};
   final Map<String, int> sessionAcknowledged = {};
   DateTime? lastSyncedAt;
+
+  /// Server highlight rev already pulled; null means never pulled.
+  int? highlightCursor;
+
+  /// Set when the server rejected highlight sync (not yet deployed).
+  DateTime? highlightsUnsupportedUntil;
   Map<String, dynamic> toJson() => {
     'pending': pending,
     'seen': seen,
     'totals': totals,
     'sessionAcknowledged': sessionAcknowledged,
     'lastSyncedAt': lastSyncedAt?.toIso8601String(),
+    if (highlightCursor != null) 'highlightCursor': highlightCursor,
+    if (highlightsUnsupportedUntil != null)
+      'highlightsUnsupportedUntil': highlightsUnsupportedUntil!
+          .toUtc()
+          .toIso8601String(),
   };
   _OriginState();
   factory _OriginState.fromJson(Map<String, dynamic> json) {
@@ -809,6 +960,10 @@ class _OriginState {
     );
     state.lastSyncedAt = DateTime.tryParse(
       json['lastSyncedAt'] as String? ?? '',
+    );
+    state.highlightCursor = (json['highlightCursor'] as num?)?.toInt();
+    state.highlightsUnsupportedUntil = DateTime.tryParse(
+      json['highlightsUnsupportedUntil'] as String? ?? '',
     );
     return state;
   }

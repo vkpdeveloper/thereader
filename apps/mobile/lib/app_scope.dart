@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import 'data/api/api_client.dart';
 import 'data/import/epub_import_service.dart';
+import 'data/repositories/highlight_repository.dart';
 import 'data/repositories/sync_repository.dart';
 import 'data/api/catalog_source.dart';
 import 'data/models/settings.dart';
@@ -23,6 +24,7 @@ class AppServices {
     CatalogSource? catalogSource,
     this.imports,
     this.sync,
+    this.highlights,
   }) : _fixed = catalogSource {
     catalog = CatalogRepository(sourceFor(settings.settings));
     settings.addListener(_onSettings);
@@ -30,6 +32,9 @@ class AppServices {
 
   final EpubImportService? imports;
   final SyncRepository? sync;
+
+  /// Null in widget tests that do not exercise annotations.
+  final HighlightRepository? highlights;
   final SettingsRepository settings;
   final LibraryRepository library;
   final ReaderService readerService;

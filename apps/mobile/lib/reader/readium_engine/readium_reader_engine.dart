@@ -1,13 +1,17 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_readium/flutter_readium.dart' as rd;
 
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/highlight_colors.dart';
 import '../../core/theme/theme_presets.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/typography/reader_fonts.dart';
+import '../../data/models/highlight.dart';
 import '../../data/models/library.dart';
 import '../../data/models/settings.dart';
 import '../../data/storage/book_store.dart';
@@ -97,7 +101,8 @@ class ReadiumReaderEngine implements ReaderEngine {
       _ReadiumView(controller: controller as ReadiumReaderController);
 }
 
-class ReadiumReaderController implements ReaderController, ReaderSearch {
+class ReadiumReaderController
+    implements ReaderController, ReaderSearch, ReaderAnnotations {
   ReadiumReaderController({
     required this.readium,
     required this.publication,
@@ -121,7 +126,10 @@ class ReadiumReaderController implements ReaderController, ReaderSearch {
     _statusSub = readium.onReaderStatusChanged.listen((s) {
       if (!_ready && s == rd.ReadiumReaderStatus.ready) {
         _ready = true;
-        unawaited(readium.setEPUBPreferences(toEpubPreferences(_prefs, _colors)));
+        unawaited(
+          readium.setEPUBPreferences(toEpubPreferences(_prefs, _colors)),
+        );
+        _pushHighlights();
       }
     });
     _prefs = prefs;
@@ -146,6 +154,19 @@ class ReadiumReaderController implements ReaderController, ReaderSearch {
   StreamSubscription<rd.ReadiumReaderStatus>? _statusSub;
   bool _ready = false;
   final ValueNotifier<bool> showControls = ValueNotifier(false);
+  final _highlightRequests = StreamController<HighlightSelection>.broadcast();
+  final _highlightTaps = StreamController<String>.broadcast();
+  List<Highlight> _highlights = const [];
+
+  static const _highlightGroup = 'highlights';
+
+  /// Android's custom selection menu replaces the system one, Copy included,
+  /// so Copy is re-added there as an app action. iOS keeps the system Copy.
+  static final List<rd.SelectionAction> selectionActions = [
+    const rd.SelectionAction(id: 'highlight', title: 'Highlight'),
+    if (!kIsWeb && Platform.isAndroid)
+      const rd.SelectionAction(id: 'copy', title: 'Copy'),
+  ];
 
   @override
   PublicationInfo get info => _info;
@@ -155,6 +176,64 @@ class ReadiumReaderController implements ReaderController, ReaderSearch {
 
   @override
   ValueListenable<bool> get controlsToggle => showControls;
+
+  @override
+  Stream<HighlightSelection> get highlightRequests => _highlightRequests.stream;
+
+  @override
+  Stream<String> get highlightTaps => _highlightTaps.stream;
+
+  @override
+  void setHighlights(List<Highlight> highlights) {
+    _highlights = highlights;
+    _pushHighlights();
+  }
+
+  /// Decorations can only be applied to a live navigator; [setHighlights]
+  /// before ready is replayed once the reader reports ready.
+  void _pushHighlights() {
+    if (!_ready || _disposed) return;
+    final decorations = <rd.ReaderDecoration>[];
+    for (final h in _highlights) {
+      final locator = rd.Locator.fromJson(Map<String, dynamic>.of(h.locator));
+      if (locator == null) continue;
+      decorations.add(
+        rd.ReaderDecoration(
+          id: h.id,
+          locator: locator,
+          style: rd.ReaderDecorationStyle(
+            style: rd.DecorationStyle.highlight,
+            tint: HighlightColors.tint(h.colorKey, _colors),
+          ),
+        ),
+      );
+    }
+    unawaited(
+      readium
+          .applyDecorations(_highlightGroup, decorations)
+          .catchError((Object e) => debugPrint('[readium] decorations: $e')),
+    );
+  }
+
+  void onSelectionAction(rd.SelectionActionEvent e) {
+    final text = (e.selectedText ?? e.locator.text?.highlight ?? '').trim();
+    if (text.isEmpty) return;
+    switch (e.actionId) {
+      case 'highlight':
+        _highlightRequests.add(
+          HighlightSelection(locator: e.locator.toJson(), text: text),
+        );
+      case 'copy':
+        unawaited(Clipboard.setData(ClipboardData(text: text)));
+    }
+  }
+
+  void onDecorationInteraction(rd.DecorationInteractionEvent e) {
+    if (e.group == _highlightGroup &&
+        e.type == rd.DecorationInteractionType.tap) {
+      _highlightTaps.add(e.decorationId);
+    }
+  }
 
   static List<TocEntry> _flattenToc(List<rd.Link> links, int depth) => [
     for (final l in links) ...[
@@ -259,9 +338,12 @@ class ReadiumReaderController implements ReaderController, ReaderSearch {
 
   @override
   void applyPreferences(ReaderPreferences prefs) {
+    final themeChanged = prefs.themeId != _prefs.themeId;
     _prefs = prefs;
     _colors = ThemePreset.byId(prefs.themeId).colors;
     unawaited(readium.setEPUBPreferences(toEpubPreferences(prefs, _colors)));
+    // Tints are resolved per theme, so a theme change redraws them.
+    if (themeChanged) _pushHighlights();
   }
 
   /// Maps app preferences onto Readium's. Colours are pinned to the active
@@ -300,6 +382,8 @@ class ReadiumReaderController implements ReaderController, ReaderSearch {
     _errSub?.cancel();
     _statusSub?.cancel();
     showControls.dispose();
+    _highlightRequests.close();
+    _highlightTaps.close();
     _locator.dispose();
     // Complete close before the next open; no delayed close may target a new book.
     ReadiumReaderEngine._closing = ReadiumReaderEngine.closeAndRelease(
@@ -338,6 +422,9 @@ class _ReadiumView extends StatelessWidget {
           shouldShowControls: controller.showControls,
           loadingWidget: ColoredBox(color: paper),
           allowedDefaultActions: const {rd.DefaultSelectionAction.copy},
+          selectionActions: ReadiumReaderController.selectionActions,
+          onSelectionAction: controller.onSelectionAction,
+          onDecorationInteraction: controller.onDecorationInteraction,
           fontFamilies: ReadiumReaderController.readiumFontFamilies,
         ),
       ),

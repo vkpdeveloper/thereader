@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
+import '../../data/models/highlight.dart';
 import '../../data/models/library.dart';
 import '../../data/models/settings.dart';
 import '../../data/storage/book_store.dart';
@@ -99,4 +100,25 @@ class ReaderSearchMatch {
   const ReaderSearchMatch({required this.excerpt, required this.locator});
   final String excerpt;
   final ReadingLocator locator;
+}
+
+/// Optional highlight capability: the engine offers a "Highlight" action on
+/// selected text, draws saved highlights, and reports taps on them.
+abstract interface class ReaderAnnotations {
+  /// Text the user chose to highlight.
+  Stream<HighlightSelection> get highlightRequests;
+
+  /// Ids of highlights the user tapped.
+  Stream<String> get highlightTaps;
+
+  /// Replaces the drawn highlights. Colours follow the active theme.
+  void setHighlights(List<Highlight> highlights);
+}
+
+class HighlightSelection {
+  const HighlightSelection({required this.locator, required this.text});
+
+  /// Engine locator JSON, including the selected text quote.
+  final Map<String, dynamic> locator;
+  final String text;
 }

@@ -27,6 +27,9 @@ extension EPUBReaderView {
     let locator = selection.locator
     let selectedText = locator.text.highlight
     channel.onSelectionAction(actionId: actionId, locator: locator, selectedText: selectedText)
+    // THEREADER PATCH: a handled action ends the selection, as Android's
+    // ActionMode.finish() does, so a new highlight is not left selected.
+    readiumViewController.clearSelection()
   }
 
   func getCurrentSelection() -> Locator? {

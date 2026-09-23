@@ -9,6 +9,7 @@ import 'core/theme/app_theme.dart';
 import 'data/api/catalog_source.dart';
 import 'data/api/api_client.dart';
 import 'data/import/epub_import_service.dart';
+import 'data/repositories/highlight_repository.dart';
 import 'data/repositories/sync_repository.dart';
 import 'data/repositories/library_repository.dart';
 import 'data/repositories/settings_repository.dart';
@@ -56,12 +57,14 @@ Future<void> main() async {
             );
           },
         );
+  final highlights = HighlightRepository(kv);
   final sync = bundledCatalog
       ? null
       : SyncRepository(
           store: kv,
           library: library,
           settings: settings,
+          highlights: highlights,
           isUploadPending: (id) => imports?.isPending(id) ?? false,
           retryUploads: () => unawaited(imports?.retryPending()),
         );
@@ -71,6 +74,7 @@ Future<void> main() async {
     library: library,
     imports: imports,
     sync: sync,
+    highlights: highlights,
     readerService: ReaderService(
       engines: const [ReadiumReaderEngine(), DartReaderEngine()],
     ),
@@ -80,6 +84,7 @@ Future<void> main() async {
   Future<void> loadPersonalLibrary() async {
     await library.load();
     await imports?.load();
+    await highlights.load();
     await sync?.load();
   }
 

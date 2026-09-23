@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/typography/reader_fonts.dart';
+import '../../data/models/highlight.dart';
 import '../../data/models/settings.dart';
 import '../../data/repositories/settings_repository.dart';
 import '../shared/states.dart';
+import 'highlight_sheets.dart';
 import 'reader_font_picker.dart';
 
 /// Typography controls. Every control here does something; the flow toggle is
@@ -93,7 +95,13 @@ class ReaderSettingsSheet extends StatelessWidget {
                 const SizedBox(height: Space.sm),
                 const Divider(),
                 const SizedBox(height: Space.sm),
-
+                _Row(
+                  label: 'Highlight',
+                  child: HighlightSwatches(
+                    selected: HighlightColor.parse(p.highlightColor),
+                    onChanged: (c) => settings.updateReader((r) => r.copyWith(highlightColor: c.name)),
+                  ),
+                ),
               ],
             ),
           ),

@@ -7,10 +7,12 @@ import '../../app_scope.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/tokens.dart';
+import '../../data/models/highlight.dart';
 import '../../data/models/library.dart';
 import '../../data/storage/book_store.dart';
 import '../../reader/engine/reader_engine.dart';
 import '../shared/states.dart';
+import 'highlight_sheets.dart';
 import 'reader_settings_sheet.dart';
 import 'reader_search_sheet.dart';
 
@@ -68,6 +70,7 @@ class _ReaderScreenState extends State<ReaderScreen>
   bool _provisional = false;
   bool _listeningLibrary = false;
   Timer? _saveDebounce;
+  final List<StreamSubscription<Object>> _annotationSubs = [];
 
   @override
   void initState() {
@@ -179,12 +182,101 @@ class _ReaderScreenState extends State<ReaderScreen>
           SnackBar(content: Text(note), duration: const Duration(seconds: 5)),
         );
       }
+      _attachHighlights(c);
       services.sync?.beginReading(widget.entry);
       // Record the opening position so "Continue reading" appears immediately.
       _onLocator();
     } catch (e) {
       if (mounted) setState(() => _error = e.toString());
     }
+  }
+
+  /// Highlights come from the local cache only; sync refreshes that cache on
+  /// its own schedule, so opening a book never costs a request.
+  void _attachHighlights(ReaderController c) {
+    final repo = _services.highlights;
+    if (c is! ReaderAnnotations || repo == null) return;
+    final a = c as ReaderAnnotations;
+    repo.addListener(_pushHighlights);
+    _annotationSubs
+      ..add(a.highlightRequests.listen(_createHighlight))
+      ..add(
+        a.highlightTaps.listen((id) {
+          if (mounted) showHighlightActions(context, repo, id);
+        }),
+      );
+    _pushHighlights();
+  }
+
+  void _pushHighlights() {
+    final c = _controller;
+    final repo = _services.highlights;
+    if (c is! ReaderAnnotations || repo == null) return;
+    (c as ReaderAnnotations).setHighlights(
+      repo.forEdition(widget.entry.origin, widget.entry.book.sha256),
+    );
+  }
+
+  Future<void> _createHighlight(HighlightSelection selection) async {
+    final repo = _services.highlights;
+    if (repo == null) return;
+    // Selection locators may lack the position and chapter; borrow them
+    // from the current page so the list can sort and label the passage.
+    final here = _controller?.locator.value;
+    final locator = Map<String, dynamic>.of(selection.locator);
+    final locations = Map<String, dynamic>.of(
+      (locator['locations'] as Map?)?.cast<String, dynamic>() ?? const {},
+    );
+    if (locations['totalProgression'] == null &&
+        here?.totalProgression != null) {
+      locations['totalProgression'] = here!.totalProgression;
+    }
+    locator['locations'] = locations;
+    if (locator['title'] == null && here?.title != null) {
+      locator['title'] = here!.title;
+    }
+    await repo.create(
+      bookId: widget.entry.book.id,
+      sha256: widget.entry.book.sha256,
+      origin: widget.entry.origin,
+      locator: locator,
+      text: selection.text,
+      color: HighlightColor.parse(
+        _services.settings.reader.highlightColor,
+      ).name,
+    );
+  }
+
+  void _openHighlights() {
+    final repo = _services.highlights;
+    final c = _controller;
+    if (repo == null || c == null) return;
+    showHighlightsList(
+      context,
+      repo: repo,
+      origin: widget.entry.origin,
+      sha256: widget.entry.book.sha256,
+      onOpen: (h) => c.goTo(
+        ReadingLocator(
+          href: h.href,
+          progression:
+              ((h.locator['locations'] as Map?)?['progression'] as num?)
+                  ?.toDouble() ??
+              0,
+          title: h.chapter,
+          engine: 'readium',
+          raw: h.locator,
+        ),
+      ),
+    );
+  }
+
+  void _detachHighlights() {
+    for (final s in _annotationSubs) {
+      s.cancel();
+    }
+    _annotationSubs.clear();
+    _services.highlights?.removeListener(_pushHighlights);
   }
 
   void _onPrefs() => _controller?.applyPreferences(_services.settings.reader);
@@ -204,6 +296,7 @@ class _ReaderScreenState extends State<ReaderScreen>
     _saveNow();
     _controller?.locator.removeListener(_onLocator);
     _controller?.controlsToggle?.removeListener(_onEngineControls);
+    _detachHighlights();
     _controller?.dispose();
     setState(() {
       _controller = null;
@@ -265,6 +358,7 @@ class _ReaderScreenState extends State<ReaderScreen>
     _services.settings.removeListener(_onPrefs);
     _controller?.locator.removeListener(_onLocator);
     _controller?.controlsToggle?.removeListener(_onEngineControls);
+    _detachHighlights();
     _controller?.dispose();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setSystemUIOverlayStyle(AppTheme.overlayFor(_colors));
@@ -309,6 +403,10 @@ class _ReaderScreenState extends State<ReaderScreen>
             controller: controller,
             engineName: _engine!.availability.name,
             onSettings: () => _openSettings(controller),
+            onHighlights:
+                controller is ReaderAnnotations && _services.highlights != null
+                ? _openHighlights
+                : null,
           ),
           _BottomChrome(visible: _chromeVisible, controller: controller),
           if (_provisional)
@@ -411,12 +509,14 @@ class _TopChrome extends StatelessWidget {
     required this.controller,
     required this.engineName,
     required this.onSettings,
+    this.onHighlights,
   });
   final bool visible;
   final String title;
   final ReaderController controller;
   final String engineName;
   final VoidCallback onSettings;
+  final VoidCallback? onHighlights;
 
   @override
   Widget build(BuildContext context) {
@@ -459,6 +559,12 @@ class _TopChrome extends StatelessWidget {
                   label: 'Contents',
                   onPressed: () => _openContents(context),
                 ),
+                if (onHighlights != null)
+                  QuietIconButton(
+                    icon: Icons.border_color_outlined,
+                    label: 'Highlights',
+                    onPressed: onHighlights,
+                  ),
                 if (controller is ReaderSearch)
                   QuietIconButton(
                     icon: Icons.search,

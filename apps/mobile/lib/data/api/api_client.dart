@@ -107,9 +107,13 @@ class ApiClient {
     return BookPage(items: items, nextCursor: json['nextCursor'] as String?);
   }
 
+  /// One pull+push. With [highlightsSince] (a server cursor, 0 for all) the
+  /// response also carries highlight rows changed since then; without it the
+  /// request is byte-for-byte what older servers accept.
   Future<Map<String, dynamic>> syncState({
     required String deviceId,
     required List<Map<String, dynamic>> changes,
+    int? highlightsSince,
   }) async {
     final uri = resolve('/v1/sync');
     final http.Response response;
@@ -121,7 +125,11 @@ class ApiClient {
               'content-type': 'application/json',
               'accept': 'application/json',
             },
-            body: jsonEncode({'deviceId': deviceId, 'changes': changes}),
+            body: jsonEncode({
+              'deviceId': deviceId,
+              'changes': changes,
+              'highlightsSince': ?highlightsSince,
+            }),
           )
           .timeout(timeout);
     } on TimeoutException {

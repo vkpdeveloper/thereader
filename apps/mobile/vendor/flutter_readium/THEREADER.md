@@ -47,6 +47,9 @@ Local changes:
   - iOS appends the declarations to `config.fontFamilyDeclarations` in
     `EPUBReaderView.swift`.
   - Faces load offline and only when used.
+- iOS clears the text selection after a custom selection action fires
+  (`EPUBReaderView+Selection.swift`), matching Android's `ActionMode.finish()`.
+  Without it, a new highlight stays selected under the system menu.
 
 The Readium Swift 3.9.0 resource lookup patch lives separately in ios/patches
 and is applied by the app's Podfile, with XCTest equivalence coverage.
