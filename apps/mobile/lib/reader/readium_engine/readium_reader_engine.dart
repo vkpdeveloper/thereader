@@ -131,6 +131,7 @@ class ReadiumReaderController
     _statusSub = readium.onReaderStatusChanged.listen((s) {
       if (!_ready && s == rd.ReadiumReaderStatus.ready) {
         _ready = true;
+        pageVisible.value = true;
         unawaited(
           readium.setEPUBPreferences(toEpubPreferences(_prefs, _colors)),
         );
@@ -158,6 +159,11 @@ class ReadiumReaderController
   StreamSubscription<rd.ReadiumError>? _errSub;
   StreamSubscription<rd.ReadiumReaderStatus>? _statusSub;
   bool _ready = false;
+
+  /// Set when the native page is on screen (Readium's `ready`). The plugin's
+  /// loading cover otherwise waits for the first page event, which Android
+  /// delays for a ToC lookup over the whole chapter.
+  final pageVisible = ValueNotifier(false);
   final ValueNotifier<bool> showControls = ValueNotifier(false);
   final _highlightRequests = StreamController<HighlightSelection>.broadcast();
   final _highlightTaps = StreamController<String>.broadcast();
@@ -276,27 +282,46 @@ class ReadiumReaderController
     return null;
   }
 
-  rd.Locator? _toReadium(ReadingLocator? l) {
+  rd.Locator? _toReadium(ReadingLocator? l) => resolveLocator(publication, l);
+
+  /// Maps a saved locator onto [publication], or null to open at the start.
+  /// A locator whose href names no reading-order item (a stale or corrupt
+  /// save, or one from another edition) is dropped rather than handed to
+  /// Readium, which cannot place it.
+  @visibleForTesting
+  static rd.Locator? resolveLocator(rd.Publication publication, ReadingLocator? l) {
     if (l == null) return null;
     final raw = l.raw;
     if (l.engine == ReadiumReaderEngine.engineId && raw != null) {
       final parsed = rd.Locator.fromJson(Map<String, dynamic>.of(raw));
-      if (parsed != null) return parsed;
+      if (parsed != null && _spineLink(publication, parsed.href) != null) {
+        return parsed;
+      }
     }
     // Locator from the built-in engine: same href convention (path inside the
     // container), so Readium can resolve it plus a progression fraction.
-    final link =
-        publication.linkWithHref(l.href) ??
-        publication.linkWithHref('/${l.href}') ??
-        publication.readingOrder
-            .where((x) => x.href.endsWith(l.href))
-            .firstOrNull;
+    final link = _spineLink(publication, l.href);
     if (link == null) return null;
+    final progression = l.progression.isFinite ? l.progression.clamp(0.0, 1.0) : 0.0;
     return rd.Locator(
       href: link.href,
       type: link.type ?? 'application/xhtml+xml',
-      locations: rd.Locations(progression: l.progression),
+      locations: rd.Locations(progression: progression),
     );
+  }
+
+  static rd.Link? _spineLink(rd.Publication publication, String href) {
+    String path(String h) {
+      final end = h.indexOf(RegExp('[#?]'));
+      final p = end == -1 ? h : h.substring(0, end);
+      return p.startsWith('/') ? p.substring(1) : p;
+    }
+
+    final target = path(href);
+    if (target.isEmpty) return null;
+    final spine = publication.readingOrder;
+    return spine.where((x) => path(x.href) == target).firstOrNull ??
+        spine.where((x) => path(x.href).endsWith('/$target')).firstOrNull;
   }
 
   @override
@@ -401,6 +426,7 @@ class ReadiumReaderController
     _errSub?.cancel();
     _statusSub?.cancel();
     showControls.dispose();
+    pageVisible.dispose();
     _highlightRequests.close();
     _highlightTaps.close();
     _externalLinks.close();
@@ -440,7 +466,14 @@ class _ReadiumView extends StatelessWidget {
           preloadNextPositionCount: controller.file.isProvisional ? 0 : 6,
           initialLocator: controller.initialLocator,
           shouldShowControls: controller.showControls,
-          loadingWidget: ColoredBox(color: paper),
+          // Lifts on `ready` even if the first page event is late: the cover
+          // is opaque and swallows touches.
+          loadingWidget: ValueListenableBuilder(
+            valueListenable: controller.pageVisible,
+            builder: (_, visible, _) => visible
+                ? const SizedBox.shrink()
+                : ColoredBox(color: paper),
+          ),
           allowedDefaultActions: const {rd.DefaultSelectionAction.copy},
           selectionActions: ReadiumReaderController.selectionActions,
           onSelectionAction: controller.onSelectionAction,

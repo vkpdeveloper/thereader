@@ -58,6 +58,18 @@ Local changes:
 - `ReadiumReaderWidget` passes `onExternalLinkActivated` to its channel, which
   upstream never did (`lib/reader_widget.dart`). iOS also emits `mailto:` and
   `tel:` links, not only http(s) (`EPUBReaderView.swift`). The app opens them.
+- Android `findAllCssSelectors` (`ReadiumExtensions.kt`) parses a chapter once
+  with jsoup and lists the `#id` of every element in document order. It feeds
+  the ToC title on each locator, including the first one, and the reader stays
+  covered until that first locator arrives. Upstream walked Readium's content
+  iterator, whose jsoup `Element.cssSelector()` re-selects the whole document
+  for every element. On a 1.5 MB maths chapter that took about a minute, and
+  the book showed a blank page. A synthetic 4,000-section chapter now takes
+  about 50 ms instead of about 19 s (`FindAllCssSelectorsTest`). jsoup 1.22.2,
+  already a runtime dependency of readium-shared, is now a compile dependency.
+  In `epubEnrichLocatorWithTocHref`, a path selector with no exact match
+  falls back to its leading `#id` ancestor. iOS uses Readium Swift's own
+  content service and did not reproduce the problem, so it is unchanged.
 
 The Readium Swift 3.9.0 resource lookup patch lives separately in ios/patches
 and is applied by the app's Podfile, with XCTest equivalence coverage.

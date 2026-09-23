@@ -99,6 +99,9 @@ dependencies {
   implementation "org.readium.kotlin-toolkit:readium-adapter-exoplayer-audio:$readium_version"
   implementation "org.readium.kotlin-toolkit:readium-adapter-pdfium:$readium_version"
   //implementation "org.readium.kotlin-toolkit:readium-lcp:$readium_version"
+  // THEREADER PATCH: linear id scan in findAllCssSelectors. Same jsoup that
+  // readium-shared already ships at runtime.
+  implementation "org.jsoup:jsoup:1.22.2"
 
   // Used for media-session controls
   def media_version = "1.10.1"

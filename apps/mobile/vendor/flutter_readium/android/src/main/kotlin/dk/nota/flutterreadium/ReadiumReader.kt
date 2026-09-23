@@ -897,14 +897,18 @@ object ReadiumReader :
 
         val documentCssSelectors = epubGetAllDocumentCssSelectors(resultLocator.href)
         val idx =
-            documentCssSelectors.indexOf(cssSelector).takeIf { it > -1 } ?: run {
-                // cssSelector wasn't found in the list of document cssSelectors, best effort is to assume first
-                PluginLog.d(
-                    TAG,
-                    "::epubEnrichLocatorWithTocHref - cssSelector:$cssSelector not found in contentIds, assume idx = 0",
-                )
-                0
-            }
+            documentCssSelectors.indexOf(cssSelector).takeIf { it > -1 }
+                // THEREADER PATCH: a path selector such as `#chapter > p:nth-child(3)`
+                // falls back to its id-anchored ancestor, which the id list contains.
+                ?: leadingIdSelector(cssSelector)?.let { documentCssSelectors.indexOf(it) }?.takeIf { it > -1 }
+                ?: run {
+                    // cssSelector wasn't found in the list of document cssSelectors, best effort is to assume first
+                    PluginLog.d(
+                        TAG,
+                        "::epubEnrichLocatorWithTocHref - cssSelector:$cssSelector not found in contentIds, assume idx = 0",
+                    )
+                    0
+                }
 
         val toc =
             tocLinks.associateBy { documentCssSelectors.indexOf("#${it.href.resolve().fragment}") }

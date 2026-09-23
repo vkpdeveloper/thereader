@@ -28,8 +28,6 @@ import org.readium.r2.shared.publication.Locator
 import org.readium.r2.shared.publication.Manifest
 import org.readium.r2.shared.publication.Publication
 import org.readium.r2.shared.publication.html.cssSelector
-import org.readium.r2.shared.publication.services.content.Content
-import org.readium.r2.shared.publication.services.content.content
 import org.readium.r2.shared.util.Error
 import org.readium.r2.shared.util.Try
 import org.readium.r2.shared.util.Url
@@ -540,6 +538,15 @@ fun Publication.getReadingOrderItemDuration(href: Url): Duration? = findReadingO
 
 /**
  * Helper for getting all cssSelectors for a HTML document.
+ *
+ * THEREADER PATCH: one linear jsoup pass collecting `#id` for every element
+ * with an id, in document order. Upstream walked Readium's content iterator,
+ * which calls jsoup `Element.cssSelector()` per element, and that re-selects
+ * the whole document to check id uniqueness. That is quadratic, and a 1.5 MB
+ * chapter took about a minute. The first locator waits on this list for its
+ * ToC title, and the reader stays covered until that locator arrives. Container
+ * ids, such as a chapter `<div>`, are now included too. That keeps the order
+ * the ToC lookup relies on and lets more locators resolve to a ToC entry.
  */
 suspend fun Publication.findAllCssSelectors(href: Url): List<String>? {
     if (!conformsTo(Publication.Profile.EPUB)) {
@@ -548,42 +555,28 @@ suspend fun Publication.findAllCssSelectors(href: Url): List<String>? {
     }
 
     val cleanHref = href.cleanHref()
-
-    val contentItems =
-        content(
-            Locator(
-                href = cleanHref,
-                mediaType = MediaType.XHTML,
-            ),
-        ) ?: run {
-            PluginLog.w(TAG, "::findAllCssSelectors - no content service found")
+    val link = linkWithHref(cleanHref) ?: run {
+        PluginLog.w(TAG, "::findAllCssSelectors - no link for $cleanHref")
+        return null
+    }
+    val html =
+        get(link)?.read()?.getOrNull()?.let { String(it) } ?: run {
+            PluginLog.w(TAG, "::findAllCssSelectors - could not read $cleanHref")
             return null
         }
 
-    val ids = arrayListOf<String>()
-    for (element in contentItems) {
-        if (element !is Content.TextElement) {
-            continue
-        }
+    return documentIdSelectors(html)
+}
 
-        if (element.locator.href
-                .cleanHref()
-                .path != cleanHref.path
-        ) {
-            // We iterated to the next document, stopping
-            break
-        }
-
-        // We are only interested in #id type of cssSelectors.
-        val cssSelector =
-            element.locator.locations.cssSelector
-                ?.takeIf { it.startsWith("#") } ?: continue
-
-        ids.add(cssSelector)
+/** THEREADER PATCH: `#id` selectors of [html] in document order, linear time. */
+fun documentIdSelectors(html: String): List<String> =
+    org.jsoup.Jsoup.parse(html).getAllElements().mapNotNull { element ->
+        element.id().takeIf { it.isNotBlank() }?.let { "#$it" }
     }
 
-    return ids
-}
+/** THEREADER PATCH: the leading `#id` of a selector like `#chapter > p:nth-child(3)`. */
+fun leadingIdSelector(cssSelector: String): String? =
+    Regex("""^#[^\s>+~.:\[]+""").find(cssSelector)?.value?.takeIf { it != cssSelector }
 
 /**
  * Get the Table of Content title from a href.
