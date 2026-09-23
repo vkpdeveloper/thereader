@@ -55,6 +55,9 @@ Local changes:
   (`FlutterReadiumPlugin.swift`, `EPUBReaderView+Navigation.swift`). In scroll
   mode a jump to 0 smooth-scrolls with `window.scrollTo`, since Readium sets
   that offset without animation. Android is unchanged and jumps at once.
+- `ReadiumReaderWidget` passes `onExternalLinkActivated` to its channel, which
+  upstream never did (`lib/reader_widget.dart`). iOS also emits `mailto:` and
+  `tel:` links, not only http(s) (`EPUBReaderView.swift`). The app opens them.
 
 The Readium Swift 3.9.0 resource lookup patch lives separately in ios/patches
 and is applied by the app's Podfile, with XCTest equivalence coverage.

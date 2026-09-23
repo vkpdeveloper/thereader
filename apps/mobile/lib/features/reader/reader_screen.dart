@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../app_scope.dart';
 import '../../core/theme/app_theme.dart';
@@ -71,6 +72,7 @@ class _ReaderScreenState extends State<ReaderScreen>
   bool _listeningLibrary = false;
   Timer? _saveDebounce;
   final List<StreamSubscription<Object>> _annotationSubs = [];
+  StreamSubscription<Uri>? _linkSub;
 
   @override
   void initState() {
@@ -183,6 +185,9 @@ class _ReaderScreenState extends State<ReaderScreen>
         );
       }
       _attachHighlights(c);
+      if (c is ReaderLinks) {
+        _linkSub = (c as ReaderLinks).externalLinks.listen(_openExternal);
+      }
       services.sync?.beginReading(widget.entry);
       // Record the opening position so "Continue reading" appears immediately.
       _onLocator();
@@ -271,6 +276,28 @@ class _ReaderScreenState extends State<ReaderScreen>
     );
   }
 
+  /// Web links open in an in-app browser; mail and phone links go to their
+  /// apps. Anything else is ignored.
+  Future<void> _openExternal(Uri uri) async {
+    final scheme = uri.scheme.toLowerCase();
+    final web = scheme == 'http' || scheme == 'https';
+    if (!web && scheme != 'mailto' && scheme != 'tel') return;
+    var opened = false;
+    try {
+      opened = await launchUrl(
+        uri,
+        mode: web
+            ? LaunchMode.inAppBrowserView
+            : LaunchMode.externalApplication,
+      );
+    } catch (_) {}
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Couldn't open link.")));
+    }
+  }
+
   void _detachHighlights() {
     for (final s in _annotationSubs) {
       s.cancel();
@@ -297,6 +324,8 @@ class _ReaderScreenState extends State<ReaderScreen>
     _controller?.locator.removeListener(_onLocator);
     _controller?.controlsToggle?.removeListener(_onEngineControls);
     _detachHighlights();
+    _linkSub?.cancel();
+    _linkSub = null;
     _controller?.dispose();
     setState(() {
       _controller = null;
@@ -359,6 +388,8 @@ class _ReaderScreenState extends State<ReaderScreen>
     _controller?.locator.removeListener(_onLocator);
     _controller?.controlsToggle?.removeListener(_onEngineControls);
     _detachHighlights();
+    _linkSub?.cancel();
+    _linkSub = null;
     _controller?.dispose();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setSystemUIOverlayStyle(AppTheme.overlayFor(_colors));

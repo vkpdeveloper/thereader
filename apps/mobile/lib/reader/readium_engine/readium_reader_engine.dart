@@ -106,7 +106,8 @@ class ReadiumReaderController
         ReaderController,
         ReaderSearch,
         ReaderAnnotations,
-        ReaderChapterStart {
+        ReaderChapterStart,
+        ReaderLinks {
   ReadiumReaderController({
     required this.readium,
     required this.publication,
@@ -160,6 +161,7 @@ class ReadiumReaderController
   final ValueNotifier<bool> showControls = ValueNotifier(false);
   final _highlightRequests = StreamController<HighlightSelection>.broadcast();
   final _highlightTaps = StreamController<String>.broadcast();
+  final _externalLinks = StreamController<Uri>.broadcast();
   List<Highlight> _highlights = const [];
 
   static const _highlightGroup = 'highlights';
@@ -186,6 +188,14 @@ class ReadiumReaderController
 
   @override
   Stream<String> get highlightTaps => _highlightTaps.stream;
+
+  @override
+  Stream<Uri> get externalLinks => _externalLinks.stream;
+
+  void onExternalLink(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri != null && !_disposed) _externalLinks.add(uri);
+  }
 
   @override
   void setHighlights(List<Highlight> highlights) {
@@ -393,6 +403,7 @@ class ReadiumReaderController
     showControls.dispose();
     _highlightRequests.close();
     _highlightTaps.close();
+    _externalLinks.close();
     _locator.dispose();
     // Complete close before the next open; no delayed close may target a new book.
     ReadiumReaderEngine._closing = ReadiumReaderEngine.closeAndRelease(
@@ -434,6 +445,7 @@ class _ReadiumView extends StatelessWidget {
           selectionActions: ReadiumReaderController.selectionActions,
           onSelectionAction: controller.onSelectionAction,
           onDecorationInteraction: controller.onDecorationInteraction,
+          onExternalLinkActivated: controller.onExternalLink,
           fontFamilies: ReadiumReaderController.readiumFontFamilies,
         ),
       ),

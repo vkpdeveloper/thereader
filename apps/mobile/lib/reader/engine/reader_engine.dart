@@ -102,6 +102,12 @@ abstract interface class ReaderChapterStart {
   Future<void> toChapterStart();
 }
 
+/// Optional capability: links out of the book (web, mail, phone), which the
+/// host opens. Links inside the book are followed by the engine itself.
+abstract interface class ReaderLinks {
+  Stream<Uri> get externalLinks;
+}
+
 class ReaderSearchMatch {
   const ReaderSearchMatch({required this.excerpt, required this.locator});
   final String excerpt;

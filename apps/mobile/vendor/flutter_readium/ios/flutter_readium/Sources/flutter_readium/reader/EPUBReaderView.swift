@@ -317,8 +317,9 @@ public class EPUBReaderView: NSObject, FlutterPlatformView, ReadiumReaderView, E
   }
 
   public func navigator(_ navigator: Navigator, presentExternalURL url: URL) {
-    guard ["http", "https"].contains(url.scheme?.lowercased() ?? "") else {
-      Log.reader.warn("skipped non-http external URL: \(url)")
+    // THEREADER PATCH: also pass mailto: and tel: links to the app.
+    guard ["http", "https", "mailto", "tel"].contains(url.scheme?.lowercased() ?? "") else {
+      Log.reader.warn("skipped unsupported external URL: \(url)")
       return
     }
     emitOnExternalLinkActivated(url: url)

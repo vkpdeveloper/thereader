@@ -401,6 +401,8 @@ class _ReadiumReaderWidgetState extends State<ReadiumReaderWidget> implements Re
           _isReadyCompleter.complete(locator);
         }
       },
+      // THEREADER PATCH: forward external links; upstream drops the callback.
+      onExternalLinkActivated: widget.onExternalLinkActivated,
       onTextSelected: widget.onTextSelected,
       onSelectionAction: widget.onSelectionAction,
       onDecorationInteraction: widget.onDecorationInteraction,
