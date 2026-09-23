@@ -102,7 +102,11 @@ class ReadiumReaderEngine implements ReaderEngine {
 }
 
 class ReadiumReaderController
-    implements ReaderController, ReaderSearch, ReaderAnnotations {
+    implements
+        ReaderController,
+        ReaderSearch,
+        ReaderAnnotations,
+        ReaderChapterStart {
   ReadiumReaderController({
     required this.readium,
     required this.publication,
@@ -313,6 +317,11 @@ class ReadiumReaderController
     final l = _toReadium(locator);
     if (l != null) await readium.goToLocator(l);
   }
+
+  /// Progression is within the current resource; the vendored plugin
+  /// animates it (see THEREADER.md).
+  @override
+  Future<void> toChapterStart() => readium.goToProgression(0);
 
   @override
   Future<void> goToHref(String href) async {

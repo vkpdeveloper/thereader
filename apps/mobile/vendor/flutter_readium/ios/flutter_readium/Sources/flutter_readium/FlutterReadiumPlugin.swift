@@ -393,7 +393,8 @@ public class FlutterReadiumPlugin: NSObject, FlutterPlugin, ReadiumShared.Warnin
           navigated = await self.timebasedNavigator?.seek(toProgression: progression) ?? false
         }
         else if let readerView = self.currentReaderView {
-          navigated = await readerView.goToProgression(progression, animated: false)
+          // THEREADER PATCH: animate; the app uses this only for jump-to-top.
+          navigated = await readerView.goToProgression(progression, animated: true)
         }
         await MainActor.run { [navigated] in
           result(navigated)

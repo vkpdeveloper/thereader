@@ -96,6 +96,12 @@ abstract interface class ReaderSearch {
   Future<List<ReaderSearchMatch>> search(String query);
 }
 
+/// Optional capability: animate back to the start of the current chapter
+/// (its first page when paginated).
+abstract interface class ReaderChapterStart {
+  Future<void> toChapterStart();
+}
+
 class ReaderSearchMatch {
   const ReaderSearchMatch({required this.excerpt, required this.locator});
   final String excerpt;

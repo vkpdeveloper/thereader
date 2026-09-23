@@ -37,7 +37,14 @@ extension EPUBReaderView {
     guard let locator = getCurrentLocation() else {
       return false
     }
-    let newLocator = locator.copyWithProgressionLocations(progression: progression)
+    // THEREADER PATCH: drop the current text anchor, which Readium would
+    // otherwise prefer over the progression, and scroll smoothly to the top
+    // in scroll mode, where Readium sets the offset without animation.
+    if animated && progression == 0 && readiumViewController.presentation.scroll {
+      _ = await readiumViewController.evaluateJavaScript("window.scrollTo({top: 0, behavior: 'smooth'})")
+      return true
+    }
+    let newLocator = locator.copyWithProgressionLocations(progression: progression).copy(text: { $0 = Locator.Text() })
     return await readiumViewController.go(to: newLocator, options: NavigatorGoOptions(animated: animated))
   }
 

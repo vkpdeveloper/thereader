@@ -409,6 +409,11 @@ class _ReaderScreenState extends State<ReaderScreen>
                 : null,
           ),
           _BottomChrome(visible: _chromeVisible, controller: controller),
+          if (controller is ReaderChapterStart)
+            _ToChapterStart(
+              chromeVisible: _chromeVisible,
+              controller: controller,
+            ),
           if (_provisional)
             Positioned(
               left: Space.gutter,
@@ -497,6 +502,57 @@ class _EdgeProgress extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Floats over the lower right once the reader is past the chapter's start,
+/// above the bottom chrome or, while it is hidden, above the corner readout.
+class _ToChapterStart extends StatelessWidget {
+  const _ToChapterStart({
+    required this.chromeVisible,
+    required this.controller,
+  });
+  final bool chromeVisible;
+  final ReaderController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final inset = MediaQuery.paddingOf(context).bottom;
+    return AnimatedPositioned(
+      duration: Motion.of(context, Motion.base),
+      curve: Motion.curve,
+      right: Space.gutter,
+      // Bottom chrome is ~65dp; the corner readout is one ~16dp label line.
+      bottom:
+          inset + (chromeVisible ? 65 + Space.sm : Space.sm + 16 + Space.sm),
+      child: ValueListenableBuilder<ReadingLocator?>(
+        valueListenable: controller.locator,
+        builder: (context, loc, _) {
+          final shown = (loc?.progression ?? 0) > 0.02;
+          return IgnorePointer(
+            ignoring: !shown,
+            child: AnimatedOpacity(
+              duration: Motion.of(context, Motion.base),
+              curve: Motion.curve,
+              opacity: shown ? 1 : 0,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: colors.bg,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: colors.border),
+                ),
+                child: QuietIconButton(
+                  icon: Icons.arrow_upward,
+                  label: 'Back to top',
+                  onPressed: (controller as ReaderChapterStart).toChapterStart,
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

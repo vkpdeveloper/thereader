@@ -50,6 +50,11 @@ Local changes:
 - iOS clears the text selection after a custom selection action fires
   (`EPUBReaderView+Selection.swift`), matching Android's `ActionMode.finish()`.
   Without it, a new highlight stays selected under the system menu.
+- iOS `goToProgression` animates and ignores the current locator's text
+  anchor, which Readium otherwise prefers over the progression
+  (`FlutterReadiumPlugin.swift`, `EPUBReaderView+Navigation.swift`). In scroll
+  mode a jump to 0 smooth-scrolls with `window.scrollTo`, since Readium sets
+  that offset without animation. Android is unchanged and jumps at once.
 
 The Readium Swift 3.9.0 resource lookup patch lives separately in ios/patches
 and is applied by the app's Podfile, with XCTest equivalence coverage.
