@@ -422,8 +422,8 @@ class _ReaderScreenState extends State<ReaderScreen>
     } else {
       body = Stack(
         children: [
-          GestureDetector(
-            behavior: HitTestBehavior.translucent,
+          ReaderTapRouting(
+            engineHandlesTaps: controller.controlsToggle != null,
             onTap: _toggleChrome,
             child: _engine!.buildView(context, controller),
           ),
@@ -505,6 +505,33 @@ class _ReaderScreenState extends State<ReaderScreen>
       ),
     );
   }
+}
+
+/// Routes taps on the book view to [onTap] only when the engine can't report
+/// them itself. A native view that does ([ReaderController.controlsToggle])
+/// must get every pointer unclaimed: a tap recognizer above an Android platform
+/// view holds the gesture arena through a long press, so the WebView never
+/// sees the press and text can't be selected.
+class ReaderTapRouting extends StatelessWidget {
+  const ReaderTapRouting({
+    super.key,
+    required this.engineHandlesTaps,
+    required this.onTap,
+    required this.child,
+  });
+
+  final bool engineHandlesTaps;
+  final VoidCallback onTap;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => engineHandlesTaps
+      ? child
+      : GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: onTap,
+          child: child,
+        );
 }
 
 /// Apple-Books-style quiet corner readout while the chrome is hidden.

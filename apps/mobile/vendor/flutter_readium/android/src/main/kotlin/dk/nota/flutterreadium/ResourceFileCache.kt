@@ -14,7 +14,7 @@ import java.security.MessageDigest
 @OptIn(ExperimentalCoroutinesApi::class)
 internal object ResourceFileCache {
     private val directory: File
-        get() = File(ReadiumReader.application.applicationContext.cacheDir, "flutter_readium_resources")
+        get() = File(ReadiumReader.application.applicationContext.cacheDir, DIRECTORY_NAME)
 
     /**
      * Returns the cache file for [href], creating the cache directory if
@@ -35,6 +35,13 @@ internal object ResourceFileCache {
      * entries don't outlive the publication they were fetched from.
      */
     fun purgeAll() {
-        directory.deleteRecursively()
+        // THEREADER PATCH: the plugin detaches from the activity and then from the
+        // engine, and both close the publication. The second close runs with no
+        // application; its cache was already purged, and throwing there killed the
+        // app on exit (`Unable to destroy activity`).
+        val app = ReadiumReader.applicationOrNull ?: return
+        File(app.applicationContext.cacheDir, DIRECTORY_NAME).deleteRecursively()
     }
+
+    private const val DIRECTORY_NAME = "flutter_readium_resources"
 }

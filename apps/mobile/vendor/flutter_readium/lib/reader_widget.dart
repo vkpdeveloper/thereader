@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart' as mq show Orientation;
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart' show kLongPressTimeout;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -14,6 +15,10 @@ import 'reader_channel.dart';
 const _viewType = 'dk.nota.flutter_readium/ReadiumReaderWidget';
 
 /// A ReadiumReaderWidget wraps a native Kotlin/Swift Readium navigator widget.
+/// THEREADER PATCH: whether a stationary press held for [held] is a tap. Longer
+/// presses are the platform view's text-selection long press.
+bool isReaderTap(final Duration held) => held < kLongPressTimeout;
+
 class ReadiumReaderWidget extends StatefulWidget {
   const ReadiumReaderWidget({
     required this.publication,
@@ -167,6 +172,7 @@ class _ReadiumReaderWidgetState extends State<ReadiumReaderWidget> implements Re
   Widget build(final BuildContext context) {
     _onOrientationChangeWorkaround(MediaQuery.orientationOf(context));
     var userSwipe = false;
+    Duration? pressStart;
 
     final readingProgression = widget.publication.metadata.readingProgression;
     // TODO: this presumes that ReadingProgression value btt or vertical scroll using btt is not ever used
@@ -211,7 +217,8 @@ class _ReadiumReaderWidgetState extends State<ReadiumReaderWidget> implements Re
         ),
         ExcludeSemantics(
           child: Listener(
-            onPointerDown: (final _) {
+            onPointerDown: (final event) {
+              pressStart = event.timeStamp;
               _enableWakelock();
             },
             onPointerMove: (final event) {
@@ -226,10 +233,14 @@ class _ReadiumReaderWidgetState extends State<ReadiumReaderWidget> implements Re
               }
             },
             onPointerUp: (final event) async {
+              final start = pressStart;
+              pressStart = null;
               if (userSwipe) {
                 /// Wait for page animation to complete.
                 await Future.delayed(const Duration(seconds: 1));
-              } else {
+              } else if (start == null || isReaderTap(event.timeStamp - start)) {
+                // THEREADER PATCH: a long press selects text in the platform view;
+                // it is not a tap, so it must not toggle the controls.
                 final dx = event.position.dx;
 
                 if (dx < 70.0 || ((context.size?.width ?? 0) - dx) < 70.0) {

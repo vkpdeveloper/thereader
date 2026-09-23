@@ -117,6 +117,9 @@ class ReadiumReaderWidget(
         val allowScreenReaderNavigation = creationParams["allowScreenReaderNavigation"] as Boolean?
         // THEREADER PATCH: read before the navigator attaches, which declares them.
         ReadiumReader.hostFontFamilies = HostFontFamilies.parse(creationParams["fontFamilies"])
+        // THEREADER PATCH: the navigator below picks its ActionMode callback from these
+        // before Dart's `configureSelectionActions` call can arrive.
+        ReadiumReader.selectionActions = SelectionActionConfig.parseList(creationParams["selectionActions"])
 
         // Accepted for API parity with iOS but currently no-op: kotlin-toolkit's
         // EpubNavigatorFragment.Configuration does not expose preload-count fields
@@ -444,15 +447,7 @@ class ReadiumReaderWidget(
             }
 
             "configureSelectionActions" -> {
-                @Suppress("UNCHECKED_CAST")
-                val actions = call.arguments as? List<Map<String, String>> ?: emptyList()
-                ReadiumReader.selectionActions =
-                    actions.map { map ->
-                        SelectionActionConfig(
-                            id = map["id"] ?: "",
-                            title = map["title"] ?: "",
-                        )
-                    }
+                ReadiumReader.selectionActions = SelectionActionConfig.parseList(call.arguments)
                 result.success(null)
             }
 

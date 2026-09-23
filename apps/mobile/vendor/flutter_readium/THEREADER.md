@@ -70,6 +70,34 @@ Local changes:
   In `epubEnrichLocatorWithTocHref`, a path selector with no exact match
   falls back to its leading `#id` ancestor. iOS uses Readium Swift's own
   content service and did not reproduce the problem, so it is unchanged.
+- Text selection on Android (`lib/reader_widget.dart`, `ReadiumReaderWidget.kt`,
+  `SelectionActionConfig.kt`, `EpubReaderFragment.kt`):
+  - The widget's tap `Listener` no longer treats a stationary press held for
+    `kLongPressTimeout` or longer as a centre tap (`isReaderTap`). A long press
+    selects text; it must not toggle the controls. The app also stopped wrapping
+    the view in a `GestureDetector`. On Android that tap recognizer held the
+    gesture arena through a long press, so the WebView never got the touch and
+    no text could be selected.
+  - `selectionActions` is read from the creation params. The navigator is
+    created in the widget's `init` and picks its ActionMode callback then;
+    Dart's `configureSelectionActions` call arrives too late, so the first book
+    after launch showed no Highlight action.
+  - After a custom action fires, the selection is cleared
+    (`SelectableNavigator.clearSelection()`). `ActionMode.finish()` alone left
+    the selection and handles over the new highlight. iOS already did this.
+- `ClosedArchiveGuard` wraps every publication container
+  (`ReadiumReader.assetToPublication`). Closing a book closes the EPUB's
+  `ZipFile` while the WebView may still be loading chapter resources.
+  Readium's `FileZipContainer` maps only `IOException`, so the
+  `IllegalStateException: zip file closed` escaped on a Chromium thread and
+  killed the app as the reader closed. That reproduced with a slow,
+  image-heavy chapter. Such reads now return a `ReadError`, which the WebView
+  sees as a failed request. `CancellationException` still propagates
+  (`ClosedArchiveGuardTest`).
+- `ResourceFileCache.purgeAll` returns when the plugin has no application.
+  `detach()` runs from both `onDetachedFromActivity` and
+  `onDetachedFromEngine`, and the second run threw
+  `Application not initialized` from `onDestroy`, crashing the app on exit.
 
 The Readium Swift 3.9.0 resource lookup patch lives separately in ios/patches
 and is applied by the app's Podfile, with XCTest equivalence coverage.

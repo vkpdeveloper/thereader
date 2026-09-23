@@ -751,6 +751,10 @@ class EpubReaderFragment :
                 lifecycleScope.launch {
                     val nav = navigator as? SelectableNavigator ?: return@launch
                     val selection = nav.currentSelection() ?: return@launch
+                    // THEREADER PATCH: finishing the ActionMode leaves the WebView's
+                    // selection and handles on top of the new highlight; clear them,
+                    // as iOS does after a custom selection action.
+                    nav.clearSelection()
                     val channel = ReadiumReader.currentReaderWidget?.channel ?: return@launch
                     channel.onSelectionAction(
                         action.id,

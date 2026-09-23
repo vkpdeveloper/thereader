@@ -503,6 +503,10 @@ object ReadiumReader :
             appRef?.get()
                 ?: throw IllegalStateException("Application not initialized. Call ReadiumReader.attach(...) first.")
 
+    /** THEREADER PATCH: null once detached; teardown runs after [detach] clears it. */
+    val applicationOrNull: Application?
+        get() = appRef?.get()
+
     var currentReaderWidget: ReadiumReaderWidget?
         get() = readerViewRef?.get()
         set(value) {
@@ -561,6 +565,8 @@ object ReadiumReader :
             publicationOpener
                 .open(asset, allowUserInteraction = true, onCreatePublication = {
                     container = transformingContainerFactory?.let { it(container) } ?: container
+                    // THEREADER PATCH: reads racing the close fail instead of crashing.
+                    container = ClosedArchiveGuard(container)
                     if (manifest.conformsTo(Publication.Profile.EPUB)) {
                         // THEREADER PATCH: serve bundled host fonts on the package origin.
                         container = HostFontContainer(container, context.assets) { hostFontFamilies }
