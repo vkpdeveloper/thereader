@@ -258,17 +258,6 @@ class _DownloadPanel extends StatelessWidget {
         inner = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (readable) ...[
-              QuietButton(
-                label: entry!.progress == null ? 'Read' : 'Continue reading',
-                emphasis: true,
-                expand: true,
-                onPressed: () => ReaderScreen.open(context, entry!),
-              ),
-              const SizedBox(height: Space.xs),
-              Text('The rest downloads while you read.', style: text.bodySmall),
-              const SizedBox(height: Space.md),
-            ],
             Row(
               children: [
                 Expanded(child: Text(label, style: text.bodyMedium)),
@@ -288,6 +277,15 @@ class _DownloadPanel extends StatelessWidget {
                 minHeight: 2,
               ),
             ),
+            if (readable) ...[
+              const SizedBox(height: Space.md),
+              QuietButton(
+                label: entry!.progress == null ? 'Read' : 'Continue reading',
+                emphasis: true,
+                expand: true,
+                onPressed: () => ReaderScreen.open(context, entry!),
+              ),
+            ],
           ],
         );
       case DownloadStatus.ready:
@@ -358,8 +356,8 @@ class _DownloadPanel extends StatelessWidget {
           children: [
             Text(
               services.library.bookStore.isDurable
-                  ? 'Kept on this device for offline reading. Verified against the catalog checksum.'
-                  : 'Browser preview: kept in memory for this session only.',
+                  ? 'Saved offline and checksum-verified.'
+                  : 'Browser preview: this session only.',
               style: text.bodySmall,
             ),
             const SizedBox(height: Space.md),
