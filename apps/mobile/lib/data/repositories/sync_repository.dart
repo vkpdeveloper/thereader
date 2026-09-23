@@ -14,6 +14,13 @@ import 'settings_repository.dart';
 
 /// One personal cloud profile, with an origin-scoped durable outbox. Device
 /// identifiers deduplicate reading sessions; they are not authentication.
+///
+/// The API runs on a metered free tier, so traffic follows one schedule: a
+/// single pull+push request every [syncInterval] while foregrounded, nothing
+/// while backgrounded, exponential backoff after failures, and best-effort
+/// flushes when reading stops or the app leaves the foreground. Local edits
+/// are saved and queued immediately but never send a request of their own;
+/// everything that changes synced data calls [requestSync].
 class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
   SyncRepository({
     required KeyValueStore store,
@@ -21,12 +28,32 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
     required this.settings,
     ApiClient Function(String)? clientFactory,
     bool Function(String)? isUploadPending,
-    this.pollInterval = const Duration(seconds: 30),
+    this.pollInterval = syncInterval,
     this.retryUploads,
+    DateTime Function()? now,
   }) : _store = store,
        _clientFactory =
            clientFactory ?? ((origin) => ApiClient(baseUrl: origin)),
-       _isUploadPending = isUploadPending ?? ((_) => false);
+       _isUploadPending = isUploadPending ?? ((_) => false),
+       _now = now ?? DateTime.now;
+
+  /// Foreground cadence of the one pull+push request per cycle.
+  static const syncInterval = Duration(minutes: 2);
+
+  /// Start/resume only syncs when the last attempt is at least this old.
+  static const resumeGap = Duration(minutes: 1);
+
+  /// A flush is skipped when a sync was attempted this recently.
+  static const flushGap = Duration(seconds: 15);
+
+  /// Failures double the wait from [pollInterval] up to this ceiling.
+  static const maxBackoff = Duration(minutes: 15);
+
+  /// Lets the reader's final progress save land before a flush reads it.
+  static const _flushSettle = Duration(seconds: 1);
+
+  /// Only used when a full batch left more of the outbox to send.
+  static const _drainDelay = Duration(seconds: 5);
 
   final KeyValueStore _store;
   final LibraryRepository library;
@@ -35,6 +62,7 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
   final bool Function(String) _isUploadPending;
   final Duration pollInterval;
   final VoidCallback? retryUploads;
+  final DateTime Function() _now;
   static const _key = 'cloud_sync.v1';
   final Map<String, _OriginState> _origins = {};
   String _deviceId = '';
@@ -43,9 +71,13 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
   bool _appActive = true;
   bool _applying = false;
   bool _isSyncing = false;
+  bool _autoSync = false;
+  bool _drainMore = false;
+  int _failures = 0;
+  DateTime? _lastAttemptAt;
   String? _error;
-  Timer? _poll;
-  Timer? _debounce;
+  Timer? _next;
+  Timer? _flushTimer;
   Timer? _readingTimer;
   Future<void> _writes = Future.value();
   Future<void>? _syncFuture;
@@ -130,14 +162,8 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
     _capture();
     await _persist();
     if (startTimers) {
-      _poll = Timer.periodic(pollInterval, (_) {
-        if (_appActive) {
-          retryUploads?.call();
-          unawaited(syncNow());
-        }
-      });
-      retryUploads?.call();
-      unawaited(syncNow());
+      _autoSync = true;
+      _resume();
     }
   }
 
@@ -194,7 +220,7 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
     }
     if (changed) {
       unawaited(_persist());
-      _schedule();
+      requestSync();
       notifyListeners();
     }
   }
@@ -226,17 +252,66 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
     };
   }
 
-  void _schedule() {
-    if (_disposed) return;
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(seconds: 2), () => unawaited(syncNow()));
+  /// The single entry point for "synced data changed locally". Callers must
+  /// already have saved and queued the change; it rides the next scheduled
+  /// cycle and never sends a request by itself.
+  void requestSync() => _scheduleNext(_cycleDelay, replace: false);
+
+  Duration get _cycleDelay {
+    if (_failures == 0) return pollInterval;
+    final backoff = pollInterval * pow(2, min(_failures, 16)).toInt();
+    return backoff < maxBackoff ? backoff : maxBackoff;
+  }
+
+  bool _attemptedWithin(Duration gap) {
+    final last = _lastAttemptAt ?? _current.lastSyncedAt;
+    return last != null && _now().difference(last) < gap;
+  }
+
+  void _scheduleNext(Duration delay, {bool replace = true}) {
+    if (!_loaded || _disposed || !_autoSync || !_appActive) return;
+    if (!replace && _next != null) return;
+    _next?.cancel();
+    _next = Timer(delay, () {
+      _next = null;
+      if (!_appActive || _disposed) return;
+      retryUploads?.call();
+      unawaited(syncNow());
+    });
+  }
+
+  /// App start or return to the foreground: pull once unless a sync ran very
+  /// recently, otherwise continue the regular cadence.
+  void _resume() {
+    if (!_loaded || _disposed || !_autoSync) return;
+    retryUploads?.call();
+    if (_attemptedWithin(resumeGap)) {
+      _scheduleNext(_cycleDelay);
+    } else {
+      unawaited(syncNow());
+    }
+  }
+
+  /// Best-effort push when reading stops or the app is backgrounded. Skipped
+  /// when nothing is queued or a sync was just attempted.
+  void _flushSoon() {
+    if (!_loaded || _disposed || !_autoSync) return;
+    _flushTimer?.cancel();
+    _flushTimer = Timer(_flushSettle, () {
+      _flushTimer = null;
+      if (_disposed) return;
+      _checkpointReading();
+      _capture();
+      if (_current.pending.isEmpty || _attemptedWithin(flushGap)) return;
+      unawaited(syncNow());
+    });
   }
 
   /// Re-check after an upload publishes its canonical cloud identity.
   void uploadsChanged() {
     if (_loaded && !_disposed) {
       _capture();
-      _schedule();
+      requestSync();
     }
   }
 
@@ -255,9 +330,15 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<void> flush() => _writes;
 
+  /// Syncs immediately (the Settings button and the schedule itself). Calls
+  /// during a running sync join it instead of starting another request.
   Future<void> syncNow() {
     if (_disposed || !_loaded) return Future.value();
-    return _syncFuture ??= _sync().whenComplete(() => _syncFuture = null);
+    return _syncFuture ??= _sync().whenComplete(() {
+      _syncFuture = null;
+      _lastAttemptAt = _now();
+      _scheduleNext(_drainMore ? _drainDelay : _cycleDelay);
+    });
   }
 
   void _scheduleMetadataRefresh(String origin, Iterable<LibraryEntry> entries) {
@@ -345,6 +426,7 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
     final state = _current;
     final client = _clientFactory(origin);
     _isSyncing = true;
+    _drainMore = false;
     _error = null;
     notifyListeners();
     try {
@@ -498,12 +580,15 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
       _capture();
       state.lastSyncedAt = DateTime.now().toUtc();
       await _persist();
+      _failures = 0;
       _scheduleMetadataRefresh(origin, metadataRefresh);
       // Drain further batches without treating a blocked import as an error.
-      if (submitted.length == 100 || bytes > 200 * 1024) _schedule();
+      _drainMore = submitted.length == 100 || bytes > 200 * 1024;
     } on ApiException catch (e) {
+      _failures++;
       _error = '${e.message} Changes remain saved on this device.';
     } catch (_) {
+      _failures++;
       _error =
           'Cloud sync is unavailable. Changes remain saved on this device.';
     } finally {
@@ -580,6 +665,7 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   void endReading() {
+    final wasReading = _reading != null;
     _reading?.watch.stop();
     _checkpointReading();
     final entry = _reading?.entry;
@@ -587,20 +673,24 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
     _reading = null;
     _readingTimer?.cancel();
     _readingTimer = null;
-    if (_loaded) _schedule();
+    if (wasReading && !_disposed) _flushSoon();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    final wasActive = _appActive;
     _appActive = state == AppLifecycleState.resumed;
     setReadingActive(_appActive);
     if (_appActive) {
-      retryUploads?.call();
-      unawaited(syncNow());
-    } else {
-      _capture();
-      unawaited(_persist());
+      if (!wasActive) _resume();
+      return;
     }
+    // No polling in the background; only flush what is already queued.
+    _next?.cancel();
+    _next = null;
+    _capture();
+    unawaited(_persist());
+    if (state != AppLifecycleState.inactive) _flushSoon();
   }
 
   @override
@@ -610,8 +700,8 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
     library.removeListener(_capture);
     settings.removeListener(_capture);
     WidgetsBinding.instance.removeObserver(this);
-    _poll?.cancel();
-    _debounce?.cancel();
+    _next?.cancel();
+    _flushTimer?.cancel();
     for (final client in _metadataClients.toList()) {
       client.close();
     }
