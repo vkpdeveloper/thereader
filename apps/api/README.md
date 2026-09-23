@@ -155,9 +155,16 @@ the workers.dev and version preview URLs are disabled.
 
 The default local D1 binding uses an invalid all-zero placeholder because
 Wrangler's local store does not need a remote database. The production binding
-points at the private `thereader-state` database by its non-secret ID. Apply
-remote migrations before deployment; repository scripts never provision or
-migrate remote resources automatically.
+points at the private `thereader-state` database by its non-secret ID. Remote
+migrations must be applied before the code that needs them is deployed, and
+must stay additive (no `DROP` or data rewrites) because they run unattended.
+
+Cloudflare Workers Builds deploys every push to `main` that touches
+`apps/api/*` (root directory `apps/api`, build command `bun run test`, deploy
+command `bun run deploy:ci`, preview builds disabled). `deploy:ci` applies
+pending production D1 migrations and then deploys, so the build token needs
+D1 Edit in addition to the default Workers permissions. Repository scripts
+never provision remote resources.
 
 Authenticate Wrangler outside the repository. Prefer `wrangler login
 --use-keyring` on macOS; CI can supply a scoped `CLOUDFLARE_API_TOKEN` through its

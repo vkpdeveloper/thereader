@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "deploy": "wrangler deploy --env production",
+    "deploy:ci": "wrangler d1 migrations apply DB --remote --env production && wrangler deploy --env production",
     "db:migrate:local": "wrangler d1 migrations apply DB --local --persist-to .wrangler/state",
     "dev": "bun run db:migrate:local && wrangler dev --persist-to .wrangler/state",
     "generate:fixtures": "bun run scripts/generate-fixtures.ts",
