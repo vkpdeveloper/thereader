@@ -54,3 +54,14 @@ flutter {
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 }
+
+// Readium 3.2 normalizes every manifest href for every image request. Route only
+// the WebView server's three lookups through the equivalent publication index.
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        variant.instrumentation.transformClassesWith(
+            com.thereader.gradle.ReadiumLookupTransform::class.java,
+            com.android.build.api.instrumentation.InstrumentationScope.ALL,
+        ) {}
+    }
+}

@@ -24,6 +24,7 @@ public class EPUBReaderView: NSObject, FlutterPlatformView, ReadiumReaderView, E
   let containerView: EPUBContainerView
   let readiumViewController: EPUBNavigatorViewController
   private var hasSentReady = false
+  private var locationEventGeneration: UInt64 = 0
   var isJumpingToLocator = false
   private var lastHrefLocation: String?
   var isMOActive = false
@@ -371,6 +372,10 @@ public class EPUBReaderView: NSObject, FlutterPlatformView, ReadiumReaderView, E
   private func emitOnPageChanged(locator: Locator) -> Void {
     Log.reader.debug("emitOnPageChanged, locator: \(locator)")
 
+    // JS/ToC enrichment awaits can finish out of order during initial restore.
+    // Never let an older (often progression 0) event overwrite the restored page.
+    locationEventGeneration &+= 1
+    let generation = locationEventGeneration
     Task.detached(priority: .high) { [locator] in
       /// Enrich Locator with PageInformation and ToC.
       var resultLocator = locator
@@ -385,6 +390,7 @@ public class EPUBReaderView: NSObject, FlutterPlatformView, ReadiumReaderView, E
       /// Immutable ref, so that we can use it on the main thread
       let finalLocator = resultLocator
       await MainActor.run() {
+        guard self.locationEventGeneration == generation else { return }
         self.channel.onPageChanged(locator: finalLocator)
         FlutterReadiumPlugin.instance?.textLocatorStreamHandler?.sendEvent(try? finalLocator.jsonString())
       }
