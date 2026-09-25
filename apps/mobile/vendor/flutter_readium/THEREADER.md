@@ -101,3 +101,18 @@ Local changes:
 
 The Readium Swift 3.9.0 resource lookup patch lives separately in ios/patches
 and is applied by the app's Podfile, with XCTest equivalence coverage.
+
+Opening-performance follow-up (see `docs/book-opening-performance.md` at the
+repository root):
+- `PublicationHrefIndex` replaces repeated resource-list scans in Android's
+  WebView server. The app's `android/buildSrc` visitor redirects its three calls
+  through AGP's supported instrumentation API and fails on upstream drift.
+  Exact/fallback URL semantics and precedence have equivalence coverage.
+- The Android resource transform builds ToC IDs only for HTML, not for images
+  and fonts. A preloaded neighbor's ready notification no longer marks the
+  current page as visible; its own page callback does.
+- The Dart controller applies preferences at native-view creation and replays
+  only changes made during loading, avoiding a redundant layout at first paint
+  on both Android and iOS.
+- iOS discards stale asynchronous locator enrichment after a newer page event,
+  preventing a late startup update from overwriting the restored progression.

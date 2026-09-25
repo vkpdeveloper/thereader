@@ -126,15 +126,19 @@ class ReadiumReaderController
       toc: _flattenToc(publication.tableOfContents, 0),
       language: publication.metadata.languages.firstOrNull,
     );
-    // The plugin reads default preferences when the native view is created;
-    // push them again once the reader reports ready so late changes apply.
+    // The native view receives the opening preferences at creation. Replaying
+    // them at first paint needlessly repeats layout on image-heavy chapters.
+    // Only preferences changed during loading need to be sent again.
     _statusSub = readium.onReaderStatusChanged.listen((s) {
       if (!_ready && s == rd.ReadiumReaderStatus.ready) {
         _ready = true;
         pageVisible.value = true;
-        unawaited(
-          readium.setEPUBPreferences(toEpubPreferences(_prefs, _colors)),
-        );
+        if (_pendingPreferences) {
+          _pendingPreferences = false;
+          unawaited(
+            readium.setEPUBPreferences(toEpubPreferences(_prefs, _colors)),
+          );
+        }
         _pushHighlights();
       }
     });
@@ -159,10 +163,12 @@ class ReadiumReaderController
   StreamSubscription<rd.ReadiumError>? _errSub;
   StreamSubscription<rd.ReadiumReaderStatus>? _statusSub;
   bool _ready = false;
+  bool _pendingPreferences = false;
 
   /// Set when the native page is on screen (Readium's `ready`). The plugin's
   /// loading cover otherwise waits for the first page event, which Android
-  /// delays for a ToC lookup over the whole chapter.
+  /// delays for a ToC lookup over the whole chapter. Android now emits ready
+  /// only for the current page, not an off-screen chapter finishing first.
   final pageVisible = ValueNotifier(false);
   final ValueNotifier<bool> showControls = ValueNotifier(false);
   final _highlightRequests = StreamController<HighlightSelection>.broadcast();
@@ -385,7 +391,11 @@ class ReadiumReaderController
     final themeChanged = prefs.themeId != _prefs.themeId;
     _prefs = prefs;
     _colors = ThemePreset.byId(prefs.themeId).colors;
-    unawaited(readium.setEPUBPreferences(toEpubPreferences(prefs, _colors)));
+    if (_ready) {
+      unawaited(readium.setEPUBPreferences(toEpubPreferences(prefs, _colors)));
+    } else {
+      _pendingPreferences = true;
+    }
     // Tints are resolved per theme, so a theme change redraws them.
     if (themeChanged) _pushHighlights();
   }

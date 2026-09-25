@@ -704,13 +704,11 @@ object ReadiumReader :
                     val publication = currentPublication ?: return@TransformingContainer resource
                     val navigator = epubNavigator ?: return@TransformingContainer resource
 
-                    val tocIds =
-                        publication.tableOfContents
-                            .flattenChildren()
-                            .mapNotNull { it.href.resolve().fragment }
-                    val epubPreferences =
-                        navigator.preferences?.effectiveForLayout(publication.metadata.layout)
                     if (url.extension?.value?.endsWith("html", ignoreCase = true) == true) {
+                        val tocIds = publication.tableOfContents.flattenChildren()
+                            .mapNotNull { it.href.resolve().fragment }
+                        val epubPreferences = navigator.preferences
+                            ?.effectiveForLayout(publication.metadata.layout)
                         resource.injectScriptsAndStyles(tocIds, epubPreferences)
                     } else {
                         resource

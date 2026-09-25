@@ -1,0 +1,530 @@
+{
+  "metric": "Milliseconds from engine.open to current-page callback + positioned CSS locator; not exact first paint",
+  "environment": "Local debug Android API 36 ARM64 emulator / iPhone 17 Pro iOS 26.5 simulator",
+  "baselineCommit": "f7180ad",
+  "runs": {
+    "android-controlled-baseline": [
+      {
+        "event": "ready",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/01_math_fundamentals_fragment.xhtml",
+        "cycle": 0,
+        "publicationMs": 407,
+        "readyMs": 3565,
+        "ready": true
+      },
+      {
+        "event": "positioned",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/01_math_fundamentals_fragment.xhtml",
+        "cycle": 0,
+        "ms": 28991
+      },
+      {
+        "event": "ready",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/01_math_fundamentals_fragment.xhtml",
+        "cycle": 1,
+        "publicationMs": 241,
+        "readyMs": 2593,
+        "ready": true
+      },
+      {
+        "event": "positioned",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/01_math_fundamentals_fragment.xhtml",
+        "cycle": 1,
+        "ms": 30403
+      },
+      {
+        "event": "ready",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/01_math_fundamentals_fragment.xhtml",
+        "cycle": 2,
+        "publicationMs": 225,
+        "readyMs": 2822,
+        "ready": true
+      },
+      {
+        "event": "positioned",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/01_math_fundamentals_fragment.xhtml",
+        "cycle": 2,
+        "ms": 36168
+      }
+    ],
+    "android-controlled-final": [
+      {
+        "event": "ready",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/01_math_fundamentals_fragment.xhtml",
+        "cycle": 0,
+        "publicationMs": 434,
+        "readyMs": 8413,
+        "ready": true
+      },
+      {
+        "event": "positioned",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/01_math_fundamentals_fragment.xhtml",
+        "cycle": 0,
+        "ms": 8980
+      },
+      {
+        "event": "ready",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/01_math_fundamentals_fragment.xhtml",
+        "cycle": 1,
+        "publicationMs": 231,
+        "readyMs": 6633,
+        "ready": true
+      },
+      {
+        "event": "positioned",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/01_math_fundamentals_fragment.xhtml",
+        "cycle": 1,
+        "ms": 7182
+      },
+      {
+        "event": "ready",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/01_math_fundamentals_fragment.xhtml",
+        "cycle": 2,
+        "publicationMs": 214,
+        "readyMs": 5873,
+        "ready": true
+      },
+      {
+        "event": "positioned",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/01_math_fundamentals_fragment.xhtml",
+        "cycle": 2,
+        "ms": 6421
+      }
+    ],
+    "android-final": [
+      {
+        "event": "ready",
+        "book": "typical",
+        "href": "OEBPS/Text/part0019.xhtml",
+        "cycle": 0,
+        "publicationMs": 88,
+        "readyMs": 1317,
+        "ready": true
+      },
+      {
+        "event": "positioned",
+        "book": "typical",
+        "href": "OEBPS/Text/part0019.xhtml",
+        "cycle": 0,
+        "ms": 1318
+      },
+      {
+        "event": "ready",
+        "book": "typical",
+        "href": "OEBPS/Text/part0019.xhtml",
+        "cycle": 1,
+        "publicationMs": 19,
+        "readyMs": 799,
+        "ready": true
+      },
+      {
+        "event": "positioned",
+        "book": "typical",
+        "href": "OEBPS/Text/part0019.xhtml",
+        "cycle": 1,
+        "ms": 799
+      },
+      {
+        "event": "ready",
+        "book": "typical",
+        "href": "OEBPS/Text/part0019.xhtml",
+        "cycle": 2,
+        "publicationMs": 15,
+        "readyMs": 745,
+        "ready": true
+      },
+      {
+        "event": "positioned",
+        "book": "typical",
+        "href": "OEBPS/Text/part0019.xhtml",
+        "cycle": 2,
+        "ms": 746
+      },
+      {
+        "event": "ready",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/01_math_fundamentals_fragment.xhtml",
+        "cycle": 0,
+        "publicationMs": 350,
+        "readyMs": 5532,
+        "ready": true
+      },
+      {
+        "event": "positioned",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/01_math_fundamentals_fragment.xhtml",
+        "cycle": 0,
+        "ms": 6130
+      },
+      {
+        "event": "ready",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/01_math_fundamentals_fragment.xhtml",
+        "cycle": 1,
+        "publicationMs": 239,
+        "readyMs": 4965,
+        "ready": true
+      },
+      {
+        "event": "positioned",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/01_math_fundamentals_fragment.xhtml",
+        "cycle": 1,
+        "ms": 5480
+      },
+      {
+        "event": "ready",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/01_math_fundamentals_fragment.xhtml",
+        "cycle": 2,
+        "publicationMs": 261,
+        "readyMs": 11708,
+        "ready": true
+      },
+      {
+        "event": "positioned",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/01_math_fundamentals_fragment.xhtml",
+        "cycle": 2,
+        "ms": 12349
+      },
+      {
+        "event": "ready",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/07_applications_fragment.xhtml",
+        "cycle": 0,
+        "publicationMs": 279,
+        "readyMs": 7896,
+        "ready": true
+      },
+      {
+        "event": "positioned",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/07_applications_fragment.xhtml",
+        "cycle": 0,
+        "ms": 8619
+      },
+      {
+        "event": "ready",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/07_applications_fragment.xhtml",
+        "cycle": 1,
+        "publicationMs": 243,
+        "readyMs": 6803,
+        "ready": true
+      },
+      {
+        "event": "positioned",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/07_applications_fragment.xhtml",
+        "cycle": 1,
+        "ms": 7648
+      },
+      {
+        "event": "ready",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/07_applications_fragment.xhtml",
+        "cycle": 2,
+        "publicationMs": 221,
+        "readyMs": 7049,
+        "ready": true
+      },
+      {
+        "event": "positioned",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/07_applications_fragment.xhtml",
+        "cycle": 2,
+        "ms": 7798
+      }
+    ],
+    "android-paginated-final": [
+      {
+        "event": "ready",
+        "book": "synthetic",
+        "href": "OEBPS/Text/chapter-9.xhtml",
+        "cycle": 0,
+        "publicationMs": 340,
+        "readyMs": 8183,
+        "ready": true
+      },
+      {
+        "event": "positioned",
+        "book": "synthetic",
+        "href": "OEBPS/Text/chapter-9.xhtml",
+        "cycle": 0,
+        "ms": 8584
+      },
+      {
+        "event": "ready",
+        "book": "synthetic",
+        "href": "OEBPS/Text/chapter-9.xhtml",
+        "cycle": 1,
+        "publicationMs": 196,
+        "readyMs": 7357,
+        "ready": true
+      },
+      {
+        "event": "positioned",
+        "book": "synthetic",
+        "href": "OEBPS/Text/chapter-9.xhtml",
+        "cycle": 1,
+        "ms": 7685
+      }
+    ],
+    "ios-paginated-final": [
+      {
+        "event": "ready",
+        "book": "synthetic",
+        "href": "OEBPS/Text/chapter-9.xhtml",
+        "cycle": 0,
+        "publicationMs": 277,
+        "readyMs": 4261,
+        "ready": true
+      },
+      {
+        "event": "positioned",
+        "book": "synthetic",
+        "href": "OEBPS/Text/chapter-9.xhtml",
+        "cycle": 0,
+        "ms": 4264
+      },
+      {
+        "event": "ready",
+        "book": "synthetic",
+        "href": "OEBPS/Text/chapter-9.xhtml",
+        "cycle": 1,
+        "publicationMs": 237,
+        "readyMs": 3715,
+        "ready": true
+      },
+      {
+        "event": "positioned",
+        "book": "synthetic",
+        "href": "OEBPS/Text/chapter-9.xhtml",
+        "cycle": 1,
+        "ms": 3715
+      }
+    ],
+    "android-progressive-final": [
+      {
+        "event": "open",
+        "received": 6975521,
+        "total": 35287073,
+        "transferMs": 5731
+      },
+      {
+        "event": "positioned",
+        "openMs": 12445,
+        "transferMs": 18176,
+        "received": 22573089,
+        "total": 35287073,
+        "progression": 0.8000009185400418
+      },
+      {
+        "event": "verified",
+        "transferMs": 30810,
+        "total": 35287073
+      }
+    ],
+    "ios-progressive-verified": [
+      {
+        "event": "open",
+        "received": 7041057,
+        "total": 35287073,
+        "transferMs": 5707
+      },
+      {
+        "event": "positioned",
+        "openMs": 5726,
+        "transferMs": 11433,
+        "received": 14381089,
+        "total": 35287073,
+        "progression": 0.7999989985428799
+      },
+      {
+        "event": "verified",
+        "transferMs": 30435,
+        "total": 35287073
+      }
+    ],
+    "ios-final-guard": [
+      {
+        "event": "ready",
+        "book": "typical",
+        "href": "OEBPS/Text/part0019.xhtml",
+        "cycle": 0,
+        "publicationMs": 75,
+        "readyMs": 1549,
+        "ready": true
+      },
+      {
+        "event": "positioned",
+        "book": "typical",
+        "href": "OEBPS/Text/part0019.xhtml",
+        "cycle": 0,
+        "ms": 1883
+      },
+      {
+        "event": "ready",
+        "book": "typical",
+        "href": "OEBPS/Text/part0019.xhtml",
+        "cycle": 1,
+        "publicationMs": 24,
+        "readyMs": 765,
+        "ready": true
+      },
+      {
+        "event": "positioned",
+        "book": "typical",
+        "href": "OEBPS/Text/part0019.xhtml",
+        "cycle": 1,
+        "ms": 965
+      },
+      {
+        "event": "ready",
+        "book": "typical",
+        "href": "OEBPS/Text/part0019.xhtml",
+        "cycle": 2,
+        "publicationMs": 15,
+        "readyMs": 765,
+        "ready": true
+      },
+      {
+        "event": "positioned",
+        "book": "typical",
+        "href": "OEBPS/Text/part0019.xhtml",
+        "cycle": 2,
+        "ms": 965
+      },
+      {
+        "event": "ready",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/01_math_fundamentals_fragment.xhtml",
+        "cycle": 0,
+        "publicationMs": 246,
+        "readyMs": 2233,
+        "ready": true
+      },
+      {
+        "event": "positioned",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/01_math_fundamentals_fragment.xhtml",
+        "cycle": 0,
+        "ms": 3669
+      },
+      {
+        "event": "ready",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/01_math_fundamentals_fragment.xhtml",
+        "cycle": 1,
+        "publicationMs": 249,
+        "readyMs": 2633,
+        "ready": true
+      },
+      {
+        "event": "positioned",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/01_math_fundamentals_fragment.xhtml",
+        "cycle": 1,
+        "ms": 3900
+      },
+      {
+        "event": "ready",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/01_math_fundamentals_fragment.xhtml",
+        "cycle": 2,
+        "publicationMs": 248,
+        "readyMs": 2182,
+        "ready": true
+      },
+      {
+        "event": "positioned",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/01_math_fundamentals_fragment.xhtml",
+        "cycle": 2,
+        "ms": 3399
+      },
+      {
+        "event": "ready",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/07_applications_fragment.xhtml",
+        "cycle": 0,
+        "publicationMs": 242,
+        "readyMs": 1632,
+        "ready": true
+      },
+      {
+        "event": "positioned",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/07_applications_fragment.xhtml",
+        "cycle": 0,
+        "ms": 2682
+      },
+      {
+        "event": "ready",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/07_applications_fragment.xhtml",
+        "cycle": 1,
+        "publicationMs": 241,
+        "readyMs": 1666,
+        "ready": true
+      },
+      {
+        "event": "positioned",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/07_applications_fragment.xhtml",
+        "cycle": 1,
+        "ms": 2782
+      },
+      {
+        "event": "ready",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/07_applications_fragment.xhtml",
+        "cycle": 2,
+        "publicationMs": 238,
+        "readyMs": 1800,
+        "ready": true
+      },
+      {
+        "event": "positioned",
+        "book": "long-chapter",
+        "href": "OEBPS/Text/07_applications_fragment.xhtml",
+        "cycle": 2,
+        "ms": 3083
+      }
+    ],
+    "android-progressive-regression": [
+      {
+        "event": "open",
+        "received": 7106593,
+        "total": 35287073,
+        "transferMs": 5755
+      },
+      {
+        "event": "positioned",
+        "openMs": 8204,
+        "transferMs": 13960,
+        "received": 17788961,
+        "total": 35287073,
+        "progression": 0.8000009185400418
+      },
+      {
+        "event": "verified",
+        "transferMs": 30455,
+        "total": 35287073
+      }
+    ]
+  }
+}

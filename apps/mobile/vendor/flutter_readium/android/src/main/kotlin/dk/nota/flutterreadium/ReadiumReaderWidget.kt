@@ -28,6 +28,7 @@ import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import org.readium.r2.shared.ExperimentalReadiumApi
+import org.readium.r2.shared.publication.Layout
 import org.readium.r2.shared.publication.Locator
 import org.readium.r2.shared.util.AbsoluteUrl
 
@@ -255,11 +256,12 @@ class ReadiumReaderWidget(
     }
 
     override fun onVisualReaderIsReady() {
-        PluginLog.i(TAG, "::onVisualReaderIsReady")
-        if (!hasSentReady) {
-            ReadiumReader.emitReaderStatusUpdate(ReadiumReaderStatus.Ready)
-
+        // Reflowable preloads can finish before the requested chapter. Wait
+        // for onPageChanged there. The SDK does not send that deprecated
+        // callback for fixed-layout EPUBs, which retain their existing signal.
+        if (ReadiumReader.currentPublication?.metadata?.layout == Layout.FIXED && !hasSentReady) {
             hasSentReady = true
+            ReadiumReader.emitReaderStatusUpdate(ReadiumReaderStatus.Ready)
         }
     }
 
