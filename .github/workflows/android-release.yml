@@ -1,0 +1,102 @@
+name: Android release APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.41.6'
+          cache: true
+
+      - name: Set release version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_version=$(sed -nE 's/^version: ([0-9]+\.[0-9]+\.)([0-9]+)\+([0-9]+)$/\1 \2 \3/p' apps/mobile/pubspec.yaml)
+          if [[ -z "$source_version" ]]; then
+            echo 'Expected pubspec.yaml version in major.minor.patch+build format' >&2
+            exit 1
+          fi
+          read -r prefix patch base_code <<< "$source_version"
+          version="${prefix}$((patch + GITHUB_RUN_NUMBER))"
+          code="$((base_code + GITHUB_RUN_NUMBER))"
+          echo "name=$version" >> "$GITHUB_OUTPUT"
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+
+      - name: Get dependencies
+        working-directory: apps/mobile
+        run: flutter pub get
+
+      - name: Analyze
+        working-directory: apps/mobile
+        run: flutter analyze
+
+      - name: Test
+        working-directory: apps/mobile
+        run: flutter test
+
+      - name: Build signed release APK
+        working-directory: apps/mobile
+        run: >-
+          flutter build apk --release
+          --build-name="${{ steps.version.outputs.name }}"
+          --build-number="${{ steps.version.outputs.code }}"
+
+      - name: Name release APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cp apps/mobile/build/app/outputs/flutter-apk/app-release.apk \
+            "dist/thereader-${{ steps.version.outputs.name }}.apk"
+
+      - name: Keep APK as Actions artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: thereader-${{ steps.version.outputs.name }}-attempt-${{ github.run_attempt }}
+          path: dist/*.apk
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk="dist/thereader-${VERSION}.apk"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$apk" --clobber
+          else
+            gh release create "$TAG" "$apk" \
+              --target "$GITHUB_SHA" \
+              --title "The Reader $VERSION" \
+              --generate-notes
+          fi

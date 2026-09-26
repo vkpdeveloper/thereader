@@ -19,6 +19,24 @@ preserved; Sample mode has been removed. For local development, enter
 `http://127.0.0.1:8787` on the iOS simulator or `http://10.0.2.2:8787` on the
 Android emulator. The health check button calls `GET /health`.
 
+## Android releases
+
+Every push to `main`, including a merged pull request, runs the Android release
+workflow. It analyzes and tests the app, builds a signed **release** APK, keeps
+it as a GitHub Actions artifact for 90 days, and publishes the same APK on a
+versioned GitHub release. The workflow can also be run manually from Actions.
+
+The version starts from `pubspec.yaml` (`0.1.0+2`) and adds the workflow run
+number to the patch and Android build code. The first run produces `v0.1.1`
+with build code `3`; later runs get unique, increasing codes. To change the
+major or minor version, update `pubspec.yaml` and keep its build code at least
+as high as the previous source value.
+
+The release build uses the checked-in `ci-debug-signing.p12` key. Its password
+is public (`android`), so these APKs are suitable for direct installation and
+updates from this repository, not for Play Store distribution. Keep this key
+unchanged to allow one GitHub release to update another.
+
 ## Layout
 
 ```
