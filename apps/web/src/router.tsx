@@ -1,72 +1,78 @@
-import { createRootRoute, createRoute, createRouter, Navigate } from '@tanstack/react-router';
+import { createRootRoute, createRoute, createRouter, redirect } from '@tanstack/react-router';
 import { Root } from './App';
-import AppLayout from './routes/app';
-import Library from './routes/library';
-import Browse from './routes/browse';
-import Settings from './routes/settings';
-import BookDetail from './routes/book';
-import Reader from './routes/reader';
+import { AppShell } from './components/AppShell';
+import { NotFound } from './routes/notFound';
+import { LibraryScreen } from './routes/library';
+import { BrowseScreen } from './routes/browse';
+import { SettingsScreen } from './routes/settings';
+import { BookScreen } from './routes/book';
+import { ReaderScreen } from './routes/reader';
 
-const rootRoute = createRootRoute({
-  component: Root,
-});
+const rootRoute = createRootRoute({ component: Root, notFoundComponent: NotFound });
 
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  component: () => <Navigate to="/app/library" />,
+  beforeLoad: () => {
+    throw redirect({ to: '/library', replace: true });
+  },
 });
 
-const appRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: 'app',
-  component: AppLayout,
-});
+/** Pathless layout: sidebar / tab row around the three destinations. */
+const shellRoute = createRoute({ getParentRoute: () => rootRoute, id: 'shell', component: AppShell });
 
-const appIndexRoute = createRoute({
-  getParentRoute: () => appRoute,
-  path: '/',
-  component: () => <Navigate to="/app/library" />,
-});
+const libraryRoute = createRoute({ getParentRoute: () => shellRoute, path: 'library', component: LibraryScreen });
+const browseRoute = createRoute({ getParentRoute: () => shellRoute, path: 'browse', component: BrowseScreen });
+const settingsRoute = createRoute({ getParentRoute: () => shellRoute, path: 'settings', component: SettingsScreen });
 
-const libraryRoute = createRoute({
-  getParentRoute: () => appRoute,
-  path: 'library',
-  component: Library,
-});
+export interface BookSearch {
+  /** Library entry id, for imported books or editions from another API origin. */
+  entry?: string;
+}
 
-const browseRoute = createRoute({
-  getParentRoute: () => appRoute,
-  path: 'browse',
-  component: Browse,
-});
-
-const settingsRoute = createRoute({
-  getParentRoute: () => appRoute,
-  path: 'settings',
-  component: Settings,
-});
-
+/** A catalog book at the current origin; `?entry=` pins a library entry. */
 const bookRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'book/$id',
-  component: BookDetail,
+  validateSearch: (search: Record<string, unknown>): BookSearch =>
+    typeof search.entry === 'string' && search.entry ? { entry: search.entry } : {},
+  component: BookScreen,
 });
 
-const readerRoute = createRoute({
+const readRoute = createRoute({ getParentRoute: () => rootRoute, path: 'read/$entryId', component: ReaderScreen });
+
+/** Paths from the first web prototype keep working. */
+const legacyApp = createRoute({
   getParentRoute: () => rootRoute,
-  path: 'reader/$id',
-  component: Reader,
+  path: 'app/$',
+  beforeLoad: ({ params }) => {
+    const rest = (params as { _splat?: string })._splat ?? '';
+    const to = rest.startsWith('browse') ? '/browse' : rest.startsWith('settings') ? '/settings' : '/library';
+    throw redirect({ to, replace: true });
+  },
+});
+const legacyAppIndex = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'app',
+  beforeLoad: () => {
+    throw redirect({ to: '/library', replace: true });
+  },
 });
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
-  appRoute.addChildren([appIndexRoute, libraryRoute, browseRoute, settingsRoute]),
+  shellRoute.addChildren([libraryRoute, browseRoute, settingsRoute]),
   bookRoute,
-  readerRoute,
+  readRoute,
+  legacyAppIndex,
+  legacyApp,
 ]);
 
-export const router = createRouter({ routeTree });
+export const router = createRouter({
+  routeTree,
+  defaultPreload: 'intent',
+  scrollRestoration: true,
+});
 
 declare module '@tanstack/react-router' {
   interface Register {
