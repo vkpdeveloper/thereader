@@ -22,16 +22,17 @@ Android emulator. The health check button calls `GET /health`.
 
 ## Android releases
 
-Every push to `main`, including a merged pull request, runs the Android release
-workflow. It analyzes and tests the app, builds a signed **release** APK, keeps
-it as a GitHub Actions artifact for 90 days, and publishes the same APK on a
-versioned GitHub release. The workflow can also be run manually from Actions.
+Pull requests targeting `main` run the Android analysis, tests, and signed
+**release** APK build before merge. Every push to `main`, including a merged
+pull request, also keeps the APK as a GitHub Actions artifact for 7 days and
+publishes it on a versioned GitHub release. The workflow can be run manually
+from Actions.
 
 The version starts from `pubspec.yaml` (`0.1.0+2`) and adds the workflow run
-number to the patch and Android build code. The first run produces `v0.1.1`
-with build code `3`; later runs get unique, increasing codes. To change the
-major or minor version, update `pubspec.yaml` and keep its build code at least
-as high as the previous source value.
+number to the patch and Android build code. For example, run 4 produces
+`v0.1.4` with build code `6`. Failed runs and PR checks can leave gaps in
+published versions. To change the major or minor version, update `pubspec.yaml`
+and keep its build code at least as high as the previous source value.
 
 The release build uses the checked-in `ci-debug-signing.p12` key. Its password
 is public (`android`), so these APKs are suitable for direct installation and
