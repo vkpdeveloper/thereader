@@ -24,7 +24,7 @@ Android emulator. The health check button calls `GET /health`.
 
 Pull requests targeting `main` run the Android analysis, tests, and signed
 **release** APK build before merge. Every push to `main`, including a merged
-pull request, also keeps the APK as a GitHub Actions artifact for 90 days and
+pull request, also keeps the APK as a GitHub Actions artifact for 7 days and
 publishes it on a versioned GitHub release. The workflow can be run manually
 from Actions.
 

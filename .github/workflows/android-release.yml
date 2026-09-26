@@ -16,6 +16,7 @@ jobs:
     timeout-minutes: 60
     outputs:
       version: ${{ steps.version.outputs.name }}
+      code: ${{ steps.version.outputs.code }}
       tag: ${{ steps.version.outputs.tag }}
       artifact: thereader-${{ steps.version.outputs.name }}-attempt-${{ github.run_attempt }}
 
@@ -92,12 +93,15 @@ jobs:
             "dist/thereader-${{ steps.version.outputs.name }}.apk"
 
       - name: Keep APK as Actions artifact
+        id: artifact
+        if: github.event_name != 'pull_request'
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: thereader-${{ steps.version.outputs.name }}-attempt-${{ github.run_attempt }}
           path: dist/*.apk
           if-no-files-found: error
-          retention-days: 90
+          retention-days: 7
 
   release:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
@@ -108,10 +112,59 @@ jobs:
 
     steps:
       - name: Download verified APK
+        id: download
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: ${{ needs.build.outputs.artifact }}
           path: dist
+
+      - name: Check out source for upload fallback
+        if: steps.download.outcome == 'failure'
+        uses: actions/checkout@v4
+
+      - name: Set up Java for upload fallback
+        if: steps.download.outcome == 'failure'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Flutter for upload fallback
+        if: steps.download.outcome == 'failure'
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.41.6'
+          cache: true
+
+      - name: Configure Gradle for upload fallback
+        if: steps.download.outcome == 'failure'
+        shell: bash
+        run: |
+          mkdir -p "$HOME/.gradle"
+          cat > "$HOME/.gradle/gradle.properties" <<'EOF'
+          org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -XX:ReservedCodeCacheSize=512m -XX:+HeapDumpOnOutOfMemoryError
+          kotlin.daemon.jvmargs=-Xmx2g -XX:MaxMetaspaceSize=1g
+          org.gradle.workers.max=2
+          org.gradle.vfs.watch=false
+          EOF
+
+      - name: Rebuild APK for upload fallback
+        if: steps.download.outcome == 'failure'
+        working-directory: apps/mobile
+        run: >-
+          flutter build apk --release
+          --build-name="${{ needs.build.outputs.version }}"
+          --build-number="${{ needs.build.outputs.code }}"
+
+      - name: Name fallback APK
+        if: steps.download.outcome == 'failure'
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp apps/mobile/build/app/outputs/flutter-apk/app-release.apk \
+            "dist/thereader-${{ needs.build.outputs.version }}.apk"
 
       - name: Publish GitHub release
         env:
@@ -131,3 +184,9 @@ jobs:
               --title "The Reader $VERSION" \
               --generate-notes
           fi
+
+      - name: Report missing Actions artifact
+        if: steps.download.outcome == 'failure'
+        run: |
+          echo '::error::GitHub release was published, but the Actions artifact could not be stored.'
+          exit 1
