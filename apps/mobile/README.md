@@ -1,7 +1,8 @@
 # The Reader (mobile)
 
-Flutter app for iOS, Android and a browser preview. Always dark, EPUB only,
-no accounts. See `docs/api-contract.md` at the repository root for the API.
+Flutter app for iOS, Android and a browser preview. Always dark, with native
+EPUB and MOBI imports; MOBI is converted on device to EPUB for reading and sync.
+No accounts. See `docs/api-contract.md` at the repository root for the API.
 
 ## Run
 
@@ -49,7 +50,7 @@ lib/
     storage/         KeyValueStore (SharedPreferences | memory),
                      BookStore (durable app-support dir | in-memory on web)
     download/        Downloader: streamed write + chunked SHA-256 + size check
-    import/          native file picker, bounded EPUB metadata, resumable R2 upload
+    import/          EPUB/MOBI picker, MOBI conversion, bounded EPUB metadata, resumable R2 upload
     repositories/    SettingsRepository, LibraryRepository, CatalogRepository,
                      SyncRepository (durable outbox and foreground reading sessions)
   reader/
@@ -85,5 +86,5 @@ See [progressive reading](../../docs/progressive-reading.md) for early native
 opening while bytes continue downloading. Partial publications require a
 connection; only complete, verified files are marked downloaded.
 
-See [import and cloud sync](../../docs/cloud-sync.md) for native EPUB picking,
+See [import and cloud sync](../../docs/cloud-sync.md) for native book picking,
 local reading during upload, D1 state, offline retry and cross-device behavior.

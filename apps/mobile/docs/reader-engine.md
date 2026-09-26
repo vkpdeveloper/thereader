@@ -21,6 +21,15 @@ This version supports Flutter 3.41.6; later wrapper releases require a newer Flu
 The native publication is opened from a verified durable path. Native locator JSON
 is retained and restored; generic fallback locators use href plus progression.
 
+DRM-free `.mobi` books are converted on device, off the UI isolate, into an EPUB
+before the existing checksum, durable storage, upload and reader pipeline runs.
+The converter preserves KF8 XHTML, styles, images, SVG and fonts, and repairs
+legacy MOBI HTML and chapter links. MOBI imports are capped at 64 MiB because
+conversion materializes the input and output; direct EPUB imports retain their
+512 MiB streaming limit. Encrypted MOBI files are unsupported. The converter
+uses `kindle_unpack` 0.2.0 (GPL-3.0), which must be considered when distributing
+the app.
+
 Reading preferences set the exact black background and off-white text, generic
 `serif`/`sans-serif` families, size, leading, margins, justification, and flow.
 The Flutter UI uses bundled Literata/Inter; native book text uses platform font

@@ -9,35 +9,37 @@ import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:xml/xml.dart';
 import '../covers/cover_validation.dart';
+import 'mobi_converter.dart';
 
 const maxImportBytes = 512 * 1024 * 1024;
 bool get importSupported => true;
 Stream<List<int>> readImportFile(String path) => File(path).openRead();
 
-Future<String?> pickEpub() async {
+Future<String?> pickBook() async {
   final picked = await FilePicker.pickFile(
     type: FileType.custom,
-    allowedExtensions: ['epub'],
+    allowedExtensions: ['epub', 'mobi'],
   );
   if (picked == null) return null;
-  if (!picked.name.toLowerCase().endsWith('.epub')) {
-    throw const FormatException('Choose an EPUB file.');
+  final extension = p.extension(picked.name).toLowerCase();
+  if (extension != '.epub' && extension != '.mobi') {
+    throw const FormatException('Choose an EPUB or MOBI file.');
   }
   final size = picked.lengthSync() ?? await picked.length();
   if (size != null && size > maxImportBytes) {
-    throw const FormatException('EPUB imports are limited to 512 MiB.');
+    throw const FormatException('Book imports are limited to 512 MiB.');
   }
   // File providers can return content URIs or temporary security-scoped URLs.
   // Consume their byte stream while the picker grants access, without readAll.
   final dir = await Directory.systemTemp.createTemp('thereader-import-');
-  final file = File(p.join(dir.path, 'picked.epub'));
+  final file = File(p.join(dir.path, 'picked$extension'));
   final sink = file.openWrite();
   try {
     var count = 0;
     await for (final chunk in picked.readAsByteStream()) {
       count += chunk.length;
       if (count > maxImportBytes) {
-        throw const FormatException('EPUB imports are limited to 512 MiB.');
+        throw const FormatException('Book imports are limited to 512 MiB.');
       }
       sink.add(chunk);
       await sink.flush();
@@ -51,8 +53,55 @@ Future<String?> pickEpub() async {
   }
 }
 
-Future<void> cleanPickedEpub(String path) =>
+Future<void> cleanPickedBook(String path) =>
     File(path).parent.delete(recursive: true);
+
+/// MOBI is unpacked once at import, off the UI isolate. The resulting EPUB
+/// enters the same checksum, storage, upload and native Readium path as a
+/// directly imported EPUB. The caller owns and removes the returned temp file.
+Future<String> prepareBook(String sourcePath) async {
+  final extension = p.extension(sourcePath).toLowerCase();
+  if (extension == '.epub') return sourcePath;
+  if (extension != '.mobi') {
+    throw const FormatException('Choose an EPUB or MOBI file.');
+  }
+  final size = await File(sourcePath).length();
+  // kindle_unpack materializes its input and EPUB output. Keep the conversion
+  // bounded; EPUB imports continue to use the existing 512 MiB streaming path.
+  const maxMobiBytes = 64 * 1024 * 1024;
+  if (size == 0 || size > maxMobiBytes) {
+    throw const FormatException('MOBI imports are limited to 64 MiB.');
+  }
+  final dir = await Directory.systemTemp.createTemp('thereader-mobi-');
+  final output = p.join(dir.path, 'converted.epub');
+  try {
+    await Isolate.run(() => _convertMobi(sourcePath, output));
+    if (await File(output).length() > maxImportBytes) {
+      throw const FormatException('The converted EPUB exceeds 512 MiB.');
+    }
+    return output;
+  } catch (_) {
+    await dir.delete(recursive: true);
+    rethrow;
+  }
+}
+
+Future<void> cleanPreparedBook(String sourcePath, String preparedPath) async {
+  if (sourcePath != preparedPath) {
+    await File(preparedPath).parent.delete(recursive: true);
+  }
+}
+
+void _convertMobi(String sourcePath, String outputPath) {
+  try {
+    final epub = convertMobi(File(sourcePath).readAsBytesSync());
+    File(outputPath).writeAsBytesSync(epub, flush: true);
+  } on FormatException {
+    rethrow;
+  } catch (_) {
+    throw const FormatException('This MOBI cannot be converted.');
+  }
+}
 
 Future<Map<String, dynamic>> inspectEpub(String path) =>
     Isolate.run(() => _inspect(path));

@@ -128,7 +128,7 @@ class EpubImportService extends ChangeNotifier {
     String? picked;
     try {
       final origin = _currentClient().baseUri.toString();
-      picked = await platform.pickEpub();
+      picked = await platform.pickBook();
       return picked == null ? null : await _import(picked, origin);
     } catch (e) {
       _error = _message(e);
@@ -136,7 +136,7 @@ class EpubImportService extends ChangeNotifier {
     } finally {
       if (picked != null) {
         try {
-          await platform.cleanPickedEpub(picked);
+          await platform.cleanPickedBook(picked);
         } catch (_) {}
       }
       _busy = false;
@@ -163,6 +163,15 @@ class EpubImportService extends ChangeNotifier {
 
   Future<LibraryEntry> _import(String sourcePath, String origin) async {
     await load();
+    final preparedPath = await platform.prepareBook(sourcePath);
+    try {
+      return await _importPrepared(preparedPath, origin);
+    } finally {
+      await platform.cleanPreparedBook(sourcePath, preparedPath);
+    }
+  }
+
+  Future<LibraryEntry> _importPrepared(String sourcePath, String origin) async {
     // Origin was captured before picker/file work; never close its shared client.
     final metadata = await platform.inspectEpub(sourcePath);
     final sha = metadata['sha256'] as String;

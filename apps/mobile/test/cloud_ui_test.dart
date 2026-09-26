@@ -116,7 +116,7 @@ void main() {
   testWidgets('without services the cloud UI is absent everywhere', (tester) async {
     final services = await makeServices(existing: _entry());
     await pumpApp(tester, services);
-    expect(find.byTooltip('Import EPUB'), findsNothing);
+    expect(find.byTooltip('Import EPUB or MOBI'), findsNothing);
     expect(cloudIcons(), findsNothing);
 
     await tester.tap(find.text('Settings'));
@@ -132,16 +132,16 @@ void main() {
     final services = await makeServices(imports: imports);
     await pumpApp(tester, services);
 
-    final button = find.byTooltip('Import EPUB');
+    final button = find.byTooltip('Import EPUB or MOBI');
     expect(button, findsOneWidget);
     final title = find.text('Library').first;
     expect(tester.getRect(button).left, greaterThan(tester.getRect(title).right));
-    expect(find.textContaining('import an EPUB'), findsOneWidget);
+    expect(find.textContaining('import an EPUB or MOBI'), findsOneWidget);
 
     await tester.tap(button);
     await tester.pump();
     // While the pick is in flight the action is replaced by a spinner.
-    expect(find.bySemanticsLabel('Importing EPUB'), findsOneWidget);
+    expect(find.bySemanticsLabel('Importing book'), findsOneWidget);
     imports.completePick();
     await tester.pumpAndSettle();
     expect(imports.picks, 1);
@@ -153,12 +153,12 @@ void main() {
     final imports = FakeImports()..result = null;
     final services = await makeServices(imports: imports);
     await pumpApp(tester, services);
-    await tester.tap(find.byTooltip('Import EPUB'));
+    await tester.tap(find.byTooltip('Import EPUB or MOBI'));
     imports.completePick();
     await tester.pumpAndSettle();
     expect(find.byType(BookDetailScreen), findsNothing);
     expect(find.byType(SnackBar), findsNothing);
-    expect(find.byTooltip('Import EPUB'), findsOneWidget);
+    expect(find.byTooltip('Import EPUB or MOBI'), findsOneWidget);
   });
 
   testWidgets('the library stays quiet through waiting, uploading and failed uploads',
@@ -223,12 +223,12 @@ void main() {
     final imports = FakeImports()..pickError = StateError('not an EPUB');
     final services = await makeServices(imports: imports);
     await pumpApp(tester, services);
-    await tester.tap(find.byTooltip('Import EPUB'));
+    await tester.tap(find.byTooltip('Import EPUB or MOBI'));
     imports.completePick();
     await tester.pumpAndSettle();
     expect(find.byType(SnackBar), findsOneWidget);
     expect(find.textContaining('Could not import that file.'), findsOneWidget);
-    expect(find.byTooltip('Import EPUB'), findsOneWidget);
+    expect(find.byTooltip('Import EPUB or MOBI'), findsOneWidget);
   });
 
   testWidgets('settings shows a Cloud sync section with last sync, pending, error and Sync now',
