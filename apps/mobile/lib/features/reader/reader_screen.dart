@@ -26,10 +26,23 @@ class ReaderScreen extends StatefulWidget {
   final LibraryEntry entry;
   final _ReaderSession? _session;
   static bool _routeActive = false;
+  static Completer<void>? _routeDone;
+
+  /// File-manager opens replace any current book and start reading at once.
+  static Future<void> openExternal(
+    BuildContext context,
+    LibraryEntry entry,
+  ) async {
+    final navigator = Navigator.of(context);
+    navigator.popUntil((route) => route.isFirst);
+    await _routeDone?.future;
+    if (context.mounted) unawaited(open(context, entry));
+  }
 
   static Future<void> open(BuildContext context, LibraryEntry entry) async {
     if (_routeActive) return;
     _routeActive = true;
+    final done = _routeDone = Completer<void>();
     final session = _ReaderSession();
     try {
       final route = PageRouteBuilder<void>(
@@ -49,6 +62,8 @@ class ReaderScreen extends StatefulWidget {
       await session.opening;
     } finally {
       _routeActive = false;
+      done.complete();
+      if (identical(_routeDone, done)) _routeDone = null;
     }
   }
 

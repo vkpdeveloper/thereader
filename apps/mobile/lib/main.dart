@@ -80,14 +80,16 @@ Future<void> main() async {
     ),
     catalogSource: bundledCatalog ? SampleCatalogSource() : null,
   );
-  // Library loads in the background; the screen shows a quiet line meanwhile.
+  // Library loads in the background; external files only wait for local state,
+  // not for upload and sync setup, before opening the reader.
+  final libraryReady = library.load();
   Future<void> loadPersonalLibrary() async {
-    await library.load();
+    await libraryReady;
     await imports?.load();
     await highlights.load();
     await sync?.load();
   }
 
-  loadPersonalLibrary();
-  runApp(TheReaderApp(services: services));
+  unawaited(loadPersonalLibrary());
+  runApp(TheReaderApp(services: services, libraryReady: libraryReady));
 }
