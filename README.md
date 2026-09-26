@@ -1,9 +1,9 @@
 # The Reader
 
-A personal, always-dark EPUB reader for iOS and Android. Flutter supplies the
+A personal, always-dark EPUB and MOBI reader for iOS and Android. Flutter supplies the
 interface; a small TypeScript Cloudflare Worker serves a catalog and books from R2.
 Books stay on the phone for offline reading; D1 syncs position, reading time and
-typography across devices. Native EPUB imports upload to R2 while remaining
+typography across devices. Native EPUB and MOBI imports upload to R2 as EPUBs while remaining
 readable from their local copy. No login or accounts.
 
 ## Workspace
@@ -30,9 +30,9 @@ explicit test fixtures only; there is no Sample mode in the interface.
 
 ## Scope
 
-EPUB only. A pure-black Default theme plus optional dark editor-inspired themes.
+EPUB reading, with on-device MOBI conversion. A pure-black Default theme plus optional dark editor-inspired themes.
 A quiet library, search, downloads, reading controls,
-typography preferences, EPUB imports, and cloud reading-state sync. No PDF,
+typography preferences, EPUB and MOBI imports, and cloud reading-state sync. No PDF,
 audiobook, social, purchase, or user-account features.
 
 ## Production API

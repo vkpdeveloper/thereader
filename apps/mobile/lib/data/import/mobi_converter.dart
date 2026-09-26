@@ -11,8 +11,45 @@ import 'package:kindle_unpack/kindle_unpack.dart';
 Uint8List convertMobi(Uint8List source) {
   final book = KindleBook.fromBytes(source);
   final flowPaths = <int, String>{};
+  final resourcePaths = <int, String>{
+    for (final image in book.images.all)
+      image.blockIndex: 'Images/${image.name}',
+  };
   final css = <EpubAsset>[];
   final extraImages = <ExtractedImage>[];
+  final fontAssets = <EpubAsset>[];
+  final firstResource = book.mobi.firstImageIndex;
+  if (firstResource != MobiHeader.unset && firstResource > 0) {
+    for (var i = firstResource; i < book.pdb.records.length; i++) {
+      final bytes = book.pdb.records[i].data;
+      if (bytes.length < 4 ||
+          bytes[0] != 0x46 ||
+          bytes[1] != 0x4f ||
+          bytes[2] != 0x4e ||
+          bytes[3] != 0x54) {
+        continue;
+      }
+      try {
+        final font = FontResource.parse(bytes);
+        final name =
+            'font${fontAssets.length.toString().padLeft(4, '0')}.${font.format.extension}';
+        resourcePaths[i - firstResource] = 'Fonts/$name';
+        fontAssets.add(
+          EpubAsset(
+            name: name,
+            bytes: font.payload,
+            mediaType: switch (font.format) {
+              FontFormat.ttf || FontFormat.ttc => 'font/ttf',
+              FontFormat.otf => 'font/otf',
+              FontFormat.unknown => 'application/octet-stream',
+            },
+          ),
+        );
+      } on HeaderException {
+        // A damaged font is treated like any other missing referenced asset.
+      }
+    }
+  }
 
   for (final flow in book.flows?.flows ?? <FlowSection>[]) {
     if (flow.kind == FlowKind.css) {
@@ -90,15 +127,13 @@ Uint8List convertMobi(Uint8List source) {
       RegExp(r'''kindle:embed:([0-9A-V]+)(?:\?mime=[^\s"'<>]+)?'''),
       (match) {
         final index = int.parse(match.group(1)!, radix: 32) - 1;
-        final image = book.images.all
-            .where((item) => item.blockIndex == index)
-            .firstOrNull;
-        if (image == null) {
+        final path = resourcePaths[index];
+        if (path == null) {
           throw FormatException(
-            'The MOBI references missing image ${index + 1}.',
+            'The MOBI references missing resource ${index + 1}.',
           );
         }
-        return '../Images/${image.name}';
+        return '../$path';
       },
     );
     text = text.replaceAllMapped(
@@ -167,14 +202,6 @@ Uint8List convertMobi(Uint8List source) {
         ),
       ),
   ];
-  final fontAssets = <EpubAsset>[
-    for (var i = 0; i < book.fonts.length; i++)
-      EpubAsset(
-        name:
-            'font${i.toString().padLeft(4, '0')}.${book.fonts[i].format.extension}',
-        bytes: book.fonts[i].payload,
-      ),
-  ];
   final cover = book.images.cover;
   final epub = EpubBuilder.build(
     metadata: EpubMetadata(
@@ -208,26 +235,26 @@ String _legacyXhtml(
     positions.add(int.parse(match.group(1)!));
   }
   // Mobi-7 filepos values address the original byte stream. Anchors are
-  // inserted at the next tag boundary, then carried through HTML repair.
-  // Reparse after insertion so invalid publisher HTML becomes valid XHTML.
+  // inserted at the next tag boundary in one pass, then carried through HTML
+  // repair so invalid publisher HTML becomes valid XHTML.
   if (positions.isNotEmpty) {
-    final ordered = positions.toList()..sort((a, b) => b.compareTo(a));
-    var patched = sourceBytes;
+    final ordered = positions.toList()..sort();
+    final patched = BytesBuilder(copy: false);
+    var lastOffset = 0;
     for (final position in ordered) {
-      if (position >= patched.length) continue;
-      var at = position;
-      while (at < patched.length && patched[at] != 0x3c) {
+      if (position >= sourceBytes.length) continue;
+      var at = position > lastOffset ? position : lastOffset;
+      while (at < sourceBytes.length && sourceBytes[at] != 0x3c) {
         at++;
       }
-      if (at < patched.length) {
-        patched = Uint8List.fromList([
-          ...patched.sublist(0, at),
-          ...utf8.encode('<span id="mobi-pos-$position"></span>'),
-          ...patched.sublist(at),
-        ]);
+      if (at < sourceBytes.length) {
+        patched.add(Uint8List.sublistView(sourceBytes, lastOffset, at));
+        patched.add(utf8.encode('<span id="mobi-pos-$position"></span>'));
+        lastOffset = at;
       }
     }
-    sourceBytes = patched;
+    patched.add(Uint8List.sublistView(sourceBytes, lastOffset));
+    sourceBytes = patched.takeBytes();
   }
   var source = textEncoding == 1252
       ? _decodeWindows1252(sourceBytes)
@@ -315,7 +342,7 @@ void _writeXhtml(dom.Node node, StringBuffer out) {
   if (node is dom.Text) {
     out.write(_escapeXml(node.text));
   } else if (node is dom.Element) {
-    final tag = node.localName?.toLowerCase() ?? 'span';
+    var tag = node.localName?.toLowerCase() ?? 'span';
     if (tag == 'mbp:pagebreak') {
       out.write('<hr style="break-before: page"/>');
       for (final child in node.nodes) {
@@ -323,11 +350,27 @@ void _writeXhtml(dom.Node node, StringBuffer out) {
       }
       return;
     }
+    if (!_xmlName.hasMatch(tag)) tag = 'span';
     out.write('<$tag');
-    if (tag == 'html') out.write(' xmlns="http://www.w3.org/1999/xhtml"');
+    if (tag == 'html') {
+      out.write(' xmlns="http://www.w3.org/1999/xhtml"');
+      out.write(' xmlns:xlink="http://www.w3.org/1999/xlink"');
+    }
     for (final entry in node.attributes.entries) {
-      if (entry.key == 'xmlns' && tag == 'html') continue;
-      out.write(' ${entry.key}="${_escapeXml(entry.value)}"');
+      final name = entry.key.toString();
+      if (tag == 'html' && (name == 'xmlns' || name == 'xmlns:xlink')) {
+        continue;
+      }
+      if (!_xmlName.hasMatch(name) &&
+          name != 'xml:lang' &&
+          name != 'xlink:href' &&
+          !name.startsWith('xmlns:')) {
+        continue;
+      }
+      if (name.startsWith('xmlns:') && !_xmlName.hasMatch(name.substring(6))) {
+        continue;
+      }
+      out.write(' $name="${_escapeXml(entry.value)}"');
     }
     if (_voidTags.contains(tag)) {
       out.write('/>');
@@ -340,6 +383,8 @@ void _writeXhtml(dom.Node node, StringBuffer out) {
     }
   }
 }
+
+final _xmlName = RegExp(r'^[A-Za-z_][A-Za-z0-9_.-]*$');
 
 String _escapeXml(String value) => value
     .replaceAll('&', '&amp;')

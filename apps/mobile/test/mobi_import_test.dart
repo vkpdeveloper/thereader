@@ -130,9 +130,9 @@ void main() {
         final first = await imports.importPath(path);
         expect(first, isNotNull);
         expect(first!.download.isReady, isTrue);
-      expect(first.download.path, endsWith('.epub'));
-      expect(
-        await inspectEpub('${books.root.path}/${first.download.path}'),
+        expect(first.download.path, endsWith('.epub'));
+        expect(
+          await inspectEpub('${books.root.path}/${first.download.path}'),
           containsPair('sha256', first.book.sha256),
         );
         expect(imports.isPending(first.id), isTrue);

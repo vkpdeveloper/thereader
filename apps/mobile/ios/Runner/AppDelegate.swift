@@ -37,18 +37,19 @@ import UIKit
     options: [UIApplication.OpenURLOptionsKey: Any] = [:]
   ) -> Bool {
     guard url.isFileURL else { return super.application(app, open: url, options: options) }
-    acceptEpub(url)
+    acceptBook(url)
     return true
   }
 
-  func acceptEpub(_ url: URL) {
-    guard url.isFileURL, url.pathExtension.lowercased() == "epub" else { return }
+  func acceptBook(_ url: URL) {
+    let ext = url.pathExtension.lowercased()
+    guard url.isFileURL, ext == "epub" || ext == "mobi" else { return }
     copyQueue.async { [weak self] in
       let item: [String: String]
       do {
-        item = ["path": try Self.copyEpub(url)]
+        item = ["path": try Self.copyBook(url, extension: ext)]
       } catch {
-        item = ["error": "Could not open this EPUB from Files."]
+        item = ["error": "Could not open this book from Files."]
       }
       DispatchQueue.main.async {
         self?.pendingBooks.append(item)
@@ -57,13 +58,13 @@ import UIKit
     }
   }
 
-  private static func copyEpub(_ url: URL) throws -> String {
+  private static func copyBook(_ url: URL, extension ext: String) throws -> String {
     let accessible = url.startAccessingSecurityScopedResource()
     defer { if accessible { url.stopAccessingSecurityScopedResource() } }
     let directory = FileManager.default.temporaryDirectory
-      .appendingPathComponent("external-epub-\(UUID().uuidString)", isDirectory: true)
+      .appendingPathComponent("external-book-\(UUID().uuidString)", isDirectory: true)
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-    let target = directory.appendingPathComponent("book.epub")
+    let target = directory.appendingPathComponent("book.\(ext)")
     do {
       var coordinationError: NSError?
       var copyError: Error?
@@ -84,7 +85,8 @@ import UIKit
             if read < 0 { throw input.streamError ?? CocoaError(.fileReadUnknown) }
             if read == 0 { break }
             count += read
-            if count > 512 * 1024 * 1024 { throw CocoaError(.fileReadTooLarge) }
+            let maximum = ext == "mobi" ? 64 * 1024 * 1024 : 512 * 1024 * 1024
+            if count > maximum { throw CocoaError(.fileReadTooLarge) }
             var written = 0
             while written < read {
               let n = output.write(buffer.advanced(by: written), maxLength: read - written)

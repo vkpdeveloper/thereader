@@ -9,14 +9,14 @@ class SceneDelegate: FlutterSceneDelegate {
   ) {
     super.scene(scene, willConnectTo: session, options: connectionOptions)
     for context in connectionOptions.urlContexts {
-      (UIApplication.shared.delegate as? AppDelegate)?.acceptEpub(context.url)
+      (UIApplication.shared.delegate as? AppDelegate)?.acceptBook(context.url)
     }
   }
 
   override func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
     super.scene(scene, openURLContexts: URLContexts)
     for context in URLContexts {
-      (UIApplication.shared.delegate as? AppDelegate)?.acceptEpub(context.url)
+      (UIApplication.shared.delegate as? AppDelegate)?.acceptBook(context.url)
     }
   }
 }

@@ -2,6 +2,7 @@ package com.vaibhav.thereader.thereader
 
 import android.content.Intent
 import android.net.Uri
+import android.provider.OpenableColumns
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -46,19 +47,29 @@ class MainActivity : FlutterFragmentActivity() {
         if (uri.scheme != "content" && uri.scheme != "file") return
         copies.execute {
             val item = try {
-                mapOf("path" to copyEpub(uri))
+                mapOf("path" to copyBook(uri, intent.type))
             } catch (_: Exception) {
-                mapOf("error" to "Could not open this EPUB from Files.")
+                mapOf("error" to "Could not open this book from Files.")
             }
             synchronized(pending) { pending.add(item) }
             runOnUiThread { channel?.invokeMethod("filesReady", null) }
         }
     }
 
-    private fun copyEpub(uri: Uri): String {
-        val directory = File(cacheDir, "external-epub-${UUID.randomUUID()}")
+    private fun copyBook(uri: Uri, mimeType: String?): String {
+        val displayName = runCatching {
+            contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+                ?.use { cursor -> if (cursor.moveToFirst()) cursor.getString(0) else null }
+        }.getOrNull()
+        val suffix = (displayName ?: uri.lastPathSegment ?: "").substringAfterLast('.', "").lowercase()
+        val extension = when {
+            suffix == "mobi" || mimeType == "application/x-mobipocket-ebook" -> "mobi"
+            suffix == "epub" || mimeType == "application/epub+zip" -> "epub"
+            else -> error("Unsupported book type")
+        }
+        val directory = File(cacheDir, "external-book-${UUID.randomUUID()}")
         check(directory.mkdir())
-        val target = File(directory, "book.epub")
+        val target = File(directory, "book.$extension")
         try {
             val source = contentResolver.openInputStream(uri) ?: error("File unavailable")
             source.use { input ->
@@ -69,7 +80,8 @@ class MainActivity : FlutterFragmentActivity() {
                         val read = input.read(buffer)
                         if (read < 0) break
                         count += read
-                        if (count > 512L * 1024 * 1024) error("EPUB too large")
+                        val maximum = if (extension == "mobi") 64L * 1024 * 1024 else 512L * 1024 * 1024
+                        if (count > maximum) error("Book too large")
                         output.write(buffer, 0, read)
                     }
                 }

@@ -106,13 +106,13 @@ class _HomeShellState extends State<HomeShell> {
           final path = data['path'] as String?;
           if (path == null) {
             _showOpenError(
-              data['error'] as String? ?? 'Could not open this EPUB.',
+              data['error'] as String? ?? 'Could not open this book.',
             );
             continue;
           }
           try {
             if (imports == null) {
-              _showOpenError('EPUB import is unavailable.');
+              _showOpenError('Book import is unavailable.');
               continue;
             }
             if (imports.busy) {
@@ -132,13 +132,13 @@ class _HomeShellState extends State<HomeShell> {
             final entry = await imports.importPath(path);
             if (!mounted) return;
             if (entry == null) {
-              _showOpenError(imports.error ?? 'Could not import this EPUB.');
+              _showOpenError(imports.error ?? 'Could not import this book.');
             } else {
               await ReaderScreen.openExternal(context, entry);
             }
           } finally {
             try {
-              await import_platform.cleanPickedEpub(path);
+              await import_platform.cleanPickedBook(path);
             } catch (_) {
               // The local library copy is already durable; cache cleanup can
               // be retried by the OS without hiding the next incoming book.
@@ -147,7 +147,7 @@ class _HomeShellState extends State<HomeShell> {
         }
       } while (_drainAgain);
     } catch (error) {
-      if (mounted) _showOpenError('Could not open this EPUB.');
+      if (mounted) _showOpenError('Could not open this book.');
     } finally {
       _draining = false;
     }
