@@ -35,7 +35,7 @@ jobs:
         with:
           channel: stable
           flutter-version: '3.41.6'
-          cache: true
+          cache: false
 
       - name: Set release version
         id: version
@@ -136,7 +136,7 @@ jobs:
         with:
           channel: stable
           flutter-version: '3.41.6'
-          cache: true
+          cache: false
 
       - name: Configure Gradle for upload fallback
         if: steps.download.outcome == 'failure'
