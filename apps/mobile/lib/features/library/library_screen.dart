@@ -103,14 +103,14 @@ class _LibraryScreenState extends State<LibraryScreen> {
                                 width: 20,
                                 height: 20,
                                 child: Semantics(
-                                  label: 'Importing EPUB',
+                                  label: 'Importing book',
                                   child: CircularProgressIndicator(strokeWidth: 1.5),
                                 ),
                               ),
                             )
                           : QuietIconButton(
                               icon: Icons.file_upload_outlined,
-                              label: 'Import EPUB',
+                              label: 'Import EPUB or MOBI',
                               // Uploads run in the background; only the pick
                               // and local copy block a second import.
                               onPressed: _import,
@@ -124,7 +124,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 child: StateMessage(
                   title: 'Nothing here yet.',
                   body: canImport
-                      ? 'Browse the library and download a book, or import an EPUB from your files with the button above. Books are kept on this device for offline reading.'
+                      ? 'Browse the library and download a book, or import an EPUB or MOBI from your files with the button above. Books are kept on this device for offline reading.'
                       : 'Browse the library and download a book. Downloads are kept on this device for offline reading.',
                   actionLabel: 'Browse books',
                   onAction: widget.onBrowse,
