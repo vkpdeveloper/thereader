@@ -75,7 +75,7 @@ export function CoverPlate({ book }: { book: Book }) {
   const seed = seedOf(book.id);
   const accent = accentVars[seed % 6];
   return (
-    <div className="cover-plate">
+    <div className="cover-plate" aria-hidden="true">
       <PlateMark seed={seed} accent={accent} />
       <div className="cover-plate-text">
         <div className="cover-plate-title">{book.title}</div>

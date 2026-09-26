@@ -46,6 +46,7 @@ export function ReaderScreen() {
   const appliedPrefs = useRef<ReaderPreferences | null>(null);
   const saveTimer = useRef<number | undefined>(undefined);
   const hoverReveal = useRef(false);
+  const lastPanel = useRef<ReaderPanel | null>(null);
 
   const [engine, setEngine] = useState<ReaderEngine | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -462,6 +463,10 @@ export function ReaderScreen() {
     }
   };
 
+  // The closing panel keeps its content while it animates out.
+  if (panel) lastPanel.current = panel;
+  const shownPanel = panel ?? lastPanel.current;
+
   const panelSheet = (
     <Sheet
       open={panel != null && engine != null}
@@ -469,12 +474,12 @@ export function ReaderScreen() {
         setFontPicker(false);
         setPanel(null);
       }}
-      title={panel ? (panel === 'typography' && fontPicker ? 'Typography' : panelTitles[panel]) : undefined}
+      title={shownPanel ? panelTitles[shownPanel] : undefined}
       docked
-      fill={panel === 'contents' || panel === 'highlights' || panel === 'search'}
+      fill={shownPanel === 'contents' || shownPanel === 'highlights' || shownPanel === 'search'}
     >
-      <div ref={panelRef} className="reader-panel-body" key={panel ?? 'none'}>
-        {panel && panelBody(panel)}
+      <div ref={panelRef} className="reader-panel-body" key={shownPanel ?? 'none'}>
+        {shownPanel && panelBody(shownPanel)}
       </div>
     </Sheet>
   );

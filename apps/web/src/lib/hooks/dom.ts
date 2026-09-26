@@ -75,8 +75,17 @@ export function usePresence(open: boolean, ms: number): { mounted: boolean; show
   useEffect(() => {
     if (open) {
       setMounted(true);
-      const raf = requestAnimationFrame(() => requestAnimationFrame(() => setShown(true)));
-      return () => cancelAnimationFrame(raf);
+      // Two frames so the closed state paints first; the timeout covers
+      // hidden tabs, where animation frames never fire.
+      let inner = 0;
+      const show = () => setShown(true);
+      const raf = requestAnimationFrame(() => (inner = requestAnimationFrame(show)));
+      const fallback = window.setTimeout(show, 60);
+      return () => {
+        cancelAnimationFrame(raf);
+        cancelAnimationFrame(inner);
+        window.clearTimeout(fallback);
+      };
     }
     setShown(false);
     const t = window.setTimeout(() => setMounted(false), ms);
