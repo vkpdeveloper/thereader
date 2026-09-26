@@ -187,21 +187,22 @@ Uint8List convertMobi(Uint8List source) {
         data: utf8.encode(rewrite(utf8.decode(image.data), 'Images')),
       ),
   ];
-  final parts = <XhtmlPart>[
-    for (final part in book.parts)
-      XhtmlPart(
-        fileNumber: part.fileNumber,
-        bytes: utf8.encode(
-          book.format == KindleFormat.mobi7Only
-              ? _legacyXhtml(
-                  part.bytes,
-                  book.mobi.textEncoding,
-                  book.images.all,
-                )
-              : rewrite(partTexts[part.fileNumber]!, 'Text'),
+  final List<XhtmlPart> parts;
+  if (book.format == KindleFormat.mobi7Only) {
+    parts = _splitMobi7Parts(
+      book.parts.single.bytes,
+      book.mobi.textEncoding,
+      book.images.all,
+    );
+  } else {
+    parts = [
+      for (final part in book.parts)
+        XhtmlPart(
+          fileNumber: part.fileNumber,
+          bytes: utf8.encode(rewrite(partTexts[part.fileNumber]!, 'Text')),
         ),
-      ),
-  ];
+    ];
+  }
   final cover = book.images.cover;
   final epub = EpubBuilder.build(
     metadata: EpubMetadata(
@@ -222,11 +223,12 @@ Uint8List convertMobi(Uint8List source) {
   return epub;
 }
 
-String _legacyXhtml(
+List<XhtmlPart> _splitMobi7Parts(
   Uint8List sourceBytes,
   int textEncoding,
-  List<ExtractedImage> images,
-) {
+  List<ExtractedImage> images, {
+  int firstFileNumber = 0,
+}) {
   final byRecord = {for (final image in images) image.blockIndex + 1: image};
   final positions = <int>{};
   for (final match in RegExp(
@@ -260,6 +262,17 @@ String _legacyXhtml(
       ? _decodeWindows1252(sourceBytes)
       : utf8.decode(sourceBytes, allowMalformed: true);
   source = source.replaceAll(RegExp(r'</br\s*>', caseSensitive: false), '');
+  // The HTML parser treats <mbp:pagebreak> as a non-void element and nests
+  // all subsequent content inside it. Convert it to a self-describing <hr>
+  // marker before parsing so chapters become sibling body children.
+  source = source.replaceAll(
+    RegExp(r'<mbp:pagebreak\s*/?>', caseSensitive: false),
+    '<hr class="mbp-pagebreak"/>',
+  );
+  source = source.replaceAll(
+    RegExp(r'</mbp:pagebreak\s*>', caseSensitive: false),
+    '',
+  );
   final repaired = html.parse(source);
   for (final element in repaired.querySelectorAll('[filepos]')) {
     final position = element.attributes.remove('filepos');
@@ -275,9 +288,78 @@ String _legacyXhtml(
     }
     element.attributes['src'] = '../Images/${image.name}';
   }
-  final output = StringBuffer('<?xml version="1.0" encoding="UTF-8"?>\n');
-  _writeXhtml(repaired.documentElement!, output);
-  return output.toString();
+
+  final body = repaired.body!;
+  final groups = <List<dom.Node>>[[]];
+  for (final node in body.nodes.toList()) {
+    if (node is dom.Element &&
+        node.localName?.toLowerCase() == 'hr' &&
+        node.attributes['class'] == 'mbp-pagebreak') {
+      groups.add([]);
+    } else {
+      groups.last.add(node);
+    }
+  }
+  groups.removeWhere((group) => group.isEmpty);
+
+  final head = repaired.head;
+  final headString = head == null ? '' : _writeNodeToString(head);
+  final bodyAttributes = <String, String>{
+    for (final entry in body.attributes.entries) entry.key.toString(): entry.value,
+  };
+
+  final partStrings = <String>[];
+  for (final group in groups) {
+    final bodyElement = dom.Element.tag('body');
+    for (final entry in bodyAttributes.entries) {
+      bodyElement.attributes[entry.key] = entry.value;
+    }
+    for (final node in group) {
+      bodyElement.append(node.clone(true));
+    }
+    final bodyString = _writeNodeToString(bodyElement);
+    partStrings.add(
+      '<?xml version="1.0" encoding="UTF-8"?>\n'
+      '<html xmlns="http://www.w3.org/1999/xhtml" '
+      'xmlns:xlink="http://www.w3.org/1999/xlink">\n'
+      '$headString\n'
+      '$bodyString\n'
+      '</html>\n',
+    );
+  }
+
+  final positionToPart = <int, int>{};
+  final idPattern = RegExp(r'id="mobi-pos-(\d+)"');
+  for (var i = 0; i < partStrings.length; i++) {
+    for (final match in idPattern.allMatches(partStrings[i])) {
+      positionToPart[int.parse(match.group(1)!)] = i;
+    }
+  }
+  for (var i = 0; i < partStrings.length; i++) {
+    partStrings[i] = partStrings[i].replaceAllMapped(
+      RegExp(r'href="#mobi-pos-(\d+)"'),
+      (match) {
+        final pos = int.parse(match.group(1)!);
+        final target = positionToPart[pos];
+        if (target == null) return match.group(0)!;
+        return 'href="part${target.toString().padLeft(4, '0')}.xhtml#mobi-pos-$pos"';
+      },
+    );
+  }
+
+  return [
+    for (var i = 0; i < partStrings.length; i++)
+      XhtmlPart(
+        fileNumber: firstFileNumber + i,
+        bytes: utf8.encode(partStrings[i]),
+      ),
+  ];
+}
+
+String _writeNodeToString(dom.Node node) {
+  final buffer = StringBuffer();
+  _writeXhtml(node, buffer);
+  return buffer.toString();
 }
 
 String _decodeWindows1252(Uint8List bytes) {
