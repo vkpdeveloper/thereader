@@ -11,10 +11,10 @@
   },
   "dependencies": {
     "@tanstack/react-router": "1.160.0",
+    "fflate": "0.8.2",
     "localforage": "1.10.0",
     "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "react-reader": "2.0.15"
+    "react-dom": "18.2.0"
   },
   "devDependencies": {
     "@types/react": "18.2.79",
