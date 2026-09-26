@@ -65,6 +65,17 @@ jobs:
         working-directory: apps/mobile
         run: flutter test
 
+      - name: Configure Gradle for CI
+        shell: bash
+        run: |
+          mkdir -p "$HOME/.gradle"
+          cat > "$HOME/.gradle/gradle.properties" <<'EOF'
+          org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -XX:ReservedCodeCacheSize=512m -XX:+HeapDumpOnOutOfMemoryError
+          kotlin.daemon.jvmargs=-Xmx2g -XX:MaxMetaspaceSize=1g
+          org.gradle.workers.max=2
+          org.gradle.vfs.watch=false
+          EOF
+
       - name: Build signed release APK
         working-directory: apps/mobile
         run: >-
