@@ -268,6 +268,7 @@ _EpubPart _finalizeKf8Part({
   required String text,
 }) {
   final document = html.parse(text);
+  _restructureHeadings(document.body!);
   final headings = _collectHeadings(document, fileNumber);
   final title = _selectTitle(headings, fallbackNumber: fileNumber);
   final xhtml = '<?xml version="1.0" encoding="UTF-8"?>\n'
@@ -335,8 +336,17 @@ bool _isHeadingLike(dom.Element element) {
   // Attribution lines such as "—NDT" are not chapter titles.
   if (RegExp(r'^[—\-–]').hasMatch(text) && text.length <= 8) return false;
 
+  final fontSize = _firstFontSize(element);
+  final hasLargeFont = fontSize != null && fontSize >= 4;
+  final hasBold = element.querySelector('b, strong') != null;
+  final isCentered = element.attributes['align']?.toLowerCase() == 'center';
+
   // All-caps short titles like PREFACE, CONTENTS, ACKNOWLEDGMENTS.
-  if (text.toUpperCase() == text && text.length >= 2 && text.length <= 30) {
+  // Skip very small print (e.g. attribution captions like "LUCRETIUS, C. 50 BC").
+  if ((fontSize == null || fontSize >= 3) &&
+      text.toUpperCase() == text &&
+      text.length >= 2 &&
+      text.length <= 30) {
     return true;
   }
 
@@ -344,10 +354,6 @@ bool _isHeadingLike(dom.Element element) {
   if (_isNumberHeading(text) || _isChapterHeading(text)) return true;
 
   // Visually emphasized, short introductory text.
-  final fontSize = _firstFontSize(element);
-  final hasLargeFont = fontSize != null && fontSize >= 4;
-  final hasBold = element.querySelector('b, strong') != null;
-  final isCentered = element.attributes['align']?.toLowerCase() == 'center';
   if ((hasLargeFont || hasBold) && (isCentered || text.length <= 40)) {
     return true;
   }
@@ -388,6 +394,65 @@ void _combineNumberHeadings(List<_Heading> headings) {
       }
     }
   }
+}
+
+void _restructureHeadings(dom.Element body) {
+  final children = body.children;
+  var i = 0;
+  while (i < children.length) {
+    final current = children[i];
+    if (!_isHeadingLike(current)) {
+      i++;
+      continue;
+    }
+    final currentText = _cleanHeading(current.text);
+    if (currentText.isEmpty) {
+      i++;
+      continue;
+    }
+    final tagName = current.localName?.toLowerCase() ?? '';
+    if (RegExp(r'^h[1-6]$').hasMatch(tagName)) {
+      i++;
+      continue;
+    }
+
+    // Combine a chapter/section number with the immediately following title.
+    if (i + 1 < children.length &&
+        (_isNumberHeading(currentText) || _isChapterHeading(currentText))) {
+      final next = children[i + 1];
+      if (_isHeadingLike(next)) {
+        final nextText = _cleanHeading(next.text);
+        if (nextText.isNotEmpty && !_isNumberHeading(nextText)) {
+          _replaceWithHeading(
+            current,
+            '${currentText.trim()} ${nextText.trim()}',
+            tag: 'h1',
+          );
+          next.remove();
+          i++;
+          continue;
+        }
+      }
+    }
+
+    // Promote remaining heading-like paragraphs to a proper heading tag.
+    final tag = (_isNumberHeading(currentText) || _isChapterHeading(currentText))
+        ? 'h1'
+        : 'h2';
+    _replaceWithHeading(current, currentText, tag: tag);
+    i++;
+  }
+}
+
+void _replaceWithHeading(dom.Element old, String text, {required String tag}) {
+  final h = dom.Element.tag(tag);
+  h.text = text;
+  h.attributes['style'] = 'text-align: center';
+  final id = old.attributes['id'];
+  if (id != null && id.isNotEmpty) {
+    h.attributes['id'] = id;
+  }
+  old.replaceWith(h);
 }
 
 String _cleanHeading(String value) {
@@ -508,6 +573,7 @@ List<_EpubPart> _splitMobi7Parts(
       bodyElement.append(node.clone(true));
     }
     final fileNumber = firstFileNumber + i;
+    _restructureHeadings(bodyElement);
     final headings = _collectHeadingsFromBody(bodyElement, fileNumber);
     final title = _selectTitle(headings, fallbackNumber: fileNumber);
     titles.add(title);
