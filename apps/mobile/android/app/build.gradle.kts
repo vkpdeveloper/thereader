@@ -38,11 +38,21 @@ android {
         jniLibs.excludes += setOf("**/libpdfium.cr.so", "**/libpdfiumandroid.so")
     }
 
+    signingConfigs {
+        create("releaseDebug") {
+            // Public debug key used for installable GitHub release APKs. Keep it
+            // stable so a later release can update an earlier one.
+            storeFile = file("ci-debug-signing.p12")
+            storeType = "PKCS12"
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("releaseDebug")
         }
     }
 }
