@@ -78,14 +78,24 @@ void main() {
           );
           expect(toc, contains('part0004.xhtml#'));
         } else {
-          final body = utf8.decode(
-            entries['OEBPS/Text/part0000.xhtml']!.content as List<int>,
+          final textParts = entries.entries
+              .where((e) => e.key.startsWith('OEBPS/Text/'))
+              .map((e) => utf8.decode(e.value.content as List<int>))
+              .toList();
+          expect(textParts, hasLength(greaterThan(1)));
+          expect(
+            textParts.any((t) => t.contains('CHAPTER I. Down the Rabbit-Hole')),
+            isTrue,
           );
-          expect(body, contains('CHAPTER I. Down the Rabbit-Hole'));
-          expect(body, contains('CHAPTER XII. Alice’s Evidence'));
-          expect(body, contains('mobi-pos-'));
-          expect(body, isNot(contains('filepos=')));
-          expect(body, isNot(contains('mbp:pagebreak')));
+          expect(
+            textParts.any((t) => t.contains('CHAPTER XII. Alice’s Evidence')),
+            isTrue,
+          );
+          expect(textParts.join(), contains('mobi-pos-'));
+          for (final body in textParts) {
+            expect(body, isNot(contains('filepos=')));
+            expect(body, isNot(contains('mbp:pagebreak')));
+          }
         }
       } finally {
         await cleanPreparedBook(source.path, converted);
