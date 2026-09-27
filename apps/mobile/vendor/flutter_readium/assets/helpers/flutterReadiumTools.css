@@ -48,3 +48,74 @@ img, svg { background-color: #ededed; }
   text-decoration-line: underline !important;
   text-decoration-color: color-mix(in srgb, currentColor 45%, transparent) !important;
 }
+
+/* THEREADER PATCH: heading hierarchy, captions and structural alignment.
+   ReadiumCSS stops forcing at h1-h6 and pre; this extends it to captions and
+   gives headings a distinct scale, while resetting publisher alignment so that
+   body text is always left-aligned and captions are centred. */
+:root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) body:not(.flutter-readium-spotlight-active) :is(h1, h2, h3, h4, h5, h6),
+:is(h1, h2, h3, h4, h5, h6) {
+  text-align: left !important;
+  -webkit-hyphens: manual !important;
+  hyphens: manual !important;
+  line-height: 1.2 !important;
+}
+:root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) body:not(.flutter-readium-spotlight-active) h1,
+h1 { font-size: 1.75rem !important; font-weight: 700 !important; margin: 1.2em 0 0.5em !important; }
+:root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) body:not(.flutter-readium-spotlight-active) h2,
+h2 { font-size: 1.35rem !important; font-weight: 700 !important; margin: 1.1em 0 0.45em !important; }
+:root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) body:not(.flutter-readium-spotlight-active) h3,
+h3 { font-size: 1.15rem !important; font-weight: 700 !important; margin: 1em 0 0.4em !important; }
+:root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) body:not(.flutter-readium-spotlight-active) h4,
+h4 { font-size: 1rem !important; color: currentColor !important; opacity: 0.75 !important; margin: 1em 0 0.4em !important; }
+
+/* Body content always left-aligned, no auto hyphenation. */
+:root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) body:not(.flutter-readium-spotlight-active) :is(p, li, dd, dt, div, td, th, blockquote),
+:is(p, li, dd, dt, div, td, th, blockquote) {
+  text-align: left !important;
+  -webkit-hyphens: manual !important;
+  hyphens: manual !important;
+}
+:root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) body:not(.flutter-readium-spotlight-active) blockquote,
+blockquote {
+  border-left: 2px solid currentColor !important;
+  padding-left: 1em !important;
+  margin: 1em 0 !important;
+  opacity: 0.85 !important;
+}
+
+/* Lists */
+:root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) body:not(.flutter-readium-spotlight-active) ul,
+ul { list-style: disc outside !important; padding-left: 1.2em !important; }
+:root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) body:not(.flutter-readium-spotlight-active) ol,
+ol { list-style: decimal outside !important; padding-left: 1.2em !important; }
+:root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) body:not(.flutter-readium-spotlight-active) li,
+li { margin: 0.35em 0 !important; }
+
+/* Captions centred, quieter, smaller. */
+:root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) body:not(.flutter-readium-spotlight-active) figcaption,
+:root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) body:not(.flutter-readium-spotlight-active) caption,
+figcaption, caption {
+  text-align: center !important;
+  font-size: 0.9rem !important;
+  font-style: italic !important;
+  opacity: 0.7 !important;
+  margin-top: 0.6em !important;
+  -webkit-hyphens: manual !important;
+  hyphens: manual !important;
+}
+
+/* Tables */
+:root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) body:not(.flutter-readium-spotlight-active) table,
+table { border-collapse: collapse !important; max-width: 100% !important; }
+:root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) body:not(.flutter-readium-spotlight-active) td,
+:root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) body:not(.flutter-readium-spotlight-active) th,
+td, th {
+  border: 1px solid color-mix(in srgb, currentColor 25%, transparent) !important;
+  padding: 0.6em 0.8em !important;
+  text-align: left !important;
+}
+
+/* Images keep intrinsic size and never blow past reading measure. */
+:root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) body:not(.flutter-readium-spotlight-active) img,
+img { width: auto !important; max-width: 100% !important; height: auto !important; box-sizing: border-box !important; }
