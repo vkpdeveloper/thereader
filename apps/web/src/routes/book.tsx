@@ -1,25 +1,19 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { useNavigate, useParams, useRouter, useSearch } from '@tanstack/react-router';
+import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { CoverArt } from '../components/CoverArt';
 import { IconButton, QuietButton } from '../components/buttons';
 import { ArrowBackIcon, ArrowDownwardIcon, CheckIcon, CloseIcon, DeleteOutlineIcon } from '../components/icons';
-import { ConfirmDialog } from '../components/overlay';
+import { hasOpenOverlay } from '../components/overlay';
+import { canRemove, removeLabel, useRemoveBook } from '../components/RemoveBook';
 import { Eyebrow, LoadingLine, ProgressLine, StateMessage, Tag } from '../components/states';
-import { downloadFraction, emptyDownload, formatBytes, formatDate, isDownloadActive, isDownloadReady } from '../lib/format';
-import { useDocumentTitle } from '../lib/hooks';
+import { downloadFraction, emptyDownload, formatBytes, formatDate, isDownloadReady } from '../lib/format';
+import { isTypingTarget, readLink, useDocumentTitle, useGoBack } from '../lib/hooks';
 import { fetchBook, RemoteError } from '../lib/remote';
 import { useServices, useStore } from '../lib/services/react';
 import type { Book, LibraryEntry } from '../lib/types';
 
-/** Back to wherever the user came from, or Library for a fresh deep link. */
-export function useGoBack(fallback: '/library' | '/browse' = '/library') {
-  const router = useRouter();
-  const navigate = useNavigate();
-  return () => {
-    if (router.history.canGoBack()) router.history.back();
-    else void navigate({ to: fallback, replace: true });
-  };
-}
+// The reader route imports this from here; it now lives with the other hooks.
+export { useGoBack } from '../lib/hooks';
 
 /**
  * Book page: description, edition facts and one honest download control.
@@ -37,6 +31,18 @@ export function BookScreen() {
   useStore(services.imports);
   const origin = services.settings.currentOrigin();
   const goBack = useGoBack();
+
+  // Escape leaves the page (the app bar's back button), unless a dialog or field has it.
+  const goBackLatest = useRef(goBack);
+  goBackLatest.current = goBack;
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || e.defaultPrevented || hasOpenOverlay() || isTypingTarget(e.target)) return;
+      goBackLatest.current();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
 
   const pinned = entryParam ? lib.entries.find((e) => e.id === entryParam) : undefined;
   const catalogBook = catalog.origin === origin ? catalog.items.find((b) => b.id === id) : undefined;
@@ -115,44 +121,17 @@ function BookDetail({
   topBar: (trailing?: ReactNode) => ReactNode;
 }) {
   const services = useServices();
-  const [confirming, setConfirming] = useState(false);
+  const removal = useRemoveBook();
   const current = entry?.book ?? book;
   const d = entry?.download ?? emptyDownload;
   const origin = entry?.origin ?? services.settings.currentOrigin();
   const outdated = entry != null && entry.book.sha256 !== book.sha256 && isDownloadReady(d);
-  // Removing a cloud download keeps its synced metadata; a cloud-only entry has nothing local to remove.
-  const removable = entry != null && !isDownloadActive(d) && (d.status !== 'none' || services.imports.isPending(entry.id));
-
-  const uploadPhase = !entry
-    ? 'none'
-    : services.imports.isUploading(entry.id)
-      ? 'uploading'
-      : services.imports.errorFor(entry.id) != null
-        ? 'failed'
-        : services.imports.isPending(entry.id)
-          ? 'pending'
-          : 'none';
-  const keepMetadata = uploadPhase === 'none';
-  const uploadNote =
-    uploadPhase === 'uploading'
-      ? ' The upload in progress will be cancelled.'
-      : uploadPhase === 'none'
-        ? ''
-        : ' The waiting upload will be cancelled, so this book will not reach your other devices.';
-
-  const remove = async () => {
-    if (!entry) return;
-    setConfirming(false);
-    // Abort the upload before the bytes disappear; ids never queued are fine.
-    await services.imports.cancelPending(entry.id);
-    await services.library.remove(entry.id, { keepMetadata });
-  };
 
   return (
     <div className="book-page">
       {topBar(
-        removable ? (
-          <IconButton icon={DeleteOutlineIcon} label="Remove download" tone="muted" tooltipSide="left" onClick={() => setConfirming(true)} />
+        canRemove(services, entry) ? (
+          <IconButton icon={DeleteOutlineIcon} label={removeLabel} tone="muted" tooltipSide="left" onClick={() => removal.ask(entry)} />
         ) : null,
       )}
       <article className="book-layout">
@@ -187,23 +166,7 @@ function BookDetail({
           </section>
         </div>
       </article>
-      <ConfirmDialog
-        open={confirming}
-        title={isDownloadReady(d) || keepMetadata ? 'Remove download?' : 'Remove from library?'}
-        body={
-          (keepMetadata
-            ? 'The file will be removed from this device. Your cloud book, reading position and reading time stay available.'
-            : isDownloadReady(d)
-              ? 'The file and your reading position for this book will be deleted from this device.'
-              : 'This book and its reading position will be removed from your library. You can download it again from Browse.') +
-          uploadNote
-        }
-        cancelLabel="Keep"
-        confirmLabel="Remove"
-        danger
-        onCancel={() => setConfirming(false)}
-        onConfirm={() => void remove()}
-      />
+      {removal.dialog}
     </div>
   );
 }
@@ -213,7 +176,10 @@ function DownloadPanel({ book, entry, outdated }: { book: Book; entry: LibraryEn
   const navigate = useNavigate();
   const d = entry?.download ?? emptyDownload;
   const lib = services.library;
-  const read = () => entry && void navigate({ to: '/read/$entryId', params: { entryId: entry.id } });
+  const read = () => entry && void navigate(readLink(entry));
+  // An existing entry re-downloads from its own origin (mobile `sourceForEntry`);
+  // `book` is the edition to fetch, newer than the entry's when outdated.
+  const download = () => void (entry ? lib.downloadEntry(entry.id, book) : lib.download(book));
   const readLabel = entry?.progress == null ? 'Read' : 'Continue reading';
 
   let inner;
@@ -256,7 +222,7 @@ function DownloadPanel({ book, entry, outdated }: { book: Book; entry: LibraryEn
           </div>
           <div className="download-actions">
             <QuietButton label={readLabel} emphasis expand onClick={read} />
-            {outdated && <QuietButton label="Update" onClick={() => void lib.download(book)} />}
+            {outdated && <QuietButton label="Update" onClick={download} />}
           </div>
         </>
       );
@@ -265,7 +231,7 @@ function DownloadPanel({ book, entry, outdated }: { book: Book; entry: LibraryEn
       inner = (
         <>
           <p className="t-body is-error">{d.error ?? 'Download failed.'}</p>
-          <QuietButton className="download-primary" label="Try again" emphasis expand onClick={() => void lib.download(book)} />
+          <QuietButton className="download-primary" label="Try again" emphasis expand onClick={download} />
         </>
       );
       break;
@@ -279,7 +245,7 @@ function DownloadPanel({ book, entry, outdated }: { book: Book; entry: LibraryEn
             icon={ArrowDownwardIcon}
             emphasis
             expand
-            onClick={() => void lib.download(book)}
+            onClick={download}
           />
         </>
       );

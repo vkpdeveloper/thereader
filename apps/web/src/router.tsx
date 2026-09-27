@@ -1,12 +1,11 @@
-import { createRootRoute, createRoute, createRouter, redirect } from '@tanstack/react-router';
+import { createRootRoute, createRoute, createRouter, lazyRouteComponent, redirect } from '@tanstack/react-router';
 import { Root } from './App';
 import { AppShell } from './components/AppShell';
 import { NotFound } from './routes/notFound';
 import { LibraryScreen } from './routes/library';
 import { BrowseScreen } from './routes/browse';
-import { SettingsScreen } from './routes/settings';
-import { BookScreen } from './routes/book';
-import { ReaderScreen } from './routes/reader';
+import { loadBook, loadReader, loadSettings } from './routes/lazy';
+import { LoadingLine } from './components/states';
 
 const rootRoute = createRootRoute({ component: Root, notFoundComponent: NotFound });
 
@@ -23,7 +22,11 @@ const shellRoute = createRoute({ getParentRoute: () => rootRoute, id: 'shell', c
 
 const libraryRoute = createRoute({ getParentRoute: () => shellRoute, path: 'library', component: LibraryScreen });
 const browseRoute = createRoute({ getParentRoute: () => shellRoute, path: 'browse', component: BrowseScreen });
-const settingsRoute = createRoute({ getParentRoute: () => shellRoute, path: 'settings', component: SettingsScreen });
+const settingsRoute = createRoute({
+  getParentRoute: () => shellRoute,
+  path: 'settings',
+  component: lazyRouteComponent(loadSettings, 'SettingsScreen'),
+});
 
 export interface BookSearch {
   /** Library entry id, for imported books or editions from another API origin. */
@@ -36,10 +39,14 @@ const bookRoute = createRoute({
   path: 'book/$id',
   validateSearch: (search: Record<string, unknown>): BookSearch =>
     typeof search.entry === 'string' && search.entry ? { entry: search.entry } : {},
-  component: BookScreen,
+  component: lazyRouteComponent(loadBook, 'BookScreen'),
 });
 
-const readRoute = createRoute({ getParentRoute: () => rootRoute, path: 'read/$entryId', component: ReaderScreen });
+const readRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'read/$entryId',
+  component: lazyRouteComponent(loadReader, 'ReaderScreen'),
+});
 
 /** Paths from the first web prototype keep working. */
 const legacyApp = createRoute({
@@ -72,6 +79,9 @@ export const router = createRouter({
   routeTree,
   defaultPreload: 'intent',
   scrollRestoration: true,
+  // Lazy chunks are small and usually warm; only a slow network shows the line.
+  defaultPendingMs: 400,
+  defaultPendingComponent: () => <LoadingLine />,
 });
 
 declare module '@tanstack/react-router' {

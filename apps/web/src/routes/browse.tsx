@@ -1,14 +1,24 @@
-import { useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { CoverArt } from '../components/CoverArt';
 import { IconButton, QuietButton } from '../components/buttons';
 import { Chip, TextField } from '../components/controls';
-import { CheckIcon, ChevronRightIcon, ErrorOutlineIcon, TuneIcon } from '../components/icons';
+import {
+  ArrowDownwardIcon,
+  CheckIcon,
+  ChevronRightIcon,
+  CloseIcon,
+  ErrorOutlineIcon,
+  InfoOutlineIcon,
+  MenuBookIcon,
+  TuneIcon,
+} from '../components/icons';
+import { ContextMenu, menuPoint, useContextMenu, type MenuItem, type MenuPoint } from '../components/overlay';
 import { LoadingLine, ProgressRing, ScreenHeader, StateMessage } from '../components/states';
 import { downloadFraction, formatBytes, isDownloadActive, isDownloadReady } from '../lib/format';
-import { isTypingTarget, useDocumentTitle, useSentinel } from '../lib/hooks';
+import { isTypingTarget, readLink, useDocumentTitle, useSentinel } from '../lib/hooks';
 import { useServices, useStore } from '../lib/services/react';
-import type { Book } from '../lib/types';
+import type { Book, LibraryEntry } from '../lib/types';
 
 /** Browse the catalog: server-side search, local subject filter, paging. */
 export function BrowseScreen() {
@@ -22,6 +32,7 @@ export function BrowseScreen() {
   const [onlyDownloaded, setOnlyDownloaded] = useState(false);
   const search = useRef<HTMLInputElement>(null);
   const sentinel = useRef<HTMLDivElement>(null);
+  const menu = useContextMenu();
 
   useEffect(() => {
     if (catalog.status === 'idle') void services.catalog.refresh();
@@ -50,11 +61,53 @@ export function BrowseScreen() {
     services.catalog.search(value);
   };
 
+  const clearFilters = () => {
+    setSubject(null);
+    setOnlyDownloaded(false);
+  };
+
+  const origin = catalog.origin;
+  const showMenu = menu.show;
+  const openMenu = useCallback(
+    (book: Book, at: MenuPoint) => {
+      const entry = services.library.entryFor(book, origin);
+      const d = entry?.download;
+      const items: MenuItem[] = [];
+      if (entry && services.library.canRead(entry.id)) {
+        items.push({
+          label: entry.progress == null ? 'Read' : 'Continue reading',
+          icon: MenuBookIcon,
+          onSelect: () => void navigate(readLink(entry)),
+        });
+      }
+      items.push({
+        label: 'Book details',
+        icon: InfoOutlineIcon,
+        onSelect: () => void navigate({ to: '/book/$id', params: { id: book.id } }),
+      });
+      if (entry && d && isDownloadActive(d)) {
+        if (d.status !== 'verifying') {
+          items.push({ label: 'Cancel download', icon: CloseIcon, onSelect: () => services.library.cancelDownload(entry.id) });
+        }
+      } else if (!d || !isDownloadReady(d)) {
+        items.push({
+          label: d?.status === 'failed' ? 'Try download again' : `Download · ${formatBytes(book.fileSize)}`,
+          icon: ArrowDownwardIcon,
+          onSelect: () => void services.library.download(book, { origin }),
+        });
+      } else if (entry.book.sha256 !== book.sha256) {
+        items.push({ label: 'Update to this edition', icon: ArrowDownwardIcon, onSelect: () => void services.library.downloadEntry(entry.id, book) });
+      }
+      showMenu({ ...at, label: book.title, items });
+    },
+    [services, origin, navigate, showMenu],
+  );
+
   let items = catalog.items;
   if (subject) items = items.filter((b) => b.subjects.includes(subject));
   if (onlyDownloaded) {
     items = items.filter((b) => {
-      const entry = services.library.entryFor(b);
+      const entry = services.library.entryFor(b, origin);
       return entry ? isDownloadReady(entry.download) : false;
     });
   }
@@ -62,38 +115,43 @@ export function BrowseScreen() {
 
   let body;
   if (catalog.status === 'loading' || catalog.status === 'idle') {
-    body = <LoadingLine label={`Contacting ${catalog.origin}`} />;
+    body = <LoadingLine label={`Contacting ${origin}`} />;
   } else if (catalog.status === 'error' && catalog.error) {
     const err = catalog.error;
     body = (
       <StateMessage
         title={err.isNetwork ? "Can't reach the API." : 'The API returned an error.'}
-        body={`${err.message}\n${catalog.origin}${err.isNetwork ? '\n\nBooks already downloaded stay readable from Library.' : ''}`}
+        body={`${err.message}\n${origin}${err.isNetwork ? '\n\nBooks already downloaded stay readable from Library.' : ''}`}
         error
         actionLabel="Try again"
         onAction={() => void services.catalog.refresh()}
+        secondary={<QuietButton label="API settings" onClick={() => void navigate({ to: '/settings' })} />}
       />
     );
   } else if (items.length === 0) {
-    const pristine = catalog.query.length === 0 && !filtered;
-    body = (
+    const searching = catalog.query.length > 0;
+    const pristine = !searching && !filtered;
+    body = pristine ? (
+      // Mobile says "Pull to refresh"; a desktop page offers the button instead.
       <StateMessage
-        title={pristine ? 'The catalog is empty.' : 'No matches.'}
-        body={
-          pristine
-            ? `Nothing is published at ${catalog.origin} yet.\nRefresh, or change the API in Settings.`
-            : 'Try a different search or clear the filters.'
-        }
-        actionLabel={filtered ? 'Clear filters' : pristine ? 'Refresh' : undefined}
+        title="The catalog is empty."
+        body={`Nothing is published at ${origin} yet.\nCheck again later, or point The Reader at another library API in Settings.`}
+        actionLabel="Check again"
+        onAction={() => void services.catalog.refresh()}
+        secondary={<QuietButton label="API settings" onClick={() => void navigate({ to: '/settings' })} />}
+      />
+    ) : (
+      <StateMessage
+        title="No matches."
+        body={filtered ? 'Try a different search or clear the filters.' : `Nothing in the catalog matches “${catalog.query}”. Try a different search.`}
+        actionLabel={filtered ? 'Clear filters' : 'Clear search'}
         onAction={
           filtered
-            ? () => {
-                setSubject(null);
-                setOnlyDownloaded(false);
+            ? clearFilters
+            : () => {
+                setSearch('');
+                search.current?.focus();
               }
-            : pristine
-              ? () => void services.catalog.refresh()
-              : undefined
         }
       />
     );
@@ -101,9 +159,10 @@ export function BrowseScreen() {
     body = (
       <>
         <ul className="catalog-list">
-          {items.map((book) => (
-            <CatalogRow key={book.id} book={book} />
-          ))}
+          {items.map((book) => {
+            const entry = services.library.entryFor(book, origin);
+            return <CatalogRow key={book.id} book={book} entry={entry} origin={origin} onMenu={openMenu} />;
+          })}
         </ul>
         {catalog.isLoadingMore ? (
           <LoadingLine />
@@ -160,14 +219,23 @@ export function BrowseScreen() {
       </div>
       {body}
       <div ref={sentinel} aria-hidden="true" />
+      <ContextMenu request={menu.request} onClose={menu.close} />
     </div>
   );
 }
 
-function CatalogRow({ book }: { book: Book }) {
-  const services = useServices();
-  const catalog = useStore(services.catalog);
-  const entry = services.library.entryFor(book);
+/** One catalog book. Memoised: only rows whose book or library entry changed re-render. */
+const CatalogRow = memo(function CatalogRow({
+  book,
+  entry,
+  origin,
+  onMenu,
+}: {
+  book: Book;
+  entry: LibraryEntry | undefined;
+  origin: string;
+  onMenu: (book: Book, at: MenuPoint) => void;
+}) {
   const d = entry?.download;
   let trailing;
   if (d && isDownloadActive(d)) {
@@ -187,10 +255,14 @@ function CatalogRow({ book }: { book: Book }) {
   } else {
     trailing = <ChevronRightIcon size={18} className="row-chevron" />;
   }
+  const onContextMenu = (e: ReactMouseEvent) => {
+    e.preventDefault();
+    onMenu(book, menuPoint(e));
+  };
   return (
-    <li>
+    <li onContextMenu={onContextMenu}>
       <Link to="/book/$id" params={{ id: book.id }} className="catalog-row">
-        <CoverArt book={book} origin={catalog.origin} width={40} />
+        <CoverArt book={book} origin={origin} width={40} />
         <div className="catalog-row-text">
           <div className="t-body-lg clamp-1">{book.title}</div>
           <div className="t-body-sm clamp-1">
@@ -201,4 +273,4 @@ function CatalogRow({ book }: { book: Book }) {
       </Link>
     </li>
   );
-}
+});

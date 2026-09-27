@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { QuietButton } from '../components/buttons';
 import { TextField } from '../components/controls';
 import { SyncIcon } from '../components/icons';
@@ -6,9 +6,8 @@ import { Eyebrow, ScreenHeader } from '../components/states';
 import { ThemeSection } from '../components/ThemeSection';
 import { useToast } from '../components/toast';
 import { formatBytes, formatReadingTime, formatRelativeTime } from '../lib/format';
-import { useDocumentTitle } from '../lib/hooks';
+import { useDocumentTitle, useStorageInfo } from '../lib/hooks';
 import { checkHealth, RemoteError } from '../lib/remote';
-import type { StorageInfo } from '../lib/services/contract';
 import { useServices, useStore } from '../lib/services/react';
 
 type Tone = 'neutral' | 'plain' | 'good' | 'warn' | 'bad';
@@ -57,7 +56,7 @@ export function SettingsScreen() {
   const [checking, setChecking] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [retrying, setRetrying] = useState(false);
-  const [storage, setStorage] = useState<StorageInfo | null>(null);
+  const { info: storage, refresh: refreshStorage } = useStorageInfo();
 
   useEffect(() => {
     if (!seeded && settings.loaded) {
@@ -66,11 +65,6 @@ export function SettingsScreen() {
     }
   }, [seeded, settings.loaded, settings.settings.apiBaseUrl]);
 
-  const refreshStorage = useCallback(() => {
-    services.storage.info().then(setStorage, () => setStorage(null));
-  }, [services.storage]);
-  const readyCount = lib.entries.filter((e) => e.download.status === 'ready').length;
-  useEffect(refreshStorage, [refreshStorage, readyCount]);
 
   const runCheck = async () => {
     setChecking(true);
@@ -222,7 +216,7 @@ export function SettingsScreen() {
         </div>
       </section>
 
-      <section className="settings-section" aria-labelledby="storage-eyebrow">
+      <section className="settings-section" id="storage" aria-labelledby="storage-eyebrow">
         <Eyebrow as="h2" id="storage-eyebrow">
           Storage
         </Eyebrow>

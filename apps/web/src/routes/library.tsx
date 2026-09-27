@@ -1,15 +1,29 @@
-import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
+import { memo, useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { CoverArt } from '../components/CoverArt';
 import { IconButton } from '../components/buttons';
-import { ChevronRightIcon, MoreHorizIcon, UploadIcon } from '../components/icons';
-import { Eyebrow, LoadingLine, ProgressLine, ProgressRing, ScreenHeader, StateMessage } from '../components/states';
+import {
+  ArrowDownwardIcon,
+  ChevronRightIcon,
+  CloseIcon,
+  DeleteOutlineIcon,
+  InfoOutlineIcon,
+  MenuBookIcon,
+  MoreHorizIcon,
+  UploadIcon,
+} from '../components/icons';
+import { ContextMenu, menuPoint, useContextMenu, type MenuItem, type MenuPoint } from '../components/overlay';
+import { canRemove, removeLabel, useRemoveBook } from '../components/RemoveBook';
+import { Eyebrow, LoadingLine, ProgressLine, ProgressRing, ScreenHeader, StateMessage, Tag } from '../components/states';
 import { useToast } from '../components/toast';
 import { importAccept } from '../lib/import/contract';
-import { useDocumentTitle, useElementWidth } from '../lib/hooks';
-import { downloadFraction, entryPercent, isDownloadActive, isDownloadReady } from '../lib/format';
+import { bookLink, readLink, useDocumentTitle, useElementWidth, useStorageInfo, whenIdle } from '../lib/hooks';
+import { loadBook, loadReader } from './lazy';
+import { downloadFraction, entryPercent, formatBytes, isDownloadActive, isDownloadReady } from '../lib/format';
+import type { AppServices } from '../lib/services/contract';
 import { useServices, useStore } from '../lib/services/react';
 import type { LibraryEntry } from '../lib/types';
+
 
 type Filter = 'all' | 'downloaded' | 'inProgress';
 
@@ -30,11 +44,6 @@ function columnsFor(width: number): number {
   return 2;
 }
 
-/** Book page for an entry; `?entry=` keeps imported and other-origin books addressable. */
-export function bookLink(entry: LibraryEntry) {
-  return { to: '/book/$id' as const, params: { id: entry.book.id }, search: { entry: entry.id } };
-}
-
 /**
  * Home: an editorial title, one continue-reading entry, then a cover-led grid
  * of everything you have. Works fully offline. Files can be imported with the
@@ -51,10 +60,15 @@ export function LibraryScreen() {
   const [dragging, setDragging] = useState(false);
   const picker = useRef<HTMLInputElement>(null);
   const [grid, gridWidth] = useElementWidth<HTMLDivElement>();
+  const menu = useContextMenu();
+  const removal = useRemoveBook();
+  const { info: storage } = useStorageInfo();
+  const importingRef = useRef(false);
 
   /** Local copy, then straight to the book page; the upload is queued, not awaited. */
   const importFiles = async (files: File[]) => {
-    if (importing || files.length === 0) return;
+    if (importingRef.current || files.length === 0) return;
+    importingRef.current = true;
     setImporting(true);
     let last: LibraryEntry | null = null;
     let imported = 0;
@@ -66,12 +80,25 @@ export function LibraryScreen() {
         toast.show(`Could not import that file. ${e instanceof Error ? e.message : String(e)}`, { durationMs: 6000 });
       }
     }
+    importingRef.current = false;
     setImporting(false);
     if (imported === 1 && last) void navigate(bookLink(last));
     else if (imported > 1) toast.show(`Imported ${imported} books.`);
   };
+  const importLatest = useRef(importFiles);
+  importLatest.current = importFiles;
 
-  // Drag and drop anywhere on the Library.
+  // Opening a book should not wait for its screen's code.
+  useEffect(
+    () =>
+      whenIdle(() => {
+        void loadReader();
+        void loadBook();
+      }),
+    [],
+  );
+
+  // Drag and drop anywhere on the Library. Listeners are registered once.
   useEffect(() => {
     let depth = 0;
     const hasFiles = (e: DragEvent) => Array.from(e.dataTransfer?.types ?? []).includes('Files');
@@ -102,7 +129,7 @@ export function LibraryScreen() {
         toast.show('Could not import that file. Choose an EPUB or MOBI book.');
         return;
       }
-      void importFiles(books);
+      void importLatest.current(books);
     };
     window.addEventListener('dragenter', onEnter);
     window.addEventListener('dragover', onOver);
@@ -114,7 +141,17 @@ export function LibraryScreen() {
       window.removeEventListener('dragleave', onLeave);
       window.removeEventListener('drop', onDrop);
     };
-  });
+  }, [toast]);
+
+  // Stable across renders so memoised tiles don't re-render for unrelated changes.
+  const showMenu = menu.show;
+  const askRemove = removal.ask;
+  const openMenu = useCallback(
+    (entry: LibraryEntry, at: MenuPoint) => {
+      showMenu({ ...at, label: entry.book.title, items: entryActions(services, entry, navigate, askRemove) });
+    },
+    [services, navigate, showMenu, askRemove],
+  );
 
   const header = (
     <ScreenHeader
@@ -164,6 +201,9 @@ export function LibraryScreen() {
         ? all.filter((e) => isDownloadReady(e.download))
         : all.filter((e) => e.progress != null && (entryPercent(e) ?? 0) < 0.995);
   const columns = columnsFor(gridWidth || 360);
+  // Mobile tags a store that may lose books ("Session only"); here that is
+  // browser storage without the persistence grant, once something is saved.
+  const atRisk = storage != null && !storage.persisted && storage.bookCount > 0;
 
   return (
     <div className="page-wide library">
@@ -180,13 +220,12 @@ export function LibraryScreen() {
         <>
           {current && <ContinueReading entry={current} />}
           <div className="library-filters">
-            <div className="filter-links" role="tablist" aria-label="Filter books">
+            <div className="filter-links" role="group" aria-label="Filter books">
               {filters.map((f) => (
                 <button
                   key={f.id}
                   type="button"
-                  role="tab"
-                  aria-selected={filter === f.id}
+                  aria-pressed={filter === f.id}
                   className={filter === f.id ? 'filter-link is-selected' : 'filter-link'}
                   onClick={() => setFilter(f.id)}
                 >
@@ -194,14 +233,24 @@ export function LibraryScreen() {
                 </button>
               ))}
             </div>
-            <span className="t-label-sm library-count" aria-label={`${shown.length} books`}>
-              {shown.length}
-            </span>
+            <div className="library-meta">
+              {atRisk && (
+                <Link
+                  to="/settings"
+                  hash="storage"
+                  className="library-storage-tag"
+                  title="The browser may clear downloads when space runs low. Keep them from Settings."
+                >
+                  <Tag color="var(--orange)">May be cleared</Tag>
+                </Link>
+              )}
+              <span className="t-label-sm library-count tabular" aria-label={`${shown.length} ${shown.length === 1 ? 'book' : 'books'}`}>
+                {shown.length}
+              </span>
+            </div>
           </div>
           <hr className="divider" />
-          {shown.length === 0 ? (
-            <StateMessage title="No books match." body="Try another filter." />
-          ) : null}
+          {shown.length === 0 ? <StateMessage title="No books match." body="Try another filter." /> : null}
           <div
             ref={grid}
             className="library-grid"
@@ -209,7 +258,7 @@ export function LibraryScreen() {
             hidden={shown.length === 0}
           >
             {shown.map((entry) => (
-              <GridItem key={entry.id} entry={entry} />
+              <GridItem key={entry.id} entry={entry} readable={services.library.canRead(entry.id)} onMenu={openMenu} />
             ))}
           </div>
         </>
@@ -223,8 +272,44 @@ export function LibraryScreen() {
           </div>
         </div>
       )}
+      <ContextMenu request={menu.request} onClose={menu.close} />
+      {removal.dialog}
     </div>
   );
+}
+
+/** Actions for a library book: the same ones its tile and book page offer. */
+function entryActions(
+  services: AppServices,
+  entry: LibraryEntry,
+  navigate: ReturnType<typeof useNavigate>,
+  askRemove: (entry: LibraryEntry) => void,
+): MenuItem[] {
+  const d = entry.download;
+  const items: MenuItem[] = [];
+  if (services.library.canRead(entry.id)) {
+    items.push({
+      label: entry.progress == null ? 'Read' : 'Continue reading',
+      icon: MenuBookIcon,
+      onSelect: () => void navigate(readLink(entry)),
+    });
+  }
+  items.push({ label: 'Book details', icon: InfoOutlineIcon, onSelect: () => void navigate(bookLink(entry)) });
+  if (isDownloadActive(d)) {
+    if (d.status !== 'verifying') {
+      items.push({ label: 'Cancel download', icon: CloseIcon, onSelect: () => services.library.cancelDownload(entry.id) });
+    }
+  } else if (!isDownloadReady(d)) {
+    items.push({
+      label: d.status === 'failed' ? 'Try download again' : `Download · ${formatBytes(entry.book.fileSize)}`,
+      icon: ArrowDownwardIcon,
+      onSelect: () => void services.library.downloadEntry(entry.id),
+    });
+  }
+  if (canRemove(services, entry)) {
+    items.push({ label: `${removeLabel}…`, icon: DeleteOutlineIcon, danger: true, separated: true, onSelect: () => askRemove(entry) });
+  }
+  return items;
 }
 
 /** The single in-progress feature: cover, title, chapter, a thin progress line. */
@@ -234,19 +319,14 @@ function ContinueReading({ entry }: { entry: LibraryEntry }) {
   return (
     <section className="continue" aria-labelledby="continue-eyebrow">
       <Eyebrow id="continue-eyebrow">Continue reading</Eyebrow>
-      <Link
-        to="/read/$entryId"
-        params={{ entryId: entry.id }}
-        className="continue-card"
-        aria-label={`Continue reading ${entry.book.title}`}
-      >
+      <Link {...readLink(entry)} className="continue-card" aria-label={`Continue reading ${entry.book.title}`}>
         <CoverArt book={entry.book} origin={entry.origin} width={64} />
         <div className="continue-text">
           <div className="t-headline clamp-2">{entry.book.title}</div>
           <div className="t-body-sm clamp-1">{chapter ? `${entry.book.author} · ${chapter}` : entry.book.author}</div>
           <div className="continue-progress">
             <ProgressLine value={percent} label="Reading progress" />
-            <span className="t-label-sm">{Math.round(percent * 100)}%</span>
+            <span className="t-label-sm tabular">{Math.round(percent * 100)}%</span>
           </div>
         </div>
         <ChevronRightIcon size={18} className="continue-chevron" />
@@ -255,12 +335,23 @@ function ContinueReading({ entry }: { entry: LibraryEntry }) {
   );
 }
 
-function GridItem({ entry }: { entry: LibraryEntry }) {
-  const services = useServices();
+const longPressMs = 500;
+
+const GridItem = memo(function GridItem({
+  entry,
+  readable,
+  onMenu,
+}: {
+  entry: LibraryEntry;
+  /** From the parent: early reading can start without the entry changing. */
+  readable: boolean;
+  onMenu: (entry: LibraryEntry, at: MenuPoint) => void;
+}) {
   const navigate = useNavigate();
   const d = entry.download;
   const percent = entryPercent(entry);
-  const readable = services.library.canRead(entry.id);
+  const press = useRef<{ timer: number; x: number; y: number; fired: boolean } | null>(null);
+  const lastPointer = useRef<string>('mouse');
 
   let status;
   if (isDownloadReady(d)) {
@@ -280,36 +371,68 @@ function GridItem({ entry }: { entry: LibraryEntry }) {
     status = <span className="grid-status">Not downloaded</span>;
   }
 
-  // Mobile long-press opens details; here right-click or the ⋯ button does.
-  const openDetails = (e?: ReactMouseEvent) => {
-    e?.preventDefault();
-    e?.stopPropagation();
-    void navigate(bookLink(entry));
+  // Touch keeps the mobile gesture: long-press opens the book page.
+  const cancelPress = () => {
+    if (press.current) window.clearTimeout(press.current.timer);
+  };
+  const onPointerDown = (e: ReactPointerEvent) => {
+    lastPointer.current = e.pointerType;
+    if (e.pointerType !== 'touch') return;
+    cancelPress();
+    const state = { x: e.clientX, y: e.clientY, fired: false, timer: 0 };
+    state.timer = window.setTimeout(() => {
+      state.fired = true;
+      void navigate(bookLink(entry));
+    }, longPressMs);
+    press.current = state;
+  };
+  const onPointerMove = (e: ReactPointerEvent) => {
+    const p = press.current;
+    if (p && Math.hypot(e.clientX - p.x, e.clientY - p.y) > 10) cancelPress();
+  };
+  const onClickCapture = (e: ReactMouseEvent) => {
+    // The long-press already navigated; swallow the click that ends it.
+    if (press.current?.fired) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    press.current = null;
+  };
+  // Mouse, pen and the keyboard menu key get the context menu.
+  const onContextMenu = (e: ReactMouseEvent) => {
+    e.preventDefault();
+    if (lastPointer.current === 'touch') return;
+    onMenu(entry, menuPoint(e));
   };
 
-  const body = (
-    <>
-      <div className="grid-cover">
-        <CoverArt book={entry.book} origin={entry.origin} />
-      </div>
-      <div className="grid-title t-title-sm clamp-2">{entry.book.title}</div>
-      <div className="grid-author t-body-sm clamp-1">{entry.book.author}</div>
-      <div className="grid-status-slot">{status}</div>
-    </>
-  );
-
+  const label = `${entry.book.title} by ${entry.book.author}`;
   return (
-    <div className="grid-item" onContextMenu={openDetails}>
-      {readable ? (
-        <Link to="/read/$entryId" params={{ entryId: entry.id }} className="grid-link" aria-label={`${entry.book.title} by ${entry.book.author}`}>
-          {body}
-        </Link>
-      ) : (
-        <Link {...bookLink(entry)} className="grid-link" aria-label={`${entry.book.title} by ${entry.book.author}`}>
-          {body}
-        </Link>
-      )}
-      <IconButton className="grid-more" icon={MoreHorizIcon} label="Book details" size={18} tooltipSide="left" onClick={(e) => openDetails(e)} />
+    <div
+      className="grid-item"
+      onContextMenu={onContextMenu}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={cancelPress}
+      onPointerCancel={cancelPress}
+      onClickCapture={onClickCapture}
+    >
+      <Link {...(readable ? readLink(entry) : bookLink(entry))} className="grid-link" aria-label={label}>
+        <div className="grid-cover">
+          <CoverArt book={entry.book} origin={entry.origin} />
+        </div>
+        <div className="grid-title t-title-sm clamp-2">{entry.book.title}</div>
+        <div className="grid-author t-body-sm clamp-1">{entry.book.author}</div>
+        <div className="grid-status-slot">{status}</div>
+      </Link>
+      <IconButton
+        className="grid-more"
+        icon={MoreHorizIcon}
+        label="Book actions"
+        aria-haspopup="menu"
+        size={18}
+        tooltipSide="left"
+        onClick={(e) => onMenu(entry, menuPoint(e, 'below'))}
+      />
     </div>
   );
-}
+});
