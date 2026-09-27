@@ -7,6 +7,9 @@ import { Emitter, WriteQueue } from './observable';
 import { noopBus, type TabBus } from './tabs';
 
 const HIGHLIGHTS_KEY = 'highlights.v1';
+/** The API's limits on highlighted text and notes. */
+export const MAX_HIGHLIGHT_TEXT = 4000;
+export const MAX_HIGHLIGHT_NOTE = 4000;
 
 /**
  * Highlights on this device. Every edit is saved locally at once and never
@@ -16,6 +19,8 @@ const HIGHLIGHTS_KEY = 'highlights.v1';
 export class HighlightStoreImpl extends Emitter<HighlightsSnapshot> implements HighlightStore {
   private items = new Map<string, Highlight>();
   private readonly writes = new WriteQueue();
+  /** `forEdition` results for the current snapshot, so repeated calls return the same array. */
+  private editions = new Map<string, Highlight[]>();
 
   constructor(
     private readonly kv: KeyValueStore,
@@ -71,13 +76,24 @@ export class HighlightStoreImpl extends Emitter<HighlightsSnapshot> implements H
   }
 
   private publish(loaded = this.snapshot.loaded): void {
+    this.editions = new Map();
     this.emit({ loaded, all: [...this.items.values()] });
   }
 
+  /**
+   * Live highlights of one edition in reading order. The same array is
+   * returned until the store changes, so it is safe as a React dependency.
+   */
   forEdition(origin: string, sha256: string): Highlight[] {
-    return this.snapshot.all
-      .filter((h) => !h.deleted && h.origin === origin && h.sha256 === sha256)
-      .sort((a, b) => position(a) - position(b) || isoOrder(a.createdAt) - isoOrder(b.createdAt));
+    const key = `${origin}\n${sha256}`;
+    let list = this.editions.get(key);
+    if (!list) {
+      list = this.snapshot.all
+        .filter((h) => !h.deleted && h.origin === origin && h.sha256 === sha256)
+        .sort((a, b) => position(a) - position(b) || isoOrder(a.createdAt) - isoOrder(b.createdAt));
+      this.editions.set(key, list);
+    }
+    return list;
   }
 
   byId(id: string): Highlight | undefined {
@@ -91,6 +107,7 @@ export class HighlightStoreImpl extends Emitter<HighlightsSnapshot> implements H
     locator: Record<string, unknown>;
     text: string;
     color: string;
+    note?: string | null;
   }): Promise<Highlight> {
     const at = this.stamp();
     const h: Highlight = {
@@ -99,9 +116,9 @@ export class HighlightStoreImpl extends Emitter<HighlightsSnapshot> implements H
       sha256: input.sha256,
       origin: input.origin,
       locator: input.locator,
-      text: input.text.length > 4000 ? input.text.slice(0, 4000) : input.text,
+      text: input.text.length > MAX_HIGHLIGHT_TEXT ? input.text.slice(0, MAX_HIGHLIGHT_TEXT) : input.text,
       color: input.color,
-      note: null,
+      note: cleanNote(input.note),
       createdAt: at,
       updatedAt: at,
       deleted: false,
@@ -115,6 +132,18 @@ export class HighlightStoreImpl extends Emitter<HighlightsSnapshot> implements H
     const h = this.items.get(id);
     if (!h || h.deleted || h.color === color) return;
     this.items.set(id, { ...h, color, updatedAt: this.stamp(h) });
+    await this.changed();
+  }
+
+  /**
+   * Sets or clears (null or blank) the note on a highlight. Notes are part of
+   * the synced record, so this rides the next sync like any other edit.
+   */
+  async setNote(id: string, note: string | null): Promise<void> {
+    const h = this.items.get(id);
+    const next = cleanNote(note);
+    if (!h || h.deleted || (h.note ?? null) === next) return;
+    this.items.set(id, { ...h, note: next, updatedAt: this.stamp(h) });
     await this.changed();
   }
 
@@ -159,6 +188,11 @@ export class HighlightStoreImpl extends Emitter<HighlightsSnapshot> implements H
   flush(): Promise<void> {
     return this.writes.flush();
   }
+}
+
+function cleanNote(note: string | null | undefined): string | null {
+  if (typeof note !== 'string' || note.trim() === '') return null;
+  return note.length > MAX_HIGHLIGHT_NOTE ? note.slice(0, MAX_HIGHLIGHT_NOTE) : note;
 }
 
 function position(h: Highlight): number {

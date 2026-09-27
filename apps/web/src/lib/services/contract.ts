@@ -168,11 +168,26 @@ export interface HighlightsSnapshot {
 }
 
 export interface HighlightStore extends Observable<HighlightsSnapshot> {
-  /** Live highlights of one edition in reading order. */
+  /**
+   * Live highlights of one edition in reading order (by locator
+   * `locations.totalProgression`, then creation). Returns the same array
+   * until the store changes.
+   */
   forEdition(origin: string, sha256: string): Highlight[];
   byId(id: string): Highlight | undefined;
-  create(input: { bookId: string; sha256: string; origin: string; locator: Record<string, unknown>; text: string; color: string }): Promise<Highlight>;
+  create(input: {
+    bookId: string;
+    sha256: string;
+    origin: string;
+    locator: Record<string, unknown>;
+    text: string;
+    color: string;
+    /** Optional note; blank means none. Capped at 4000 characters like the API. */
+    note?: string | null;
+  }): Promise<Highlight>;
   recolor(id: string, color: string): Promise<void>;
+  /** Sets or clears (null/blank) a highlight's note; synced with the highlight. */
+  setNote(id: string, note: string | null): Promise<void>;
   delete(id: string): Promise<void>;
 }
 
