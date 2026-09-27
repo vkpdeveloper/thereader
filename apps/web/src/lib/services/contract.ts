@@ -255,6 +255,19 @@ export interface CoverStore {
    * Rejects on network failure (render a quiet "unavailable" state, retry later).
    */
   load(book: Book, origin: string): Promise<string | null>;
+  /**
+   * Synchronous answer when already known, without I/O: the object URL, null
+   * (known to have no cover), or undefined (call `load`). Use it for the
+   * initial render so a remounted cover shows at once. The same URL is
+   * returned for a cover until it is evicted or replaced.
+   */
+  peek(book: Book, origin: string): string | null | undefined;
+  /**
+   * The <img> failed to decode the URL `load` returned: drop the cached copy
+   * and back off before fetching it again (mobile `CoverCache.reject`). Call
+   * from the image's onError, then retry `load` after ~31 s.
+   */
+  reject(book: Book, origin: string): Promise<void>;
 }
 
 // ---------------------------------------------------------------- storage
