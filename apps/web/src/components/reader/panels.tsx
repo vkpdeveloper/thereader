@@ -4,7 +4,7 @@ import { highlightHues, parseHighlightColor } from '../../lib/themes';
 import type { Highlight, ReadingLocator } from '../../lib/types';
 import { IconButton } from '../buttons';
 import { TextField } from '../controls';
-import { DeleteOutlineIcon, SearchIcon } from '../icons';
+import { CloseIcon, DeleteOutlineIcon, FormatListIcon, SearchIcon } from '../icons';
 import { ProgressLine } from '../states';
 import { NoteEditor, NoteIcon } from './Floating';
 
@@ -66,7 +66,7 @@ export function ContentsList({
   );
 }
 
-/** Persistent floating table of contents for desktop web readers. */
+/** Compact floating rail TOC for desktop web readers. */
 export function FloatingToc({
   toc,
   currentHref,
@@ -78,38 +78,91 @@ export function FloatingToc({
   currentTitle: string | null;
   onOpen: (entry: TocEntry) => void;
 }) {
-  const listRef = useRef<HTMLUListElement>(null);
-  const activeRef = useRef<HTMLButtonElement>(null);
-  const activeIndex = useMemo(() => activeEntry(toc, currentHref, currentTitle), [toc, currentHref, currentTitle]);
+  const [visible, setVisible] = useState(true);
+  const [expanded, setExpanded] = useState(false);
 
-  useEffect(() => {
-    const item = activeRef.current;
-    if (!item || !listRef.current) return;
-    item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-  }, [activeIndex]);
+  const sections = useMemo(() => {
+    if (!currentHref) return [];
+    return toc.filter((t) => t.href.split('#')[0] === currentHref);
+  }, [toc, currentHref]);
 
-  if (toc.length === 0) return null;
+  const activeIndex = useMemo(() => activeEntry(sections, currentHref, currentTitle), [sections, currentHref, currentTitle]);
+
+  if (sections.length === 0) return null;
+
+  if (!visible) {
+    return (
+      <button
+        type="button"
+        className="floating-toc-reopen"
+        aria-label="Show table of contents"
+        onClick={() => setVisible(true)}
+      >
+        <FormatListIcon size={18} />
+      </button>
+    );
+  }
+
   return (
-    <nav className="floating-toc" aria-label="Table of contents">
-      <div className="floating-toc-header">Table of contents</div>
-      <ul ref={listRef} className="floating-toc-list">
-        {toc.map((t, i) => {
+    <nav
+      className={expanded ? 'floating-toc-rail is-expanded' : 'floating-toc-rail'}
+      aria-label="Table of contents"
+      onMouseEnter={() => setExpanded(true)}
+      onMouseLeave={() => setExpanded(false)}
+      onFocus={() => setExpanded(true)}
+      onBlur={() => setExpanded(false)}
+    >
+      <div className="floating-toc-rail-head">
+        <button type="button" className="floating-toc-close" aria-label="Hide table of contents" onClick={() => setVisible(false)}>
+          <CloseIcon size={14} />
+        </button>
+      </div>
+      <div className="floating-toc-rail-track">
+        <div
+          className="floating-toc-rail-marker"
+          style={{
+            opacity: activeIndex >= 0 ? 1 : 0,
+            transform: `translateY(${activeIndex >= 0 ? activeIndex * 24 : 0}px)`,
+          }}
+        />
+        {sections.map((t, i) => {
           const isActive = i === activeIndex;
           return (
-            <li key={`${t.href}-${i}`} className="floating-toc-row" style={{ paddingLeft: t.depth * 14 }}>
-              <button
-                ref={isActive ? activeRef : undefined}
-                type="button"
-                className={isActive ? 'floating-toc-item is-active' : 'floating-toc-item'}
-                aria-current={isActive ? 'location' : undefined}
-                onClick={() => onOpen(t)}
-              >
-                {t.title}
-              </button>
-            </li>
+            <button
+              key={`${t.href}-${i}`}
+              type="button"
+              className={isActive ? 'floating-toc-notch is-active' : 'floating-toc-notch'}
+              aria-current={isActive ? 'location' : undefined}
+              title={t.title}
+              onClick={() => onOpen(t)}
+            >
+              <span className="floating-toc-notch-bar" />
+            </button>
           );
         })}
-      </ul>
+      </div>
+      <div className="floating-toc-popover">
+        <ul className="floating-toc-popover-list">
+          {sections.map((t, i) => {
+            const isActive = i === activeIndex;
+            return (
+              <li key={`${t.href}-${i}-pop`} className="floating-toc-popover-row" style={{ paddingLeft: t.depth * 12 }}>
+                <button
+                  type="button"
+                  className={isActive ? 'floating-toc-popover-item is-active' : 'floating-toc-popover-item'}
+                  aria-current={isActive ? 'location' : undefined}
+                  onClick={() => {
+                    setExpanded(false);
+                    onOpen(t);
+                  }}
+                >
+                  {t.title}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
     </nav>
   );
 }

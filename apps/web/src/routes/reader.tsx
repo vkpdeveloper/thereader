@@ -691,7 +691,7 @@ export function ReaderScreen() {
   const showFloatingToc = desktop && engine != null;
 
   return (
-    <div className="reader" data-flow={settings.reader.flow} data-floating-toc={showFloatingToc ? 'true' : undefined}>
+    <div className="reader" data-flow={settings.reader.flow}>
       {showFloatingToc && (
         <FloatingToc
           toc={engine.info.toc}
