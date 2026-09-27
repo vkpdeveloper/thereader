@@ -115,6 +115,12 @@ export function parseBook(json: unknown): Book {
 
 export const sameBookJson = (a: Book, b: Book): boolean => stableStringify(a) === stableStringify(b);
 
+/** Identifies a file edition: `id@version` (mobile `Book.editionKey`). */
+export const editionKey = (book: Pick<Book, 'id' | 'version'>): string => `${book.id}@${book.version}`;
+
+/** Same edition as mobile `Book ==`: id, version and sha256 all match. */
+export const sameEdition = (a: Book, b: Book): boolean => a.id === b.id && a.version === b.version && a.sha256 === b.sha256;
+
 // ---------------------------------------------------------------- download
 
 export const emptyDownload = (totalBytes: number | null = null): DownloadState => ({
@@ -184,6 +190,12 @@ export function parseProgress(json: unknown): ReadingProgress | null {
   const updatedAt = toIso(json.updatedAt);
   if (!updatedAt) return null;
   return { locator: parseLocator(json.locator), updatedAt };
+}
+
+/** 0..1 through the publication (mobile `ReadingProgress.percent`). */
+export function progressPercent(progress: ReadingProgress | null | undefined): number {
+  const total = progress?.locator.totalProgression;
+  return typeof total === 'number' && Number.isFinite(total) ? Math.min(1, Math.max(0, total)) : 0;
 }
 
 export const progressToJson = (p: ReadingProgress): Json => ({ locator: locatorToJson(p.locator), updatedAt: p.updatedAt });

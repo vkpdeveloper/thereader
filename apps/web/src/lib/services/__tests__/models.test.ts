@@ -4,7 +4,8 @@ import { validCoverBytes } from '../coverValidation';
 import { sha256Hex } from '../hash';
 import { HighlightStoreImpl } from '../highlights';
 import { MemoryKv } from '../kv';
-import { isoOrder, normalizeOrigin, parseReaderPreferences } from '../models';
+import { editionKey, isoOrder, normalizeOrigin, parseReaderPreferences, progressPercent, sameEdition } from '../models';
+import { makeBook } from './helpers';
 import { Clock } from './helpers';
 
 describe('models', () => {
@@ -53,6 +54,19 @@ describe('models', () => {
     expect(validCoverBytes(new TextEncoder().encode('<svg><script>alert(1)</script></svg>'))).toBe(false);
     expect(validCoverBytes(new TextEncoder().encode('<svg><image href="https://evil.test/x.png"/></svg>'))).toBe(false);
     expect(validCoverBytes(new TextEncoder().encode('<svg onload="x()"></svg>'))).toBe(false);
+  });
+});
+
+describe('edition helpers', () => {
+  test('edition key, equality and progress percent follow mobile', () => {
+    const book = makeBook({ version: '3' });
+    expect(editionKey(book)).toBe('moby-dick@3');
+    expect(sameEdition(book, { ...book, title: 'Other' })).toBe(true);
+    expect(sameEdition(book, { ...book, sha256: 'b'.repeat(64) })).toBe(false);
+    const locator = { href: 'a', progression: 0.5, totalProgression: 1.4, title: null, engine: 'web', raw: null };
+    expect(progressPercent({ locator, updatedAt: '2026-01-01T00:00:00.000Z' })).toBe(1);
+    expect(progressPercent({ locator: { ...locator, totalProgression: null }, updatedAt: '2026-01-01T00:00:00.000Z' })).toBe(0);
+    expect(progressPercent(null)).toBe(0);
   });
 });
 
