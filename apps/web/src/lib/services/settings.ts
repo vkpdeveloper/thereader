@@ -8,8 +8,10 @@ import {
   isRecord,
   normalizeOrigin,
   nowIso,
+  parseIso,
   parseReaderPreferences,
   readerPreferencesToJson,
+  stableStringify,
   toIso,
 } from './models';
 import { Emitter, WriteQueue } from './observable';
@@ -73,10 +75,14 @@ export class SettingsStoreImpl extends Emitter<SettingsSnapshot> implements Sett
   /** Another tab changed settings: adopt its API URL and any newer preferences. */
   private async reload(): Promise<void> {
     const stored = await this.read();
-    const reader = isAfter(stored.readerUpdatedAt, this.snapshot.readerUpdatedAt)
-      ? { reader: stored.reader, readerUpdatedAt: stored.readerUpdatedAt }
-      : {};
-    this.emit({ ...this.snapshot, settings: stored.settings, ...reader });
+    const newerReader = isAfter(stored.readerUpdatedAt, this.snapshot.readerUpdatedAt);
+    const urlChanged = stored.settings.apiBaseUrl !== this.snapshot.settings.apiBaseUrl;
+    if (!newerReader && !urlChanged) return;
+    this.emit({
+      ...this.snapshot,
+      settings: urlChanged ? stored.settings : this.snapshot.settings,
+      ...(newerReader ? { reader: stored.reader, readerUpdatedAt: stored.readerUpdatedAt } : {}),
+    });
   }
 
   currentOrigin(): string {
@@ -87,9 +93,16 @@ export class SettingsStoreImpl extends Emitter<SettingsSnapshot> implements Sett
     }
   }
 
+  /**
+   * Saves the URL as typed (trimmed), like mobile; callers validate it with
+   * `normalizeOrigin` first. An invalid saved URL maps to an unreachable
+   * origin in `currentOrigin`, so offline books stay readable.
+   */
   async setApiBaseUrl(url: string): Promise<void> {
     const apiBaseUrl = url.trim() || this.defaultApiBaseUrl;
-    this.emit({ ...this.snapshot, settings: { ...this.snapshot.settings, apiBaseUrl } });
+    if (apiBaseUrl !== this.snapshot.settings.apiBaseUrl) {
+      this.emit({ ...this.snapshot, settings: { ...this.snapshot.settings, apiBaseUrl } });
+    }
     await this.kv.set(SETTINGS_KEY, { apiBaseUrl });
     this.bus.post('settings');
   }
@@ -103,10 +116,24 @@ export class SettingsStoreImpl extends Emitter<SettingsSnapshot> implements Sett
     return this.updateReader((r) => ({ ...r, font: FONT_FAMILY_CLASSES[familyId] ?? r.font, fontFamilyId: familyId }));
   }
 
+  /**
+   * Applies and stamps an edit. An edit that changes nothing is dropped, so
+   * it neither re-renders nor queues a sync change. The stamp always moves
+   * forward, even if the clock is behind a pulled copy, so a local edit is
+   * never lost to an older one under last write wins.
+   */
   async updateReader(change: (prefs: ReaderPreferences) => ReaderPreferences): Promise<void> {
     const reader = clampReaderPreferences(change({ ...this.snapshot.reader }));
-    this.emit({ ...this.snapshot, reader, readerUpdatedAt: nowIso(this.now) });
+    if (stableStringify(readerPreferencesToJson(reader)) === stableStringify(readerPreferencesToJson(this.snapshot.reader))) return;
+    this.emit({ ...this.snapshot, reader, readerUpdatedAt: this.stamp() });
     await this.persistReader();
+  }
+
+  private stamp(): string {
+    const now = nowIso(this.now);
+    const previous = this.snapshot.readerUpdatedAt;
+    if (previous !== null && !isAfter(now, previous)) return new Date(parseIso(previous) + 1).toISOString();
+    return now;
   }
 
   /** Applies the cloud copy only when it is newer than the local edit. */
