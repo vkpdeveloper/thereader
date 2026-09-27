@@ -66,6 +66,54 @@ export function ContentsList({
   );
 }
 
+/** Persistent floating table of contents for desktop web readers. */
+export function FloatingToc({
+  toc,
+  currentHref,
+  currentTitle,
+  onOpen,
+}: {
+  toc: TocEntry[];
+  currentHref: string | null;
+  currentTitle: string | null;
+  onOpen: (entry: TocEntry) => void;
+}) {
+  const listRef = useRef<HTMLUListElement>(null);
+  const activeRef = useRef<HTMLButtonElement>(null);
+  const activeIndex = useMemo(() => activeEntry(toc, currentHref, currentTitle), [toc, currentHref, currentTitle]);
+
+  useEffect(() => {
+    const item = activeRef.current;
+    if (!item || !listRef.current) return;
+    item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [activeIndex]);
+
+  if (toc.length === 0) return null;
+  return (
+    <nav className="floating-toc" aria-label="Table of contents">
+      <div className="floating-toc-header">Table of contents</div>
+      <ul ref={listRef} className="floating-toc-list">
+        {toc.map((t, i) => {
+          const isActive = i === activeIndex;
+          return (
+            <li key={`${t.href}-${i}`} className="floating-toc-row" style={{ paddingLeft: t.depth * 14 }}>
+              <button
+                ref={isActive ? activeRef : undefined}
+                type="button"
+                className={isActive ? 'floating-toc-item is-active' : 'floating-toc-item'}
+                aria-current={isActive ? 'location' : undefined}
+                onClick={() => onOpen(t)}
+              >
+                {t.title}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  );
+}
+
 /** Every live highlight of the open edition, in reading order, with its note. */
 export function HighlightsList({
   items,
