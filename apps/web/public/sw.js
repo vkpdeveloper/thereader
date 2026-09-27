@@ -9,6 +9,7 @@
  *   CSS url()s) and precache it. Hashed assets of older deployments are
  *   pruned once a crawl completes.
  * - /assets/* (hashed Vite bundles) and /fonts/*: cache first.
+ * - The web manifest and icons: cached copy first, refreshed in the background.
  * - Navigations: network first, falling back to the cached app shell.
  * Bump VERSION to drop every older cache on activation. */
 
@@ -18,6 +19,8 @@ const STATIC_CACHE = `thereader-static-${VERSION}`;
 const CURRENT = new Set([SHELL_CACHE, STATIC_CACHE]);
 const SHELL_URL = '/index.html';
 const CRAWL_LIMIT = 400;
+/** Unhashed files the browser asks for on every visit (install metadata, icons). */
+const ROOT_FILES = ['/manifest.webmanifest', '/favicon.svg', '/icon.svg'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -25,7 +28,9 @@ self.addEventListener('install', (event) => {
       .then(async (response) => {
         if (!response.ok) return;
         const html = await response.clone().text();
-        await (await caches.open(SHELL_CACHE)).put(SHELL_URL, response);
+        const shell = await caches.open(SHELL_CACHE);
+        await shell.put(SHELL_URL, response);
+        await Promise.all(ROOT_FILES.map((path) => refresh(shell, path).catch(() => undefined)));
         // Best effort: a failed asset must not keep the worker from installing.
         await precache(html).catch(() => undefined);
       })
@@ -124,6 +129,24 @@ async function precache(html) {
   }
 }
 
+async function refresh(cache, request) {
+  const response = await fetch(request, { cache: 'no-cache' });
+  if (response.ok && response.type === 'basic') await cache.put(request, response.clone());
+  return response;
+}
+
+/** The cached copy immediately; the network copy for next time. */
+async function staleWhileRevalidate(event) {
+  const cache = await caches.open(SHELL_CACHE);
+  const cached = await cache.match(event.request);
+  const fresh = refresh(cache, event.request);
+  if (cached) {
+    event.waitUntil(fresh.catch(() => undefined));
+    return cached;
+  }
+  return fresh;
+}
+
 async function cacheFirst(request) {
   const cache = await caches.open(STATIC_CACHE);
   const cached = await cache.match(request);
@@ -164,4 +187,5 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   if (isStatic(url)) event.respondWith(cacheFirst(request));
+  else if (ROOT_FILES.includes(url.pathname)) event.respondWith(staleWhileRevalidate(event));
 });
