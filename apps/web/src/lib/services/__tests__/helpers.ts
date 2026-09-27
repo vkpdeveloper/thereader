@@ -85,7 +85,9 @@ export type SyncHandler = (call: SyncCall) => Promise<SyncResponse> | SyncRespon
 
 export const emptyResponse = (): SyncResponse => ({ serverTime: '2026-09-27T10:00:00.000Z', books: [], preferences: null });
 
-export async function harness(options: { handler?: SyncHandler; books?: Record<string, Book> } = {}) {
+export async function harness(
+  options: { handler?: SyncHandler; books?: Record<string, Book>; pollInterval?: number; startTimers?: boolean } = {},
+) {
   const clock = new Clock();
   const kv = new MemoryKv();
   const blobs = new MemoryKv();
@@ -114,7 +116,7 @@ export async function harness(options: { handler?: SyncHandler; books?: Record<s
     locks,
     env,
     now: clock.now,
-    pollInterval: 10 * 60_000,
+    pollInterval: options.pollInterval ?? 10 * 60_000,
     isUploadPending: (id) => pendingUploads.has(id),
     clientFor: () => ({
       async syncState(o) {
@@ -129,7 +131,7 @@ export async function harness(options: { handler?: SyncHandler; books?: Record<s
       },
     }),
   });
-  await sync.load({ startTimers: false });
+  await sync.load({ startTimers: options.startTimers === true });
   return {
     clock,
     kv,

@@ -191,7 +191,21 @@ export interface SyncStore extends Observable<SyncSnapshot> {
   /** Reading-time session for the open book; mirrors mobile beginReading/endReading. */
   beginReading(entry: LibraryEntry): void;
   endReading(): void;
+  /**
+   * Pauses/resumes the open book's clock (mobile `setReadingActive`). Tab
+   * visibility is already handled by the store.
+   */
+  setReadingActive(active: boolean): void;
+  /**
+   * Marks reading activity. The clock stops after 10 min without activity;
+   * page-level input and saved progress count automatically, so call this
+   * for input inside the reader's content iframe.
+   */
+  noteReadingActivity(): void;
+  /** Total cloud + unsynced reading time of one edition (mobile `readingMillisecondsFor`). */
   readingMillisecondsFor(entry: LibraryEntry): number;
+  /** Random per-install id that deduplicates reading sessions (not authentication). */
+  readonly deviceId: string;
 }
 
 // ---------------------------------------------------------------- imports

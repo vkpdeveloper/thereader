@@ -50,6 +50,13 @@ const DRAIN_DELAY_MS = 5_000;
 /** How long to stop sending highlights after a server rejected them. */
 export const HIGHLIGHTS_RETRY_MS = 6 * 60 * 60_000;
 const CHECKPOINT_MS = 15_000;
+/**
+ * A visible tab has no screen lock to pause it the way a phone does, so a
+ * reader left open stops counting this long after the last sign of reading
+ * (input, a page turn or scroll that saved progress). Time up to that point
+ * counts, like a phone that locks after its timeout.
+ */
+export const READING_IDLE_MS = 10 * 60_000;
 const MAX_CHANGES = 100;
 const MAX_BATCH_BYTES = 240 * 1024;
 const MAX_SESSION_MS = 7 * 24 * 60 * 60_000;
@@ -110,11 +117,23 @@ export interface SyncEnvironment {
   isVisible(): boolean;
   onVisibilityChange(handler: (visible: boolean) => void): () => void;
   onPageHide(handler: () => void): () => void;
+  /** User input anywhere on the page (reading idle detection). */
+  onActivity?(handler: () => void): () => void;
 }
+
+const ACTIVITY_EVENTS = ['pointerdown', 'keydown', 'wheel', 'touchstart'] as const;
 
 export function browserSyncEnvironment(): SyncEnvironment {
   const hasDocument = typeof document !== 'undefined';
   return {
+    onActivity(handler) {
+      if (!hasDocument) return () => {};
+      const options = { capture: true, passive: true } as const;
+      for (const type of ACTIVITY_EVENTS) document.addEventListener(type, handler, options);
+      return () => {
+        for (const type of ACTIVITY_EVENTS) document.removeEventListener(type, handler, options);
+      };
+    },
     isVisible: () => !hasDocument || document.visibilityState === 'visible',
     onVisibilityChange(handler) {
       if (!hasDocument) return () => {};
@@ -149,8 +168,14 @@ interface ReadingSession {
   entry: LibraryEntry;
   id: string;
   accumulated: number;
+  /** Start of the current counting stretch; null while paused. */
   startedAt: number | null;
   lastSaved: number;
+  /** Paused by the reader UI (`setReadingActive(false)`). */
+  paused: boolean;
+  lastActivity: number;
+  /** Progress stamp last seen, so a saved position counts as activity. */
+  progressStamp: string | null;
 }
 
 type Capture = [key: string, stamp: string, change: SyncChange | null];
@@ -218,15 +243,27 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
 
   // ---------------------------------------------------------------- snapshot
 
+  /** Emits only when a visible value changed, so subscribers re-render only then. */
   private publish(): void {
     const st = this.current();
-    this.emit({
+    const next: SyncSnapshot = {
       isSyncing: this.isSyncing,
       lastSyncedAt: st.lastSyncedAt,
       pendingCount: Object.keys(st.pending).length,
       totalReadingMilliseconds: totalMilliseconds(st),
       error: this.error,
-    });
+    };
+    const prev = this.snapshot;
+    if (
+      prev.isSyncing === next.isSyncing &&
+      prev.lastSyncedAt === next.lastSyncedAt &&
+      prev.pendingCount === next.pendingCount &&
+      prev.totalReadingMilliseconds === next.totalReadingMilliseconds &&
+      prev.error === next.error
+    ) {
+      return;
+    }
+    this.emit(next);
   }
 
   readingMillisecondsFor(entry: LibraryEntry): number {
@@ -303,14 +340,22 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
     this.loaded = true;
     const capture = () => this.scheduleCapture();
     this.unsubscribers.push(
-      this.deps.library.subscribe(capture),
-      this.deps.settings.subscribe(capture),
+      this.deps.library.subscribe(() => {
+        this.readingProgressChanged();
+        capture();
+      }),
+      // A new API URL switches the status shown to that origin's state.
+      this.deps.settings.subscribe(() => {
+        this.publish();
+        capture();
+      }),
       ...(this.deps.highlights ? [this.deps.highlights.subscribe(capture)] : []),
       this.bus.listen((topic) => {
         if (topic === 'sync') void this.reloadFromOtherTab();
       }),
       this.env.onVisibilityChange((visible) => this.visibilityChanged(visible)),
       this.env.onPageHide(() => void this.flushNow(true)),
+      ...(this.env.onActivity ? [this.env.onActivity(() => this.noteReadingActivity())] : []),
     );
     await this.captureNow();
     this.publish();
@@ -333,7 +378,9 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
   private visibilityChanged(visible: boolean): void {
     const was = this.visible;
     this.visible = visible;
-    this.setReadingActive(visible);
+    // Returning to the tab is itself a sign of reading.
+    if (visible) this.noteReadingActivity();
+    else this.updateReadingClock();
     if (visible) {
       if (!was) this.resume();
       return;
@@ -467,8 +514,7 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
   }
 
   private cycleDelay(): number {
-    if (this.failures === 0) return this.pollInterval;
-    return Math.min(this.pollInterval * 2 ** Math.min(this.failures, 16), MAX_BACKOFF_MS);
+    return cycleDelay(this.pollInterval, this.failures);
   }
 
   private lastAttempt(): number | null {
@@ -858,37 +904,100 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
 
   // ---------------------------------------------------------------- reading time
 
-  /** Time advances only while the reader is open and the tab is visible. */
+  /**
+   * Time advances only while the reader is open, the tab is visible, the
+   * reader UI has not paused it, and the reader was active within
+   * `READING_IDLE_MS`. The cumulative session counter is saved every 15 s and
+   * whenever counting stops.
+   */
   beginReading(entry: LibraryEntry): void {
     this.endReading();
     if (entry.source !== 'api' || this.disposed) return;
+    const now = this.now();
     this.reading = {
       entry,
       id: randomId(),
       accumulated: 0,
-      startedAt: this.visible ? this.now() : null,
+      startedAt: this.visible ? now : null,
       lastSaved: 0,
+      paused: false,
+      lastActivity: now,
+      progressStamp: entry.progress?.updatedAt ?? null,
     };
     this.activeEditions.add(`${entry.origin}\n${entry.book.sha256}`);
-    this.readingTimer = setInterval(() => this.checkpointReading(), CHECKPOINT_MS);
+    this.readingTimer = setInterval(() => {
+      this.updateReadingClock();
+      this.checkpointReading();
+    }, CHECKPOINT_MS);
   }
 
-  private setReadingActive(active: boolean): void {
+  /**
+   * Pauses or resumes counting for the open book (mobile `setReadingActive`),
+   * e.g. while a modal hides the page. Visibility is handled here already.
+   */
+  setReadingActive(active: boolean): void {
     const reading = this.reading;
     if (!reading) return;
-    if (active && this.visible) {
-      reading.startedAt ??= this.now();
-    } else {
-      if (reading.startedAt !== null) reading.accumulated += Math.max(0, this.now() - reading.startedAt);
-      reading.startedAt = null;
-      this.checkpointReading();
+    reading.paused = !active;
+    if (active) this.noteReadingActivity();
+    else this.updateReadingClock();
+  }
+
+  /**
+   * A sign that the user is reading (input, a page turn). Input on the page
+   * itself is observed automatically; the reader should call this for input
+   * inside its content frame. Saved progress counts as activity too.
+   */
+  noteReadingActivity(): void {
+    const reading = this.reading;
+    if (!reading) return;
+    // Settle an idle stretch first, so the gap before this input never counts.
+    this.updateReadingClock();
+    reading.lastActivity = this.now();
+    this.updateReadingClock();
+  }
+
+  /** Current session counter in milliseconds (0 without an open book). */
+  get currentReadingMilliseconds(): number {
+    return this.reading ? this.readingElapsed(this.reading) : 0;
+  }
+
+  private readingProgressChanged(): void {
+    const reading = this.reading;
+    if (!reading) return;
+    const stamp = this.deps.library.entry(reading.entry.id)?.progress?.updatedAt ?? null;
+    if (stamp === reading.progressStamp) return;
+    reading.progressStamp = stamp;
+    this.noteReadingActivity();
+  }
+
+  private readingElapsed(reading: ReadingSession): number {
+    if (reading.startedAt === null) return reading.accumulated;
+    const end = Math.min(this.now(), reading.lastActivity + READING_IDLE_MS);
+    return reading.accumulated + Math.max(0, end - reading.startedAt);
+  }
+
+  /** Starts or stops the session clock to match visibility, pause and idleness. */
+  private updateReadingClock(): void {
+    const reading = this.reading;
+    if (!reading) return;
+    const now = this.now();
+    const run = this.visible && !reading.paused && now - reading.lastActivity < READING_IDLE_MS;
+    if (run) {
+      reading.startedAt ??= now;
+      return;
     }
+    if (reading.startedAt !== null) {
+      reading.accumulated = this.readingElapsed(reading);
+      reading.startedAt = null;
+    }
+    this.checkpointReading();
   }
 
   private checkpointReading(): void {
     const reading = this.reading;
     if (!reading) return;
-    const elapsed = Math.round(reading.accumulated + (reading.startedAt === null ? 0 : Math.max(0, this.now() - reading.startedAt)));
+    const elapsed = Math.round(this.readingElapsed(reading));
     if (elapsed <= reading.lastSaved) return;
     reading.lastSaved = elapsed;
     void this.recordReadingSession(reading.entry, reading.id, elapsed);
@@ -909,7 +1018,7 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
   endReading(): void {
     const reading = this.reading;
     if (reading && reading.startedAt !== null) {
-      reading.accumulated += Math.max(0, this.now() - reading.startedAt);
+      reading.accumulated = this.readingElapsed(reading);
       reading.startedAt = null;
     }
     this.checkpointReading();
@@ -922,6 +1031,12 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
 }
 
 // ---------------------------------------------------------------- pure helpers
+
+/** Wait before the next cycle: the poll interval, doubled per consecutive failure up to 15 min. */
+export function cycleDelay(pollInterval: number, failures: number): number {
+  if (failures <= 0) return pollInterval;
+  return Math.min(pollInterval * 2 ** Math.min(failures, 16), MAX_BACKOFF_MS);
+}
 
 function sessionDelta(state: OriginState, change: SyncChange): number {
   return Math.max(0, (Number(change.payload.readingMilliseconds) || 0) - (state.sessionAcknowledged[change.id] ?? 0));

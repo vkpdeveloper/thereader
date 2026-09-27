@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { ApiError } from '../contract';
 import { entryIdentity } from '../models';
-import { wirePreferences } from '../sync';
+import { MAX_BACKOFF_MS, READING_IDLE_MS, cycleDelay, wirePreferences } from '../sync';
 import { defaultReaderPreferences } from '../../types';
 import { ORIGIN, addBook, emptyResponse, harness, makeBook } from './helpers';
 
@@ -385,5 +385,174 @@ describe('wire values', () => {
     expect(value.highlightColor).toBe('yellow');
     expect(value.lineHeight).toBe(2.2);
     expect(wirePreferences({ ...defaultReaderPreferences, themeId: 'nord' }).themeId).toBe('nord');
+  });
+});
+
+describe('schedule', () => {
+  const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+  test('backoff doubles from the poll interval and caps at 15 minutes', () => {
+    expect(cycleDelay(120_000, 0)).toBe(120_000);
+    expect(cycleDelay(120_000, 1)).toBe(240_000);
+    expect(cycleDelay(120_000, 2)).toBe(480_000);
+    expect(cycleDelay(120_000, 3)).toBe(MAX_BACKOFF_MS);
+    expect(cycleDelay(120_000, 40)).toBe(MAX_BACKOFF_MS);
+  });
+
+  test('edits never send a request of their own; they ride the next cycle', async () => {
+    const h = await harness({ startTimers: true });
+    await h.settle();
+    expect(h.calls).toHaveLength(1); // start-up pull
+    const book = makeBook();
+    const entry = await addBook(h, book);
+    for (let i = 1; i <= 5; i++) await h.library.saveProgress(entry.id, locator(i / 10), book.sha256);
+    await h.settings.updateReader((p) => ({ ...p, fontSize: 20 }));
+    await h.highlights.create({ bookId: book.id, sha256: book.sha256, origin: ORIGIN, locator: { href: 'a' }, text: 't', color: 'blue' });
+    await h.settle();
+    expect(h.calls).toHaveLength(1);
+    // Coalesced: one progress change however many saves.
+    expect(Object.keys(h.pending()).filter((k) => k.startsWith('progress:'))).toHaveLength(1);
+    h.sync.dispose();
+  });
+
+  test('polls only while visible and syncs on return after the resume gap', async () => {
+    const h = await harness({ startTimers: true, pollInterval: 30 });
+    await h.settle();
+    expect(h.calls).toHaveLength(1);
+    await wait(80);
+    const whileVisible = h.calls.length;
+    expect(whileVisible).toBeGreaterThanOrEqual(2);
+
+    h.env.setVisible(false);
+    await h.settle();
+    const hidden = h.calls.length;
+    await wait(100);
+    expect(h.calls.length).toBe(hidden);
+
+    // Back within a minute of the last attempt: no extra request at once.
+    h.env.setVisible(true);
+    await h.settle();
+    expect(h.calls.length).toBe(hidden);
+
+    h.env.setVisible(false);
+    await h.settle();
+    h.clock.advance(61_000);
+    const before = h.calls.length;
+    h.env.setVisible(true);
+    await h.settle();
+    expect(h.calls.length).toBe(before + 1);
+    h.sync.dispose();
+  });
+
+  test('hiding the tab flushes queued changes unless a sync just ran', async () => {
+    const h = await harness();
+    const book = makeBook();
+    await addBook(h, book);
+    await h.settle();
+    h.sync['autoSync'] = true; // as after load with timers, without the start-up pull
+    h.env.setVisible(false);
+    await h.settle();
+    expect(h.calls).toHaveLength(1);
+    expect(Object.keys(h.pending())).toHaveLength(0);
+
+    await h.settings.updateReader((p) => ({ ...p, fontSize: 24 }));
+    h.env.setVisible(true);
+    h.env.setVisible(false);
+    await h.settle();
+    expect(h.calls).toHaveLength(1); // within the 15 s flush gap
+    h.sync.dispose();
+  });
+});
+
+describe('snapshots', () => {
+  test('emit only when a visible value changes', async () => {
+    const h = await harness();
+    await h.settle();
+    let emits = 0;
+    h.sync.subscribe(() => emits++);
+    await h.sync.syncNow();
+    const afterFirst = emits;
+    expect(afterFirst).toBeGreaterThan(0);
+    const snapshot = h.sync.getSnapshot();
+    h.clock.advance(0);
+    await h.sync.syncNow(); // same lastSyncedAt stamp, nothing pending
+    expect(h.sync.getSnapshot().lastSyncedAt).toBe(snapshot.lastSyncedAt);
+    // isSyncing toggled on and off, and nothing else changed.
+    expect(emits - afterFirst).toBe(2);
+    await h.library.markOpened('none', 'x').catch(() => undefined);
+    await h.settle();
+    expect(emits - afterFirst).toBe(2);
+  });
+
+  test('switching the API origin shows that origin\'s status', async () => {
+    const h = await harness();
+    const book = makeBook();
+    await addBook(h, book);
+    await h.settle();
+    expect(h.sync.getSnapshot().pendingCount).toBe(1);
+    await h.settings.setApiBaseUrl('http://other.test');
+    await h.settle();
+    expect(h.sync.getSnapshot().pendingCount).toBe(0);
+    await h.settings.setApiBaseUrl(ORIGIN);
+    await h.settle();
+    expect(h.sync.getSnapshot().pendingCount).toBe(1);
+  });
+});
+
+describe('reading idle handling', () => {
+  const sessionMs = (h: Awaited<ReturnType<typeof harness>>) =>
+    Object.values(h.pending())
+      .filter((c) => c.kind === 'session')
+      .reduce((n, c) => n + Number(c.payload.readingMilliseconds), 0);
+
+  test('stops counting after the idle limit and resumes on activity', async () => {
+    const h = await harness();
+    const book = makeBook();
+    const entry = await addBook(h, book);
+    await h.settle();
+    h.sync.beginReading(h.library.entry(entry.id)!);
+    h.clock.advance(READING_IDLE_MS + 30 * 60_000); // walked away
+    expect(h.sync.currentReadingMilliseconds).toBe(READING_IDLE_MS);
+    h.sync.noteReadingActivity(); // came back: the gap does not count
+    h.clock.advance(60_000);
+    h.sync.endReading();
+    await h.settle();
+    expect(sessionMs(h)).toBe(READING_IDLE_MS + 60_000);
+  });
+
+  test('saved progress counts as activity', async () => {
+    const h = await harness();
+    const book = makeBook();
+    const entry = await addBook(h, book);
+    await h.settle();
+    h.sync.beginReading(h.library.entry(entry.id)!);
+    h.clock.advance(READING_IDLE_MS - 1000);
+    await h.library.saveProgress(entry.id, locator(0.3), book.sha256);
+    await h.settle();
+    h.clock.advance(READING_IDLE_MS - 1000);
+    h.sync.endReading();
+    await h.settle();
+    expect(sessionMs(h)).toBe(2 * (READING_IDLE_MS - 1000));
+  });
+
+  test('setReadingActive pauses the clock without ending the session', async () => {
+    const h = await harness();
+    const book = makeBook();
+    const entry = await addBook(h, book);
+    await h.settle();
+    h.sync.beginReading(h.library.entry(entry.id)!);
+    h.clock.advance(5_000);
+    h.sync.setReadingActive(false);
+    h.clock.advance(60_000);
+    h.env.setVisible(false);
+    h.env.setVisible(true); // visibility alone does not resume a paused reader
+    h.clock.advance(60_000);
+    h.sync.setReadingActive(true);
+    h.clock.advance(5_000);
+    h.sync.endReading();
+    await h.settle();
+    const sessions = Object.values(h.pending()).filter((c) => c.kind === 'session');
+    expect(sessions).toHaveLength(1);
+    expect(sessionMs(h)).toBe(10_000);
   });
 });
