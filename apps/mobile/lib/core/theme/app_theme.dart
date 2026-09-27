@@ -169,12 +169,32 @@ abstract final class AppTheme {
         contentPadding: const EdgeInsets.symmetric(horizontal: Space.gutter),
       ),
       pageTransitionsTheme: const PageTransitionsTheme(builders: {
-        TargetPlatform.iOS: cupertino.CupertinoPageTransitionsBuilder(),
+        TargetPlatform.iOS: _AppCupertinoPageTransitionsBuilder(),
         TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
-        TargetPlatform.macOS: cupertino.CupertinoPageTransitionsBuilder(),
+        TargetPlatform.macOS: _AppCupertinoPageTransitionsBuilder(),
         TargetPlatform.linux: FadeForwardsPageTransitionsBuilder(),
         TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
       }),
+    );
+  }
+}
+
+// Flutter 3.47 moved CupertinoPageTransitionsBuilder from material.dart to
+// cupertino.dart. Keep the same transition on both the app SDK and release CI.
+class _AppCupertinoPageTransitionsBuilder extends PageTransitionsBuilder {
+  const _AppCupertinoPageTransitionsBuilder();
+
+  @override
+  Duration get transitionDuration => cupertino.CupertinoRouteTransitionMixin.kTransitionDuration;
+
+  @override
+  DelegatedTransitionBuilder? get delegatedTransition => cupertino.CupertinoPageTransition.delegatedTransition;
+
+  @override
+  Widget buildTransitions<T>(PageRoute<T> route, BuildContext context, Animation<double> animation,
+      Animation<double> secondaryAnimation, Widget child) {
+    return cupertino.CupertinoRouteTransitionMixin.buildPageTransitions<T>(
+      route, context, animation, secondaryAnimation, child,
     );
   }
 }
