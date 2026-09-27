@@ -9,5 +9,15 @@
   "theme_color": "#000000",
   "icons": [
     { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
-  ]
+  ],
+  "file_handlers": [
+    {
+      "action": "/library",
+      "accept": {
+        "application/epub+zip": [".epub"],
+        "application/x-mobipocket-ebook": [".mobi", ".azw", ".azw3", ".prc"]
+      }
+    }
+  ],
+  "launch_handler": { "client_mode": "focus-existing" }
 }

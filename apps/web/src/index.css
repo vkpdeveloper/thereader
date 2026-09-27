@@ -137,6 +137,18 @@
   box-sizing: border-box;
 }
 
+/* Switching presets cross-fades every surface (mobile themeAnimationDuration). */
+.theme-changing *,
+.theme-changing *::before,
+.theme-changing *::after {
+  transition:
+    background-color var(--motion-base) var(--ease),
+    border-color var(--motion-base) var(--ease),
+    color var(--motion-base) var(--ease),
+    fill var(--motion-base) var(--ease),
+    stroke var(--motion-base) var(--ease) !important;
+}
+
 html,
 body {
   margin: 0;
@@ -1166,6 +1178,19 @@ kbd {
   color: var(--fg);
 }
 
+.library-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+.library-storage-tag {
+  display: inline-flex;
+  border-radius: 4px;
+}
+.library-storage-tag:hover .tag {
+  border-color: var(--border-active);
+}
+
 .library-grid {
   display: grid;
   column-gap: var(--space-md);
@@ -1181,11 +1206,21 @@ kbd {
 .grid-item {
   position: relative;
   min-width: 0;
+  /* Off-screen tiles skip layout and paint; large libraries stay cheap. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 320px;
+  /* Room inside the paint containment for the focus ring and hover lift. */
+  padding: 4px;
+  margin: -4px;
 }
 .grid-link {
   display: flex;
   flex-direction: column;
   border-radius: var(--radius-md);
+  /* Long-press opens the book page (mobile), not the browser's link callout. */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 .grid-cover {
   transition: transform var(--motion-base) var(--ease);
@@ -1220,8 +1255,8 @@ kbd {
 }
 .grid-more {
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: 10px;
+  right: 10px;
   width: 32px;
   height: 32px;
   background: color-mix(in srgb, var(--bg) 82%, transparent);
@@ -1541,12 +1576,15 @@ kbd {
   color: var(--pink);
 }
 
+.theme-section {
+  container-type: inline-size;
+}
 .theme-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-sm);
 }
-@media (min-width: 600px) {
+@container (min-width: 560px) {
   .theme-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 12px;
@@ -1895,6 +1933,73 @@ kbd {
 .toast-action {
   font-weight: 600;
   color: var(--blue);
+}
+
+.context-menu {
+  position: fixed;
+  z-index: 250;
+  min-width: 208px;
+  max-width: 300px;
+  padding: 4px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transform: scale(0.98);
+  transform-origin: top left;
+  transition:
+    opacity var(--motion-fast) var(--ease),
+    transform var(--motion-fast) var(--ease);
+}
+.context-menu.is-shown {
+  opacity: 1;
+  transform: none;
+}
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  font-weight: 500;
+  text-align: left;
+  color: var(--fg);
+}
+.context-menu-item svg,
+.context-menu-icon-slot {
+  flex: none;
+  width: 16px;
+  color: var(--muted);
+}
+.context-menu-item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.context-menu-item:hover,
+.context-menu-item:focus-visible {
+  background: var(--element);
+  outline: none;
+}
+.context-menu-item.is-danger,
+.context-menu-item.is-danger svg {
+  color: var(--pink);
+}
+.context-menu-item.is-separated {
+  position: relative;
+  margin-top: 9px;
+}
+.context-menu-item.is-separated::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  right: -4px;
+  top: -5px;
+  border-top: 1px solid var(--border);
 }
 
 /* ------------------------------------------------------------ reader */

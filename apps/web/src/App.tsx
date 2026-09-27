@@ -1,10 +1,11 @@
 import { useLayoutEffect } from 'react';
 import { Outlet } from '@tanstack/react-router';
+import { FileLaunchHandler } from './components/FileLaunch';
 import { ToastProvider } from './components/toast';
 import { applyTheme } from './lib/themes';
 import { useServices, useStore } from './lib/services/react';
 
-/** Root: follows the synced theme preset and hosts the snackbar. */
+/** Root: follows the synced theme preset, hosts the snackbar and takes books opened from the OS. */
 export function Root() {
   const services = useServices();
   const settings = useStore(services.settings);
@@ -15,6 +16,7 @@ export function Root() {
   return (
     <ToastProvider>
       <Outlet />
+      <FileLaunchHandler />
     </ToastProvider>
   );
 }

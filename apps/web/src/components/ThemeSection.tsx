@@ -10,7 +10,7 @@ import { Eyebrow } from './states';
 export function ThemeSection({ selectedId, onSelect }: { selectedId: string | undefined; onSelect: (id: string) => void }) {
   const current = themeById(selectedId);
   return (
-    <section className="settings-section" aria-labelledby="theme-eyebrow">
+    <section className="settings-section theme-section" aria-labelledby="theme-eyebrow">
       <Eyebrow as="h2" id="theme-eyebrow">
         Theme
       </Eyebrow>

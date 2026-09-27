@@ -170,11 +170,24 @@ const cssVars: Record<keyof ThemeColors, string> = {
 };
 
 const themeStorageKey = 'thereader.themeId';
+let appliedThemeId: string | null = null;
+let themeTransitionTimer = 0;
 
-/** Re-themes the whole app through CSS variables on `:root`. */
+/**
+ * Re-themes the whole app through CSS variables on `:root`. Switching presets
+ * cross-fades every surface over Motion.base, like mobile's
+ * `themeAnimationDuration`; the first paint applies instantly.
+ */
 export function applyTheme(id: string | null | undefined): void {
   const theme = themeById(id);
   const root = document.documentElement;
+  if (appliedThemeId === theme.id) return;
+  if (appliedThemeId !== null) {
+    root.classList.add('theme-changing');
+    window.clearTimeout(themeTransitionTimer);
+    themeTransitionTimer = window.setTimeout(() => root.classList.remove('theme-changing'), 260);
+  }
+  appliedThemeId = theme.id;
   for (const key of Object.keys(cssVars) as (keyof ThemeColors)[]) {
     root.style.setProperty(cssVars[key], theme.colors[key]);
   }

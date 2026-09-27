@@ -7,6 +7,42 @@ export function useDocumentTitle(title: string | null | undefined): void {
   }, [title]);
 }
 
+/**
+ * One IntersectionObserver per root margin, shared by every watcher: a grid
+ * of a thousand covers costs one observer, not a thousand.
+ */
+const sharedObservers = new Map<string, { io: IntersectionObserver; callbacks: Map<Element, () => void> }>();
+
+function watchOnce(el: Element, rootMargin: string, onVisible: () => void): () => void {
+  let shared = sharedObservers.get(rootMargin);
+  if (!shared) {
+    const callbacks = new Map<Element, () => void>();
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          const cb = callbacks.get(e.target);
+          callbacks.delete(e.target);
+          io.unobserve(e.target);
+          cb?.();
+        }
+      },
+      { rootMargin },
+    );
+    shared = { io, callbacks };
+    sharedObservers.set(rootMargin, shared);
+  }
+  const { io, callbacks } = shared;
+  callbacks.set(el, onVisible);
+  io.observe(el);
+  return () => {
+    if (callbacks.get(el) === onVisible) {
+      callbacks.delete(el);
+      io.unobserve(el);
+    }
+  };
+}
+
 /** True once the element has come within `rootMargin` of the viewport (sticky). */
 export function useInView<T extends Element>(ref: RefObject<T>, rootMargin = '200px'): boolean {
   const [seen, setSeen] = useState(false);
@@ -17,19 +53,23 @@ export function useInView<T extends Element>(ref: RefObject<T>, rootMargin = '20
       setSeen(true);
       return;
     }
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((e) => e.isIntersecting)) {
-          setSeen(true);
-          io.disconnect();
-        }
-      },
-      { rootMargin },
-    );
-    io.observe(el);
-    return () => io.disconnect();
+    return watchOnce(el, rootMargin, () => setSeen(true));
   }, [ref, rootMargin, seen]);
   return seen;
+}
+
+/** Runs `task` once the browser is idle (or after `timeoutMs`), e.g. to warm a lazy chunk. */
+export function whenIdle(task: () => void, timeoutMs = 2000): () => void {
+  const w = window as Window & {
+    requestIdleCallback?: (cb: () => void, options?: { timeout: number }) => number;
+    cancelIdleCallback?: (handle: number) => void;
+  };
+  if (w.requestIdleCallback) {
+    const handle = w.requestIdleCallback(task, { timeout: timeoutMs });
+    return () => w.cancelIdleCallback?.(handle);
+  }
+  const t = window.setTimeout(task, 200);
+  return () => window.clearTimeout(t);
 }
 
 /** Calls `onVisible` every time the sentinel scrolls within `rootMargin`. */

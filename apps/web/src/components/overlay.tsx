@@ -1,8 +1,19 @@
-import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ComponentType,
+  type CSSProperties,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { useFocusTrap, useIsDesktop, usePresence } from '../lib/hooks';
 import { IconButton } from './buttons';
-import { CloseIcon } from './icons';
+import { CloseIcon, type IconProps } from './icons';
 import { Eyebrow } from './states';
 
 // ---------------------------------------------------------------- overlay stack
@@ -17,7 +28,7 @@ export function hasOpenOverlay(): boolean {
   return stack.length > 0;
 }
 
-function useOverlayLayer(active: boolean, onEscape: () => void): void {
+export function useOverlayLayer(active: boolean, onEscape: () => void): void {
   const latest = useRef(onEscape);
   latest.current = onEscape;
   useEffect(() => {
@@ -240,4 +251,143 @@ export function Sheet({
     </div>,
     document.body,
   );
+}
+
+// ---------------------------------------------------------------- context menu
+
+export interface MenuItem {
+  label: string;
+  onSelect: () => void;
+  icon?: ComponentType<IconProps>;
+  danger?: boolean;
+  /** Draws a hairline above this item. */
+  separated?: boolean;
+}
+
+export interface MenuPoint {
+  x: number;
+  y: number;
+  /** `end` puts the menu's right edge at `x` (menus opened from a button). */
+  align?: 'start' | 'end';
+}
+
+export interface MenuRequest extends MenuPoint {
+  items: MenuItem[];
+  label: string;
+}
+
+/**
+ * Where a context menu opens for a mouse event, or under the target for the
+ * keyboard (Shift+F10 / the menu key report 0,0) and for ⋯ buttons.
+ */
+export function menuPoint(
+  e: { clientX: number; clientY: number; currentTarget: EventTarget },
+  anchor: 'pointer' | 'below' = 'pointer',
+): MenuPoint {
+  if (anchor === 'pointer' && (e.clientX !== 0 || e.clientY !== 0)) return { x: e.clientX, y: e.clientY };
+  const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+  return anchor === 'below' ? { x: r.right, y: r.bottom + 4, align: 'end' } : { x: r.left + 12, y: r.top + 12 };
+}
+
+/**
+ * Desktop context menu (the mobile long-press, widened into actions). Opens
+ * at the pointer, stays inside the viewport, and is fully keyboard driven:
+ * arrows / Home / End move, Enter selects, Escape or Tab closes.
+ */
+export function ContextMenu({ request, onClose }: { request: MenuRequest | null; onClose: () => void }) {
+  const open = request != null;
+  const { mounted, shown } = usePresence(open, 140);
+  const menu = useRef<HTMLDivElement>(null);
+  const last = useRef<MenuRequest | null>(null);
+  if (request) last.current = request;
+  const current = request ?? last.current;
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  useOverlayLayer(open, onClose);
+  useFocusTrap(menu, open && mounted, false);
+
+  useLayoutEffect(() => {
+    const el = menu.current;
+    if (!request || !el) return;
+    const w = el.offsetWidth;
+    const h = el.offsetHeight;
+    const pad = 8;
+    const start = request.align === 'end' ? request.x - w : request.x;
+    const x = start < pad ? pad : start + w + pad > window.innerWidth ? Math.max(pad, request.x - w) : start;
+    const y = request.y + h + pad > window.innerHeight ? Math.max(pad, request.y - h) : request.y;
+    setPos({ x, y });
+  }, [request, mounted]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (e: PointerEvent) => {
+      if (!menu.current?.contains(e.target as Node)) onClose();
+    };
+    const close = () => onClose();
+    document.addEventListener('pointerdown', onPointer, true);
+    window.addEventListener('resize', close);
+    window.addEventListener('blur', close);
+    document.addEventListener('scroll', close, true);
+    return () => {
+      document.removeEventListener('pointerdown', onPointer, true);
+      window.removeEventListener('resize', close);
+      window.removeEventListener('blur', close);
+      document.removeEventListener('scroll', close, true);
+    };
+  }, [open, onClose]);
+
+  if (!mounted || !current) return null;
+
+  const onKeyDown = (e: ReactKeyboardEvent) => {
+    const items = Array.from(menu.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []);
+    const i = items.indexOf(document.activeElement as HTMLElement);
+    const focus = (n: number) => items[(n + items.length) % items.length]?.focus();
+    if (e.key === 'ArrowDown') focus(i + 1);
+    else if (e.key === 'ArrowUp') focus(i < 0 ? -1 : i - 1);
+    else if (e.key === 'Home') focus(0);
+    else if (e.key === 'End') focus(-1);
+    else if (e.key === 'Tab') onClose();
+    else return;
+    e.preventDefault();
+  };
+
+  return createPortal(
+    <div
+      ref={menu}
+      className={shown && pos ? 'context-menu is-shown' : 'context-menu'}
+      role="menu"
+      aria-label={current.label}
+      style={{ left: pos?.x ?? current.x, top: pos?.y ?? current.y }}
+      onKeyDown={onKeyDown}
+      onContextMenu={(e) => e.preventDefault()}
+    >
+      {current.items.map((item, i) => (
+        <button
+          key={item.label}
+          type="button"
+          role="menuitem"
+          data-autofocus={i === 0 ? '' : undefined}
+          className={['context-menu-item', item.danger && 'is-danger', item.separated && 'is-separated'].filter(Boolean).join(' ')}
+          onClick={() => {
+            onClose();
+            item.onSelect();
+          }}
+        >
+          {item.icon ? <item.icon size={16} /> : <span className="context-menu-icon-slot" />}
+          <span>{item.label}</span>
+        </button>
+      ))}
+    </div>,
+    document.body,
+  );
+}
+
+/** State for one context menu per screen. */
+export function useContextMenu(): {
+  request: MenuRequest | null;
+  show: (request: MenuRequest) => void;
+  close: () => void;
+} {
+  const [request, setRequest] = useState<MenuRequest | null>(null);
+  const close = useCallback(() => setRequest(null), []);
+  return { request, show: setRequest, close };
 }
