@@ -1,147 +1,255 @@
-import { useEffect, useState } from 'react';
-import { Link, useParams } from '@tanstack/react-router';
-import { useApp } from '../lib/store';
-import { Eyebrow, Tag, QuietButton, LoadingLine, StateMessage, formatBytes } from '../components/ui';
-import type { Book } from '../lib/types';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
+import { CoverArt } from '../components/CoverArt';
+import { IconButton, QuietButton } from '../components/buttons';
+import { ArrowBackIcon, ArrowDownwardIcon, CheckIcon, CloseIcon, DeleteOutlineIcon } from '../components/icons';
+import { hasOpenOverlay } from '../components/overlay';
+import { canRemove, removeLabel, useRemoveBook } from '../components/RemoveBook';
+import { Eyebrow, LoadingLine, ProgressLine, StateMessage, Tag } from '../components/states';
+import { downloadFraction, emptyDownload, formatBytes, formatDate, isDownloadReady } from '../lib/format';
+import { isTypingTarget, readLink, useDocumentTitle, useGoBack } from '../lib/hooks';
+import { fetchBook, RemoteError } from '../lib/remote';
+import { useServices, useStore } from '../lib/services/react';
+import type { Book, LibraryEntry } from '../lib/types';
 
-function coverUrl(book: Book, base: string) {
-  return book.coverUrl ? (base ? `${base.replace(/\/+$/, '')}${book.coverUrl}` : book.coverUrl) : null;
-}
+// The reader route imports this from here; it now lives with the other hooks.
+export { useGoBack } from '../lib/hooks';
 
-export default function BookDetail() {
+/**
+ * Book page: description, edition facts and one honest download control.
+ * Removing a book lives in the top bar, away from the reading action, and
+ * always asks first.
+ */
+export function BookScreen() {
   const { id } = useParams({ from: '/book/$id' });
-  const { getBookById, getEntry, download, remove, settings } = useApp();
-  const [book, setBook] = useState<Book | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [downloading, setDownloading] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const { entry: entryParam } = useSearch({ from: '/book/$id' });
+  const services = useServices();
+  const lib = useStore(services.library);
+  const catalog = useStore(services.catalog);
+  useStore(services.settings);
+  // Observed only so Remove can tell whether an upload is at stake.
+  useStore(services.imports);
+  const origin = services.settings.currentOrigin();
+  const goBack = useGoBack();
 
-  const entry = getEntry(id);
+  // Escape leaves the page (the app bar's back button), unless a dialog or field has it.
+  const goBackLatest = useRef(goBack);
+  goBackLatest.current = goBack;
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || e.defaultPrevented || hasOpenOverlay() || isTypingTarget(e.target)) return;
+      goBackLatest.current();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+
+  const pinned = entryParam ? lib.entries.find((e) => e.id === entryParam) : undefined;
+  const catalogBook = catalog.origin === origin ? catalog.items.find((b) => b.id === id) : undefined;
+  const byOrigin = lib.entries.find((e) => e.book.id === id && e.origin === origin);
+
+  const [fetched, setFetched] = useState<{ book: Book | null; error: RemoteError | null; loading: boolean }>({
+    book: null,
+    error: null,
+    loading: false,
+  });
+  const [attempt, setAttempt] = useState(0);
+  const needsFetch = lib.loaded && !pinned && !catalogBook && !byOrigin;
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
-    getBookById(id)
-      .then(setBook)
-      .catch((e) => setError((e as Error).message))
-      .finally(() => setLoading(false));
-  }, [id, getBookById]);
+    if (!needsFetch) return;
+    let cancelled = false;
+    setFetched({ book: null, error: null, loading: true });
+    fetchBook(origin, id).then(
+      (book) => !cancelled && setFetched({ book, error: null, loading: false }),
+      (error) =>
+        !cancelled &&
+        setFetched({ book: null, error: error instanceof RemoteError ? error : new RemoteError(String(error), true), loading: false }),
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [needsFetch, origin, id, attempt]);
 
-  const handleDownload = async (b: Book) => {
-    setDownloading(true);
-    setProgress(0);
-    try {
-      await download(b, setProgress);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setDownloading(false);
-    }
-  };
+  // Mobile passes the entry's own book from Library (never "outdated") and
+  // the catalog's latest edition from Browse.
+  const resolved = pinned?.book ?? catalogBook ?? byOrigin?.book ?? fetched.book ?? null;
+  const lastKnown = useRef<Book | null>(null);
+  if (resolved) lastKnown.current = resolved;
+  const book = resolved ?? (lastKnown.current?.id === id ? lastKnown.current : null);
+  const entry: LibraryEntry | undefined = pinned ?? (book ? services.library.entryFor(book) : undefined);
+  useDocumentTitle(book?.title ?? 'Book');
 
-  const handleRemove = async () => {
-    if (!confirm('Remove this book from your library?')) return;
-    await remove(id);
-  };
-
-  if (loading) return <LoadingLine label="Loading book" />;
-  if (error || !book) return (
-    <div className="screen">
-      <StateMessage title="Couldn't load this book." body={error ?? 'Not found.'} />
+  const topBar = (trailing?: ReactNode) => (
+    <div className="book-topbar">
+      <IconButton icon={ArrowBackIcon} label="Back" tooltipSide="bottom" onClick={goBack} />
+      <div className="book-topbar-trailing">{trailing}</div>
     </div>
   );
 
-  const outdated = entry?.downloaded && entry.book.sha256 !== book.sha256;
-  const downloaded = entry?.downloaded && !outdated;
-
-  return (
-    <div className="screen">
-      <button
-        className="btn btn-quiet btn-sm"
-        onClick={() => window.history.back()}
-        style={{ marginBottom: 'var(--space-md)' }}
-      >
-        ← Back
-      </button>
-
-      <div style={{ textAlign: 'center', marginBottom: 'var(--space-lg)' }}>
-        <div style={{ width: 120, margin: '0 auto' }}>
-          <img
-            src={coverUrl(book, settings.apiBaseUrl) ?? undefined}
-            alt=""
-            style={{ width: '100%', aspectRatio: '2/3', objectFit: 'cover', borderRadius: 'var(--radius-md)' }}
-            onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
-          />
+  if (!book) {
+    return (
+      <div className="book-page">
+        {topBar()}
+        <div className="book-layout is-single">
+          {fetched.error ? (
+            <StateMessage
+              title={fetched.error.status === 404 ? 'This book is not in the catalog.' : "Couldn't load this book."}
+              body={`${fetched.error.message}\n${origin}`}
+              error
+              actionLabel="Try again"
+              onAction={() => setAttempt((a) => a + 1)}
+            />
+          ) : (
+            <LoadingLine label="Loading" />
+          )}
         </div>
       </div>
+    );
+  }
 
-      <h1 className="display-small" style={{ marginBottom: 'var(--space-xs)' }}>{book.title}</h1>
-      <p className="body-large" style={{ color: 'var(--muted)', marginBottom: 'var(--space-md)' }}>{book.author}</p>
+  return <BookDetail book={book} entry={entry} topBar={topBar} />;
+}
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-sm)', marginBottom: 'var(--space-lg)' }}>
-        {book.subjects.map((s) => <Tag key={s}>{s}</Tag>)}
-        <Tag>{book.language.toUpperCase()}</Tag>
-        <Tag>{formatBytes(book.fileSize)}</Tag>
-      </div>
+function BookDetail({
+  book,
+  entry,
+  topBar,
+}: {
+  book: Book;
+  entry: LibraryEntry | undefined;
+  topBar: (trailing?: ReactNode) => ReactNode;
+}) {
+  const services = useServices();
+  const removal = useRemoveBook();
+  const current = entry?.book ?? book;
+  const d = entry?.download ?? emptyDownload;
+  const origin = entry?.origin ?? services.settings.currentOrigin();
+  const outdated = entry != null && entry.book.sha256 !== book.sha256 && isDownloadReady(d);
 
-      <div className="card" style={{ marginBottom: 'var(--space-xl)' }}>
-        {downloading ? (
-          <>
-            <p className="body">{formatBytes(Math.round(progress * book.fileSize))} of {formatBytes(book.fileSize)}</p>
-            <div style={{ margin: 'var(--space-sm) 0' }}>
-              <progress value={progress} max={1} style={{ width: '100%' }} />
-            </div>
-          </>
-        ) : downloaded ? (
-          <>
-            <p className="body-small" style={{ color: 'var(--green)', marginBottom: 'var(--space-md)' }}>
-              ✓ Saved and verified.
-            </p>
-            <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
-              <Link to="/reader/$id" params={{ id: book.id }} style={{ flex: 1 }}>
-                <QuietButton primary expand>{entry?.progress ? 'Continue reading' : 'Read'}</QuietButton>
-              </Link>
-              {entry && (
-                <QuietButton onClick={handleRemove}>Remove</QuietButton>
-              )}
-            </div>
-          </>
-        ) : (
-          <>
-            <p className="body-small" style={{ marginBottom: 'var(--space-md)' }}>
-              Browser preview: download this book to read offline.
-            </p>
-            <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
-              <QuietButton primary expand onClick={() => handleDownload(book)}>
-                Download · {formatBytes(book.fileSize)}
-              </QuietButton>
-              {entry?.downloaded && (
-                <QuietButton onClick={handleRemove}>Remove</QuietButton>
-              )}
-            </div>
-          </>
-        )}
-      </div>
-
-      {book.description && (
-        <>
-          <Eyebrow>About</Eyebrow>
-          <p className="body-large" style={{ fontFamily: 'var(--font-serif)', lineHeight: 1.55, marginBottom: 'var(--space-xl)' }}>
-            {book.description}
-          </p>
-        </>
+  return (
+    <div className="book-page">
+      {topBar(
+        canRemove(services, entry) ? (
+          <IconButton icon={DeleteOutlineIcon} label={removeLabel} tone="muted" tooltipSide="left" onClick={() => removal.ask(entry)} />
+        ) : null,
       )}
-
-      <Eyebrow>Edition</Eyebrow>
-      <div className="body-small" style={{ display: 'grid', gridTemplateColumns: '84px 1fr', gap: 'var(--space-sm)' }}>
-        <span style={{ color: 'var(--muted)' }}>Version</span>
-        <span>{book.version}</span>
-        <span style={{ color: 'var(--muted)' }}>Updated</span>
-        <span>{new Date(book.updatedAt).toLocaleDateString()}</span>
-        <span style={{ color: 'var(--muted)' }}>SHA-256</span>
-        <span style={{ wordBreak: 'break-all' }}>{book.sha256}</span>
-      </div>
+      <article className="book-layout">
+        <div className="book-cover">
+          <CoverArt book={current} origin={origin} />
+        </div>
+        <div className="book-main">
+          <h1 className="t-display-sm book-title">{current.title}</h1>
+          <p className="t-body-lg book-author">{current.author}</p>
+          <div className="tag-row">
+            {current.subjects.map((s) => (
+              <Tag key={s}>{s}</Tag>
+            ))}
+            {current.language && <Tag>{current.language.toUpperCase()}</Tag>}
+            <Tag>{formatBytes(current.fileSize)}</Tag>
+          </div>
+          <DownloadPanel book={book} entry={entry} outdated={outdated} />
+          {current.description && (
+            <section className="book-section">
+              <Eyebrow as="h2">About</Eyebrow>
+              <p className="book-description">{current.description}</p>
+            </section>
+          )}
+          <section className="book-section">
+            <Eyebrow as="h2">Edition</Eyebrow>
+            <dl className="facts">
+              <dt>Version</dt>
+              <dd>{current.version}</dd>
+              <dt>Updated</dt>
+              <dd>{formatDate(current.updatedAt)}</dd>
+            </dl>
+          </section>
+        </div>
+      </article>
+      {removal.dialog}
     </div>
   );
+}
+
+function DownloadPanel({ book, entry, outdated }: { book: Book; entry: LibraryEntry | undefined; outdated: boolean }) {
+  const services = useServices();
+  const navigate = useNavigate();
+  const d = entry?.download ?? emptyDownload;
+  const lib = services.library;
+  const read = () => entry && void navigate(readLink(entry));
+  // An existing entry re-downloads from its own origin (mobile `sourceForEntry`);
+  // `book` is the edition to fetch, newer than the entry's when outdated.
+  const download = () => void (entry ? lib.downloadEntry(entry.id, book) : lib.download(book));
+  const readLabel = entry?.progress == null ? 'Read' : 'Continue reading';
+
+  let inner;
+  switch (d.status) {
+    case 'queued':
+    case 'downloading':
+    case 'verifying': {
+      const label =
+        d.status === 'verifying'
+          ? 'Verifying SHA-256'
+          : d.status === 'queued'
+            ? 'Connecting'
+            : `${formatBytes(d.receivedBytes)} of ${formatBytes(d.totalBytes ?? book.fileSize)}`;
+      // Readable once the opening slice is cached; "downloaded" waits for verification.
+      const readable = entry != null && lib.canRead(entry.id);
+      inner = (
+        <>
+          <div className="download-row">
+            <span className="t-body" aria-live="polite">
+              {label}
+            </span>
+            {d.status !== 'verifying' && entry && (
+              <IconButton icon={CloseIcon} label="Cancel download" tooltipSide="left" onClick={() => lib.cancelDownload(entry.id)} />
+            )}
+          </div>
+          <ProgressLine value={d.status === 'verifying' ? null : downloadFraction(d)} label="Download progress" />
+          {readable && <QuietButton className="download-primary" label={readLabel} emphasis expand onClick={read} />}
+        </>
+      );
+      break;
+    }
+    case 'ready':
+      inner = (
+        <>
+          <div className="download-status">
+            <CheckIcon size={16} className="download-check" />
+            <span className={outdated ? 't-body-sm is-warn' : 't-body-sm'}>
+              {d.error ?? (outdated ? 'Downloaded (an older edition).' : 'Saved and verified.')}
+            </span>
+          </div>
+          <div className="download-actions">
+            <QuietButton label={readLabel} emphasis expand onClick={read} />
+            {outdated && <QuietButton label="Update" onClick={download} />}
+          </div>
+        </>
+      );
+      break;
+    case 'failed':
+      inner = (
+        <>
+          <p className="t-body is-error">{d.error ?? 'Download failed.'}</p>
+          <QuietButton className="download-primary" label="Try again" emphasis expand onClick={download} />
+        </>
+      );
+      break;
+    default:
+      inner = (
+        <>
+          <p className="t-body-sm">Saved offline and checksum-verified.</p>
+          <QuietButton
+            className="download-primary"
+            label={`Download · ${formatBytes(book.fileSize)}`}
+            icon={ArrowDownwardIcon}
+            emphasis
+            expand
+            onClick={download}
+          />
+        </>
+      );
+  }
+
+  return <div className="download-panel">{inner}</div>;
 }

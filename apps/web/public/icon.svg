@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <rect width="1024" height="1024" fill="#000000"/>
+  <g transform="translate(0 0) scale(1)">
+    <path fill="#ededed" d="M324 212H700A52 52 0 0 1 752 264V760A52 52 0 0 1 700 812H324A52 52 0 0 1 272 760V264A52 52 0 0 1 324 212Z"/>
+    <path fill="#52a8ff" d="M540 212L652 212L652 632L596 588L540 632Z"/>
+  </g>
+</svg>

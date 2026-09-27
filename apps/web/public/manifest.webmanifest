@@ -1,0 +1,23 @@
+{
+  "name": "The Reader",
+  "short_name": "Reader",
+  "description": "A quiet, offline-first EPUB reader.",
+  "start_url": "/library",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "file_handlers": [
+    {
+      "action": "/library",
+      "accept": {
+        "application/epub+zip": [".epub"],
+        "application/x-mobipocket-ebook": [".mobi", ".azw", ".azw3", ".prc"]
+      }
+    }
+  ],
+  "launch_handler": { "client_mode": "focus-existing" }
+}
