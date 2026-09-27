@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { useParams } from '@tanstack/react-router';
 import { hasOpenOverlay, Sheet } from '../components/overlay';
 import { BottomChrome, EdgeProgress, TopChrome, ToChapterStart, type ReaderPanel } from '../components/reader/ReaderChrome';
-import { ContentsList, HighlightsList, SearchBook } from '../components/reader/panels';
+import { ContentsList, FloatingToc, HighlightsList, SearchBook } from '../components/reader/panels';
 import { FontPicker, TypographyPanel } from '../components/reader/TypographyPanel';
 import { FloatingBar, HighlightActions, NoteEditor, SelectionActions } from '../components/reader/Floating';
 import { LoadingLine, StateMessage } from '../components/states';
@@ -688,8 +688,18 @@ export function ReaderScreen() {
     </Sheet>
   );
 
+  const showFloatingToc = desktop && engine != null;
+
   return (
     <div className="reader" data-flow={settings.reader.flow}>
+      {showFloatingToc && (
+        <FloatingToc
+          toc={engine.info.toc}
+          currentHref={locator?.href ?? null}
+          currentTitle={locator?.title ?? null}
+          onOpen={(t) => void engine.goToHref(t.href)}
+        />
+      )}
       <div className="reader-row">
         <div className="reader-stage-wrap">
           <div ref={stage} className="reader-stage" />
