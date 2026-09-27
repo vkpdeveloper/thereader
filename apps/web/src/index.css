@@ -179,6 +179,50 @@ body {
   background: var(--selection);
 }
 
+/*
+ * Scrollbars: thin, transparent track, rounded thumb in the element tone that
+ * lifts to --subtle on hover. Chromium and Safari use the ::-webkit-scrollbar
+ * pseudos (full control over shape); Chromium would ignore them if
+ * scrollbar-color were set, so the standard properties only apply where the
+ * pseudos are unsupported (Firefox).
+ */
+:root {
+  --scrollbar-thumb: color-mix(in srgb, var(--element) 75%, var(--subtle));
+  --scrollbar-thumb-hover: var(--subtle);
+}
+@supports not selector(::-webkit-scrollbar) {
+  html,
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+  }
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+  background: transparent;
+}
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  min-height: 32px;
+}
+::-webkit-scrollbar-thumb:hover,
+::-webkit-scrollbar-thumb:active {
+  background-color: var(--scrollbar-thumb-hover);
+}
+::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 h1,
 h2,
 h3,
@@ -1466,7 +1510,58 @@ kbd {
   font-size: 16px;
   line-height: 1.55;
   max-width: 68ch;
-  white-space: pre-line;
+}
+.book-description :is(p, ul, ol, blockquote) {
+  margin: 0 0 0.85em;
+}
+.book-description .rich-heading {
+  margin-top: 1.2em;
+}
+.book-description > :first-child,
+.book-description blockquote > :first-child {
+  margin-top: 0;
+}
+.book-description > :last-child,
+.book-description blockquote > :last-child {
+  margin-bottom: 0;
+}
+.book-description :is(ul, ol) {
+  padding-left: 1.4em;
+}
+.book-description ul {
+  list-style: disc outside;
+}
+.book-description ol {
+  list-style: decimal outside;
+}
+.book-description li::marker {
+  color: var(--muted);
+}
+.book-description li {
+  margin: 0.3em 0;
+}
+.book-description li > p {
+  margin: 0;
+}
+.book-description blockquote {
+  padding-left: var(--space-md);
+  border-left: 2px solid var(--border);
+  color: var(--muted);
+}
+.book-description a {
+  color: var(--fg);
+  text-decoration: underline;
+  text-decoration-color: var(--border-active);
+  text-underline-offset: 0.18em;
+  transition: text-decoration-color var(--motion-fast) var(--ease);
+}
+.book-description a:hover {
+  text-decoration-color: var(--fg);
+}
+.book-description a:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 .facts {
   margin-top: var(--space-sm);

@@ -5,6 +5,7 @@ import { IconButton, QuietButton } from '../components/buttons';
 import { ArrowBackIcon, ArrowDownwardIcon, CheckIcon, CloseIcon, DeleteOutlineIcon } from '../components/icons';
 import { hasOpenOverlay } from '../components/overlay';
 import { canRemove, removeLabel, useRemoveBook } from '../components/RemoveBook';
+import { RichText } from '../components/RichText';
 import { Eyebrow, LoadingLine, ProgressLine, StateMessage, Tag } from '../components/states';
 import { downloadFraction, emptyDownload, formatBytes, formatDate, isDownloadReady } from '../lib/format';
 import { isTypingTarget, readLink, useDocumentTitle, useGoBack } from '../lib/hooks';
@@ -152,7 +153,7 @@ function BookDetail({
           {current.description && (
             <section className="book-section">
               <Eyebrow as="h2">About</Eyebrow>
-              <p className="book-description">{current.description}</p>
+              <RichText className="book-description" source={current.description} />
             </section>
           )}
           <section className="book-section">
