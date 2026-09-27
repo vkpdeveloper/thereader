@@ -2,7 +2,9 @@ import type { Book } from '../types';
 import { ApiError, type ApiClient, type CatalogSnapshot, type CatalogStore } from './contract';
 import { Emitter } from './observable';
 
-/** Remote catalog browsing: server-side search, paging and errors. */
+export const SEARCH_DEBOUNCE_MS = 250;
+
+/** Remote catalog browsing: server-side search, paging and errors (mobile `CatalogRepository`). */
 export class CatalogStoreImpl extends Emitter<CatalogSnapshot> implements CatalogStore {
   private nextCursor: string | null = null;
   private requestId = 0;
@@ -15,16 +17,19 @@ export class CatalogStoreImpl extends Emitter<CatalogSnapshot> implements Catalo
     super(emptyCatalog(currentOrigin()));
   }
 
-  /** The configured API changed: drop the old origin's results. */
+  /**
+   * The configured API changed: drop the old origin's results and go idle
+   * (mobile `replaceSource`). The browse screen loads an idle catalog when it
+   * is shown, so switching origins elsewhere costs no request.
+   */
   originChanged(): void {
     const origin = this.currentOrigin();
     if (origin === this.snapshot.origin) return;
-    const wasLoaded = this.snapshot.status !== 'idle';
     this.requestId++;
     if (this.debounce) clearTimeout(this.debounce);
+    this.debounce = null;
     this.nextCursor = null;
     this.emit({ ...emptyCatalog(origin), query: this.snapshot.query });
-    if (wasLoaded) void this.refresh();
   }
 
   refresh(): Promise<void> {
@@ -33,11 +38,11 @@ export class CatalogStoreImpl extends Emitter<CatalogSnapshot> implements Catalo
 
   search(query: string): void {
     if (this.debounce) clearTimeout(this.debounce);
-    this.emit({ ...this.snapshot, query });
+    if (query !== this.snapshot.query) this.emit({ ...this.snapshot, query });
     this.debounce = setTimeout(() => {
       this.debounce = null;
       void this.load();
-    }, 250);
+    }, SEARCH_DEBOUNCE_MS);
   }
 
   async loadMore(): Promise<void> {
@@ -78,7 +83,8 @@ function emptyCatalog(origin: string): CatalogSnapshot {
 }
 
 function withItems(s: CatalogSnapshot, items: Book[]): CatalogSnapshot {
-  const subjects = [...new Set(items.flatMap((b) => b.subjects))].sort((a, b) => a.localeCompare(b));
+  // Code-unit order, like Dart's `List<String>.sort()` on mobile.
+  const subjects = [...new Set(items.flatMap((b) => b.subjects))].sort();
   return { ...s, items, subjects };
 }
 
