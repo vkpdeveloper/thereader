@@ -1,3 +1,5 @@
+import { sha256Bytes, toHex } from '../services/hash';
+
 /** Byte helpers shared by the EPUB inspector and the MOBI converter. */
 
 const utf8Lenient = new TextDecoder('utf-8');
@@ -84,9 +86,14 @@ export function crc32(bytes: Uint8Array): number {
   return (crc ^ 0xffffffff) >>> 0;
 }
 
+/**
+ * WebCrypto only exists in secure contexts; a self-host served over plain
+ * http on a LAN address has no `crypto.subtle`, so hash in JS there.
+ */
 export async function sha256Hex(bytes: Uint8Array): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', bytes as BufferSource);
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+  const subtle = typeof crypto === 'undefined' ? undefined : crypto.subtle;
+  if (subtle === undefined) return toHex(sha256Bytes(bytes));
+  return toHex(new Uint8Array(await subtle.digest('SHA-256', bytes as BufferSource)));
 }
 
 /** Copies `bytes` into a fresh ArrayBuffer so it can back a Blob / BufferSource. */

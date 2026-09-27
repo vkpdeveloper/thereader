@@ -1,5 +1,5 @@
-import { unzlibSync, zipSync, type Zippable } from 'fflate';
-import { ByteBuilder, latin1Decode, utf8Decode, utf8Encode, view } from './bytes';
+import { unzlibSync } from 'fflate';
+import { ByteBuilder, latin1Decode, utf8Decode, view } from './bytes';
 
 /**
  * TypeScript port of `package:kindle_unpack` 0.2.0, the Dart library the
@@ -855,7 +855,7 @@ const imageMagic: Array<[ImageFormat, number[]]> = [
   ['bmp', [0x42, 0x4d]],
 ];
 const imageExtension: Record<ImageFormat, string> = { jpeg: 'jpg', png: 'png', gif: 'gif', bmp: 'bmp', svg: 'svg' };
-const imageMime: Record<ImageFormat, string> = {
+export const imageMime: Record<ImageFormat, string> = {
   jpeg: 'image/jpeg',
   png: 'image/png',
   gif: 'image/gif',
@@ -998,7 +998,7 @@ export function readKindleBook(bytes: Uint8Array): KindleBook {
 }
 
 // ---------------------------------------------------------------------------
-// EPUB builder (`epub.dart`)
+// EPUB builder inputs (`epub.dart`); the converter's own builder writes the package.
 
 export interface EpubAsset {
   name: string;
@@ -1014,129 +1014,4 @@ export interface EpubMetadata {
   publisher: string | null;
   description: string | null;
   coverImageId: string | null;
-}
-
-function escapeXml(text: string): string {
-  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
-}
-
-const containerXml =
-  '<?xml version="1.0" encoding="UTF-8"?>\n' +
-  '<container xmlns="urn:oasis:names:tc:opendocument:xmlns:container" version="1.0">\n' +
-  '  <rootfiles>\n' +
-  '    <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>\n' +
-  '  </rootfiles>\n' +
-  '</container>\n';
-
-export function buildEpub(options: {
-  metadata: EpubMetadata;
-  parts: XhtmlPart[];
-  images: ExtractedImage[];
-  css: EpubAsset[];
-  fonts: EpubAsset[];
-}): Uint8Array {
-  const { metadata, parts, images, css, fonts } = options;
-  const files: Zippable = {
-    // Stored, no extra field, first entry: OCF requires this exact prefix.
-    mimetype: [utf8Encode('application/epub+zip'), { level: 0 }],
-    'META-INF/container.xml': utf8Encode(containerXml),
-    'OEBPS/content.opf': utf8Encode(buildOpf(metadata, parts, images, css, fonts)),
-    'OEBPS/nav.xhtml': utf8Encode(buildNav(metadata, parts)),
-    'OEBPS/toc.ncx': utf8Encode(buildNcx(metadata, parts)),
-  };
-  for (const part of parts) files[`OEBPS/Text/${partFilename(part)}`] = part.bytes;
-  for (const image of images) files[`OEBPS/Images/${imageName(image)}`] = image.data;
-  for (const asset of css) files[`OEBPS/Styles/${asset.name}`] = asset.bytes;
-  for (const asset of fonts) files[`OEBPS/Fonts/${asset.name}`] = asset.bytes;
-  return zipSync(files, { level: 6 });
-}
-
-function buildOpf(m: EpubMetadata, parts: XhtmlPart[], images: ExtractedImage[], css: EpubAsset[], fonts: EpubAsset[]): string {
-  let manifest = '';
-  let spine = '';
-  for (const part of parts) {
-    const id = `p${part.fileNumber}`;
-    manifest += `    <item id="${id}" href="Text/${partFilename(part)}" media-type="application/xhtml+xml"/>\n`;
-    spine += `    <itemref idref="${id}"/>\n`;
-  }
-  for (const image of images) {
-    manifest += `    <item id="img${image.blockIndex}" href="Images/${imageName(image)}" media-type="${imageMime[image.format]}"/>\n`;
-  }
-  css.forEach((asset, i) => {
-    manifest += `    <item id="css${i}" href="Styles/${asset.name}" media-type="text/css"/>\n`;
-  });
-  fonts.forEach((asset, i) => {
-    manifest += `    <item id="font${i}" href="Fonts/${asset.name}" media-type="${asset.mediaType ?? 'application/octet-stream'}"/>\n`;
-  });
-  manifest += '    <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>\n';
-  manifest += '    <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>\n';
-  const coverMeta = m.coverImageId !== null ? `    <meta name="cover" content="${escapeXml(m.coverImageId)}"/>\n` : '';
-  return (
-    '<?xml version="1.0" encoding="UTF-8"?>\n' +
-    '<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="bookid">\n' +
-    '  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">\n' +
-    `    <dc:identifier id="bookid">${escapeXml(m.identifier)}</dc:identifier>\n` +
-    `    <dc:title>${escapeXml(m.title)}</dc:title>\n` +
-    `    <dc:language>${escapeXml(m.language)}</dc:language>\n` +
-    m.creators.map((creator) => `    <dc:creator>${escapeXml(creator)}</dc:creator>\n`).join('') +
-    (m.publisher === null ? '' : `    <dc:publisher>${escapeXml(m.publisher)}</dc:publisher>\n`) +
-    (m.description === null ? '' : `    <dc:description>${escapeXml(m.description)}</dc:description>\n`) +
-    coverMeta +
-    '  </metadata>\n' +
-    '  <manifest>\n' +
-    manifest +
-    '  </manifest>\n' +
-    '  <spine toc="ncx">\n' +
-    spine +
-    '  </spine>\n' +
-    '</package>\n'
-  );
-}
-
-function buildNav(m: EpubMetadata, parts: XhtmlPart[]): string {
-  const items = parts
-    .map((part, i) => `        <li><a href="Text/${partFilename(part)}">Part ${i + 1}</a></li>\n`)
-    .join('');
-  return (
-    '<?xml version="1.0" encoding="UTF-8"?>\n' +
-    '<!DOCTYPE html>\n' +
-    `<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${escapeXml(m.language)}">\n` +
-    '  <head>\n' +
-    '    <meta charset="utf-8"/>\n' +
-    `    <title>${escapeXml(m.title)}</title>\n` +
-    '  </head>\n' +
-    '  <body>\n' +
-    '    <nav epub:type="toc" id="toc">\n' +
-    `      <h1>${escapeXml(m.title)}</h1>\n` +
-    '      <ol>\n' +
-    items +
-    '      </ol>\n' +
-    '    </nav>\n' +
-    '  </body>\n' +
-    '</html>\n'
-  );
-}
-
-function buildNcx(m: EpubMetadata, parts: XhtmlPart[]): string {
-  const navPoints = parts
-    .map(
-      (part, i) =>
-        `    <navPoint id="navPoint-${i + 1}" playOrder="${i + 1}">\n` +
-        `      <navLabel><text>Part ${i + 1}</text></navLabel>\n` +
-        `      <content src="Text/${partFilename(part)}"/>\n` +
-        '    </navPoint>\n',
-    )
-    .join('');
-  return (
-    '<?xml version="1.0" encoding="UTF-8"?>\n' +
-    '<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">\n' +
-    '  <head>\n' +
-    `    <meta name="dtb:uid" content="${escapeXml(m.identifier)}"/>\n` +
-    '  </head>\n' +
-    `  <docTitle><text>${escapeXml(m.title)}</text></docTitle>\n` +
-    '  <navMap>\n' +
-    navPoints +
-    '  </navMap>\n' +
-    '</ncx>\n'
-  );
 }

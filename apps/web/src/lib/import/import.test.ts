@@ -4,6 +4,8 @@ import type { Book } from '../types';
 import { ImportError, bookFromInspected, inspectFile, uploadBook } from './index';
 import { resolveUri, decodeComponent } from './epub';
 import { parseXml, descendants, getAttribute } from './xml';
+import { convertMobi, finalizeKf8Part } from './mobi';
+import { sha256Hex } from './bytes';
 
 // Run with `cd apps/web && bun test src/lib/import`.
 
@@ -199,6 +201,237 @@ describe('inspectFile: MOBI', () => {
     const drm = await rejection(inspectFile(fileOf(encrypted, 'locked.azw')));
     expect(drm.code).toBe('DRM');
     expect(drm.message).toContain('DRM-protected');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// MOBI parity with the mobile converter
+
+/**
+ * Every entry the Dart converter (`mobi_converter.dart`) writes for the
+ * fixtures, in ZIP order, with a SHA-256 prefix of its content. Regenerate
+ * from `convertMobi` in Dart when the mobile converter changes.
+ */
+const dartConversions: Record<string, string[]> = {
+  'alice-kf8': [
+    'mimetype e468e350d1143eb6',
+    'META-INF/container.xml 7ce02a1312e4fa4c',
+    'OEBPS/content.opf b1c6fb93dde81f1b',
+    'OEBPS/nav.xhtml 14308e42e161a0b6',
+    'OEBPS/toc.ncx aa476b237b273f0b',
+    'OEBPS/Text/part0000.xhtml 9d22c6460916ba96',
+    'OEBPS/Text/part0001.xhtml f12f2d78df2b0f50',
+    'OEBPS/Text/part0002.xhtml f6e98406167ef3f7',
+    'OEBPS/Text/part0003.xhtml 56c97452d10052b3',
+    'OEBPS/Text/part0004.xhtml b27ec5a9e5a4286e',
+    'OEBPS/Text/part0005.xhtml 2ba9076a1653456f',
+    'OEBPS/Text/part0006.xhtml 0710085cb308104b',
+    'OEBPS/Text/part0007.xhtml c6ee54207fb37b69',
+    'OEBPS/Text/part0008.xhtml f704b4ccc816881a',
+    'OEBPS/Text/part0009.xhtml bea26a400774047a',
+    'OEBPS/Text/part0010.xhtml ff55043f1d2c8cdb',
+    'OEBPS/Text/part0011.xhtml 611b5086498554a4',
+    'OEBPS/Text/part0012.xhtml f4731a1be2fa0a93',
+    'OEBPS/Text/part0013.xhtml c6813d55822daaef',
+    'OEBPS/Text/part0014.xhtml e09eb61a258ffb08',
+    'OEBPS/Text/part0015.xhtml 90fa230b3283cde8',
+    'OEBPS/Text/part0016.xhtml f1bb7c85847e68b0',
+    'OEBPS/Text/part0017.xhtml b32d10a73bc20682',
+    'OEBPS/Text/part0018.xhtml 96abc630441eae8a',
+    'OEBPS/Images/image00000.jpg 2a34efaa254af4e3',
+    'OEBPS/Images/image00001.jpg 47a54f7434520afc',
+    'OEBPS/Images/image10004.svg 4f5622f0af5ed1f9',
+    'OEBPS/Styles/style0001.css 6d41342290307c1e',
+    'OEBPS/Styles/style0002.css 686758780bb13da9',
+    'OEBPS/Styles/style0003.css 3efb4a54d1609c17',
+  ],
+  'alice-mobi7': [
+    'mimetype e468e350d1143eb6',
+    'META-INF/container.xml 7ce02a1312e4fa4c',
+    'OEBPS/content.opf 39e3f6463a4f28dc',
+    'OEBPS/nav.xhtml 303bc8d5324a9ba3',
+    'OEBPS/toc.ncx 120c20ec25a55e21',
+    'OEBPS/Text/part0000.xhtml 8d3c1713afdb66a3',
+    'OEBPS/Text/part0001.xhtml fa41eeecd08f5083',
+    'OEBPS/Text/part0002.xhtml 1a561ce64d460938',
+    'OEBPS/Text/part0003.xhtml f24552fdc053d665',
+    'OEBPS/Text/part0004.xhtml 2d03873c27cd2f40',
+    'OEBPS/Text/part0005.xhtml 7340ba35549d932d',
+    'OEBPS/Text/part0006.xhtml 21a76296940149f7',
+    'OEBPS/Text/part0007.xhtml 21397334fb58f7ec',
+    'OEBPS/Text/part0008.xhtml b6bea4a2437f238c',
+    'OEBPS/Text/part0009.xhtml 09a24864f5e1856e',
+    'OEBPS/Text/part0010.xhtml e979725798255647',
+    'OEBPS/Text/part0011.xhtml 40c86966298f8f48',
+    'OEBPS/Text/part0012.xhtml 34e6dbd3ccacf8cc',
+    'OEBPS/Text/part0013.xhtml 0f030355b596f946',
+    'OEBPS/Text/part0014.xhtml 2dc776bb2bef57e8',
+    'OEBPS/Text/part0015.xhtml 6be0575a1bc5ec70',
+    'OEBPS/Text/part0016.xhtml 074c9a79a8628ac9',
+    'OEBPS/Text/part0017.xhtml d09ddb7014d01a63',
+    'OEBPS/Text/part0018.xhtml 27a787230fb5c6c0',
+    'OEBPS/Text/part0019.xhtml 74c1388d30460a35',
+    'OEBPS/Images/image00000.jpg 2a34efaa254af4e3',
+    'OEBPS/Images/image00001.jpg 47a54f7434520afc',
+  ],
+};
+
+describe('convertMobi: parity with the mobile converter', () => {
+  for (const [edition, expected] of Object.entries(dartConversions)) {
+    test(`${edition} converts file-for-file like Dart`, async () => {
+      const entries = unzipSync(convertMobi(await read(`apps/mobile/test/fixtures/mobi/${edition}.mobi`)));
+      const actual = await Promise.all(
+        Object.entries(entries).map(async ([name, data]) => `${name} ${(await sha256Hex(data)).substring(0, 16)}`),
+      );
+      expect(actual).toEqual(expected);
+    });
+  }
+
+  test('navigation is labelled with titles read from the text, not "Part N"', async () => {
+    const labels = async (edition: string): Promise<string[]> => {
+      const entries = unzipSync(convertMobi(await read(`apps/mobile/test/fixtures/mobi/${edition}.mobi`)));
+      const ncx = decoder.decode(entries['OEBPS/toc.ncx']);
+      expect(decoder.decode(entries['OEBPS/nav.xhtml'])).not.toContain('>Part 1<');
+      return [...ncx.matchAll(/<navLabel><text>([^<]*)<\/text>/g)].map((match) => match[1]!);
+    };
+    const kf8 = await labels('alice-kf8');
+    expect(kf8.slice(0, 5)).toEqual([
+      'Section 1',
+      'Alice’s Adventures in Wonderland',
+      'by Lewis Carroll',
+      'THE MILLENNIUM FULCRUM EDITION 3.0',
+      'Contents',
+    ]);
+    const mobi7 = await labels('alice-mobi7');
+    expect(mobi7).toContain('CHAPTER I. Down the Rabbit-Hole');
+    expect(mobi7).toContain('CHAPTER XII. Alice’s Evidence');
+  });
+});
+
+/** Expected values produced by the Dart `_finalizeKf8Part` for the same bodies. */
+const headingCases: Array<{ name: string; body: string; title: string; headings: Array<[number, string, string]>; xhtml: string }> = [
+  {
+    name: 'numberAndTitle',
+    body: '<p class="c">1.</p><p class="c"><b>The Greatest Story Ever Told</b></p><p>The greatest story ever told is the story of everything.</p>',
+    title: '1. The Greatest Story Ever Told',
+    headings: [[1, '1. The Greatest Story Ever Told', 'mobi-hd-7-0']],
+    xhtml: '<h1 style="text-align: center" id="mobi-hd-7-0">1. The Greatest Story Ever Told</h1><p>The greatest story ever told is the story of everything.</p>',
+  },
+  {
+    name: 'allCaps',
+    body: '<p><font size="3">PREFACE</font></p><p>Some introductory remarks, written in ordinary sentence case.</p>',
+    title: 'PREFACE',
+    headings: [[2, 'PREFACE', 'mobi-hd-7-0']],
+    xhtml: '<h2 style="text-align: center" id="mobi-hd-7-0">PREFACE</h2><p>Some introductory remarks, written in ordinary sentence case.</p>',
+  },
+  {
+    name: 'smallPrintCaption',
+    body: '<p><font size="2">LUCRETIUS, C. 50 BC</font></p><p>Some introductory remarks, written in ordinary sentence case.</p>',
+    title: 'Section 8',
+    headings: [],
+    xhtml: '<p><font size="2">LUCRETIUS, C. 50 BC</font></p><p>Some introductory remarks, written in ordinary sentence case.</p>',
+  },
+  {
+    name: 'attribution',
+    body: '<p><b>—NDT</b></p><p>Some introductory remarks, written in ordinary sentence case.</p>',
+    title: 'Section 8',
+    headings: [],
+    xhtml: '<p><b>—NDT</b></p><p>Some introductory remarks, written in ordinary sentence case.</p>',
+  },
+  {
+    name: 'existingHeadings',
+    body: '<h1>1</h1><h2 id="t">Title</h2><p>Body.</p>',
+    title: '1 Title',
+    headings: [[1, '1 Title', 'mobi-hd-7-0']],
+    xhtml: '<h1 id="mobi-hd-7-0">1</h1><h2 id="t">Title</h2><p>Body.</p>',
+  },
+  {
+    name: 'firstRunOnly',
+    body: '<h2>Part One</h2><br/><span> </span><h3>Chapter A</h3><p>Body text that is not a heading because it is long and lowercase.</p><h2>Later</h2>',
+    title: 'Part One',
+    headings: [[2, 'Part One', 'mobi-hd-7-0'], [3, 'Chapter A', 'mobi-hd-7-3']],
+    xhtml: '<h2 id="mobi-hd-7-0">Part One</h2><br/><span> </span><h3 id="mobi-hd-7-3">Chapter A</h3><p>Body text that is not a heading because it is long and lowercase.</p><h2>Later</h2>',
+  },
+  {
+    name: 'centeredBold',
+    body: '<div align="center"><b>A Long Emphasized Title That Is Centered In Its Paragraph</b></div><p>body text in sentence case goes here.</p>',
+    title: 'A Long Emphasized Title That Is Centered In Its Paragraph',
+    headings: [[2, 'A Long Emphasized Title That Is Centered In Its Paragraph', 'mobi-hd-7-0']],
+    xhtml: '<h2 style="text-align: center" id="mobi-hd-7-0">A Long Emphasized Title That Is Centered In Its Paragraph</h2><p>body text in sentence case goes here.</p>',
+  },
+  {
+    name: 'keepsId',
+    body: '<p id="c1" class="x">CHAPTER 3</p><p>A plain opening sentence follows here.</p>',
+    title: 'CHAPTER 3',
+    headings: [[1, 'CHAPTER 3', 'c1']],
+    xhtml: '<h1 style="text-align: center" id="c1">CHAPTER 3</h1><p>A plain opening sentence follows here.</p>',
+  },
+  {
+    name: 'dartUpperCase',
+    body: '<p>STRAßE</p><p>body text in sentence case goes here.</p>',
+    title: 'STRAßE',
+    headings: [[2, 'STRAßE', 'mobi-hd-7-0']],
+    xhtml: '<h2 style="text-align: center" id="mobi-hd-7-0">STRAßE</h2><p>body text in sentence case goes here.</p>',
+  },
+  {
+    name: 'hexFontSize',
+    body: '<p><font size="0x4">Quiet emphasis</font></p><p>body text in sentence case goes here.</p>',
+    title: 'Quiet emphasis',
+    headings: [[2, 'Quiet emphasis', 'mobi-hd-7-0']],
+    xhtml: '<h2 style="text-align: center" id="mobi-hd-7-0">Quiet emphasis</h2><p>body text in sentence case goes here.</p>',
+  },
+  {
+    name: 'nbspNumber',
+    body: '<p>\u00a0 2 \u00a0</p><p><b>Two</b></p><p>body text in sentence case goes here.</p>',
+    title: '2 Two',
+    headings: [[1, '2 Two', 'mobi-hd-7-0']],
+    xhtml: '<h1 style="text-align: center" id="mobi-hd-7-0">2 Two</h1><p>body text in sentence case goes here.</p>',
+  },
+  {
+    name: 'noHeadings',
+    body: '<p>Just a paragraph of ordinary prose, nothing more.</p>',
+    title: 'Section 8',
+    headings: [],
+    xhtml: '<p>Just a paragraph of ordinary prose, nothing more.</p>',
+  },
+];
+
+describe('finalizeKf8Part: chapter titles and headings like Dart', () => {
+  for (const { name, body, title, headings, xhtml } of headingCases) {
+    test(name, () => {
+      const source =
+        '<?xml version="1.0" encoding="UTF-8"?>\n' +
+        `<html xmlns="http://www.w3.org/1999/xhtml"><head><title>T</title></head><body>${body}</body></html>`;
+      const part = finalizeKf8Part(7, source);
+      expect(part.title).toBe(title);
+      expect(part.headings.map((heading) => [heading.level, heading.text, heading.anchor])).toEqual(headings);
+      const text = decoder.decode(part.bytes);
+      expect(text.startsWith('<?xml version="1.0" encoding="UTF-8"?>\n<html xmlns="http://www.w3.org/1999/xhtml"')).toBe(true);
+      expect(/<body>(.*)<\/body>/s.exec(text)![1]).toBe(xhtml);
+    });
+  }
+});
+
+describe('sha256Hex without WebCrypto', () => {
+  test('plain-http origins (no crypto.subtle) hash imports in JS', async () => {
+    const real = globalThis.crypto;
+    const epubBytes = await read('apps/mobile/assets/samples/the-quiet-hour.epub');
+    const mobiBytes = await read('apps/mobile/test/fixtures/mobi/alice-kf8.mobi');
+    const native = [await sha256Hex(epubBytes), (await inspectFile(fileOf(mobiBytes, 'a.mobi'))).sha256];
+    Object.defineProperty(globalThis, 'crypto', {
+      value: { getRandomValues: real.getRandomValues.bind(real) },
+      configurable: true,
+      writable: true,
+    });
+    try {
+      expect(globalThis.crypto.subtle).toBeUndefined();
+      expect(await sha256Hex(new Uint8Array())).toBe('e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855');
+      expect(await sha256Hex(new TextEncoder().encode('abc'))).toBe('ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
+      expect((await inspectFile(fileOf(epubBytes, 'x.epub'))).sha256).toBe(native[0]);
+      expect((await inspectFile(fileOf(mobiBytes, 'a.mobi'))).sha256).toBe(native[1]);
+    } finally {
+      Object.defineProperty(globalThis, 'crypto', { value: real, configurable: true, writable: true });
+    }
   });
 });
 

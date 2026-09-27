@@ -1,21 +1,23 @@
+import { zipSync, type Zippable } from 'fflate';
 import { ImportError } from './contract';
 import { ByteBuilder, latin1Decode, utf8Decode, utf8DecodeStrict, utf8Encode, view } from './bytes';
 import { allElements, htmlElement, parseHtml, type HtmlElement, type HtmlNode } from './html';
 import {
   KindleError,
   UNSET,
-  buildEpub,
   coverImage,
   exth,
   fontExtension,
+  imageMime,
   imageName,
   parseFont,
   parseFragments,
+  partFilename,
   readKindleBook,
   type EpubAsset,
+  type EpubMetadata,
   type ExtractedImage,
   type FragmentEntry,
-  type XhtmlPart,
 } from './kindle';
 
 /**
@@ -23,6 +25,12 @@ import {
  * as an EPUB publication so every subsequent read uses the ordinary EPUB
  * path. Kindle URLs must become relative EPUB links before a reader can load
  * styles, images or the table of contents.
+ *
+ * The converter is deliberately "intelligent" about chapter labels: instead
+ * of emitting generic "Part 1, Part 2..." entries, it reads the actual
+ * headings inside each XHTML part and uses those for the EPUB 3 nav doc and
+ * NCX. Sub-sections are nested so the table of contents matches the book's
+ * real structure.
  */
 
 /** Thrown for conversion problems the user should read verbatim (Dart `FormatException`). */
@@ -157,9 +165,9 @@ export function convertMobi(source: Uint8Array): Uint8Array {
     ...book.images.all,
     ...extraImages.map((image) => ({ ...image, data: utf8Encode(rewrite(utf8DecodeStrict(image.data), 'Images')) })),
   ];
-  const parts: XhtmlPart[] = book.format === 'mobi7Only'
+  const parts: EpubPart[] = book.format === 'mobi7Only'
     ? splitMobi7Parts(book.parts[0]!.bytes, book.mobi.textEncoding, book.images.all)
-    : book.parts.map((part) => ({ fileNumber: part.fileNumber, bytes: utf8Encode(rewrite(partTexts.get(part.fileNumber)!, 'Text')) }));
+    : book.parts.map((part) => finalizeKf8Part(part.fileNumber, rewrite(partTexts.get(part.fileNumber)!, 'Text')));
 
   const epub = buildEpub({
     metadata: {
@@ -180,12 +188,212 @@ export function convertMobi(source: Uint8Array): Uint8Array {
   return epub;
 }
 
+/** One finalized EPUB text part, including the real heading-derived label. */
+export interface EpubPart {
+  fileNumber: number;
+  bytes: Uint8Array;
+  /** Human-readable label for this part (chapter/section title). */
+  title: string;
+  /** All headings found inside this part, used for nested navigation. */
+  headings: Heading[];
+}
+
+export interface Heading {
+  level: number;
+  text: string;
+  anchor: string;
+}
+
+export function finalizeKf8Part(fileNumber: number, text: string): EpubPart {
+  const document = parseHtml(text);
+  restructureHeadings(document.body);
+  const headings = collectHeadings(document.body, fileNumber);
+  const title = selectTitle(headings, fileNumber);
+  const xhtml = `<?xml version="1.0" encoding="UTF-8"?>\n${writeXhtml(document.html)}`;
+  return { fileNumber, bytes: utf8Encode(xhtml), title, headings };
+}
+
+function collectHeadings(body: HtmlElement, fileNumber: number): Heading[] {
+  const headings: Heading[] = [];
+  let inHeadings = false;
+  // Anchors number element children only, like Dart's `body.children`.
+  let index = 0;
+  for (const child of body.children) {
+    if (child.kind !== 'element') continue;
+    const heading = extractHeading(child, fileNumber, index++);
+    if (heading !== null) {
+      headings.push(heading);
+      inHeadings = true;
+      continue;
+    }
+    if (inHeadings && !isIgnorableForHeadings(child)) break;
+  }
+  combineNumberHeadings(headings);
+  return headings;
+}
+
+function extractHeading(element: HtmlElement, fileNumber: number, index: number): Heading | null {
+  if (isIgnorableForHeadings(element)) return null;
+  if (!isHeadingLike(element)) return null;
+  const text = cleanHeading(textContent(element));
+  if (text === '') return null;
+  let anchor = element.attributes.get('id');
+  if (anchor === undefined || anchor === '') {
+    anchor = `mobi-hd-${fileNumber}-${index}`;
+    element.attributes.set('id', anchor);
+  }
+  const level = dartIntTryParse(element.name.substring(1)) ?? 1;
+  return { level, text, anchor };
+}
+
+function isIgnorableForHeadings(element: HtmlElement): boolean {
+  const tag = element.name;
+  if (tag === 'br' || tag === 'hr' || tag === 'script' || tag === 'style') return true;
+  return tag === 'span' && cleanHeading(textContent(element)) === '';
+}
+
+const headingTag = /^h[1-6]$/;
+
+function isHeadingLike(element: HtmlElement): boolean {
+  if (headingTag.test(element.name)) return true;
+
+  const text = cleanHeading(textContent(element));
+  if (text === '' || text.length > 120) return false;
+
+  // Attribution lines such as "—NDT" are not chapter titles.
+  if (/^[—\-–]/.test(text) && text.length <= 8) return false;
+
+  const fontSize = firstFontSize(element);
+  const hasLargeFont = fontSize !== null && fontSize >= 4;
+  const hasBold = hasDescendant(element, (node) => node.name === 'b' || node.name === 'strong');
+  const isCentered = element.attributes.get('align')?.toLowerCase() === 'center';
+
+  // All-caps short titles like PREFACE, CONTENTS, ACKNOWLEDGMENTS.
+  // Skip very small print (e.g. attribution captions like "LUCRETIUS, C. 50 BC").
+  if ((fontSize === null || fontSize >= 3) && isDartUpperCase(text) && text.length >= 2 && text.length <= 30) return true;
+
+  // Chapter / section numbers, with or without the word "Chapter".
+  if (isNumberHeading(text) || isChapterHeading(text)) return true;
+
+  // Visually emphasized, short introductory text.
+  return (hasLargeFont || hasBold) && (isCentered || text.length <= 40);
+}
+
+/** `querySelectorAll('font[size]')` (descendants, document order), then the element's own `size`. */
+function firstFontSize(element: HtmlElement): number | null {
+  let found: number | null = null;
+  hasDescendant(element, (node) => {
+    const size = node.name === 'font' ? node.attributes.get('size') : undefined;
+    if (size !== undefined) found = dartIntTryParse(size);
+    return found !== null;
+  });
+  return found ?? dartIntTryParse(element.attributes.get('size') ?? '');
+}
+
+/** Pre-order search of the element's descendants, stopping at the first match. */
+function hasDescendant(element: HtmlElement, test: (node: HtmlElement) => boolean): boolean {
+  for (const child of element.children) {
+    if (child.kind === 'element' && (test(child) || hasDescendant(child, test))) return true;
+  }
+  return false;
+}
+
+/** Dart `Element.text`: every descendant text node, concatenated. */
+function textContent(element: HtmlElement): string {
+  let text = '';
+  const walk = (node: HtmlElement): void => {
+    for (const child of node.children) {
+      if (child.kind === 'text') text += child.text;
+      else if (child.kind === 'element') walk(child);
+    }
+  };
+  walk(element);
+  return text;
+}
+
+const numberHeadingPattern = /^\s*\d+[.:\-]?\s*$/;
+const chapterHeadingPattern = /^\s*(Chapter|CHAPTER|Ch\.?|Section|SECTION)?\s*\d+[.:\-]?\s*$/;
+
+function isNumberHeading(text: string): boolean {
+  return numberHeadingPattern.test(text);
+}
+
+function isChapterHeading(text: string): boolean {
+  return chapterHeadingPattern.test(text);
+}
+
+function combineNumberHeadings(headings: Heading[]): void {
+  for (let i = 0; i < headings.length - 1; i++) {
+    const current = headings[i]!;
+    const next = headings[i + 1]!;
+    if ((isNumberHeading(current.text) || isChapterHeading(current.text)) && !isNumberHeading(next.text)) {
+      headings[i] = { level: current.level, text: `${dartTrim(current.text)} ${dartTrim(next.text)}`, anchor: current.anchor };
+      headings.splice(i + 1, 1);
+      i--;
+    }
+  }
+}
+
+/** Stands in for a body child `restructureHeadings` removed, so removal stays linear. */
+const removedNode: HtmlNode = { kind: 'text', text: '' };
+
+function restructureHeadings(body: HtmlElement): void {
+  const nodes = body.children;
+  let removed = false;
+  for (let i = 0; i < nodes.length; i++) {
+    const current = nodes[i]!;
+    if (current.kind !== 'element' || !isHeadingLike(current)) continue;
+    const currentText = cleanHeading(textContent(current));
+    if (currentText === '' || headingTag.test(current.name)) continue;
+    const numbered = isNumberHeading(currentText) || isChapterHeading(currentText);
+
+    // Combine a chapter/section number with the immediately following title.
+    if (numbered) {
+      let j = i + 1;
+      while (j < nodes.length && nodes[j]!.kind !== 'element') j++;
+      const next = nodes[j];
+      if (next?.kind === 'element' && isHeadingLike(next)) {
+        const nextText = cleanHeading(textContent(next));
+        if (nextText !== '' && !isNumberHeading(nextText)) {
+          nodes[i] = centeredHeading(current, `${dartTrim(currentText)} ${dartTrim(nextText)}`, 'h1');
+          nodes[j] = removedNode;
+          removed = true;
+          i = j;
+          continue;
+        }
+      }
+    }
+
+    // Promote remaining heading-like paragraphs to a proper heading tag.
+    nodes[i] = centeredHeading(current, currentText, numbered ? 'h1' : 'h2');
+  }
+  if (removed) body.children = nodes.filter((node) => node !== removedNode);
+}
+
+function centeredHeading(old: HtmlElement, text: string, tag: string): HtmlElement {
+  const heading = htmlElement(tag, new Map([['style', 'text-align: center']]));
+  heading.children.push({ kind: 'text', text });
+  const id = old.attributes.get('id');
+  if (id !== undefined && id !== '') heading.attributes.set('id', id);
+  return heading;
+}
+
+function cleanHeading(value: string): string {
+  let text = dartTrim(value.replace(/\u00a0/g, ' ')).replace(/\s+/g, ' ');
+  if (text.length > 200) text = dartTrim(text.substring(0, 200));
+  return text;
+}
+
+function selectTitle(headings: Heading[], fallbackNumber: number): string {
+  return headings.length > 0 ? headings[0]!.text : `Section ${fallbackNumber + 1}`;
+}
+
 export function splitMobi7Parts(
   original: Uint8Array,
   textEncoding: number,
   images: ExtractedImage[],
   firstFileNumber = 0,
-): XhtmlPart[] {
+): EpubPart[] {
   let sourceBytes = original;
   const byRecord = new Map<number, ExtractedImage>();
   for (const image of images) byRecord.set(image.blockIndex + 1, image);
@@ -245,9 +453,16 @@ export function splitMobi7Parts(
   const nonEmpty = groups.filter((group) => group.length > 0);
   const headString = writeXhtml(repaired.head);
 
-  const partStrings = nonEmpty.map((group) => {
+  const titles: string[] = [];
+  const headingsList: Heading[][] = [];
+  const partStrings = nonEmpty.map((group, i) => {
     const bodyElement = htmlElement('body', new Map(body.attributes));
     bodyElement.children = group;
+    const fileNumber = firstFileNumber + i;
+    restructureHeadings(bodyElement);
+    const headings = collectHeadings(bodyElement, fileNumber);
+    titles.push(selectTitle(headings, fileNumber));
+    headingsList.push(headings);
     return (
       '<?xml version="1.0" encoding="UTF-8"?>\n' +
       '<html xmlns="http://www.w3.org/1999/xhtml" xmlns:xlink="http://www.w3.org/1999/xlink">\n' +
@@ -269,13 +484,221 @@ export function splitMobi7Parts(
       return `href="part${String(target).padStart(4, '0')}.xhtml#mobi-pos-${position}"`;
     }),
   );
-  return linked.map((text, i) => ({ fileNumber: firstFileNumber + i, bytes: utf8Encode(text) }));
+  return linked.map((text, i) => ({
+    fileNumber: firstFileNumber + i,
+    bytes: utf8Encode(text),
+    title: titles[i]!,
+    headings: headingsList[i]!,
+  }));
 }
 
-/** Dart `int.tryParse` (radix 10): optional sign, digits, surrounding whitespace. */
+// ---------------------------------------------------------------------------
+// EPUB package (`_ThereaderEpubBuilder`)
+
+const containerXml =
+  '<?xml version="1.0" encoding="UTF-8"?>\n' +
+  '<container xmlns="urn:oasis:names:tc:opendocument:xmlns:container" version="1.0">\n' +
+  '  <rootfiles>\n' +
+  '    <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>\n' +
+  '  </rootfiles>\n' +
+  '</container>\n';
+
+function buildEpub(options: {
+  metadata: EpubMetadata;
+  parts: EpubPart[];
+  images: ExtractedImage[];
+  css: EpubAsset[];
+  fonts: EpubAsset[];
+}): Uint8Array {
+  const { metadata, parts, images, css, fonts } = options;
+  const files: Zippable = {
+    // Stored, no extra field, first entry: OCF requires this exact prefix.
+    mimetype: [utf8Encode('application/epub+zip'), { level: 0 }],
+    'META-INF/container.xml': utf8Encode(containerXml),
+    'OEBPS/content.opf': utf8Encode(buildOpf(metadata, parts, images, css, fonts)),
+    'OEBPS/nav.xhtml': utf8Encode(buildNav(metadata, parts)),
+    'OEBPS/toc.ncx': utf8Encode(buildNcx(metadata, parts)),
+  };
+  for (const part of parts) files[`OEBPS/Text/${partFilename(part)}`] = part.bytes;
+  for (const image of images) files[`OEBPS/Images/${imageName(image)}`] = image.data;
+  for (const asset of css) files[`OEBPS/Styles/${asset.name}`] = asset.bytes;
+  for (const asset of fonts) files[`OEBPS/Fonts/${asset.name}`] = asset.bytes;
+  return zipSync(files, { level: 6 });
+}
+
+function buildOpf(m: EpubMetadata, parts: EpubPart[], images: ExtractedImage[], css: EpubAsset[], fonts: EpubAsset[]): string {
+  const manifest: string[] = [];
+  const spine: string[] = [];
+  for (const part of parts) {
+    const id = `p${part.fileNumber}`;
+    manifest.push(`    <item id="${id}" href="Text/${partFilename(part)}" media-type="application/xhtml+xml"/>\n`);
+    spine.push(`    <itemref idref="${id}"/>\n`);
+  }
+  for (const image of images) {
+    manifest.push(`    <item id="img${image.blockIndex}" href="Images/${imageName(image)}" media-type="${imageMime[image.format]}"/>\n`);
+  }
+  css.forEach((asset, i) => manifest.push(`    <item id="css${i}" href="Styles/${asset.name}" media-type="text/css"/>\n`));
+  fonts.forEach((asset, i) => {
+    manifest.push(`    <item id="font${i}" href="Fonts/${asset.name}" media-type="${asset.mediaType ?? 'application/octet-stream'}"/>\n`);
+  });
+  manifest.push('    <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>\n');
+  manifest.push('    <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>\n');
+  const coverMeta = m.coverImageId !== null ? `    <meta name="cover" content="${escapeXml(m.coverImageId)}"/>\n` : '';
+  return (
+    '<?xml version="1.0" encoding="UTF-8"?>\n' +
+    '<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="bookid">\n' +
+    '  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">\n' +
+    `    <dc:identifier id="bookid">${escapeXml(m.identifier)}</dc:identifier>\n` +
+    `    <dc:title>${escapeXml(m.title)}</dc:title>\n` +
+    `    <dc:language>${escapeXml(m.language)}</dc:language>\n` +
+    m.creators.map((creator) => `    <dc:creator>${escapeXml(creator)}</dc:creator>\n`).join('') +
+    (m.publisher === null ? '' : `    <dc:publisher>${escapeXml(m.publisher)}</dc:publisher>\n`) +
+    (m.description === null ? '' : `    <dc:description>${escapeXml(m.description)}</dc:description>\n`) +
+    coverMeta +
+    '  </metadata>\n' +
+    '  <manifest>\n' +
+    manifest.join('') +
+    '  </manifest>\n' +
+    '  <spine toc="ncx">\n' +
+    spine.join('') +
+    '  </spine>\n' +
+    '</package>\n'
+  );
+}
+
+interface NavNode {
+  label: string;
+  src: string;
+  level: number;
+  children: NavNode[];
+}
+
+/** Headings nest under the closest earlier entry of a shallower level; heading-less parts are top level. */
+function buildNavTree(parts: EpubPart[]): NavNode[] {
+  const roots: NavNode[] = [];
+  const stack: NavNode[] = [];
+  for (const part of parts) {
+    if (part.headings.length === 0) {
+      const node: NavNode = { label: part.title, src: `Text/${partFilename(part)}`, level: 1, children: [] };
+      roots.push(node);
+      stack.length = 0;
+      stack.push(node);
+      continue;
+    }
+    for (const heading of part.headings) {
+      const node: NavNode = { label: heading.text, src: `Text/${partFilename(part)}#${heading.anchor}`, level: heading.level, children: [] };
+      while (stack.length > 0 && stack[stack.length - 1]!.level >= heading.level) stack.pop();
+      if (stack.length === 0) roots.push(node);
+      else stack[stack.length - 1]!.children.push(node);
+      stack.push(node);
+    }
+  }
+  return roots;
+}
+
+function buildNav(m: EpubMetadata, parts: EpubPart[]): string {
+  const items: string[] = [];
+  const render = (nodes: NavNode[], depth: number): void => {
+    if (nodes.length === 0) return;
+    items.push(`${'  '.repeat(depth)}<ol>\n`);
+    for (const node of nodes) {
+      items.push(`${'  '.repeat(depth + 1)}<li>\n`);
+      items.push(`${'  '.repeat(depth + 2)}<a href="${escapeXml(node.src)}">${escapeXml(node.label)}</a>\n`);
+      render(node.children, depth + 2);
+      items.push(`${'  '.repeat(depth + 1)}</li>\n`);
+    }
+    items.push(`${'  '.repeat(depth)}</ol>\n`);
+  };
+  render(buildNavTree(parts), 3);
+  return (
+    '<?xml version="1.0" encoding="UTF-8"?>\n' +
+    '<!DOCTYPE html>\n' +
+    `<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${escapeXml(m.language)}">\n` +
+    '  <head>\n' +
+    '    <meta charset="utf-8"/>\n' +
+    `    <title>${escapeXml(m.title)}</title>\n` +
+    '  </head>\n' +
+    '  <body>\n' +
+    '    <nav epub:type="toc" id="toc">\n' +
+    `      <h1>${escapeXml(m.title)}</h1>\n` +
+    items.join('') +
+    '    </nav>\n' +
+    '  </body>\n' +
+    '</html>\n'
+  );
+}
+
+/** NCX 2005 nests by heading level too; `navPoint`s close when a same or shallower level starts. */
+function buildNcx(m: EpubMetadata, parts: EpubPart[]): string {
+  const entries: Array<{ level: number; label: string; src: string }> = [];
+  for (const part of parts) {
+    if (part.headings.length === 0) {
+      entries.push({ level: 1, label: part.title, src: `Text/${partFilename(part)}` });
+    } else {
+      for (const heading of part.headings) {
+        entries.push({ level: heading.level, label: heading.text, src: `Text/${partFilename(part)}#${heading.anchor}` });
+      }
+    }
+  }
+  const navPoints: string[] = [];
+  const open: number[] = [];
+  let order = 0;
+  for (const entry of entries) {
+    while (open.length > 0 && open[open.length - 1]! >= entry.level) {
+      navPoints.push(`${'  '.repeat(open.length + 1)}</navPoint>\n`);
+      open.pop();
+    }
+    order++;
+    const indent = '  '.repeat(open.length + 2);
+    const labelIndent = '  '.repeat(open.length + 3);
+    navPoints.push(`${indent}<navPoint id="navPoint-${order}" playOrder="${order}">\n`);
+    navPoints.push(`${labelIndent}<navLabel><text>${escapeXml(entry.label)}</text></navLabel>\n`);
+    navPoints.push(`${labelIndent}<content src="${escapeXml(entry.src)}"/>\n`);
+    open.push(entry.level);
+  }
+  while (open.length > 0) {
+    navPoints.push(`${'  '.repeat(open.length + 1)}</navPoint>\n`);
+    open.pop();
+  }
+  return (
+    '<?xml version="1.0" encoding="UTF-8"?>\n' +
+    '<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">\n' +
+    '  <head>\n' +
+    `    <meta name="dtb:uid" content="${escapeXml(m.identifier)}"/>\n` +
+    '  </head>\n' +
+    `  <docTitle><text>${escapeXml(m.title)}</text></docTitle>\n` +
+    '  <navMap>\n' +
+    navPoints.join('') +
+    '  </navMap>\n' +
+    '</ncx>\n'
+  );
+}
+
+/** Dart `int.tryParse` without a radix: optional sign, decimal or `0x` hex digits, surrounding whitespace. */
 function dartIntTryParse(text: string): number | null {
-  const trimmed = text.trim();
-  return /^[+-]?[0-9]+$/.test(trimmed) ? Number.parseInt(trimmed, 10) : null;
+  const match = /^([+-]?)(?:([0-9]+)|0[xX]([0-9a-fA-F]+))$/.exec(dartTrim(text));
+  if (match === null) return null;
+  const value = match[2] !== undefined ? Number.parseInt(match[2], 10) : Number.parseInt(match[3]!, 16);
+  return match[1] === '-' ? -value : value;
+}
+
+/** Dart `String.trim`: Unicode White_Space plus BOM, which (unlike JS) includes U+0085. */
+function dartTrim(text: string): string {
+  return text.replace(/^[\t\n\v\f\r \u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+|[\t\n\v\f\r \u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+$/g, '');
+}
+
+/**
+ * Characters Dart's `toUpperCase` leaves unchanged but JS maps: special
+ * casings JS expands (ß, ligatures) and letters added after Dart's Unicode
+ * tables (Georgian Mtavruli, Cherokee, newer Latin extensions...).
+ */
+const dartCaseless =
+  /[\u{df}\u{149}\u{19b}\u{1f0}\u{23f}-\u{240}\u{252}\u{25c}\u{261}\u{264}-\u{266}\u{26a}\u{26c}\u{282}\u{287}\u{29d}-\u{29e}\u{390}\u{3b0}\u{3f3}\u{525}\u{527}\u{529}\u{52b}\u{52d}\u{52f}\u{587}\u{10d0}-\u{10fa}\u{10fd}-\u{10ff}\u{13f8}-\u{13fd}\u{1c80}-\u{1c88}\u{1c8a}\u{1d8e}\u{1e96}-\u{1e9a}\u{1f50}\u{1f52}\u{1f54}\u{1f56}\u{1f88}-\u{1f8f}\u{1f98}-\u{1f9f}\u{1fa8}-\u{1faf}\u{1fb2}\u{1fb4}\u{1fb6}-\u{1fb7}\u{1fbc}\u{1fc2}\u{1fc4}\u{1fc6}-\u{1fc7}\u{1fcc}\u{1fd2}-\u{1fd3}\u{1fd6}-\u{1fd7}\u{1fe2}-\u{1fe4}\u{1fe6}-\u{1fe7}\u{1ff2}\u{1ff4}\u{1ff6}-\u{1ff7}\u{1ffc}\u{2c5f}\u{2cec}\u{2cee}\u{2cf3}\u{2d27}\u{2d2d}\u{a661}\u{a699}\u{a69b}\u{a791}\u{a793}-\u{a794}\u{a797}\u{a799}\u{a79b}\u{a79d}\u{a79f}\u{a7a1}\u{a7a3}\u{a7a5}\u{a7a7}\u{a7a9}\u{a7b5}\u{a7b7}\u{a7b9}\u{a7bb}\u{a7bd}\u{a7bf}\u{a7c1}\u{a7c3}\u{a7c8}\u{a7ca}\u{a7cd}\u{a7cf}\u{a7d1}\u{a7d3}\u{a7d5}\u{a7d7}\u{a7d9}\u{a7db}\u{a7f6}\u{ab53}\u{ab70}-\u{abbf}\u{fb00}-\u{fb06}\u{fb13}-\u{fb17}\u{104d8}-\u{104fb}\u{10597}-\u{105a1}\u{105a3}-\u{105b1}\u{105b3}-\u{105b9}\u{105bb}-\u{105bc}\u{10cc0}-\u{10cf2}\u{10d70}-\u{10d85}\u{118c0}-\u{118df}\u{16e60}-\u{16e7f}\u{16ebb}-\u{16ed3}\u{1e922}-\u{1e943}]/gu;
+
+/** Dart `text.toUpperCase() == text`. */
+function isDartUpperCase(text: string): boolean {
+  const cased = text.replace(dartCaseless, '');
+  return cased.toUpperCase() === cased;
 }
 
 function escapeRegExp(text: string): string {
