@@ -66,12 +66,25 @@ export interface CatalogSnapshot {
   subjects: string[];
   hasMore: boolean;
   isLoadingMore: boolean;
+  /** A background request is revalidating the items on screen. */
+  refreshing: boolean;
+  /**
+   * When the items on screen were saved, while they come from the on-disk
+   * cache and have not been revalidated; null once fresh. With `error` set on
+   * a ready catalog this is the offline/stale state.
+   */
+  cachedAt: string | null;
   error: ApiError | null;
   origin: string;
 }
 
 export interface CatalogStore extends Observable<CatalogSnapshot> {
   refresh(): Promise<void>;
+  /**
+   * Browse is on screen: loads an idle catalog, or revalidates the cached
+   * listing once per session (one request; items stay on screen).
+   */
+  revalidate(): Promise<void>;
   /** Debounced server-side search (~250 ms). */
   search(query: string): void;
   loadMore(): Promise<void>;
