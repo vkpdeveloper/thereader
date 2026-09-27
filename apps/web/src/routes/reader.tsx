@@ -7,14 +7,33 @@ import { FontPicker, TypographyPanel } from '../components/reader/TypographyPane
 import { FloatingBar, HighlightActions, SelectionActions } from '../components/reader/Floating';
 import { LoadingLine, StateMessage } from '../components/states';
 import { useToast } from '../components/toast';
-import { useCanHover, useDocumentTitle, useIsDesktop, useWakeLock, isTypingTarget } from '../lib/hooks';
+import { useCanHover, useDocumentTitle, useGoBack, useIsDesktop, useWakeLock, isTypingTarget } from '../lib/hooks';
 import { engineColors, parseHighlightColor } from '../lib/themes';
 import { useServices, useStore } from '../lib/services/react';
-import type { Highlight, HighlightColor, LibraryEntry, ReaderPreferences, ReadingLocator } from '../lib/types';
-import type { EngineCallbacks, ReaderEngine, SelectionInfo } from '../reader/engine';
-import { useGoBack } from './book';
+import { MAX_FONT_SIZE, MIN_FONT_SIZE, type Highlight, type HighlightColor, type LibraryEntry, type ReaderPreferences, type ReadingLocator } from '../lib/types';
+import type { EngineCallbacks, PageInfo, ReaderEngine, SelectionInfo } from '../reader/engine';
+import { ShortcutsDialog } from '../components/reader/ShortcutsDialog';
+import '../components/reader/reader.css';
 
 const saveDebounceMs = 600;
+
+/** The engine chunk (kept out of the library bundle), fetched once and shared. */
+let engineModule: Promise<typeof import('../reader/epub')> | null = null;
+function loadEngine() {
+  engineModule ??= import('../reader/epub').catch((e: unknown) => {
+    engineModule = null;
+    throw e;
+  });
+  return engineModule;
+}
+
+// Warm the engine while the app is idle, so the first open does not wait on the network.
+if (typeof window !== 'undefined') {
+  const warm = () => void loadEngine().catch(() => undefined);
+  const idle = () => (window.requestIdleCallback ? window.requestIdleCallback(warm, { timeout: 5000 }) : window.setTimeout(warm, 2000));
+  if (document.readyState === 'complete') window.setTimeout(idle, 1500);
+  else window.addEventListener('load', () => window.setTimeout(idle, 1500), { once: true });
+}
 
 const panelTitles: Record<ReaderPanel, string> = {
   contents: 'Contents',
@@ -51,6 +70,8 @@ export function ReaderScreen() {
   const [engine, setEngine] = useState<ReaderEngine | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [locator, setLocator] = useState<ReadingLocator | null>(null);
+  const [page, setPage] = useState<PageInfo | null>(null);
+  const [shortcuts, setShortcuts] = useState(false);
   const [chrome, setChrome] = useState(false);
   const [panel, setPanel] = useState<ReaderPanel | null>(null);
   const [fontPicker, setFontPicker] = useState(false);
@@ -182,7 +203,36 @@ export function ReaderScreen() {
     goBack();
   }, [saveNow, goBack]);
 
+  /** Deletes at once (as on mobile) and offers Undo, which restores the passage as a new highlight. */
+  const deleteHighlight = useCallback(
+    (h: Highlight) => {
+      void services.highlights.delete(h.id);
+      toast.show('Highlight deleted.', {
+        action: {
+          label: 'Undo',
+          onClick: () =>
+            void services.highlights
+              .create({ bookId: h.bookId, sha256: h.sha256, origin: h.origin, locator: h.locator, text: h.text, color: h.color })
+              .catch(() => toast.show("Couldn't restore the highlight.")),
+        },
+      });
+    },
+    [services, toast],
+  );
+
+  const stepFontSize = useCallback(
+    (delta: number) =>
+      void services.settings.updateReader((r) => ({
+        ...r,
+        fontSize: Math.min(MAX_FONT_SIZE, Math.max(MIN_FONT_SIZE, Math.round(r.fontSize) + delta)),
+      })),
+    [services],
+  );
+
   // ------------------------------------------------------------ engine callbacks
+
+  /** Right-to-left books turn pages leftwards: the arrows, click zones and swipes follow. */
+  const rtl = engine?.info.readingProgression === 'rtl' && settings.reader.flow === 'paginated';
 
   const handleKey = (e: KeyboardEvent, fromFrame: boolean) => {
     if (hasOpenOverlay()) return;
@@ -192,6 +242,7 @@ export function ReaderScreen() {
     const mod = e.metaKey || e.ctrlKey;
     const inPanel = !fromFrame && !!panelRef.current?.contains(e.target as Node);
     const handled = () => e.preventDefault();
+    const scrolled = settings.reader.flow !== 'paginated';
 
     if (key === 'Escape') {
       handled();
@@ -215,13 +266,29 @@ export function ReaderScreen() {
     }
     if (mod || e.altKey || !eng) return;
     if (inPanel) return;
+    // A focused control (a chrome button) keeps Space and Enter for itself.
+    if (!fromFrame && (key === ' ' || key === 'Enter') && (e.target as Element | null)?.closest?.('button, a, [role=button]')) return;
     switch (key) {
       case 'ArrowRight':
+      case 'ArrowLeft': {
+        handled();
+        const forward = (key === 'ArrowRight') !== rtl;
+        if (e.shiftKey) void (forward ? eng.nextChapter() : eng.previousChapter());
+        else void (forward ? eng.next() : eng.previous());
+        break;
+      }
+      case 'ArrowDown':
+      case 'ArrowUp':
+        // The frame scrolls itself by a line; from the page, scroll a little too.
+        if (fromFrame && scrolled) return;
+        handled();
+        if (scrolled) eng.scrollBy(key === 'ArrowDown' ? 0.12 : -0.12);
+        else void (key === 'ArrowDown' ? eng.next() : eng.previous());
+        break;
       case 'PageDown':
         handled();
         void eng.next();
         break;
-      case 'ArrowLeft':
       case 'PageUp':
         handled();
         void eng.previous();
@@ -233,6 +300,23 @@ export function ReaderScreen() {
       case 'Home':
         handled();
         void eng.toChapterStart();
+        break;
+      case ']':
+        handled();
+        void eng.nextChapter();
+        break;
+      case '[':
+        handled();
+        void eng.previousChapter();
+        break;
+      case '+':
+      case '=':
+        handled();
+        stepFontSize(1);
+        break;
+      case '-':
+        handled();
+        stepFontSize(-1);
         break;
       case 't':
       case 'c':
@@ -256,6 +340,15 @@ export function ReaderScreen() {
         handled();
         toggleFullscreen();
         break;
+      case 'm':
+        handled();
+        hoverReveal.current = false;
+        setChrome((v) => !v);
+        break;
+      case '?':
+        handled();
+        setShortcuts(true);
+        break;
     }
   };
 
@@ -263,6 +356,7 @@ export function ReaderScreen() {
   handlers.current = {
     onLocator(loc) {
       setLocator(loc);
+      setPage(engineRef.current?.page ?? null);
       scheduleSave();
     },
     onSelection(sel) {
@@ -279,8 +373,8 @@ export function ReaderScreen() {
         return;
       }
       const eng = engineRef.current;
-      if (eng && settings.reader.flow === 'paginated' && x < 0.3) void eng.previous();
-      else if (eng && settings.reader.flow === 'paginated' && x > 0.7) void eng.next();
+      const zone = settings.reader.flow !== 'paginated' ? 0 : x < 0.3 ? -1 : x > 0.7 ? 1 : 0;
+      if (eng && zone !== 0) void (zone > 0 !== rtl ? eng.next() : eng.previous());
       else {
         hoverReveal.current = false;
         setChrome((v) => !v);
@@ -328,7 +422,7 @@ export function ReaderScreen() {
       if (!e) throw new Error('This book is not in your library.');
       if (!services.library.canRead(entryId)) throw new Error('This book has not been downloaded.');
       const data = await services.library.openForReading(entryId);
-      const { openPublication } = await import('../reader/epub');
+      const { openPublication } = await loadEngine();
       if (cancelled) return;
       const prefs = services.settings.getSnapshot().reader;
       const callbacks: EngineCallbacks = {
@@ -353,10 +447,13 @@ export function ReaderScreen() {
       }
       opened = eng;
       engineRef.current = eng;
+      // Development handle for driving the engine from the console and tests.
+      if ((import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV) (window as unknown as { readerEngine?: ReaderEngine }).readerEngine = eng;
       session.current = e;
       appliedPrefs.current = prefs;
       setEngine(eng);
       setLocator(eng.locator);
+      setPage(eng.page);
       void services.library.markOpened(e.id, e.book.sha256);
       services.sync.beginReading(e);
       eng.setHighlights(services.highlights.forEdition(e.origin, e.book.sha256));
@@ -398,18 +495,29 @@ export function ReaderScreen() {
     if (engine && e) engine.setHighlights(services.highlights.forEdition(e.origin, e.book.sha256));
   }, [engine, highlightsSnapshot, services]);
 
-  // Re-layout whenever the page area changes size (window, side panel).
+  // Re-layout whenever the page area changes size (window, side panel): once
+  // per frame while dragging, with a timer for tabs where frames are paused.
   useLayoutEffect(() => {
     const el = stage.current;
     if (!el || !engine) return;
     let frame = 0;
-    const ro = new ResizeObserver(() => {
+    let timer = 0;
+    const run = () => {
       cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => engine.resize());
+      window.clearTimeout(timer);
+      frame = 0;
+      timer = 0;
+      engine.resize();
+    };
+    const ro = new ResizeObserver(() => {
+      if (frame || timer) return;
+      frame = requestAnimationFrame(run);
+      timer = window.setTimeout(run, 100);
     });
     ro.observe(el);
     return () => {
       cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
       ro.disconnect();
     };
   }, [engine]);
@@ -431,6 +539,7 @@ export function ReaderScreen() {
           <ContentsList
             toc={engine.info.toc}
             currentHref={locator?.href ?? null}
+            currentTitle={locator?.title ?? null}
             onOpen={(t) => {
               closeOnMobile();
               void engine.goToHref(t.href);
@@ -445,7 +554,7 @@ export function ReaderScreen() {
               closeOnMobile();
               openHighlight(h);
             }}
-            onDelete={(h) => void services.highlights.delete(h.id)}
+            onDelete={deleteHighlight}
           />
         );
       case 'search':
@@ -519,6 +628,7 @@ export function ReaderScreen() {
                 onPanel={togglePanel}
                 fullscreen={fullscreen}
                 onFullscreen={toggleFullscreen}
+                onShortcuts={() => setShortcuts(true)}
                 onMouseLeave={() => {
                   if (hoverReveal.current) {
                     hoverReveal.current = false;
@@ -529,6 +639,8 @@ export function ReaderScreen() {
               <BottomChrome
                 visible={chrome}
                 locator={locator}
+                page={page}
+                rtl={rtl}
                 onPrevious={() => void engine.previous()}
                 onNext={() => void engine.next()}
               />
@@ -566,7 +678,7 @@ export function ReaderScreen() {
             }}
             onDelete={() => {
               setPopover(null);
-              void services.highlights.delete(popoverHighlight.id);
+              deleteHighlight(popoverHighlight);
             }}
           />
         </FloatingBar>
@@ -583,12 +695,13 @@ export function ReaderScreen() {
               }}
               onDelete={() => {
                 setPopover(null);
-                void services.highlights.delete(popoverHighlight.id);
+                deleteHighlight(popoverHighlight);
               }}
             />
           )}
         </Sheet>
       )}
+      <ShortcutsDialog open={shortcuts} rtl={rtl} onClose={() => setShortcuts(false)} />
     </div>
   );
 }

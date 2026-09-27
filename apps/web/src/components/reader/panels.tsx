@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { SearchMatch, TocEntry } from '../../reader/engine';
 import { highlightHues, parseHighlightColor } from '../../lib/themes';
 import type { Highlight, ReadingLocator } from '../../lib/types';
@@ -7,17 +7,37 @@ import { TextField } from '../controls';
 import { DeleteOutlineIcon, SearchIcon } from '../icons';
 import { ProgressLine } from '../states';
 
-/** Table of contents; the current chapter is set in the foreground colour. */
+/**
+ * The entry being read: of the entries in the current file, the last whose
+ * title is the page's chapter title (a section inside the file), else the
+ * file's first entry.
+ */
+function activeEntry(toc: TocEntry[], href: string | null, title: string | null): number {
+  if (href == null) return -1;
+  let first = -1;
+  let titled = -1;
+  toc.forEach((t, i) => {
+    if (t.href.split('#')[0] !== href) return;
+    if (first < 0) first = i;
+    if (title != null && t.title === title) titled = i;
+  });
+  return titled >= 0 ? titled : first;
+}
+
+/** Table of contents; the entry being read is set in the foreground colour. */
 export function ContentsList({
   toc,
   currentHref,
+  currentTitle,
   onOpen,
 }: {
   toc: TocEntry[];
   currentHref: string | null;
+  currentTitle: string | null;
   onOpen: (entry: TocEntry) => void;
 }) {
   const active = useRef<HTMLButtonElement>(null);
+  const activeIndex = useMemo(() => activeEntry(toc, currentHref, currentTitle), [toc, currentHref, currentTitle]);
   useLayoutEffect(() => {
     active.current?.scrollIntoView({ block: 'center' });
   }, []);
@@ -25,7 +45,7 @@ export function ContentsList({
   return (
     <ul className="toc-list">
       {toc.map((t, i) => {
-        const isActive = currentHref != null && t.href.split('#')[0] === currentHref;
+        const isActive = i === activeIndex;
         return (
           <li key={`${t.href}-${i}`}>
             <button

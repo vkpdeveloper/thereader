@@ -1,0 +1,44 @@
+/* Reader-only pieces added after the shared stylesheet's reader section. */
+
+.reader-pages-left {
+  color: var(--subtle);
+}
+
+.dialog:has(.shortcuts) {
+  width: min(560px, calc(100vw - 40px));
+}
+.shortcuts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-lg);
+  color: var(--fg);
+}
+.shortcuts h3 {
+  margin-bottom: var(--space-sm);
+}
+.shortcut-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  min-height: 30px;
+}
+.shortcut-row dt {
+  color: var(--muted);
+  font-size: 13px;
+}
+.shortcut-row dd {
+  display: flex;
+  gap: 4px;
+  flex: none;
+}
+.shortcut-row kbd {
+  min-width: 22px;
+  text-align: center;
+  color: var(--fg);
+}
+@media (max-width: 599px) {
+  .shortcuts {
+    grid-template-columns: 1fr;
+  }
+}

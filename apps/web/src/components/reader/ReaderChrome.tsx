@@ -1,5 +1,6 @@
 import { inertProps } from '../../lib/hooks';
 import type { ReadingLocator } from '../../lib/types';
+import type { PageInfo } from '../../reader/engine';
 import { IconButton } from '../buttons';
 import {
   ArrowUpwardIcon,
@@ -14,6 +15,7 @@ import {
   TextFieldsIcon,
 } from '../icons';
 import { ProgressLine } from '../states';
+import { KeyboardIcon } from './ShortcutsDialog';
 
 export type ReaderPanel = 'contents' | 'highlights' | 'search' | 'typography';
 
@@ -28,6 +30,7 @@ export function TopChrome({
   onPanel,
   fullscreen,
   onFullscreen,
+  onShortcuts,
   onMouseLeave,
 }: {
   visible: boolean;
@@ -37,6 +40,7 @@ export function TopChrome({
   onPanel: (p: ReaderPanel) => void;
   fullscreen: boolean | null;
   onFullscreen: () => void;
+  onShortcuts: () => void;
   onMouseLeave?: () => void;
 }) {
   const tool = (p: ReaderPanel) => ({ 'aria-pressed': panel === p, className: panel === p ? 'is-active' : undefined });
@@ -48,6 +52,7 @@ export function TopChrome({
       <IconButton icon={BorderColorIcon} label="Highlights" shortcut="H" onClick={() => onPanel('highlights')} {...tool('highlights')} />
       <IconButton icon={SearchIcon} label="Search book" shortcut="/" onClick={() => onPanel('search')} {...tool('search')} />
       <IconButton icon={TextFieldsIcon} label="Typography" shortcut="A" onClick={() => onPanel('typography')} {...tool('typography')} />
+      <IconButton className="desktop-only-flex" icon={KeyboardIcon} label="Keyboard shortcuts" shortcut="?" onClick={onShortcuts} />
       {fullscreen !== null && (
         <IconButton
           className="desktop-only-flex"
@@ -62,28 +67,47 @@ export function TopChrome({
   );
 }
 
-/** Previous / chapter title + progress line + percent / next. */
+/** "3 pages left in chapter" while paginated; the last page says so. */
+function pagesLeft(page: PageInfo | null): string | null {
+  if (!page || page.count < 2) return null;
+  const left = page.count - 1 - page.index;
+  return left === 0 ? 'Last page in chapter' : left === 1 ? '1 page left in chapter' : `${left} pages left in chapter`;
+}
+
+/**
+ * Previous / chapter title + progress line + percent / next. Right-to-left
+ * books turn forwards to the left, so the arrows swap roles.
+ */
 export function BottomChrome({
   visible,
   locator,
+  page,
+  rtl,
   onPrevious,
   onNext,
 }: {
   visible: boolean;
   locator: ReadingLocator | null;
+  page: PageInfo | null;
+  rtl: boolean;
   onPrevious: () => void;
   onNext: () => void;
 }) {
   const pct = percentOf(locator);
+  const left = pagesLeft(page);
+  const back = <IconButton icon={ChevronLeftIcon} label={rtl ? 'Next page' : 'Previous page'} shortcut="←" tooltipSide="top" onClick={rtl ? onNext : onPrevious} />;
+  const forward = <IconButton icon={ChevronRightIcon} label={rtl ? 'Previous page' : 'Next page'} shortcut="→" tooltipSide="top" onClick={rtl ? onPrevious : onNext} />;
   return (
     <div className={visible ? 'reader-bottom is-visible' : 'reader-bottom'} {...inertProps(!visible)}>
-      <IconButton icon={ChevronLeftIcon} label="Previous page" shortcut="←" tooltipSide="top" onClick={onPrevious} />
+      {back}
       <div className="reader-bottom-center">
         <div className="t-label-sm clamp-1 reader-chapter">{locator?.title ?? ''}</div>
         <ProgressLine value={(locator?.totalProgression ?? 0) || 0} label="Book progress" />
-        <div className="t-label-sm tabular">{pct}%</div>
+        <div className="t-label-sm tabular">
+          {pct}%{left && <span className="reader-pages-left"> · {left}</span>}
+        </div>
       </div>
-      <IconButton icon={ChevronRightIcon} label="Next page" shortcut="→" tooltipSide="top" onClick={onNext} />
+      {forward}
     </div>
   );
 }
