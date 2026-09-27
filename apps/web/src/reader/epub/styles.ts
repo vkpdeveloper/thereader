@@ -149,8 +149,6 @@ const NOT_MONO = ':not(code):not(kbd):not(samp):not(pre):not(tt):not(var):not(pr
 export function preferencesCss(prefs: ReaderPreferences, colors: EngineColors, g: PageGeometry, rtl = false): string {
   const fontSize = clampFont(prefs.fontSize);
   const lineHeight = Number.isFinite(prefs.lineHeight) ? prefs.lineHeight : 1.6;
-  const align = prefs.justify ? 'justify' : 'left';
-  const hyphens = prefs.justify ? 'auto' : 'manual';
   const tints = Object.entries(colors.highlightTints)
     .map(([key, tint]) => `reader-hl[data-hl-color="${cssString(key)}"]{background-color:${tint} !important;}`)
     .join('\n');
@@ -178,18 +176,36 @@ body{background-color:${colors.paper};}
 html{font-size:${fontSize}px !important;background-color:${colors.paper} !important;}
 body{font-size:1rem !important;font-family:${resolveFontStack(prefs)} !important;color:${colors.ink} !important;
   background:${colors.paper} !important;line-height:${lineHeight} !important;
-  overflow-wrap:break-word;font-kerning:normal;text-rendering:optimizeLegibility;}
+  overflow-wrap:break-word;font-kerning:normal;text-rendering:optimizeLegibility;
+  text-align:left !important;}
 body *${NOT_MONO}{font-family:inherit !important;}
 body *{color:inherit !important;background-color:transparent !important;border-color:${colors.muted} !important;}
-body :is(p, li, dd, dt, blockquote, div, td, th, figcaption, span, a, em, i, b, strong, cite, small, sup, sub){line-height:inherit !important;}
-body, body p:not(blockquote p):not(figcaption p):not(header p):not(footer p), body li, body dd{
-  text-align:${align} !important;-webkit-hyphens:${hyphens} !important;hyphens:${hyphens} !important;}
-body a[href], body a[href] *{color:${colors.link} !important;text-decoration-color:${colors.link};}
+body :is(p, li, dd, dt, blockquote, div, td, th, span, a, em, i, b, strong, cite, small, sup, sub){line-height:inherit !important;}
+body :is(h1, h2, h3, h4, h5, h6){font-weight:700 !important;line-height:1.15 !important;text-align:left !important;
+  -webkit-hyphens:manual !important;hyphens:manual !important;margin:1.2em 0 0.5em !important;}
+body h1{font-size:1.75rem !important;}
+body h2{font-size:1.35rem !important;}
+body h3{font-size:1.15rem !important;}
+body h4{font-size:1rem !important;color:${colors.muted} !important;}
+body p, body li, body dd, body dt{
+  text-align:left !important;-webkit-hyphens:manual !important;hyphens:manual !important;}
+body blockquote{margin:1em 0 1em 0 !important;padding-left:1em !important;border-left:2px solid ${colors.muted} !important;
+  text-align:left !important;-webkit-hyphens:manual !important;hyphens:manual !important;}
+body ul{list-style:disc outside !important;padding-left:1.2em !important;margin:1em 0 !important;}
+body ol{list-style:decimal outside !important;padding-left:1.2em !important;margin:1em 0 !important;}
+body li{margin:0.35em 0 !important;}
+body figcaption, body caption{
+  color:${colors.muted} !important;font-size:0.9rem !important;font-weight:400 !important;
+  font-style:italic !important;text-align:center !important;margin-top:0.6em !important;
+  -webkit-hyphens:manual !important;hyphens:manual !important;}
+body caption{caption-side:top !important;margin-top:0 !important;margin-bottom:0.6em !important;}
+body a[href], body a[href] *{color:${colors.link} !important;text-decoration:underline !important;text-decoration-color:color-mix(in srgb, ${colors.link} 50%, transparent);}
 body hr{background-color:${colors.muted} !important;border-color:${colors.muted} !important;}
 body img, body svg, body video, body picture{background-color:transparent !important;}
 body pre{white-space:pre-wrap !important;overflow-wrap:anywhere;}
-body table{max-width:100%;}
-body img, body video{max-width:100% !important;height:auto;box-sizing:border-box;}
+body table{max-width:100%;border-collapse:collapse !important;margin:1em 0;}
+body td, body th{border:1px solid color-mix(in srgb, ${colors.muted} 25%, transparent) !important;padding:0.6em 0.8em !important;text-align:left !important;}
+body img, body video{width:auto !important;max-width:100% !important;height:auto;box-sizing:border-box;}
 body svg{max-width:100%;}
 .reader-error{font-style:italic;color:${colors.muted} !important;text-align:center !important;margin-top:30vh !important;}
 `;
