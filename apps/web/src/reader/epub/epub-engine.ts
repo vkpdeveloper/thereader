@@ -3,6 +3,7 @@ import type {
   EngineCallbacks,
   EngineColors,
   OpenOptions,
+  PageInfo,
   PublicationInfo,
   ReaderEngine,
   SearchMatch,
@@ -21,7 +22,12 @@ type Target =
   | { kind: 'progression'; value: number }
   | { kind: 'offset'; value: number }
   | { kind: 'fragment'; id: string; fallback: number }
-  | { kind: 'quote'; quote: TextQuote; progression: number | null; flash: boolean }
+  /**
+   * A text quote. `jump` goes to a found passage (search, highlight) and
+   * leaves context above it; otherwise the quote is a saved position and
+   * becomes the first line. `flash` briefly marks the passage.
+   */
+  | { kind: 'quote'; quote: TextQuote; progression: number | null; jump: boolean; flash: boolean }
   | { kind: 'end' };
 
 const XLINK_NS = 'http://www.w3.org/1999/xlink';
@@ -29,12 +35,18 @@ const CONTEXT = 120;
 const SEARCH_CONTEXT = 60;
 const MAX_SEARCH_RESULTS = 200;
 const CACHE_SIZE = 5;
+/** Characters of visible text kept in a saved position, enough to find it again. */
+const POSITION_QUOTE = 48;
+const TURN_MS = 200;
+
+/** Scripts written right to left; a chapter in one of these reads RTL even without `dir`. */
+const RTL_LANG = /^(ar|arc|ckb|dv|fa|he|iw|ku|ps|sd|ug|ur|yi)(-|$)/i;
 
 const SHELL = (origin: string) =>
   `<!DOCTYPE html><html><head><meta charset="utf-8">` +
   `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'none'; object-src 'none'; ` +
   `img-src blob: data:; media-src blob: data:; font-src blob: data: ${origin}; style-src 'unsafe-inline' blob: data:">` +
-  `<style id="reader-fonts"></style><style id="reader-prefs"></style><style id="reader-fixed"></style>` +
+  `<style id="reader-dir"></style><style id="reader-fonts"></style><style id="reader-prefs"></style><style id="reader-fixed"></style>` +
   `</head><body></body></html>`;
 
 function num(v: unknown): number | null {
@@ -70,7 +82,7 @@ const yieldToEventLoop = () =>
 
 export class EpubEngine implements ReaderEngine {
   readonly info: PublicationInfo;
-  locator: ReadingLocator | null = null;
+  private base: ReadingLocator | null = null;
 
   private readonly res: Resources;
   private readonly cb: EngineCallbacks;
@@ -91,7 +103,7 @@ export class EpubEngine implements ReaderEngine {
   private readonly cache = new Map<number, Promise<PreparedChapter>>();
   private readonly plainCache = new Map<number, string>();
   private current: PreparedChapter | null = null;
-  private page = 0;
+  private pageIndex = 0;
   private pageCount = 1;
   private index: TextIndex | null = null;
   private highlights: Highlight[] = [];
@@ -116,6 +128,10 @@ export class EpubEngine implements ReaderEngine {
   private wheelLockUntil = 0;
   private touchStart: { x: number; y: number; t: number } | null = null;
   private programmaticScroll = false;
+  /** Set when the base locator changed; `locator` then adds the text anchor on demand. */
+  private anchorPending = false;
+  private turnAnimation: Animation | null = null;
+  private readonly reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   private readonly cleanup: (() => void)[] = [];
 
   constructor(
@@ -293,7 +309,8 @@ export class EpubEngine implements ReaderEngine {
     return p;
   }
 
-  private resolveLocator(l: ReadingLocator, flash: boolean): [number, Target] | null {
+  /** `jump`: a found passage (search result, highlight) rather than a saved reading position. */
+  private resolveLocator(l: ReadingLocator, jump: boolean): [number, Target] | null {
     const raw = obj(l.raw);
     const locations = obj(raw?.locations);
     const text = obj(raw?.text);
@@ -308,7 +325,8 @@ export class EpubEngine implements ReaderEngine {
           kind: 'quote',
           quote: { highlight, before: str(text?.before) ?? '', after: str(text?.after) ?? '' },
           progression,
-          flash,
+          jump,
+          flash: jump,
         },
       ];
     }
@@ -338,7 +356,7 @@ export class EpubEngine implements ReaderEngine {
     this.clearSelectionState();
     this.current = chapter;
     this.index = null;
-    this.page = 0;
+    this.pageIndex = 0;
     this.fragmentPositions.clear();
 
     for (const s of Array.from(doc.head.querySelectorAll('style[data-book]'))) s.remove();
@@ -353,6 +371,12 @@ export class EpubEngine implements ReaderEngine {
     const html = doc.documentElement;
     for (const name of ['lang', 'dir', 'class']) html.removeAttribute(name);
     for (const [name, value] of chapter.htmlAttrs) html.setAttribute(name, value);
+    // The page root's direction follows the book's progression (see preferencesCss);
+    // the text keeps the chapter's own direction. Zero specificity: book CSS wins.
+    const attr = (n: string) => chapter.htmlAttrs.find(([k]) => k === n)?.[1].trim().toLowerCase();
+    const dir = attr('dir');
+    const textDir = dir === 'rtl' || dir === 'ltr' ? dir : RTL_LANG.test(attr('lang') ?? this.info.language ?? '') ? 'rtl' : 'ltr';
+    doc.getElementById('reader-dir')!.textContent = `:where(body:not([dir])){direction:${textDir};}`;
 
     const body = doc.importNode(chapter.body, true) as HTMLElement;
     html.replaceChild(body, doc.body);
@@ -372,7 +396,7 @@ export class EpubEngine implements ReaderEngine {
     this.wrapper.style.background = this.colors.paper;
     this.frame.style.background = this.colors.paper;
     this.doc.getElementById('reader-prefs')!.textContent =
-      preferencesCss(this.prefs, this.colors, g) + '\nhtml{scroll-behavior:auto !important;}';
+      preferencesCss(this.prefs, this.colors, g, this.pkg.rtl) + '\nhtml{scroll-behavior:auto !important;}';
     this.layoutFixed();
     this.ensureNextButton();
     this.fragmentPositions.clear();
@@ -439,21 +463,37 @@ export class EpubEngine implements ReaderEngine {
     const se = this.scroller();
     const w = this.geometry.width;
     this.pageCount = Math.max(1, Math.ceil(se.scrollWidth / w - 0.02));
-    if (this.page >= this.pageCount) this.page = this.pageCount - 1;
+    if (this.pageIndex >= this.pageCount) this.pageIndex = this.pageCount - 1;
     // The last column ends short of a full page; stretch the scrollable
     // width so the last page can scroll fully into place.
     spacer = this.doc.createElement('div');
     spacer.setAttribute('data-reader-ui', '');
     spacer.className = 'reader-spacer';
-    spacer.style.cssText = `position:absolute;top:0;left:${this.pageCount * w - 1}px;width:1px;height:1px;`;
+    spacer.style.cssText = `position:absolute;top:0;${this.rtl ? 'right' : 'left'}:${this.pageCount * w - 1}px;width:1px;height:1px;`;
     html.append(spacer);
   }
 
+  /** Paginated right-to-left: pages run leftwards and scrollLeft goes negative. */
+  private get rtl(): boolean {
+    return this.pkg.rtl && this.geometry?.mode === 'paginated';
+  }
+
+  /** Paginated scroll offset along the reading direction (always >= 0). */
+  private scrollAlong(): number {
+    const x = this.scroller().scrollLeft;
+    return this.rtl ? -x : x;
+  }
+
+  /** Paginated: distance of a rect's leading edge from the chapter's first page start. */
+  private along(r: DOMRect): number {
+    return this.rtl ? this.geometry.width - r.right + this.scrollAlong() : r.left + this.scrollAlong();
+  }
+
   private setPage(page: number): void {
-    this.page = Math.max(0, Math.min(page, this.pageCount - 1));
+    this.pageIndex = Math.max(0, Math.min(page, this.pageCount - 1));
     const se = this.scroller();
     this.programmaticScroll = true;
-    se.scrollLeft = this.page * this.geometry.width;
+    se.scrollLeft = (this.rtl ? -1 : 1) * this.pageIndex * this.geometry.width;
     se.scrollTop = 0;
     this.programmaticScroll = false;
   }
@@ -465,10 +505,9 @@ export class EpubEngine implements ReaderEngine {
     this.programmaticScroll = false;
   }
 
-  /** Paginated: returns the page holding document x-coordinate (in frame viewport space). */
-  private pageForViewportX(x: number): number {
-    const abs = x + this.scroller().scrollLeft;
-    return Math.max(0, Math.min(this.pageCount - 1, Math.floor((abs + 1) / this.geometry.width)));
+  /** Paginated: the page holding a rect (frame viewport coordinates). */
+  private pageForRect(r: DOMRect): number {
+    return Math.max(0, Math.min(this.pageCount - 1, Math.floor((this.along(r) + 1) / this.geometry.width)));
   }
 
   private position(target: Target): void {
@@ -507,7 +546,7 @@ export class EpubEngine implements ReaderEngine {
         const range = this.textIndex().range(found.start, found.end);
         const rect = range ? firstRect(range) : null;
         if (rect) {
-          if (mode === 'scrolled') {
+          if (mode === 'scrolled' && target.jump) {
             // Leave a little context above the match.
             this.setScrollTop(rect.top + this.scroller().scrollTop - this.geometry.height * 0.25);
           } else this.positionRect(rect);
@@ -524,7 +563,7 @@ export class EpubEngine implements ReaderEngine {
   }
 
   private positionRect(rect: DOMRect): void {
-    if (this.geometry.mode === 'paginated') this.setPage(this.pageForViewportX(rect.left));
+    if (this.geometry.mode === 'paginated') this.setPage(this.pageForRect(rect));
     else this.setScrollTop(rect.top + this.scroller().scrollTop);
   }
 
@@ -559,7 +598,7 @@ export class EpubEngine implements ReaderEngine {
   private progression(): number {
     const g = this.geometry;
     if (!g || g.mode === 'fixed') return 0;
-    if (g.mode === 'paginated') return this.pageCount > 0 ? clamp01(this.page / this.pageCount) : 0;
+    if (g.mode === 'paginated') return this.pageCount > 0 ? clamp01(this.pageIndex / this.pageCount) : 0;
     const se = this.scroller();
     return se.scrollHeight > 0 ? clamp01(se.scrollTop / se.scrollHeight) : 0;
   }
@@ -577,8 +616,10 @@ export class EpubEngine implements ReaderEngine {
     const nodes = idx.nodes;
     if (nodes.length === 0) return null;
     const paginated = this.geometry.mode === 'paginated';
+    const rtl = this.rtl;
+    const w = this.geometry.width;
     const range = this.doc.createRange();
-    const visibleAfterStart = (r: DOMRect) => (paginated ? r.right > 1 : r.bottom > 1);
+    const visibleAfterStart = (r: DOMRect) => (!paginated ? r.bottom > 1 : rtl ? r.left < w - 1 : r.right > 1);
     // Predicate for node i: its last line reaches into or past the viewport.
     const nodeTest = (i: number): boolean | null => {
       range.selectNodeContents(nodes[i]);
@@ -630,7 +671,7 @@ export class EpubEngine implements ReaderEngine {
     const rect = range ? firstRect(range) : null;
     if (!rect) return null;
     const se = this.scroller();
-    if (this.geometry.mode === 'paginated') return se.scrollWidth > 0 ? clamp01((rect.left + se.scrollLeft) / se.scrollWidth) : null;
+    if (this.geometry.mode === 'paginated') return se.scrollWidth > 0 ? clamp01(this.along(rect) / se.scrollWidth) : null;
     return se.scrollHeight > 0 ? clamp01((rect.top + se.scrollTop) / se.scrollHeight) : null;
   }
 
@@ -660,7 +701,7 @@ export class EpubEngine implements ReaderEngine {
       if (this.geometry.mode === 'paginated') {
         // Column index plus the fraction down that column.
         const step = this.geometry.width / this.geometry.columns;
-        pos = Math.floor((r.left + se.scrollLeft + 1) / step) + clamp01(r.top / this.geometry.height);
+        pos = Math.floor((this.along(r) + 1) / step) + clamp01(r.top / this.geometry.height);
       } else pos = r.top + se.scrollTop;
     }
     this.fragmentPositions.set(id, pos);
@@ -675,7 +716,7 @@ export class EpubEngine implements ReaderEngine {
     if (entries.length === 1 || this.geometry.mode === 'fixed') return entries[0].title;
     const paginated = this.geometry.mode === 'paginated';
     const here = paginated
-      ? this.page * this.geometry.columns + 0.2
+      ? this.pageIndex * this.geometry.columns + 0.2
       : this.scroller().scrollTop + this.geometry.height * 0.2;
     let title: string | null = null;
     for (const e of entries) {
@@ -702,8 +743,44 @@ export class EpubEngine implements ReaderEngine {
       engine: 'web',
       raw: null,
     };
-    this.locator = locator;
+    this.base = locator;
+    this.anchorPending = true;
     this.cb.onLocator(locator);
+  }
+
+  get locator(): ReadingLocator | null {
+    if (this.anchorPending && this.base && !this.destroyed) {
+      this.anchorPending = false;
+      this.base = { ...this.base, raw: this.positionAnchor(this.base) };
+    }
+    return this.base;
+  }
+
+  /**
+   * The base locator as a Readium locator plus the first visible words, so
+   * the saved position survives another window size or font. Mobile reads
+   * `href` + `progression` from non-Readium locators; the quote is extra.
+   */
+  private positionAnchor(base: ReadingLocator): Record<string, unknown> | null {
+    const ch = this.current;
+    if (!ch || ch.href !== base.href) return null;
+    const raw: Record<string, unknown> = {
+      href: ch.href,
+      type: this.pkg.spine[ch.index].mediaType || 'application/xhtml+xml',
+      title: base.title,
+      locations: { progression: base.progression, totalProgression: base.totalProgression },
+    };
+    const offset = this.firstVisibleOffset();
+    if (offset === null) return raw;
+    const text = this.textIndex().text;
+    const highlight = text.slice(offset, offset + POSITION_QUOTE);
+    if (highlight.trim()) raw.text = { before: text.slice(Math.max(0, offset - POSITION_QUOTE), offset), highlight, after: '' };
+    return raw;
+  }
+
+  get page(): PageInfo | null {
+    if (!this.current || this.geometry?.mode !== 'paginated') return null;
+    return { index: this.pageIndex, count: this.pageCount };
   }
 
   // ---------------------------------------------------------------- highlights
@@ -815,8 +892,7 @@ export class EpubEngine implements ReaderEngine {
   private onScroll(): void {
     if (this.destroyed || !this.current) return;
     if (this.geometry.mode === 'paginated') {
-      const se = this.scroller();
-      if (!this.programmaticScroll && !this.pointerDown && Math.abs(se.scrollLeft - this.page * this.geometry.width) > 1) {
+      if (!this.programmaticScroll && !this.pointerDown && Math.abs(this.scrollAlong() - this.pageIndex * this.geometry.width) > 1) {
         this.snapPage();
       }
       return;
@@ -836,9 +912,8 @@ export class EpubEngine implements ReaderEngine {
 
   /** Re-aligns to a page after the browser scrolled on its own (selection drag, focus). */
   private snapPage(): void {
-    const se = this.scroller();
-    const page = Math.round(se.scrollLeft / this.geometry.width);
-    const changed = page !== this.page;
+    const page = Math.round(this.scrollAlong() / this.geometry.width);
+    const changed = page !== this.pageIndex;
     this.setPage(page);
     if (changed) this.emitLocator();
   }
@@ -851,7 +926,8 @@ export class EpubEngine implements ReaderEngine {
     e.preventDefault();
     this.sticky = null;
     const now = Date.now();
-    const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+    // Horizontal swipes follow the page direction; wheels always read down as forward.
+    const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? (this.rtl ? -e.deltaX : e.deltaX) : e.deltaY;
     if (now < this.wheelLockUntil) {
       // Trackpad momentum: keep the lock while events keep coming.
       this.wheelLockUntil = now + 180;
@@ -886,7 +962,7 @@ export class EpubEngine implements ReaderEngine {
     const dy = t.clientY - start.y;
     if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5 || Date.now() - start.t > 800 || this.hasSelection()) return;
     this.suppressTapUntil = Date.now() + 400;
-    void (dx < 0 ? this.next() : this.previous());
+    void (dx < 0 !== this.rtl ? this.next() : this.previous());
   }
 
   private scheduleRelayout(): void {
@@ -907,7 +983,7 @@ export class EpubEngine implements ReaderEngine {
         this.position(this.sticky);
         this.emitLocator();
       } else if (this.geometry.mode === 'paginated') {
-        this.setPage(this.page);
+        this.setPage(this.pageIndex);
       }
     };
     this.relayoutFrame = requestAnimationFrame(run);
@@ -998,42 +1074,47 @@ export class EpubEngine implements ReaderEngine {
   async next(): Promise<boolean> {
     if (!this.current) return false;
     this.sticky = null;
-    const g = this.geometry;
-    if (g.mode === 'paginated') {
-      this.measure();
-      if (this.page < this.pageCount - 1) {
-        this.setPage(this.page + 1);
-        this.emitLocator();
+    const mode = this.geometry.mode;
+    if (mode === 'scrolled') {
+      const se = this.scroller();
+      if (se.scrollTop + se.clientHeight < se.scrollHeight - 2) {
+        this.scrollBy(0.9);
         return true;
       }
       return this.nextChapter();
     }
-    if (g.mode === 'scrolled') {
-      const se = this.scroller();
-      if (se.scrollTop + se.clientHeight < se.scrollHeight - 2) {
-        this.win.scrollBy({ top: se.clientHeight * 0.9, behavior: 'smooth' });
+    if (mode === 'paginated') {
+      this.remeasure();
+      if (this.pageIndex < this.pageCount - 1) {
+        this.setPage(this.pageIndex + 1);
+        this.turned(true);
+        this.emitLocator();
         return true;
       }
     }
-    return this.nextChapter();
+    const moved = await this.nextChapter();
+    if (moved) this.turned(true);
+    return moved;
   }
 
   async previous(): Promise<boolean> {
     if (!this.current) return false;
     this.sticky = null;
-    const g = this.geometry;
-    if (g.mode === 'paginated' && this.page > 0) {
-      this.setPage(this.page - 1);
+    const mode = this.geometry.mode;
+    if (mode === 'paginated' && this.pageIndex > 0) {
+      this.setPage(this.pageIndex - 1);
+      this.turned(false);
       this.emitLocator();
       return true;
     }
-    if (g.mode === 'scrolled' && this.scroller().scrollTop > 2) {
-      this.win.scrollBy({ top: -this.scroller().clientHeight * 0.9, behavior: 'smooth' });
+    if (mode === 'scrolled' && this.scroller().scrollTop > 2) {
+      this.scrollBy(-0.9);
       return true;
     }
     const prev = this.previousLinear(this.current.index);
     if (prev === null) return false;
-    await this.display(prev, g.mode === 'fixed' ? { kind: 'progression', value: 0 } : { kind: 'end' });
+    await this.display(prev, mode === 'fixed' ? { kind: 'progression', value: 0 } : { kind: 'end' });
+    if (mode !== 'scrolled') this.turned(false);
     return true;
   }
 
@@ -1057,26 +1138,64 @@ export class EpubEngine implements ReaderEngine {
     if (this.current) await this.display(this.current.index, { kind: 'progression', value: 0 });
   }
 
+  scrollBy(screens: number): void {
+    if (!this.current || this.destroyed) return;
+    if (this.geometry.mode !== 'scrolled') {
+      void (screens > 0 ? this.next() : this.previous());
+      return;
+    }
+    this.sticky = null;
+    this.win.scrollBy({ top: this.scroller().clientHeight * screens, behavior: this.reducedMotion.matches ? 'auto' : 'smooth' });
+  }
+
+  /** Late images or fonts can lengthen a chapter between relayouts; the spacer keeps it from shrinking. */
+  private remeasure(): void {
+    if (this.scroller().scrollWidth > this.pageCount * this.geometry.width + 1) this.measure();
+  }
+
+  /** A short slide in the reading direction, so a page turn reads as one. Compositor-only. */
+  private turned(forward: boolean): void {
+    if (this.reducedMotion.matches || typeof this.frame.animate !== 'function') return;
+    this.turnAnimation?.cancel();
+    const dx = (forward !== this.rtl ? 1 : -1) * Math.min(24, Math.round(this.geometry.width * 0.02));
+    this.turnAnimation = this.frame.animate(
+      [
+        { transform: `translateX(${dx}px)`, opacity: 0.6 },
+        { transform: 'none', opacity: 1 },
+      ],
+      { duration: TURN_MS, easing: 'cubic-bezier(0.2, 0.7, 0.2, 1)' },
+    );
+  }
+
   applyPreferences(prefs: ReaderPreferences, colors: EngineColors): void {
-    const anchor = this.firstVisibleOffset();
-    const progression = this.progression();
+    const keep = this.current ? this.keepTarget() : null;
     const flowChanged = prefs.flow !== this.prefs.flow;
     this.prefs = prefs;
     this.colors = colors;
-    if (!this.current) return;
+    if (!this.current || !keep) return;
     if (flowChanged) this.doc.body.querySelector(':scope > [data-reader-ui].reader-next')?.remove();
-    this.relayoutKeeping(anchor, progression);
+    this.relayoutKeeping(keep);
   }
 
   resize(): void {
     // A hidden (zero-size) container would lose the position; wait for a real size.
     if (!this.current || this.destroyed || !this.wrapper.clientWidth || !this.wrapper.clientHeight) return;
-    this.relayoutKeeping(this.firstVisibleOffset(), this.progression());
+    this.relayoutKeeping(this.keepTarget());
   }
 
-  private relayoutKeeping(anchor: number | null, progression: number): void {
+  /**
+   * What to hold on screen through a relayout. Until the reader moves, the
+   * last target is kept, so a window drag or a run of size steps cannot
+   * drift; after that, the first visible character.
+   */
+  private keepTarget(): Target {
+    if (this.sticky) return this.sticky;
+    const anchor = this.firstVisibleOffset();
+    return anchor !== null ? { kind: 'offset', value: anchor } : { kind: 'progression', value: this.progression() };
+  }
+
+  private relayoutKeeping(target: Target): void {
     this.layout();
-    const target: Target = anchor !== null ? { kind: 'offset', value: anchor } : { kind: 'progression', value: progression };
     this.position(target);
     this.sticky = target;
     this.emitLocator();
@@ -1189,6 +1308,7 @@ export class EpubEngine implements ReaderEngine {
       }
     }
     this.cleanup.length = 0;
+    this.turnAnimation?.cancel();
     this.wrapper.remove();
     this.cache.clear();
     this.plainCache.clear();

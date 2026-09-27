@@ -128,6 +128,9 @@ export async function readPackage(zip: ZipArchive): Promise<EpubPackage> {
     toc = spine.filter((s) => s.linear).map((s, i) => ({ title: `Section ${i + 1}`, href: s.href, depth: 0 }));
   }
 
+  const rtl = spineEl?.getAttribute('page-progression-direction') === 'rtl';
+  await rejectProtected(zip, spine);
+
   return {
     opfPath,
     info: {
@@ -136,12 +139,33 @@ export async function readPackage(zip: ZipArchive): Promise<EpubPackage> {
       language: meta('language') || null,
       toc,
       spineCount: spine.length,
+      readingProgression: rtl ? 'rtl' : 'ltr',
     },
     spine,
     manifestByHref,
     fixedLayout,
-    rtl: spineEl?.getAttribute('page-progression-direction') === 'rtl',
+    rtl,
   };
+}
+
+/** Font obfuscation only scrambles fonts; anything else in encryption.xml is DRM. */
+const FONT_OBFUSCATION = new Set(['http://www.idpf.org/2008/embedding', 'http://ns.adobe.com/pdf/enc#RC']);
+
+/** DRM-protected sections would render as garbage; say so instead, as Readium does. */
+async function rejectProtected(zip: ZipArchive, spine: SpineItem[]): Promise<void> {
+  const text = zip.has('META-INF/encryption.xml') ? await zip.readText('META-INF/encryption.xml').catch(() => null) : null;
+  const doc = text ? parseXml(text) : null;
+  if (!doc) return;
+  const sections = new Set(spine.map((s) => s.href.toLowerCase()));
+  for (const data of byLocal(doc, 'EncryptedData')) {
+    const algorithm = byLocal(data, 'EncryptionMethod')[0]?.getAttribute('Algorithm') ?? '';
+    if (FONT_OBFUSCATION.has(algorithm)) continue;
+    const uri = byLocal(data, 'CipherReference')[0]?.getAttribute('URI');
+    const path = uri ? resolveRef('', uri)?.path.toLowerCase() : null;
+    if (path && sections.has(path)) {
+      throw new EpubFormatError('This book is protected by DRM and cannot be opened here.');
+    }
+  }
 }
 
 /** Uses the zip's own casing for the path part so TOC hrefs match spine hrefs. */

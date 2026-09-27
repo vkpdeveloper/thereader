@@ -18,6 +18,14 @@ export interface PublicationInfo {
   language: string | null;
   toc: TocEntry[];
   spineCount: number;
+  /** Page progression from the spine (`page-progression-direction`), as Readium reads it. */
+  readingProgression: 'ltr' | 'rtl';
+}
+
+/** Paginated position inside the current chapter; a page is one screen (one spread on wide screens). */
+export interface PageInfo {
+  index: number;
+  count: number;
 }
 
 /** Colours the engine paints with; resolved from the active theme preset. */
@@ -75,8 +83,14 @@ export interface OpenOptions {
 
 export interface ReaderEngine {
   readonly info: PublicationInfo;
-  /** Current position, or null before the first layout. */
+  /**
+   * Current position, or null before the first layout. Reading it (e.g. to
+   * save) also anchors the position to the first visible text, in a
+   * Readium-shaped `raw`, so a reopen lands on the same words at any size.
+   */
   readonly locator: ReadingLocator | null;
+  /** Paginated flow only; null when scrolling or fixed-layout. */
+  readonly page: PageInfo | null;
   goTo(locator: ReadingLocator): Promise<void>;
   goToHref(href: string): Promise<void>;
   /** Next page (paginated) or next screenful (scrolled); crosses chapters. False at the end. */
@@ -85,6 +99,8 @@ export interface ReaderEngine {
   nextChapter(): Promise<boolean>;
   previousChapter(): Promise<boolean>;
   toChapterStart(): Promise<void>;
+  /** Scrolled flow: scrolls by a fraction of the screen (negative = up). Paginated: turns a page. */
+  scrollBy(screens: number): void;
   applyPreferences(prefs: ReaderPreferences, colors: EngineColors): void;
   /** Replaces the drawn highlights (live ones only). */
   setHighlights(highlights: Highlight[]): void;

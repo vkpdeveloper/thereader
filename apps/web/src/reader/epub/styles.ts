@@ -140,8 +140,13 @@ function clampFont(size: number): number {
 
 const NOT_MONO = ':not(code):not(kbd):not(samp):not(pre):not(tt):not(var):not(pre *):not(code *):not(math):not(math *)';
 
-/** The user stylesheet injected after the book's own styles. */
-export function preferencesCss(prefs: ReaderPreferences, colors: EngineColors, g: PageGeometry): string {
+/**
+ * The user stylesheet injected after the book's own styles. `rtl` is the
+ * book's page progression: columns then run right to left. The multicol root
+ * always gets an explicit direction, so a chapter's own `dir` only sets its
+ * text direction (see the engine's `reader-dir`) and never reverses paging.
+ */
+export function preferencesCss(prefs: ReaderPreferences, colors: EngineColors, g: PageGeometry, rtl = false): string {
   const fontSize = clampFont(prefs.fontSize);
   const lineHeight = Number.isFinite(prefs.lineHeight) ? prefs.lineHeight : 1.6;
   const align = prefs.justify ? 'justify' : 'left';
@@ -191,7 +196,8 @@ body svg{max-width:100%;}
 
   if (g.mode === 'scrolled') {
     return `${common}${typography}
-html{overflow-x:hidden !important;overflow-y:auto !important;height:auto !important;column-count:auto !important;padding:0 !important;margin:0 !important;}
+html{overflow-x:hidden !important;overflow-y:auto !important;height:auto !important;column-count:auto !important;padding:0 !important;margin:0 !important;
+  direction:ltr !important;}
 body{box-sizing:content-box !important;max-width:${g.measure}px !important;margin:0 auto !important;
   padding:${g.padTop}px ${g.sidePad}px ${g.padBottom}px !important;min-height:0 !important;height:auto !important;}
 [data-reader-ui].reader-next{display:block !important;margin:3.5em 0 1em !important;text-align:center !important;}
@@ -206,7 +212,7 @@ body{box-sizing:content-box !important;max-width:${g.measure}px !important;margi
   const contentHeight = Math.max(80, g.height - g.padTop - g.padBottom);
   return `${common}${typography}
 html{height:${g.height}px !important;width:100% !important;max-width:none !important;overflow:hidden !important;margin:0 !important;
-  position:static !important;transform:none !important;
+  position:static !important;transform:none !important;direction:${rtl ? 'rtl' : 'ltr'} !important;
   box-sizing:border-box !important;padding:${g.padTop}px ${g.gap / 2}px ${g.padBottom}px !important;
   column-count:${g.columns} !important;column-gap:${g.gap}px !important;column-fill:auto !important;column-rule:none !important;}
 body{margin:0 !important;padding:0 !important;max-width:none !important;width:auto !important;height:auto !important;
