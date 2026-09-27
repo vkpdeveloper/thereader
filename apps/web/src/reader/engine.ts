@@ -68,11 +68,30 @@ export interface EngineCallbacks {
   onExternalLink(url: string): void;
   /** Keydown inside the book frame, forwarded so host shortcuts keep working. */
   onKey(event: KeyboardEvent): void;
+  /**
+   * Input inside the book frame (keys, pointer, wheel, touch), at most every
+   * few seconds. The page's own input never reaches the host's document, so
+   * this keeps the reading clock from taking the reader for idle.
+   */
+  onActivity(): void;
+}
+
+/**
+ * Random-access EPUB bytes: the library's `BookFile`. `provisional` files
+ * are still downloading (reads wait for missing bytes), so the engine does
+ * not preload neighbouring chapters from them.
+ */
+export interface BookBytes {
+  readonly size: number;
+  readonly provisional: boolean;
+  read(start: number, end: number): Promise<Uint8Array>;
+  slice(start: number, end: number, type?: string): Promise<Blob>;
+  close(): void;
 }
 
 export interface OpenOptions {
-  /** Verified EPUB bytes. */
-  data: Blob;
+  /** The book. The engine owns it from here and closes it on `destroy` (or a failed open). */
+  file: BookBytes;
   container: HTMLElement;
   prefs: ReaderPreferences;
   colors: EngineColors;

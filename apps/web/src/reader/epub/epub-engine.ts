@@ -38,6 +38,7 @@ const CACHE_SIZE = 5;
 /** Characters of visible text kept in a saved position, enough to find it again. */
 const POSITION_QUOTE = 48;
 const TURN_MS = 200;
+const ACTIVITY_THROTTLE_MS = 5000;
 
 /** Scripts written right to left; a chapter in one of these reads RTL even without `dir`. */
 const RTL_LANG = /^(ar|arc|ckb|dv|fa|he|iw|ku|ps|sd|ug|ur|yi)(-|$)/i;
@@ -86,6 +87,7 @@ export class EpubEngine implements ReaderEngine {
 
   private readonly res: Resources;
   private readonly cb: EngineCallbacks;
+  private readonly file: OpenOptions['file'];
   private prefs: ReaderPreferences;
   private colors: EngineColors;
   private readonly wrapper: HTMLDivElement;
@@ -130,6 +132,7 @@ export class EpubEngine implements ReaderEngine {
   private programmaticScroll = false;
   /** Set when the base locator changed; `locator` then adds the text anchor on demand. */
   private anchorPending = false;
+  private lastActivity = 0;
   private turnAnimation: Animation | null = null;
   private readonly reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   private readonly cleanup: (() => void)[] = [];
@@ -142,6 +145,7 @@ export class EpubEngine implements ReaderEngine {
   ) {
     this.info = pkg.info;
     this.cb = options.callbacks;
+    this.file = options.file;
     this.prefs = options.prefs;
     this.colors = options.colors;
     this.res = new Resources(zip, pkg.manifestByHref);
@@ -232,6 +236,13 @@ export class EpubEngine implements ReaderEngine {
       this.cleanup.push(() => doc.removeEventListener(type, fn as EventListener, opts));
     };
     on('click', (e) => this.onClick(e));
+    const activity = () => {
+      const now = Date.now();
+      if (now - this.lastActivity < ACTIVITY_THROTTLE_MS) return;
+      this.lastActivity = now;
+      this.cb.onActivity();
+    };
+    for (const type of ['pointerdown', 'keydown', 'wheel', 'touchstart'] as const) on(type, activity, { capture: true, passive: true });
     on('keydown', (e) => {
       this.sticky = null;
       this.cb.onKey(e);
@@ -1046,7 +1057,9 @@ export class EpubEngine implements ReaderEngine {
   private schedulePreload(): void {
     clearTimeout(this.preloadTimer);
     const current = this.current?.index;
-    if (current === undefined) return;
+    // A book still downloading would pull neighbouring chapters ahead of the
+    // download's own order; mobile turns Readium's preloading off likewise.
+    if (current === undefined || this.file.provisional) return;
     this.preloadTimer = window.setTimeout(() => {
       if (this.destroyed) return;
       const next = this.nextLinear(current);
@@ -1315,6 +1328,7 @@ export class EpubEngine implements ReaderEngine {
     this.current = null;
     this.index = null;
     this.res.destroy();
+    this.file.close();
   }
 }
 
