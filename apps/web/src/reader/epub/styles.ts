@@ -194,9 +194,9 @@ body blockquote{margin:1em 0 1em 0 !important;padding-left:1em !important;border
 body ul{list-style:disc outside !important;padding-left:1.2em !important;margin:1em 0 !important;}
 body ol{list-style:decimal outside !important;padding-left:1.2em !important;margin:1em 0 !important;}
 body li{margin:0.35em 0 !important;}
-body figcaption, body caption{
-  color:${colors.muted} !important;font-size:0.9rem !important;font-weight:400 !important;
-  font-style:italic !important;text-align:center !important;margin-top:0.6em !important;
+body figcaption, body caption, body .figure-container > h5, body .figure-container-h5{
+  color:${colors.muted} !important;font-size:0.8rem !important;font-weight:400 !important;
+  font-style:normal !important;line-height:1.4 !important;text-align:left !important;margin-top:0.6em !important;
   -webkit-hyphens:manual !important;hyphens:manual !important;}
 body caption{caption-side:top !important;margin-top:0 !important;margin-bottom:0.6em !important;}
 body a[href], body a[href] *{color:${colors.link} !important;text-decoration:underline !important;text-decoration-color:color-mix(in srgb, ${colors.link} 50%, transparent);}

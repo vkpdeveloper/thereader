@@ -227,6 +227,7 @@ export class EpubEngine implements ReaderEngine {
 
   private attachListeners(): void {
     const doc = this.doc;
+    let hoveredLink: HTMLAnchorElement | null = null;
     const on = <K extends keyof DocumentEventMap>(
       type: K,
       fn: (e: DocumentEventMap[K]) => void,
@@ -236,6 +237,29 @@ export class EpubEngine implements ReaderEngine {
       this.cleanup.push(() => doc.removeEventListener(type, fn as EventListener, opts));
     };
     on('click', (e) => this.onClick(e));
+    const externalAnchor = (target: EventTarget | null): HTMLAnchorElement | null => {
+      const node = target as Node | null;
+      const element = node?.nodeType === Node.ELEMENT_NODE ? node as Element : node?.parentElement;
+      const link = element?.closest('a[href]') as HTMLAnchorElement | null;
+      return link && /^https?:\/\//i.test(link.getAttribute('href') ?? '') ? link : null;
+    };
+    on('pointerover', (e) => {
+      const link = externalAnchor(e.target);
+      if (link === hoveredLink) return;
+      hoveredLink = link;
+      this.cb.onLinkHover(link ? { url: link.href, rect: this.toHostRect(link.getBoundingClientRect()) } : null);
+    });
+    on('pointerout', (e) => {
+      if (!hoveredLink || hoveredLink.contains(e.relatedTarget as Node | null)) return;
+      hoveredLink = null;
+      this.cb.onLinkHover(null);
+    });
+    on('pointermove', (e) => this.cb.onReadingPointer(this.toHostRect(new DOMRect(e.clientX, e.clientY, 0, 0)).top));
+    on('focusin', (e) => {
+      const link = externalAnchor(e.target);
+      if (link) this.cb.onLinkHover({ url: link.href, rect: this.toHostRect(link.getBoundingClientRect()) });
+    });
+    on('focusout', () => this.cb.onLinkHover(null));
     const activity = () => {
       const now = Date.now();
       if (now - this.lastActivity < ACTIVITY_THROTTLE_MS) return;
@@ -263,7 +287,10 @@ export class EpubEngine implements ReaderEngine {
       if (!this.pointerDown) this.scheduleSelection(250);
     });
     on('scroll', () => this.onScroll(), { passive: true });
-    on('wheel', (e) => this.onWheel(e), { passive: false });
+    on('wheel', (e) => {
+      if (e.deltaX || e.deltaY) this.cb.onReadingGesture();
+      this.onWheel(e);
+    }, { passive: false });
     on('touchstart', (e) => this.onTouchStart(e), { passive: true });
     on('touchend', (e) => this.onTouchEnd(e), { passive: true });
     on('dragstart', (e) => e.preventDefault());
@@ -902,6 +929,7 @@ export class EpubEngine implements ReaderEngine {
 
   private onScroll(): void {
     if (this.destroyed || !this.current) return;
+    if (!this.programmaticScroll) this.cb.onReadingGesture();
     if (this.geometry.mode === 'paginated') {
       if (!this.programmaticScroll && !this.pointerDown && Math.abs(this.scrollAlong() - this.pageIndex * this.geometry.width) > 1) {
         this.snapPage();
@@ -971,6 +999,7 @@ export class EpubEngine implements ReaderEngine {
     const t = e.changedTouches[0];
     const dx = t.clientX - start.x;
     const dy = t.clientY - start.y;
+    if (Math.abs(dx) > 12 || Math.abs(dy) > 12) this.cb.onReadingGesture();
     if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5 || Date.now() - start.t > 800 || this.hasSelection()) return;
     this.suppressTapUntil = Date.now() + 400;
     void (dx < 0 !== this.rtl ? this.next() : this.previous());

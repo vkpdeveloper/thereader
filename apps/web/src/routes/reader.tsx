@@ -5,6 +5,7 @@ import { BottomChrome, EdgeProgress, TopChrome, ToChapterStart, type ReaderPanel
 import { ContentsList, FloatingToc, HighlightsList, SearchBook } from '../components/reader/panels';
 import { FontPicker, TypographyPanel } from '../components/reader/TypographyPanel';
 import { FloatingBar, HighlightActions, NoteEditor, SelectionActions } from '../components/reader/Floating';
+import { LinkPreviewCard } from '../components/reader/LinkPreviewCard';
 import { LoadingLine, StateMessage } from '../components/states';
 import { useToast } from '../components/toast';
 import { useCanHover, useDocumentTitle, useGoBack, useIsDesktop, useWakeLock, isTypingTarget } from '../lib/hooks';
@@ -73,6 +74,9 @@ export function ReaderScreen() {
   const appliedPrefs = useRef<ReaderPreferences | null>(null);
   const saveTimer = useRef<number | undefined>(undefined);
   const hoverReveal = useRef(false);
+  const chromeHideTimer = useRef<number | undefined>(undefined);
+  const linkOpenTimer = useRef<number | undefined>(undefined);
+  const linkCloseTimer = useRef<number | undefined>(undefined);
   const lastPanel = useRef<ReaderPanel | null>(null);
 
   const [engine, setEngine] = useState<ReaderEngine | null>(null);
@@ -84,6 +88,7 @@ export function ReaderScreen() {
   const [provisional, setProvisional] = useState(false);
   const stopReading = useRef<((message: string) => void) | null>(null);
   const [chrome, setChrome] = useState(false);
+  const [linkHover, setLinkHover] = useState<{ url: string; rect: DOMRect } | null>(null);
   const [panel, setPanel] = useState<ReaderPanel | null>(null);
   const [fontPicker, setFontPicker] = useState(false);
   const [selection, setSelection] = useState<SelectionInfo | null>(null);
@@ -110,6 +115,42 @@ export function ReaderScreen() {
     window.clearTimeout(saveTimer.current);
     saveTimer.current = window.setTimeout(saveNow, saveDebounceMs);
   }, [saveNow]);
+
+  const cancelChromeHide = () => {
+    window.clearTimeout(chromeHideTimer.current);
+    chromeHideTimer.current = undefined;
+  };
+  const scheduleChromeHide = () => {
+    if (panel || chromeHideTimer.current != null) return;
+    chromeHideTimer.current = window.setTimeout(() => {
+      chromeHideTimer.current = undefined;
+      hoverReveal.current = false;
+      setChrome(false);
+    }, 800);
+  };
+  const handleReaderPointer = (y: number) => {
+    if (!chrome || !canHover) return;
+    const bounds = stage.current?.getBoundingClientRect();
+    if (!bounds) return;
+    if (y < bounds.top + 96 || y > bounds.bottom - 96) cancelChromeHide();
+    else scheduleChromeHide();
+  };
+  const cancelLinkClose = () => window.clearTimeout(linkCloseTimer.current);
+  const scheduleLinkClose = () => {
+    window.clearTimeout(linkOpenTimer.current);
+    cancelLinkClose();
+    linkCloseTimer.current = window.setTimeout(() => setLinkHover(null), 250);
+  };
+
+  useEffect(() => {
+    if (panel) cancelChromeHide();
+  }, [panel]);
+
+  useEffect(() => () => {
+    window.clearTimeout(chromeHideTimer.current);
+    window.clearTimeout(linkOpenTimer.current);
+    window.clearTimeout(linkCloseTimer.current);
+  }, []);
 
   useEffect(() => {
     const onHide = () => {
@@ -385,21 +426,54 @@ export function ReaderScreen() {
         clearFloating();
         return;
       }
+      if (chrome) {
+        cancelChromeHide();
+        hoverReveal.current = false;
+        setChrome(false);
+        return;
+      }
       const eng = engineRef.current;
       const zone = settings.reader.flow !== 'paginated' ? 0 : x < 0.3 ? -1 : x > 0.7 ? 1 : 0;
       if (eng && zone !== 0) void (zone > 0 !== rtl ? eng.next() : eng.previous());
       else {
         hoverReveal.current = false;
-        setChrome((v) => !v);
+        setChrome(true);
+        if (canHover) scheduleChromeHide();
       }
     },
     onExternalLink(url) {
+      window.clearTimeout(linkOpenTimer.current);
+      setLinkHover(null);
       if (/^https?:/i.test(url)) {
         const w = window.open(url, '_blank', 'noopener,noreferrer');
         if (!w) toast.show("Couldn't open link.");
       } else {
         window.location.href = url;
       }
+    },
+    onLinkHover(link) {
+      if (!canHover || !desktop) return;
+      if (!link) {
+        scheduleLinkClose();
+        return;
+      }
+      cancelLinkClose();
+      window.clearTimeout(linkOpenTimer.current);
+      setLinkHover(null);
+      linkOpenTimer.current = window.setTimeout(() => setLinkHover(link), 300);
+    },
+    onReadingGesture() {
+      if (!panel) {
+        cancelChromeHide();
+        hoverReveal.current = false;
+        setChrome(false);
+      }
+      window.clearTimeout(linkOpenTimer.current);
+      cancelLinkClose();
+      setLinkHover(null);
+    },
+    onReadingPointer(y) {
+      handleReaderPointer(y);
     },
     onKey(e) {
       handleKey(e, true);
@@ -477,6 +551,9 @@ export function ReaderScreen() {
         onHighlightClick: (id, r) => handlers.current.onHighlightClick(id, r),
         onTap: (x) => handlers.current.onTap(x),
         onExternalLink: (u) => handlers.current.onExternalLink(u),
+        onLinkHover: (link) => handlers.current.onLinkHover(link),
+        onReadingGesture: () => handlers.current.onReadingGesture(),
+        onReadingPointer: (y) => handlers.current.onReadingPointer(y),
         onKey: (k) => handlers.current.onKey(k),
         onActivity: () => handlers.current.onActivity(),
       };
@@ -691,7 +768,7 @@ export function ReaderScreen() {
   const showFloatingToc = desktop && engine != null;
 
   return (
-    <div className="reader" data-flow={settings.reader.flow}>
+    <div className="reader" data-flow={settings.reader.flow} onMouseMove={(e) => handleReaderPointer(e.clientY)}>
       {showFloatingToc && (
         <FloatingToc
           toc={engine.info.toc}
@@ -720,6 +797,7 @@ export function ReaderScreen() {
                   className="reader-hover-strip"
                   aria-hidden="true"
                   onMouseEnter={() => {
+                    cancelChromeHide();
                     hoverReveal.current = true;
                     setChrome(true);
                   }}
@@ -735,10 +813,7 @@ export function ReaderScreen() {
                 onFullscreen={toggleFullscreen}
                 onShortcuts={() => setShortcuts(true)}
                 onMouseLeave={() => {
-                  if (hoverReveal.current) {
-                    hoverReveal.current = false;
-                    setChrome(false);
-                  }
+                  if (canHover) scheduleChromeHide();
                 }}
               />
               <BottomChrome
@@ -758,6 +833,15 @@ export function ReaderScreen() {
         {desktop && panelSheet}
       </div>
       {!desktop && panelSheet}
+
+      {linkHover && canHover && desktop && (
+        <LinkPreviewCard
+          url={linkHover.url}
+          rect={linkHover.rect}
+          onCancelClose={cancelLinkClose}
+          onScheduleClose={scheduleLinkClose}
+        />
+      )}
 
       {selection && (
         <FloatingBar rect={selection.rect} preferBelow={!canHover} label="Selection" onDismiss={clearFloating}>

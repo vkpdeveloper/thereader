@@ -52,7 +52,7 @@ img, svg { background-color: #ededed; }
 /* THEREADER PATCH: heading hierarchy, captions and structural alignment.
    ReadiumCSS stops forcing at h1-h6 and pre; this extends it to captions and
    gives headings a distinct scale, while resetting publisher alignment so that
-   body text is always left-aligned and captions are centred. */
+   body text and captions are left-aligned. */
 :root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) body:not(.flutter-readium-spotlight-active) :is(h1, h2, h3, h4, h5, h6),
 :is(h1, h2, h3, h4, h5, h6) {
   text-align: left !important;
@@ -92,13 +92,19 @@ ol { list-style: decimal outside !important; padding-left: 1.2em !important; }
 :root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) body:not(.flutter-readium-spotlight-active) li,
 li { margin: 0.35em 0 !important; }
 
-/* Captions centred, quieter, smaller. */
+/* Semantic captions and publisher figure headings share the same quiet style.
+   Some EPUBs use an h5 for a figure caption instead of figcaption. */
 :root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) body:not(.flutter-readium-spotlight-active) figcaption,
 :root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) body:not(.flutter-readium-spotlight-active) caption,
-figcaption, caption {
-  text-align: center !important;
-  font-size: 0.9rem !important;
-  font-style: italic !important;
+:root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) body:not(.flutter-readium-spotlight-active) .figure-container > h5,
+:root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) body:not(.flutter-readium-spotlight-active) .figure-container-h5,
+figcaption, caption, .figure-container > h5, .figure-container-h5 {
+  color: var(--USER__textColor, currentColor) !important;
+  text-align: left !important;
+  font-size: 0.8rem !important;
+  font-weight: 400 !important;
+  font-style: normal !important;
+  line-height: 1.4 !important;
   opacity: 0.7 !important;
   margin-top: 0.6em !important;
   -webkit-hyphens: manual !important;

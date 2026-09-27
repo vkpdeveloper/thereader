@@ -22,13 +22,18 @@ class DartReaderView extends StatefulWidget {
 
   /// Element styles for the active preset. Visible for tests.
   @visibleForTesting
-  static Map<String, String>? stylesFor(String tag, ReaderPreferences prefs, AppColors colors) {
+  static Map<String, String>? stylesFor(String tag, ReaderPreferences prefs, AppColors colors, {bool figureCaption = false}) {
     final ink = colors.ink.toCssHex();
     final muted = colors.muted.toCssHex();
     final link = colors.primary.toCssHex();
     final panel = colors.panel.toCssHex();
     final border = colors.border.toCssHex();
     final justify = prefs.justify ? {'text-align': 'justify'} : <String, String>{};
+    final caption = {
+      'font-size': '0.8em', 'font-weight': '400', 'font-style': 'normal',
+      'line-height': '1.4', 'text-align': 'left', 'margin': '0.6em 0 1.2em', 'color': muted,
+    };
+    if (figureCaption) return caption;
     switch (tag) {
       case 'h1':
         return {'font-size': '1.55em', 'font-weight': '500', 'line-height': '1.2', 'margin': '0 0 1.2em', 'color': ink};
@@ -42,7 +47,7 @@ class DartReaderView extends StatefulWidget {
         return {'font-size': '1em', 'font-weight': '600', 'margin': '1.2em 0 0.4em', 'color': ink};
       case 'figcaption':
       case 'caption':
-        return {'font-size': '0.9em', 'margin': '0.6em 0 1.2em', 'color': ink};
+        return caption;
       case 'th':
       case 'td':
         return {'color': ink, 'border-color': border};
@@ -222,8 +227,12 @@ class _DartReaderViewState extends State<DartReaderView> {
     );
   }
 
-  static Map<String, String>? _styles(dynamic element, ReaderPreferences prefs, AppColors colors) =>
-      DartReaderView.stylesFor((element.localName as String?) ?? '', prefs, colors);
+  static Map<String, String>? _styles(dynamic element, ReaderPreferences prefs, AppColors colors) {
+    final tag = (element.localName as String?) ?? '';
+    final figureCaption = tag == 'h5' &&
+        (element.classes.contains('figure-container-h5') || element.parent?.classes.contains('figure-container') == true);
+    return DartReaderView.stylesFor(tag, prefs, colors, figureCaption: figureCaption);
+  }
 }
 
 class _EpubWidgetFactory extends WidgetFactory {

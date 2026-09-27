@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
+import 'package:flutter/cupertino.dart' as cupertino;
 
 import 'app_colors.dart';
 import 'tokens.dart';
@@ -169,9 +169,9 @@ abstract final class AppTheme {
         contentPadding: const EdgeInsets.symmetric(horizontal: Space.gutter),
       ),
       pageTransitionsTheme: const PageTransitionsTheme(builders: {
-        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.iOS: cupertino.CupertinoPageTransitionsBuilder(),
         TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
-        TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.macOS: cupertino.CupertinoPageTransitionsBuilder(),
         TargetPlatform.linux: FadeForwardsPageTransitionsBuilder(),
         TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
       }),

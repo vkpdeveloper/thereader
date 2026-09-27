@@ -66,6 +66,12 @@ export interface EngineCallbacks {
   onTap(x: number): void;
   /** Links leaving the book (http, https, mailto, tel). */
   onExternalLink(url: string): void;
+  /** A hovered or focused external HTTPS link inside the book frame. */
+  onLinkHover(link: { url: string; rect: DOMRect } | null): void;
+  /** User scrolls or swipes the reading surface. */
+  onReadingGesture(): void;
+  /** Pointer position in the host viewport while over the reading frame. */
+  onReadingPointer(y: number): void;
   /** Keydown inside the book frame, forwarded so host shortcuts keep working. */
   onKey(event: KeyboardEvent): void;
   /**

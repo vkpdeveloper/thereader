@@ -170,7 +170,10 @@ void main() {
     final css = File('$helpers/flutterReadiumTools.css').readAsStringSync();
     final js = File('$helpers/thereaderTheme.js').readAsStringSync();
     final fixture = File('test/fixtures/publisher_colors.xhtml').readAsStringSync();
-    final patch = css.substring(css.indexOf('THEREADER PATCH: theme enforcement'));
+    final patch = css.substring(
+      css.indexOf('THEREADER PATCH: theme enforcement'),
+      css.indexOf('THEREADER PATCH: heading hierarchy'),
+    );
 
     int idCount(String selector) => RegExp(r'#[A-Za-z_-]').allMatches(selector).length;
 
@@ -277,12 +280,19 @@ void main() {
       expect(html, contains('<img src="data:image/gif'));
     });
 
-    test('the Dart engine paints every heading, caption and cell in ink', () {
+    test('the Dart engine uses ink for headings and a muted caption style', () {
       const prefs = ReaderPreferences();
       final colors = ThemePreset.gruvbox.colors;
-      for (final tag in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'figcaption', 'caption', 'th', 'td', 'pre', 'code']) {
+      for (final tag in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'th', 'td', 'pre', 'code']) {
         expect(DartReaderView.stylesFor(tag, prefs, colors)!['color'], colors.ink.toCssHex(), reason: tag);
       }
+      for (final tag in ['figcaption', 'caption']) {
+        expect(DartReaderView.stylesFor(tag, prefs, colors)!['color'], colors.muted.toCssHex(), reason: tag);
+      }
+      final figureHeading = DartReaderView.stylesFor('h5', prefs, colors, figureCaption: true)!;
+      expect(figureHeading['font-size'], '0.8em');
+      expect(figureHeading['font-weight'], '400');
+      expect(figureHeading['color'], colors.muted.toCssHex());
       expect(DartReaderView.stylesFor('td', prefs, colors)!['border-color'], colors.border.toCssHex());
       expect(DartReaderView.stylesFor('pre', prefs, colors)!['font-family'], 'monospace');
     });

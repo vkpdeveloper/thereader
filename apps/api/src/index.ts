@@ -1,6 +1,7 @@
 import { loadCatalog, toPublicBook, validateBookId } from "./catalog";
 import { downloadBook } from "./download";
 import { ApiError, errorResponse } from "./errors";
+import { linkPreview } from "./link-preview";
 import { encodeCursor, parseListQuery } from "./query";
 import { getSyncState, pushSync } from "./sync";
 import type { CatalogBook, Env } from "./types";
@@ -104,6 +105,11 @@ async function route(request: Request, env: Env): Promise<Response> {
     }
     const response = json({ status: "ok", service: "thereader-api" });
     return request.method === "HEAD" ? new Response(null, { status: response.status, headers: response.headers }) : response;
+  }
+
+  if (url.pathname === "/v1/link-preview") {
+    if (request.method !== "GET") throw new ApiError(405, "METHOD_NOT_ALLOWED", "Method not allowed.", { Allow: "GET, OPTIONS" });
+    return linkPreview(request);
   }
 
   if (url.pathname === "/v1/books") {
