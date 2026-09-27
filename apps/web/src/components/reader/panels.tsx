@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { SearchMatch, TocEntry } from '../../reader/engine';
 import { highlightHues, parseHighlightColor } from '../../lib/themes';
 import type { Highlight, ReadingLocator } from '../../lib/types';
@@ -66,7 +66,21 @@ export function ContentsList({
   );
 }
 
-/** Compact floating rail TOC for desktop web readers. */
+const CARD_WIDTH = 220;
+const GAP = 40;
+const AUTO_CLOSE_MS = 12000;
+
+function bodyLeft(): number | null {
+  const host = document.querySelector('.reader-host');
+  const iframe = host?.querySelector('iframe') as HTMLIFrameElement | null;
+  const body = iframe?.contentDocument?.body;
+  if (!iframe || !body) return null;
+  const iframeRect = iframe.getBoundingClientRect();
+  const bodyRect = body.getBoundingClientRect();
+  return iframeRect.left + bodyRect.left;
+}
+
+/** Auto-collapsing floating TOC card for desktop web readers. */
 export function FloatingToc({
   toc,
   currentHref,
@@ -78,8 +92,12 @@ export function FloatingToc({
   currentTitle: string | null;
   onOpen: (entry: TocEntry) => void;
 }) {
-  const [visible, setVisible] = useState(true);
-  const [expanded, setExpanded] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [contentLeft, setContentLeft] = useState<number | null>(null);
+  const [entered, setEntered] = useState(false);
+  const hoveredRef = useRef(false);
+  const collapsedRef = useRef(false);
+  const timerRef = useRef<number | null>(null);
 
   const sections = useMemo(() => {
     if (!currentHref) return [];
@@ -88,81 +106,133 @@ export function FloatingToc({
 
   const activeIndex = useMemo(() => activeEntry(sections, currentHref, currentTitle), [sections, currentHref, currentTitle]);
 
+  const clearTimer = useCallback(() => {
+    if (timerRef.current) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  const startTimer = useCallback((ms = AUTO_CLOSE_MS) => {
+    clearTimer();
+    if (hoveredRef.current || collapsedRef.current) return;
+    timerRef.current = window.setTimeout(() => {
+      if (!hoveredRef.current) setCollapsed(true);
+    }, ms);
+  }, [clearTimer]);
+
+  useLayoutEffect(() => {
+    const measure = () => setContentLeft(bodyLeft());
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [currentHref, currentTitle]);
+
+  useEffect(() => {
+    collapsedRef.current = collapsed;
+    if (!collapsed && !hoveredRef.current) {
+      startTimer();
+    }
+  }, [collapsed, startTimer]);
+
+  useEffect(() => {
+    setCollapsed(false);
+    setEntered(false);
+    clearTimer();
+    const raf = requestAnimationFrame(() => setEntered(true));
+    return () => cancelAnimationFrame(raf);
+  }, [currentHref, clearTimer]);
+
+  useEffect(() => {
+    if (!collapsedRef.current && !hoveredRef.current) {
+      startTimer();
+    }
+  }, [currentTitle, startTimer]);
+
+  useEffect(() => {
+    return () => clearTimer();
+  }, [clearTimer]);
+
   if (sections.length === 0) return null;
 
-  if (!visible) {
+  const baseLeft = (contentLeft ?? 80) - GAP;
+
+  if (collapsed) {
+    const left = Math.max(12, baseLeft - 28);
     return (
       <button
         type="button"
-        className="floating-toc-reopen"
+        className="floating-toc-collapsed"
+        style={{ left }}
         aria-label="Show table of contents"
-        onClick={() => setVisible(true)}
+        onMouseEnter={() => {
+          setCollapsed(false);
+        }}
+        onFocus={() => setCollapsed(false)}
+        onClick={() => setCollapsed(false)}
       >
-        <FormatListIcon size={18} />
+        <FormatListIcon size={16} />
       </button>
     );
   }
 
+  const left = Math.max(12, baseLeft - CARD_WIDTH);
+
+  const handleOpen = (t: TocEntry) => {
+    onOpen(t);
+    startTimer(800);
+  };
+
   return (
     <nav
-      className={expanded ? 'floating-toc-rail is-expanded' : 'floating-toc-rail'}
+      className={['floating-toc-card', !entered && 'is-entering'].filter(Boolean).join(' ')}
+      style={{ left }}
       aria-label="Table of contents"
-      onMouseEnter={() => setExpanded(true)}
-      onMouseLeave={() => setExpanded(false)}
-      onFocus={() => setExpanded(true)}
-      onBlur={() => setExpanded(false)}
+      onMouseEnter={() => {
+        hoveredRef.current = true;
+        clearTimer();
+      }}
+      onMouseLeave={() => {
+        hoveredRef.current = false;
+        startTimer();
+      }}
+      onFocus={() => {
+        hoveredRef.current = true;
+        clearTimer();
+      }}
+      onBlur={() => {
+        hoveredRef.current = false;
+        startTimer();
+      }}
     >
-      <div className="floating-toc-rail-head">
-        <button type="button" className="floating-toc-close" aria-label="Hide table of contents" onClick={() => setVisible(false)}>
+      <div className="floating-toc-header">
+        <span className="floating-toc-title">Sections</span>
+        <button
+          type="button"
+          className="floating-toc-close"
+          aria-label="Hide table of contents"
+          onClick={() => setCollapsed(true)}
+        >
           <CloseIcon size={14} />
         </button>
       </div>
-      <div className="floating-toc-rail-track">
-        <div
-          className="floating-toc-rail-marker"
-          style={{
-            opacity: activeIndex >= 0 ? 1 : 0,
-            transform: `translateY(${activeIndex >= 0 ? activeIndex * 24 : 0}px)`,
-          }}
-        />
+      <ul className="floating-toc-list" role="list">
         {sections.map((t, i) => {
           const isActive = i === activeIndex;
           return (
-            <button
-              key={`${t.href}-${i}`}
-              type="button"
-              className={isActive ? 'floating-toc-notch is-active' : 'floating-toc-notch'}
-              aria-current={isActive ? 'location' : undefined}
-              title={t.title}
-              onClick={() => onOpen(t)}
-            >
-              <span className="floating-toc-notch-bar" />
-            </button>
+            <li key={`${t.href}-${i}`} className="floating-toc-row" style={{ paddingLeft: t.depth * 12 }}>
+              <button
+                type="button"
+                className={isActive ? 'floating-toc-item is-active' : 'floating-toc-item'}
+                aria-current={isActive ? 'location' : undefined}
+                onClick={() => handleOpen(t)}
+              >
+                {t.title}
+              </button>
+            </li>
           );
         })}
-      </div>
-      <div className="floating-toc-popover">
-        <ul className="floating-toc-popover-list">
-          {sections.map((t, i) => {
-            const isActive = i === activeIndex;
-            return (
-              <li key={`${t.href}-${i}-pop`} className="floating-toc-popover-row" style={{ paddingLeft: t.depth * 12 }}>
-                <button
-                  type="button"
-                  className={isActive ? 'floating-toc-popover-item is-active' : 'floating-toc-popover-item'}
-                  aria-current={isActive ? 'location' : undefined}
-                  onClick={() => {
-                    setExpanded(false);
-                    onOpen(t);
-                  }}
-                >
-                  {t.title}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
+      </ul>
     </nav>
   );
 }
