@@ -79,28 +79,82 @@ export interface CatalogStore extends Observable<CatalogSnapshot> {
 
 // ---------------------------------------------------------------- library
 
+/**
+ * Random-access EPUB bytes for the reader (mobile `BookFile`). A verified
+ * file reads straight from IndexedDB; a provisional one is an online-only
+ * lease over a download that is still running (mobile `ProvisionalBookFile`).
+ */
+export interface BookFile {
+  /** Bytes in the edition. */
+  readonly size: number;
+  /**
+   * True while the download runs: bytes are not SHA-verified yet and missing
+   * ranges are fetched on demand. Readers should not preload far ahead, and
+   * must close themselves when `library.canRead(id)` turns false (the
+   * download failed or was cancelled; reads then reject).
+   */
+  readonly provisional: boolean;
+  /** Bytes `[start, end)`. A provisional file waits for (and prioritizes) missing bytes. */
+  read(start: number, end: number): Promise<Uint8Array>;
+  /** Bytes `[start, end)` as a Blob of `type`; zero-copy for a verified file. */
+  slice(start: number, end: number, type?: string): Promise<Blob>;
+  /** Releases the lease. Idempotent. */
+  close(): void;
+}
+
 export interface LibrarySnapshot {
   loaded: boolean;
   entries: LibraryEntry[];
-  /** Readable entries with lastOpenedAt, most recent first. */
+  /** Readable entries (see `canRead`) with lastOpenedAt, most recent first. */
   continueReading: LibraryEntry[];
+  /**
+   * Ids of entries readable while their download still runs: the ZIP
+   * directory and the opening 5% arrived. Not "downloaded" until verified.
+   */
+  earlyReadable: string[];
 }
 
 export interface LibraryStore extends Observable<LibrarySnapshot> {
   entry(id: string): LibraryEntry | undefined;
-  /** Entry for a catalog book at the current origin. */
-  entryFor(book: Book): LibraryEntry | undefined;
+  /** Entry for a catalog book at `origin` (default: the current origin). */
+  entryFor(book: Book, origin?: string): LibraryEntry | undefined;
+  /**
+   * Verified and downloaded, or (like mobile) early-readable while its
+   * download runs. Use `isProvisional` to tell the two apart.
+   */
   canRead(id: string): boolean;
-  /** Adds (or updates to a new edition) and downloads into IndexedDB with SHA-256 verification. Progress is observable on the entry. */
-  download(book: Book): Promise<void>;
+  /** True when `canRead` only because of early reading (no verified copy yet). */
+  isProvisional(id: string): boolean;
+  /**
+   * Adds (or updates to a new edition) and downloads into IndexedDB with
+   * SHA-256 verification, as parallel byte ranges. Bytes come from `origin`
+   * (default: the current origin); the entry is keyed by that origin.
+   * Progress is observable on the entry.
+   */
+  download(book: Book, options?: { origin?: string }): Promise<void>;
+  /**
+   * Retries or updates an existing entry from the entry's own origin, never
+   * the current API address. `book` (same id) is a newer edition to fetch;
+   * default: the entry's edition.
+   */
+  downloadEntry(id: string, book?: Book): Promise<void>;
   cancelDownload(id: string): void;
   /**
    * Removes local bytes. With `keepMetadata` (cloud books when sync is on)
    * the entry stays in the library, not downloaded, keeping its progress.
    */
   remove(id: string, options?: { keepMetadata?: boolean }): Promise<void>;
-  /** Verified EPUB bytes for reading. Throws if not downloaded. */
+  /**
+   * Verified EPUB bytes for reading, read from IndexedDB with no network.
+   * While an early-readable download runs this waits for its verification.
+   * Throws if the book is not downloaded (or the download fails).
+   */
   openForReading(id: string): Promise<Blob>;
+  /**
+   * Random-access file for the reader: the verified copy, or a provisional
+   * lease for early reading while the download runs. Call `close()` when done.
+   */
+  openFile(id: string): Promise<BookFile>;
   markOpened(id: string, expectedSha256: string): Promise<void>;
   saveProgress(id: string, locator: ReadingLocator, expectedSha256: string): Promise<void>;
 }

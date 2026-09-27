@@ -1,7 +1,8 @@
 /**
  * SHA-256 helpers. Library identities must be computed synchronously
- * (`entryFor(book)`), so short strings use this small implementation; EPUB
- * verification uses `crypto.subtle` on the downloaded bytes.
+ * (`entryFor(book)`), and downloads hash segments as they arrive, so this
+ * module carries a small incremental implementation; whole small blobs use
+ * `crypto.subtle`.
  */
 
 const K = new Uint32Array([
@@ -15,18 +16,68 @@ const K = new Uint32Array([
   0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
 ]);
 
-export function sha256Bytes(input: Uint8Array): Uint8Array {
-  const bitLength = input.length * 8;
-  const padded = new Uint8Array(((input.length + 9 + 63) >> 6) << 6);
-  padded.set(input);
-  padded[input.length] = 0x80;
-  const view = new DataView(padded.buffer);
-  view.setUint32(padded.length - 8, Math.floor(bitLength / 0x100000000));
-  view.setUint32(padded.length - 4, bitLength >>> 0);
+/**
+ * Incremental SHA-256. Downloads hash each segment as it becomes part of the
+ * contiguous prefix, so verification needs no second pass over the book and
+ * never holds the whole file in one buffer.
+ */
+export class Sha256 {
+  private readonly h = new Uint32Array([0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19]);
+  private readonly w = new Uint32Array(64);
+  private readonly block = new Uint8Array(64);
+  private readonly blockView = new DataView(this.block.buffer);
+  private buffered = 0;
+  private length = 0;
+  private finished = false;
 
-  const h = new Uint32Array([0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19]);
-  const w = new Uint32Array(64);
-  for (let offset = 0; offset < padded.length; offset += 64) {
+  update(input: Uint8Array): this {
+    if (this.finished) throw new Error('SHA-256 already finalized.');
+    this.length += input.length;
+    let offset = 0;
+    if (this.buffered > 0) {
+      const take = Math.min(64 - this.buffered, input.length);
+      this.block.set(input.subarray(0, take), this.buffered);
+      this.buffered += take;
+      offset = take;
+      if (this.buffered < 64) return this;
+      this.compress(this.blockView, 0);
+      this.buffered = 0;
+    }
+    const whole = offset + ((input.length - offset) & ~63);
+    if (whole > offset) {
+      const view = new DataView(input.buffer, input.byteOffset, input.byteLength);
+      for (; offset < whole; offset += 64) this.compress(view, offset);
+    }
+    if (offset < input.length) {
+      this.block.set(input.subarray(offset), 0);
+      this.buffered = input.length - offset;
+    }
+    return this;
+  }
+
+  digest(): Uint8Array {
+    if (this.finished) throw new Error('SHA-256 already finalized.');
+    const bitLength = this.length * 8;
+    const pad = new Uint8Array(((this.buffered + 9 + 63) >> 6) << 6);
+    pad[0] = 0x80;
+    const tail = new DataView(pad.buffer);
+    tail.setUint32(pad.length - 8 - this.buffered, Math.floor(bitLength / 0x100000000));
+    tail.setUint32(pad.length - 4 - this.buffered, bitLength >>> 0);
+    this.update(pad.subarray(0, pad.length - this.buffered));
+    this.finished = true;
+    const out = new Uint8Array(32);
+    const outView = new DataView(out.buffer);
+    for (let i = 0; i < 8; i++) outView.setUint32(i * 4, this.h[i]!);
+    return out;
+  }
+
+  hex(): string {
+    return toHex(this.digest());
+  }
+
+  private compress(view: DataView, offset: number): void {
+    const w = this.w;
+    const h = this.h;
     for (let i = 0; i < 16; i++) w[i] = view.getUint32(offset + i * 4);
     for (let i = 16; i < 64; i++) {
       const a = w[i - 15]!, b = w[i - 2]!;
@@ -48,10 +99,10 @@ export function sha256Bytes(input: Uint8Array): Uint8Array {
     h[0] = (h[0]! + a) | 0; h[1] = (h[1]! + b) | 0; h[2] = (h[2]! + c) | 0; h[3] = (h[3]! + d) | 0;
     h[4] = (h[4]! + e) | 0; h[5] = (h[5]! + f) | 0; h[6] = (h[6]! + g) | 0; h[7] = (h[7]! + hh) | 0;
   }
-  const out = new Uint8Array(32);
-  const outView = new DataView(out.buffer);
-  for (let i = 0; i < 8; i++) outView.setUint32(i * 4, h[i]!);
-  return out;
+}
+
+export function sha256Bytes(input: Uint8Array): Uint8Array {
+  return new Sha256().update(input).digest();
 }
 
 export function toHex(bytes: Uint8Array): string {
@@ -64,10 +115,24 @@ export function sha256Hex(text: string): string {
   return toHex(sha256Bytes(new TextEncoder().encode(text)));
 }
 
-/** SHA-256 of a Blob through WebCrypto. */
+/** Blobs up to this size hash in one native WebCrypto call. */
+const ONE_SHOT_LIMIT = 32 * 1024 * 1024;
+const BLOB_READ = 4 * 1024 * 1024;
+
+/**
+ * SHA-256 of a Blob. Small blobs go through WebCrypto; larger ones are read
+ * in 4 MiB slices so a big book never sits in memory as one ArrayBuffer.
+ */
 export async function sha256OfBlob(blob: Blob): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', await blob.arrayBuffer());
-  return toHex(new Uint8Array(digest));
+  if (blob.size <= ONE_SHOT_LIMIT && typeof crypto !== 'undefined' && crypto.subtle) {
+    const digest = await crypto.subtle.digest('SHA-256', await blob.arrayBuffer());
+    return toHex(new Uint8Array(digest));
+  }
+  const hasher = new Sha256();
+  for (let offset = 0; offset < blob.size; offset += BLOB_READ) {
+    hasher.update(new Uint8Array(await blob.slice(offset, offset + BLOB_READ).arrayBuffer()));
+  }
+  return hasher.hex();
 }
 
 /** 32 random hex chars, valid as a sync client ID. */

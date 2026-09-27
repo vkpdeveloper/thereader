@@ -1,7 +1,5 @@
 import type { Book, DownloadState, LibraryEntry, ReadingLocator, ReadingProgress } from '../types';
-import { ApiError, type LibrarySnapshot, type LibraryStore } from './contract';
-import type { HttpApiClient } from './api';
-import { sha256OfBlob } from './hash';
+import { ApiError, type BookFile, type LibrarySnapshot, type LibraryStore } from './contract';
 import type { KeyValueStore } from './kv';
 import {
   MISSING_FILE,
@@ -14,39 +12,56 @@ import {
   isRecord,
   isoOrder,
   newEntry,
+  normalizeOrigin,
   nowIso,
   parseEntry,
   sameBookJson,
 } from './models';
 import { Emitter, WriteQueue } from './observable';
+import {
+  DownloadCancelled,
+  DownloadFailure,
+  EPUB_TYPE,
+  ProgressiveDownload,
+  type DownloadClient,
+} from './progressiveDownload';
+import type { SegmentPolicy } from './segmentPlan';
 import { noopBus, type TabBus } from './tabs';
+
+export { DownloadFailure } from './progressiveDownload';
 
 const LIBRARY_KEY = 'library.v1';
 
 /** IndexedDB key of an edition's verified EPUB blob. */
 export const bookBlobKey = (entryId: string, sha256: string): string => `book:${entryId}:${sha256}`;
 
-export class DownloadFailure extends Error {
-  constructor(message: string, readonly code = 'DOWNLOAD_FAILED') {
-    super(message);
-    this.name = 'DownloadFailure';
-  }
-}
-
-class DownloadCancelled extends Error {}
-
 export interface LibraryDeps {
   kv: KeyValueStore;
   /** EPUB blobs. */
   books: KeyValueStore;
   currentOrigin(): string;
-  clientFor(origin: string): Pick<HttpApiClient, 'openDownload'>;
+  /** HTTP client of one API origin; downloads always use the entry's origin. */
+  clientFor(origin: string): DownloadClient;
   bus?: TabBus;
   now?: () => number;
-  hashBlob?: (blob: Blob) => Promise<string>;
+  segmentPolicy?: SegmentPolicy;
   /** Called after a download verifies (asks the browser to keep storage). */
   onDownloaded?: () => void;
 }
+
+/** A verified blob read from IndexedDB; slices are zero-copy. */
+function blobFile(blob: Blob): BookFile {
+  return {
+    size: blob.size,
+    provisional: false,
+    read: async (start, end) => new Uint8Array(await blob.slice(start, end).arrayBuffer()),
+    slice: async (start, end, type) => blob.slice(start, end, type ?? ''),
+    close: () => undefined,
+  };
+}
+
+const sameIds = (a: string[], b: string[]): boolean => a.length === b.length && a.every((id, i) => id === b[i]);
+const sameEntries = (a: LibraryEntry[], b: LibraryEntry[]): boolean => a.length === b.length && a.every((e, i) => e === b[i]);
 
 /**
  * The local library: which books were added, their durable download state
@@ -57,19 +72,18 @@ export class LibraryStoreImpl extends Emitter<LibrarySnapshot> implements Librar
   private entries = new Map<string, LibraryEntry>();
   private readonly aliases = new Map<string, string>();
   private readonly cancelRequests = new Set<string>();
-  private readonly controllers = new Map<string, AbortController>();
+  /** Running downloads; early reading leases come from here. */
+  private readonly progressive = new Map<string, ProgressiveDownload>();
   /** A verified edition kept while its replacement downloads. */
   private readonly verifiedBeforeUpdate = new Map<string, LibraryEntry>();
   private readonly writes = new WriteQueue();
   private readonly bus: TabBus;
   private readonly now: () => number;
-  private readonly hashBlob: (blob: Blob) => Promise<string>;
 
   constructor(private readonly deps: LibraryDeps) {
-    super({ loaded: false, entries: [], continueReading: [] });
+    super({ loaded: false, entries: [], continueReading: [], earlyReadable: [] });
     this.bus = deps.bus ?? noopBus;
     this.now = deps.now ?? Date.now;
-    this.hashBlob = deps.hashBlob ?? sha256OfBlob;
     this.bus.listen((topic) => {
       if (topic === 'library' && this.snapshot.loaded) void this.reload();
     });
@@ -96,13 +110,22 @@ export class LibraryStoreImpl extends Emitter<LibrarySnapshot> implements Librar
     return this.entries.get(this.resolveId(id));
   }
 
-  entryFor(book: Book): LibraryEntry | undefined {
-    return this.entry(entryIdentity(book.id, this.deps.currentOrigin()));
+  entryFor(book: Book, origin: string = this.deps.currentOrigin()): LibraryEntry | undefined {
+    return this.entry(entryIdentity(book.id, origin));
   }
 
+  /** Partial publications stay online-only until their final SHA is verified. */
   canRead(id: string): boolean {
-    const e = this.entry(id);
-    return e !== undefined && isReady(e.download);
+    id = this.resolveId(id);
+    const e = this.entries.get(id);
+    if (!e) return false;
+    return isReady(e.download) || (isActive(e.download) && this.progressive.get(id)?.canRead === true);
+  }
+
+  isProvisional(id: string): boolean {
+    id = this.resolveId(id);
+    const e = this.entries.get(id);
+    return e !== undefined && !isReady(e.download) && this.canRead(id);
   }
 
   // ---------------------------------------------------------------- persistence
@@ -179,10 +202,16 @@ export class LibraryStoreImpl extends Emitter<LibrarySnapshot> implements Librar
 
   private publish(loaded = this.snapshot.loaded): void {
     const entries = [...this.entries.values()];
-    const continueReading = entries
-      .filter((e) => isReady(e.download) && e.lastOpenedAt !== null)
+    let continueReading = entries
+      .filter((e) => this.canRead(e.id) && e.lastOpenedAt !== null)
       .sort((a, b) => isoOrder(b.lastOpenedAt) - isoOrder(a.lastOpenedAt));
-    this.emit({ loaded, entries, continueReading });
+    let earlyReadable = entries.filter((e) => this.isProvisional(e.id)).map((e) => e.id);
+    // Keep unchanged derived lists identical so their rows skip re-rendering
+    // while a download paints progress.
+    const previous = this.snapshot;
+    if (sameEntries(continueReading, previous.continueReading)) continueReading = previous.continueReading;
+    if (sameIds(earlyReadable, previous.earlyReadable)) earlyReadable = previous.earlyReadable;
+    this.emit({ loaded, entries, continueReading, earlyReadable });
   }
 
   private put(e: LibraryEntry, persist = true): void {
@@ -194,11 +223,13 @@ export class LibraryStoreImpl extends Emitter<LibrarySnapshot> implements Librar
   // ---------------------------------------------------------------- downloads
 
   /**
-   * Adds (or refreshes to a new edition) and downloads into IndexedDB. Returns
-   * when the download finishes or fails; state is observable on the entry.
+   * Adds (or refreshes to a new edition) and downloads into IndexedDB from
+   * `origin` (default: the current API). Returns when the download finishes
+   * or fails; state is observable on the entry. Ported from mobile
+   * `LibraryRepository.download`, which always takes the book's source.
    */
-  async download(book: Book): Promise<void> {
-    const origin = this.deps.currentOrigin();
+  async download(book: Book, options: { origin?: string } = {}): Promise<void> {
+    const origin = normalizeOrigin(options.origin ?? this.deps.currentOrigin());
     const id = entryIdentity(book.id, origin);
     const existing = this.entries.get(id);
     if (existing && isActive(existing.download)) return;
@@ -209,8 +240,6 @@ export class LibraryStoreImpl extends Emitter<LibrarySnapshot> implements Librar
       : newEntry(book, origin, nowIso(this.now));
     e = { ...e, download: { status: 'queued', receivedBytes: 0, totalBytes: book.fileSize, path: null, error: null } };
     this.cancelRequests.delete(id);
-    const controller = new AbortController();
-    this.controllers.set(id, controller);
     this.put(e);
 
     const current = () => this.entries.get(id) ?? e;
@@ -223,63 +252,28 @@ export class LibraryStoreImpl extends Emitter<LibrarySnapshot> implements Librar
     const cancelled = () => this.cancelRequests.has(id);
 
     try {
-      const response = await this.deps.clientFor(origin).openDownload(book, controller.signal);
-      if (cancelled()) throw new DownloadCancelled();
-      const headerLength = Number(response.headers.get('content-length'));
-      const encoded = (response.headers.get('content-encoding') ?? 'identity') !== 'identity';
-      if (!encoded && headerLength > 0 && headerLength !== book.fileSize) {
-        throw new DownloadFailure(
-          `The server reported ${headerLength} bytes but the catalog says ${book.fileSize}.`,
-          'SIZE_MISMATCH',
-        );
-      }
-      setDownload({ status: 'downloading', error: null });
-
-      const chunks: Uint8Array[] = [];
-      let received = 0;
       let lastPaint = this.now();
       const fivePercent = book.fileSize * 0.05;
-      const progress = () => {
-        const done = received >= book.fileSize;
+      const progress = (received: number, total: number) => {
+        const done = received >= total;
         const now = this.now();
         if (done || (received >= fivePercent && e.download.receivedBytes < fivePercent) || now - lastPaint >= 80) {
           lastPaint = now;
-          setDownload({ status: done ? 'verifying' : 'downloading', receivedBytes: received, totalBytes: book.fileSize }, false);
+          setDownload({ status: done ? 'verifying' : 'downloading', receivedBytes: received, totalBytes: total }, false);
         }
       };
-
-      if (!response.body) throw new DownloadFailure('The server sent no book data.');
-      const reader = response.body.getReader();
-      try {
-        for (;;) {
-          if (cancelled()) throw new DownloadCancelled();
-          let chunk: ReadableStreamReadResult<Uint8Array>;
-          try {
-            chunk = await reader.read();
-          } catch (error) {
-            if (cancelled()) throw new DownloadCancelled();
-            throw new DownloadFailure('The book download was interrupted.', 'NETWORK');
-          }
-          if (chunk.done) break;
-          received += chunk.value.byteLength;
-          if (received > book.fileSize) {
-            throw new DownloadFailure(`Received more data than the catalog size (${book.fileSize} bytes).`, 'SIZE_MISMATCH');
-          }
-          chunks.push(chunk.value);
-          progress();
-        }
-      } finally {
-        reader.cancel().catch(() => undefined);
+      const partial = new ProgressiveDownload(book, this.deps.clientFor(origin), {
+        onProgress: progress,
+        onReadable: () => this.publish(),
+        policy: this.deps.segmentPolicy,
+      });
+      this.progressive.set(id, partial);
+      if (cancelled()) {
+        partial.cancel();
+        throw new DownloadCancelled();
       }
-      if (received !== book.fileSize) {
-        throw new DownloadFailure(`Download ended early: ${received} of ${book.fileSize} bytes.`, 'SIZE_MISMATCH');
-      }
-      setDownload({ status: 'verifying', receivedBytes: received, totalBytes: book.fileSize }, false);
-      const blob = new Blob(chunks as BlobPart[], { type: 'application/epub+zip' });
-      chunks.length = 0;
-      if ((await this.hashBlob(blob)) !== book.sha256) {
-        throw new DownloadFailure('Checksum did not match the catalog. The file was discarded.', 'CHECKSUM_MISMATCH');
-      }
+      setDownload({ status: 'downloading', error: null });
+      const blob = await partial.run();
       if (cancelled()) throw new DownloadCancelled();
       const path = bookBlobKey(id, book.sha256);
       try {
@@ -316,10 +310,20 @@ export class LibraryStoreImpl extends Emitter<LibrarySnapshot> implements Librar
       }
     } finally {
       await this.flush();
-      this.controllers.delete(id);
+      this.progressive.get(id)?.release();
+      this.progressive.delete(id);
       this.cancelRequests.delete(id);
       this.verifiedBeforeUpdate.delete(id);
+      // Early readability ends with the download (the verified copy or nothing replaces it).
+      this.publish();
     }
+  }
+
+  async downloadEntry(id: string, book?: Book): Promise<void> {
+    const e = this.entry(id);
+    if (!e) throw new Error('This book is not in your library.');
+    if (book && book.id !== e.book.id) throw new Error('That edition belongs to a different book.');
+    await this.download(book ?? e.book, { origin: e.origin });
   }
 
   cancelDownload(id: string): void {
@@ -327,7 +331,7 @@ export class LibraryStoreImpl extends Emitter<LibrarySnapshot> implements Librar
     const e = this.entries.get(id);
     if (e && isActive(e.download)) {
       this.cancelRequests.add(id);
-      this.controllers.get(id)?.abort();
+      this.progressive.get(id)?.cancel();
     }
   }
 
@@ -350,6 +354,20 @@ export class LibraryStoreImpl extends Emitter<LibrarySnapshot> implements Librar
 
   async openForReading(id: string): Promise<Blob> {
     id = this.resolveId(id);
+    if (this.isProvisional(id)) await this.settled(id);
+    return this.readVerified(id);
+  }
+
+  async openFile(id: string): Promise<BookFile> {
+    id = this.resolveId(id);
+    const e = this.entries.get(id);
+    if (e && isReady(e.download)) return blobFile(await this.readVerified(id));
+    const partial = this.progressive.get(id);
+    if (e && isActive(e.download) && partial?.canRead) return partial.open();
+    throw new Error('This book is not ready to read yet.');
+  }
+
+  private async readVerified(id: string): Promise<Blob> {
     const e = this.entries.get(id);
     if (!e || !isReady(e.download)) throw new Error('This book is not ready to read yet.');
     const blob = await this.deps.books.get<Blob>(e.download.path!);
@@ -357,7 +375,23 @@ export class LibraryStoreImpl extends Emitter<LibrarySnapshot> implements Librar
       this.put({ ...e, download: { ...emptyDownload(), status: 'failed', error: MISSING_FILE } });
       throw new Error(MISSING_FILE);
     }
-    return blob.type === 'application/epub+zip' ? blob : new Blob([blob], { type: 'application/epub+zip' });
+    // Re-typing is a zero-copy slice; the bytes stay in IndexedDB's blob store.
+    return blob.type === EPUB_TYPE ? blob : blob.slice(0, blob.size, EPUB_TYPE);
+  }
+
+  /** Resolves once the entry's download is no longer running. */
+  private settled(id: string): Promise<void> {
+    return new Promise<void>((resolve) => {
+      const check = () => {
+        const e = this.entries.get(id);
+        if (!e || !isActive(e.download)) {
+          unsubscribe();
+          resolve();
+        }
+      };
+      const unsubscribe = this.subscribe(check);
+      check();
+    });
   }
 
   // ---------------------------------------------------------------- imports & cloud

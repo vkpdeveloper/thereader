@@ -63,7 +63,7 @@ describe('downloads', () => {
     await s.library.download(book);
     const entry = s.library.entryFor(book)!;
     expect(entry.download.status).toBe('failed');
-    expect(entry.download.error).toBe('Checksum did not match the catalog. The file was discarded.');
+    expect(entry.download.error).toBe('The downloaded book failed its integrity check.');
     expect(await s.blobs.keys()).toHaveLength(0);
     await expect(s.library.openForReading(entry.id)).rejects.toThrow('This book is not ready to read yet.');
   });
@@ -95,7 +95,7 @@ describe('downloads', () => {
     let entry = s.library.entry(id)!;
     expect(entry.book.sha256).toBe(book1.sha256);
     expect(entry.download.status).toBe('ready');
-    expect(entry.download.error).toBe('Update failed. Checksum did not match the catalog. The file was discarded.');
+    expect(entry.download.error).toBe('Update failed. The downloaded book failed its integrity check.');
     expect(entry.progress!.locator.progression).toBe(0.4);
 
     // It verifies: the old blob goes, progress of the old edition is cleared.

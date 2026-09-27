@@ -31,6 +31,19 @@ export interface HttpApiClient extends ApiClient {
   }): Promise<SyncResponse>;
   /** Streams an EPUB. The caller reads `response.body`. */
   openDownload(book: Book, signal?: AbortSignal): Promise<Response>;
+  /**
+   * Streams bytes `[start, end)` of this exact edition (`If-Range` pinned to
+   * its SHA-256) as `chunkSize` pieces aligned to `start`; the last piece may
+   * be shorter and is delivered only once the whole range arrived. Ported
+   * from mobile `ApiClient.streamRange`. A server that ignores ranges fails
+   * with `INVALID_RANGE` and status 200; a short body with `TRUNCATED_RANGE`.
+   */
+  streamRange(
+    book: Book,
+    start: number,
+    end: number,
+    options: { onChunk: (chunk: Uint8Array) => void | Promise<void>; chunkSize?: number; signal?: AbortSignal },
+  ): Promise<void>;
 }
 
 export const API_TIMEOUT_MS = 15_000;
@@ -148,6 +161,91 @@ export function createApiClient(
       const response = await send(url, { headers: { accept: 'application/epub+zip' } }, `Timed out connecting to ${host}.`, signal);
       if (response.status !== 200) throw errorFrom(response.status, await readText(response, host));
       return response;
+    },
+    async streamRange(book, start, end, { onChunk, chunkSize = 64 * 1024, signal }) {
+      if (start < 0 || end <= start || end > book.fileSize || chunkSize <= 0) throw new RangeError('Invalid EPUB range');
+      const url = resolve(book.downloadUrl);
+      const etag = `"${book.sha256}"`;
+      // One controller for headers and body, so an idle body can time out too.
+      const request = new AbortController();
+      const onAbort = () => request.abort();
+      if (signal?.aborted) request.abort();
+      signal?.addEventListener('abort', onAbort);
+      let idle = false;
+      try {
+        // `send` maps connection failures and header timeouts to ApiError.
+        const response = await send(
+          url,
+          { headers: { accept: 'application/epub+zip', range: `bytes=${start}-${end - 1}`, 'if-range': etag } },
+          `Timed out connecting to ${host}.`,
+          request.signal,
+        );
+        // Errors keep the server's message; retry decisions use the status.
+        if (response.status >= 400) throw errorFrom(response.status, await readText(response, host));
+        const length = response.headers.get('content-length');
+        const encoding = response.headers.get('content-encoding');
+        if (
+          response.status !== 206 ||
+          response.headers.get('content-range') !== `bytes ${start}-${end - 1}/${book.fileSize}` ||
+          response.headers.get('etag') !== etag ||
+          (length !== null && Number(length) !== end - start) ||
+          (encoding !== null && encoding !== 'identity')
+        ) {
+          response.body?.cancel().catch(() => undefined);
+          throw new ApiError(
+            'The book changed or the server cannot stream this edition. Retry the download.',
+            'INVALID_RANGE',
+            response.status,
+          );
+        }
+        if (!response.body) throw new ApiError('The book download was interrupted.', 'TRUNCATED_RANGE');
+        const reader = response.body.getReader();
+        let buffer = new Uint8Array(chunkSize);
+        let filled = 0;
+        let received = 0;
+        try {
+          for (;;) {
+            const timer = setTimeout(() => {
+              idle = true;
+              request.abort();
+            }, timeoutMs);
+            let result: ReadableStreamReadResult<Uint8Array>;
+            try {
+              result = await reader.read();
+            } catch (error) {
+              if (idle) throw new ApiError('The book download timed out.', 'TIMEOUT', null, true);
+              if (signal?.aborted) throw error;
+              throw new ApiError(friendlyNetwork(error, url), 'NETWORK', null, true);
+            } finally {
+              clearTimeout(timer);
+            }
+            if (result.done) break;
+            const incoming = result.value;
+            if (received + incoming.length > end - start) {
+              throw new ApiError('The server returned too many bytes.', 'INVALID_RANGE');
+            }
+            let offset = 0;
+            while (offset < incoming.length) {
+              const take = Math.min(incoming.length - offset, chunkSize - filled);
+              buffer.set(incoming.subarray(offset, offset + take), filled);
+              filled += take;
+              received += take;
+              offset += take;
+              if (filled === chunkSize && received < end - start) {
+                await onChunk(buffer);
+                buffer = new Uint8Array(chunkSize);
+                filled = 0;
+              }
+            }
+          }
+        } finally {
+          reader.cancel().catch(() => undefined);
+        }
+        if (received !== end - start) throw new ApiError('The book download was interrupted.', 'TRUNCATED_RANGE');
+        if (filled > 0) await onChunk(filled === chunkSize ? buffer : buffer.subarray(0, filled));
+      } finally {
+        signal?.removeEventListener('abort', onAbort);
+      }
     },
   };
 }
