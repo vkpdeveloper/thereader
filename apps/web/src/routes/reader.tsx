@@ -4,7 +4,7 @@ import { hasOpenOverlay, Sheet } from '../components/overlay';
 import { BottomChrome, EdgeProgress, TopChrome, ToChapterStart, type ReaderPanel } from '../components/reader/ReaderChrome';
 import { ContentsList, HighlightsList, SearchBook } from '../components/reader/panels';
 import { FontPicker, TypographyPanel } from '../components/reader/TypographyPanel';
-import { FloatingBar, HighlightActions, SelectionActions } from '../components/reader/Floating';
+import { FloatingBar, HighlightActions, NoteEditor, SelectionActions } from '../components/reader/Floating';
 import { LoadingLine, StateMessage } from '../components/states';
 import { useToast } from '../components/toast';
 import { useCanHover, useDocumentTitle, useGoBack, useIsDesktop, useWakeLock, isTypingTarget } from '../lib/hooks';
@@ -16,6 +16,14 @@ import { ShortcutsDialog } from '../components/reader/ShortcutsDialog';
 import '../components/reader/reader.css';
 
 const saveDebounceMs = 600;
+
+/** "Downloading · 42%" while an early-read book is still arriving (mobile parity). */
+function downloadNote(entry: LibraryEntry | undefined): string | null {
+  const d = entry?.download;
+  if (!d || (d.status !== 'downloading' && d.status !== 'queued' && d.status !== 'verifying')) return null;
+  const fraction = d.totalBytes ? d.receivedBytes / d.totalBytes : 0;
+  return `Downloading · ${Math.floor(Math.min(1, fraction) * 100)}%`;
+}
 
 /** The engine chunk (kept out of the library bundle), fetched once and shared. */
 let engineModule: Promise<typeof import('../reader/epub')> | null = null;
@@ -72,11 +80,15 @@ export function ReaderScreen() {
   const [locator, setLocator] = useState<ReadingLocator | null>(null);
   const [page, setPage] = useState<PageInfo | null>(null);
   const [shortcuts, setShortcuts] = useState(false);
+  /** Reading a download that is still running (mobile "early reading"). */
+  const [provisional, setProvisional] = useState(false);
+  const stopReading = useRef<((message: string) => void) | null>(null);
   const [chrome, setChrome] = useState(false);
   const [panel, setPanel] = useState<ReaderPanel | null>(null);
   const [fontPicker, setFontPicker] = useState(false);
   const [selection, setSelection] = useState<SelectionInfo | null>(null);
-  const [popover, setPopover] = useState<{ id: string; rect: DOMRect } | null>(null);
+  /** A drawn highlight's actions; `editing` shows its note editor instead. */
+  const [popover, setPopover] = useState<{ id: string; rect: DOMRect; editing?: boolean } | null>(null);
   const [fullscreen, setFullscreen] = useState<boolean | null>(
     typeof document !== 'undefined' && document.fullscreenEnabled ? !!document.fullscreenElement : null,
   );
@@ -157,7 +169,7 @@ export function ReaderScreen() {
 
   /** Mobile `_createHighlight`: borrow position and chapter from the page when the selection lacks them. */
   const createHighlight = useCallback(
-    async (sel: SelectionInfo, color: HighlightColor) => {
+    async (sel: SelectionInfo, color: HighlightColor, then?: 'note') => {
       const e = session.current;
       if (!e) return;
       const here = engineRef.current?.locator ?? null;
@@ -169,7 +181,7 @@ export function ReaderScreen() {
       engineRef.current?.clearSelection();
       setSelection(null);
       try {
-        await services.highlights.create({
+        const h = await services.highlights.create({
           bookId: e.book.id,
           sha256: e.book.sha256,
           origin: e.origin,
@@ -177,6 +189,7 @@ export function ReaderScreen() {
           text: sel.text,
           color,
         });
+        if (then === 'note') setPopover({ id: h.id, rect: sel.rect, editing: true });
       } catch {
         toast.show("Couldn't save the highlight.");
       }
@@ -212,7 +225,7 @@ export function ReaderScreen() {
           label: 'Undo',
           onClick: () =>
             void services.highlights
-              .create({ bookId: h.bookId, sha256: h.sha256, origin: h.origin, locator: h.locator, text: h.text, color: h.color })
+              .create({ bookId: h.bookId, sha256: h.sha256, origin: h.origin, locator: h.locator, text: h.text, color: h.color, note: h.note ?? null })
               .catch(() => toast.show("Couldn't restore the highlight.")),
         },
       });
@@ -391,6 +404,9 @@ export function ReaderScreen() {
     onKey(e) {
       handleKey(e, true);
     },
+    onActivity() {
+      services.sync.noteReadingActivity();
+    },
   };
 
   // Keys typed on the page itself (the frame forwards its own through onKey).
@@ -415,15 +431,45 @@ export function ReaderScreen() {
     container.appendChild(host);
     setError(null);
     setEngine(null);
+    setProvisional(false);
+
+    /** Saves the position, ends the reading session and closes the book (and its file). */
+    const teardown = () => {
+      const eng = opened;
+      if (!eng) return;
+      opened = null;
+      window.clearTimeout(saveTimer.current);
+      const loc = eng.locator;
+      const e = session.current;
+      if (loc && e) void services.library.saveProgress(e.id, loc, e.book.sha256);
+      services.sync.endReading();
+      eng.destroy();
+      if (engineRef.current === eng) engineRef.current = null;
+    };
+    stopReading.current = (message) => {
+      teardown();
+      setEngine(null);
+      setError(message);
+    };
 
     (async () => {
       await services.ready;
       const e = services.library.entry(entryId);
       if (!e) throw new Error('This book is not in your library.');
       if (!services.library.canRead(entryId)) throw new Error('This book has not been downloaded.');
-      const data = await services.library.openForReading(entryId);
-      const { openPublication } = await loadEngine();
-      if (cancelled) return;
+      // The verified copy, or (mobile parity) a lease on a download still running.
+      const file = await services.library.openFile(entryId);
+      let openPublication: Awaited<ReturnType<typeof loadEngine>>['openPublication'];
+      try {
+        ({ openPublication } = await loadEngine());
+      } catch (err) {
+        file.close();
+        throw err;
+      }
+      if (cancelled) {
+        file.close();
+        return;
+      }
       const prefs = services.settings.getSnapshot().reader;
       const callbacks: EngineCallbacks = {
         onLocator: (l) => handlers.current.onLocator(l),
@@ -432,9 +478,10 @@ export function ReaderScreen() {
         onTap: (x) => handlers.current.onTap(x),
         onExternalLink: (u) => handlers.current.onExternalLink(u),
         onKey: (k) => handlers.current.onKey(k),
+        onActivity: () => handlers.current.onActivity(),
       };
       const eng = await openPublication({
-        data,
+        file,
         container: host,
         prefs,
         colors: engineColors(prefs.themeId),
@@ -448,9 +495,12 @@ export function ReaderScreen() {
       opened = eng;
       engineRef.current = eng;
       // Development handle for driving the engine from the console and tests.
-      if ((import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV) (window as unknown as { readerEngine?: ReaderEngine }).readerEngine = eng;
+      if ((import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV) {
+        Object.assign(window, { readerEngine: eng, readerServices: services });
+      }
       session.current = e;
       appliedPrefs.current = prefs;
+      setProvisional(file.provisional);
       setEngine(eng);
       setLocator(eng.locator);
       setPage(eng.page);
@@ -465,20 +515,33 @@ export function ReaderScreen() {
 
     return () => {
       cancelled = true;
-      if (opened) {
-        window.clearTimeout(saveTimer.current);
-        const loc = opened.locator;
-        const e = session.current;
-        if (loc && e) void services.library.saveProgress(e.id, loc, e.book.sha256);
-        services.sync.endReading();
-        opened.destroy();
-      }
+      stopReading.current = null;
+      teardown();
       engineRef.current = null;
       host.remove();
     };
     // Reopen only for another book; everything else flows through refs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entryId, services]);
+
+  // Early reading: like mobile, leave the book if its download stops or the
+  // edition changes under it, since the lease can no longer serve bytes.
+  useEffect(() => {
+    const e = session.current;
+    if (!provisional || !engine || !e) return;
+    const current = services.library.entry(e.id);
+    if (!services.library.canRead(e.id) || current?.book.sha256 !== e.book.sha256) {
+      stopReading.current?.('The download stopped. Return to your library to retry.');
+    }
+  }, [provisional, engine, lib, services]);
+
+  // The reading clock pauses while a modal covers the page (tab visibility
+  // and idleness are the sync store's own business).
+  const pageCovered = shortcuts || (!desktop && (panel != null || popover != null));
+  useEffect(() => {
+    if (!engine) return;
+    services.sync.setReadingActive(!pageCovered);
+  }, [engine, pageCovered, services]);
 
   // Preferences (including theme changes arriving from sync) re-apply live.
   useEffect(() => {
@@ -526,6 +589,37 @@ export function ReaderScreen() {
 
   const title = entry?.book.title ?? '';
   const popoverHighlight = popover ? services.highlights.byId(popover.id) : undefined;
+
+  /** Actions for a tapped highlight, or its note editor. */
+  const highlightPanel = (h: Highlight, compact: boolean) =>
+    popover?.editing ? (
+      <NoteEditor
+        compact={compact}
+        initial={h.note?.trim() ? h.note : null}
+        quote={compact ? undefined : h.text}
+        onCancel={() => setPopover((p) => (p ? { ...p, editing: false } : p))}
+        onSave={(note) => {
+          void services.highlights.setNote(h.id, note);
+          setPopover(null);
+        }}
+      />
+    ) : (
+      <HighlightActions
+        compact={compact}
+        color={parseHighlightColor(h.color)}
+        note={h.note?.trim() ? h.note : null}
+        onRecolor={(c) => void services.highlights.recolor(h.id, c)}
+        onNote={() => setPopover((p) => (p ? { ...p, editing: true } : p))}
+        onCopy={() => {
+          void copy(h.text);
+          setPopover(null);
+        }}
+        onDelete={() => {
+          setPopover(null);
+          deleteHighlight(h);
+        }}
+      />
+    );
   const defaultColor = parseHighlightColor(settings.reader.highlightColor);
   const closeOnMobile = () => {
     if (!desktop) setPanel(null);
@@ -555,6 +649,7 @@ export function ReaderScreen() {
               openHighlight(h);
             }}
             onDelete={deleteHighlight}
+            onNote={(h, note) => void services.highlights.setNote(h.id, note)}
           />
         );
       case 'search':
@@ -644,6 +739,7 @@ export function ReaderScreen() {
                 onPrevious={() => void engine.previous()}
                 onNext={() => void engine.next()}
               />
+              {provisional && chrome && downloadNote(entry) && <div className="reader-download-note t-label-sm">{downloadNote(entry)}</div>}
               <EdgeProgress visible={!chrome} locator={locator} />
               <ToChapterStart chromeVisible={chrome} locator={locator} onPress={() => void engine.toChapterStart()} />
             </>
@@ -658,6 +754,7 @@ export function ReaderScreen() {
           <SelectionActions
             defaultColor={defaultColor}
             onHighlight={(c) => void createHighlight(selection, c)}
+            onNote={() => void createHighlight(selection, defaultColor, 'note')}
             onCopy={() => {
               void copy(selection.text);
               clearFloating();
@@ -667,38 +764,13 @@ export function ReaderScreen() {
       )}
 
       {popover && popoverHighlight && !popoverHighlight.deleted && desktop && (
-        <FloatingBar rect={popover.rect} label="Highlight" onDismiss={() => setPopover(null)}>
-          <HighlightActions
-            compact
-            color={parseHighlightColor(popoverHighlight.color)}
-            onRecolor={(c) => void services.highlights.recolor(popoverHighlight.id, c)}
-            onCopy={() => {
-              void copy(popoverHighlight.text);
-              setPopover(null);
-            }}
-            onDelete={() => {
-              setPopover(null);
-              deleteHighlight(popoverHighlight);
-            }}
-          />
+        <FloatingBar rect={popover.rect} label="Highlight" layoutKey={popover.editing ? 'note' : 'actions'} onDismiss={() => setPopover(null)}>
+          {highlightPanel(popoverHighlight, true)}
         </FloatingBar>
       )}
       {!desktop && (
         <Sheet open={!!(popover && popoverHighlight && !popoverHighlight.deleted)} onClose={() => setPopover(null)} label="Highlight">
-          {popoverHighlight && (
-            <HighlightActions
-              color={parseHighlightColor(popoverHighlight.color)}
-              onRecolor={(c) => void services.highlights.recolor(popoverHighlight.id, c)}
-              onCopy={() => {
-                void copy(popoverHighlight.text);
-                setPopover(null);
-              }}
-              onDelete={() => {
-                setPopover(null);
-                deleteHighlight(popoverHighlight);
-              }}
-            />
-          )}
+          {popoverHighlight && highlightPanel(popoverHighlight, false)}
         </Sheet>
       )}
       <ShortcutsDialog open={shortcuts} rtl={rtl} onClose={() => setShortcuts(false)} />

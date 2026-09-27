@@ -6,6 +6,7 @@ import { IconButton } from '../buttons';
 import { TextField } from '../controls';
 import { DeleteOutlineIcon, SearchIcon } from '../icons';
 import { ProgressLine } from '../states';
+import { NoteEditor, NoteIcon } from './Floating';
 
 /**
  * The entry being read: of the entries in the current file, the last whose
@@ -65,31 +66,57 @@ export function ContentsList({
   );
 }
 
-/** Every live highlight of the open edition, in reading order. */
+/** Every live highlight of the open edition, in reading order, with its note. */
 export function HighlightsList({
   items,
   onOpen,
   onDelete,
+  onNote,
 }: {
   items: Highlight[];
   onOpen: (h: Highlight) => void;
   onDelete: (h: Highlight) => void;
+  onNote: (h: Highlight, note: string | null) => void;
 }) {
+  const [editing, setEditing] = useState<string | null>(null);
   if (items.length === 0) return <p className="panel-empty">No highlights yet.</p>;
   return (
     <ul className="highlight-list">
       {items.map((h) => {
         const chapter = typeof h.locator.title === 'string' ? h.locator.title : null;
+        const note = h.note?.trim() ? h.note : null;
         return (
           <li key={h.id} className="highlight-item">
             <button type="button" className="highlight-open" onClick={() => onOpen(h)}>
               <span className="highlight-dot" style={{ background: highlightHues[parseHighlightColor(h.color)] }} />
               <span className="highlight-text">
                 <span className="highlight-quote clamp-3">{h.text}</span>
+                {note && editing !== h.id && <span className="highlight-note clamp-3">{note}</span>}
                 {chapter && <span className="t-label-sm clamp-1">{chapter}</span>}
               </span>
             </button>
-            <IconButton icon={DeleteOutlineIcon} label="Delete highlight" tone="muted" size={18} tooltipSide="left" onClick={() => onDelete(h)} />
+            <div className="highlight-item-actions">
+              <IconButton
+                icon={NoteIcon}
+                label={note ? 'Edit note' : 'Add note'}
+                tone="muted"
+                size={18}
+                tooltipSide="left"
+                aria-expanded={editing === h.id}
+                onClick={() => setEditing((cur) => (cur === h.id ? null : h.id))}
+              />
+              <IconButton icon={DeleteOutlineIcon} label="Delete highlight" tone="muted" size={18} tooltipSide="left" onClick={() => onDelete(h)} />
+            </div>
+            {editing === h.id && (
+              <NoteEditor
+                initial={note}
+                onCancel={() => setEditing(null)}
+                onSave={(n) => {
+                  setEditing(null);
+                  onNote(h, n);
+                }}
+              />
+            )}
           </li>
         );
       })}
