@@ -171,7 +171,7 @@ export function BrowseScreen() {
         ) : catalog.error && catalog.cachedAt && !catalog.refreshing ? (
           // Offline with cached results: say so quietly instead of the error screen.
           <div className="load-more">
-            <p className="t-body-sm" style={{ marginBottom: 'var(--space-sm)' }}>
+            <p className="t-body-sm load-more-note">
               {catalog.error.isNetwork ? `Can't reach ${origin}.` : 'The API returned an error.'} Showing results saved{' '}
               {new Date(catalog.cachedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}.
             </p>
@@ -196,7 +196,7 @@ export function BrowseScreen() {
         trailing={
           <>
             {catalog.refreshing && (
-              <span style={{ display: 'grid', marginRight: 'var(--space-sm)' }}>
+              <span className="browse-refreshing">
                 <ProgressRing value={null} size={16} label="Refreshing the catalog" />
               </span>
             )}

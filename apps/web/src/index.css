@@ -1360,6 +1360,15 @@ kbd {
 .chip-row::-webkit-scrollbar {
   display: none;
 }
+
+/* Browse: the background-refresh ring and the "showing saved results" note. */
+.browse-refreshing {
+  display: grid;
+  margin-right: var(--space-sm);
+}
+.load-more-note {
+  margin-bottom: var(--space-sm);
+}
 @media (min-width: 900px) {
   .chip-row {
     flex-wrap: wrap;
