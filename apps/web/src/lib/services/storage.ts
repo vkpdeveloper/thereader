@@ -1,6 +1,7 @@
-import type { StorageInfo, StorageStore } from './contract';
+import type { AppServices, StorageInfo, StorageStore } from './contract';
 import type { KeyValueStore } from './kv';
 import type { LibraryStoreImpl } from './library';
+import { isReady } from './models';
 
 /** Browser storage usage and the persistence grant that protects downloads from eviction. */
 export class StorageStoreImpl implements StorageStore {
@@ -54,4 +55,20 @@ export class StorageStoreImpl implements StorageStore {
     this.persistRequested = true;
     void this.requestPersistence();
   }
+}
+
+/**
+ * At startup, once the library has loaded: ask the browser to keep storage
+ * when there are downloads to protect or the app runs installed, so an
+ * installed reader is protected before its first download. Silent and best effort.
+ */
+export async function persistAtStartup(services: Pick<AppServices, 'library' | 'storage'>): Promise<void> {
+  if (!services.library.getSnapshot().entries.some((e) => isReady(e.download)) && !isInstalled()) return;
+  await services.storage.requestPersistence().catch(() => false);
+}
+
+function isInstalled(): boolean {
+  if (typeof window === 'undefined') return false;
+  const standalone = (navigator as Navigator & { standalone?: boolean }).standalone === true;
+  return standalone || (window.matchMedia?.('(display-mode: standalone)').matches ?? false);
 }

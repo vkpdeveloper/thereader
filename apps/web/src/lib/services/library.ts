@@ -134,11 +134,17 @@ export class LibraryStoreImpl extends Emitter<LibrarySnapshot> implements Librar
 
   async load(): Promise<void> {
     this.entries = await this.readStored();
-    // Reconcile with storage: a "ready" record whose blob vanished is not ready.
+    // Reconcile with storage: a "ready" record whose blob vanished is not ready,
+    // and a verified blob saved just before the page closed (its record still
+    // says interrupted) is adopted rather than downloaded again.
     const keys = new Set(await this.deps.books.keys().catch(() => [] as string[]));
     for (const e of [...this.entries.values()]) {
       if (isReady(e.download) && !keys.has(e.download.path!)) {
         this.entries.set(e.id, { ...e, download: { ...emptyDownload(), status: 'failed', error: MISSING_FILE } });
+      } else if (!isReady(e.download) && keys.has(bookBlobKey(e.id, e.book.sha256))) {
+        const size = e.book.fileSize;
+        const path = bookBlobKey(e.id, e.book.sha256);
+        this.entries.set(e.id, { ...e, download: { status: 'ready', receivedBytes: size, totalBytes: size, path, error: null } });
       }
     }
     this.publish(true);
