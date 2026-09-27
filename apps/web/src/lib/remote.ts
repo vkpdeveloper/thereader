@@ -1,3 +1,5 @@
+import { BookCache } from './services/bookCache';
+import { createIdbKv } from './services/idb';
 import type { Book } from './types';
 
 /**
@@ -5,6 +7,9 @@ import type { Book } from './types';
  * cover: a health check for an address typed in Settings, and one book for a
  * deep link to /book/:id before the catalog has loaded.
  */
+
+let bookCache: BookCache | null = null;
+const books = () => (bookCache ??= new BookCache(createIdbKv('kv')));
 
 const timeoutMs = 15_000;
 
@@ -52,9 +57,23 @@ export async function checkHealth(origin: string): Promise<{ ok: boolean; servic
   return { ok: json.status === 'ok', service: String(json.service ?? 'unknown') };
 }
 
+/**
+ * One book from the API, remembered per origin; when the API is unreachable
+ * (or failing) the last fetched copy is returned instead.
+ */
 export async function fetchBook(origin: string, id: string): Promise<Book> {
-  const json = await getJson(`${origin}/v1/books/${encodeURIComponent(id)}`);
-  const book = json.book as Book | undefined;
+  let book: Book | undefined;
+  try {
+    const json = await getJson(`${origin}/v1/books/${encodeURIComponent(id)}`);
+    book = json.book as Book | undefined;
+  } catch (error) {
+    if (error instanceof RemoteError && (error.isNetwork || (error.status ?? 0) >= 500)) {
+      const cached = await books().recall(origin, id).catch(() => null);
+      if (cached) return cached;
+    }
+    throw error;
+  }
   if (!book || typeof book.id !== 'string') throw new RemoteError('The server returned an invalid response.', false);
+  void books().remember(origin, book).catch((error) => console.warn('Could not cache the book', error));
   return book;
 }

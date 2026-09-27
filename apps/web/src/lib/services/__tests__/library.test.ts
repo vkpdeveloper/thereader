@@ -183,6 +183,46 @@ describe('persistence', () => {
     expect(entry.download.error).toBe('The file is missing from storage.');
   });
 
+  test('a verified blob whose record was not saved yet is adopted, not downloaded again', async () => {
+    const kv = new MemoryKv();
+    const blobs = new MemoryKv();
+    const book = await bookFor(bytesOf('saved bytes'));
+    const id = entryIdentity(book.id, ORIGIN);
+    await kv.set('library.v1', {
+      entries: [
+        {
+          book,
+          source: 'api',
+          origin: ORIGIN,
+          addedAt: '2026-09-01T00:00:00.000Z',
+          download: { status: 'verifying', receivedBytes: 11, totalBytes: 11, path: null, error: null },
+          progress: null,
+          lastOpenedAt: null,
+        },
+      ],
+    });
+    await blobs.set(bookBlobKey(id, book.sha256), new Blob([bytesOf('saved bytes')]));
+    let requests = 0;
+    const library = new LibraryStoreImpl({
+      kv,
+      books: blobs,
+      currentOrigin: () => ORIGIN,
+      clientFor: () => ({
+        openDownload: async () => {
+          requests++;
+          return new Response();
+        },
+      }),
+    });
+    await library.load();
+    const entry = library.entry(id)!;
+    expect(entry.download.status).toBe('ready');
+    expect(entry.download.path).toBe(bookBlobKey(id, book.sha256));
+    const blob = await library.openForReading(id);
+    expect(new TextDecoder().decode(new Uint8Array(await blob.arrayBuffer()))).toBe('saved bytes');
+    expect(requests).toBe(0);
+  });
+
   test('remove with keepMetadata keeps the entry and its progress', async () => {
     const epub = bytesOf('bytes');
     const book = await bookFor(epub);

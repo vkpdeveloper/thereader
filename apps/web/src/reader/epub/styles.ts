@@ -216,6 +216,13 @@ html{overflow-x:hidden !important;overflow-y:auto !important;height:auto !import
   direction:ltr !important;}
 body{box-sizing:content-box !important;max-width:${g.measure}px !important;margin:0 auto !important;
   padding:${g.padTop}px ${g.sidePad}px ${g.padBottom}px !important;min-height:0 !important;height:auto !important;}
+::-webkit-scrollbar{width:10px;height:10px;background:transparent;}
+::-webkit-scrollbar-track, ::-webkit-scrollbar-corner{background:transparent;}
+::-webkit-scrollbar-thumb{background-color:color-mix(in srgb, ${colors.muted} 30%, transparent);background-clip:padding-box;
+  border:2px solid transparent;border-radius:999px;min-height:32px;}
+::-webkit-scrollbar-thumb:hover, ::-webkit-scrollbar-thumb:active{background-color:color-mix(in srgb, ${colors.muted} 60%, transparent);}
+::-webkit-scrollbar-button{display:none;width:0;height:0;}
+@supports not selector(::-webkit-scrollbar){html{scrollbar-width:thin;scrollbar-color:color-mix(in srgb, ${colors.muted} 30%, transparent) transparent;}}
 [data-reader-ui].reader-next{display:block !important;margin:3.5em 0 1em !important;text-align:center !important;}
 [data-reader-ui].reader-next > button{all:initial;cursor:pointer !important;display:inline-block !important;padding:10px 18px !important;
   border-radius:999px !important;border:1px solid ${colors.muted} !important;font-family:${SANS_STACK} !important;font-size:14px !important;

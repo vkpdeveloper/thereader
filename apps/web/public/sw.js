@@ -6,34 +6,51 @@
  *
  * - Install, and every newly deployed shell: crawl the asset graph from
  *   index.html (script/link tags, Vite's dynamic imports and preload maps,
- *   CSS url()s) and precache it. Hashed assets of older deployments are
- *   pruned once a crawl completes.
+ *   CSS url()s) and precache it. Bundles of an older worker version are
+ *   carried over, and hashed assets referenced by neither the new nor the
+ *   previous shell are pruned once a crawl completes (a page still running
+ *   the previous shell can lazy-load its routes offline).
+ * - Navigations: the cached app shell immediately. The network copy (the
+ *   navigation preload response when available) refreshes it in the
+ *   background; a changed shell is precached first, then stored, then open
+ *   pages get a `thereader:shell-updated` message and apply it when idle.
+ *   With no cached shell yet (first visit), the network.
  * - /assets/* (hashed Vite bundles) and /fonts/*: cache first.
  * - The web manifest and icons: cached copy first, refreshed in the background.
- * - Navigations: network first, falling back to the cached app shell.
  * Bump VERSION to drop every older cache on activation. */
 
-const VERSION = 'v2';
+const VERSION = 'v3';
 const SHELL_CACHE = `thereader-shell-${VERSION}`;
 const STATIC_CACHE = `thereader-static-${VERSION}`;
 const CURRENT = new Set([SHELL_CACHE, STATIC_CACHE]);
 const SHELL_URL = '/index.html';
 const CRAWL_LIMIT = 400;
+const UPDATED_MESSAGE = 'thereader:shell-updated';
 /** Unhashed files the browser asks for on every visit (install metadata, icons). */
-const ROOT_FILES = ['/manifest.webmanifest', '/favicon.svg', '/icon.svg'];
+const ROOT_FILES = [
+  '/manifest.webmanifest',
+  '/favicon.svg',
+  '/icon.svg',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/icon-maskable-512.png',
+  '/apple-touch-icon.png',
+];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    fetch(new Request('/', { cache: 'reload' }))
-      .then(async (response) => {
-        if (!response.ok) return;
-        const html = await response.clone().text();
-        const shell = await caches.open(SHELL_CACHE);
-        await shell.put(SHELL_URL, response);
-        await Promise.all(ROOT_FILES.map((path) => refresh(shell, path).catch(() => undefined)));
-        // Best effort: a failed asset must not keep the worker from installing.
-        await precache(html).catch(() => undefined);
-      })
+    (async () => {
+      const previous = await previousShellHtml();
+      await carryOverStatic();
+      const response = await fetch(new Request('/', { cache: 'reload' }));
+      if (!isHtml(response)) return;
+      const html = await response.clone().text();
+      const shell = await caches.open(SHELL_CACHE);
+      await Promise.all(ROOT_FILES.map((path) => refresh(shell, path).catch(() => undefined)));
+      // Best effort: a failed asset must not keep the worker from installing.
+      await precache(html, previous).catch(() => undefined);
+      await shell.put(SHELL_URL, response);
+    })()
       .catch(() => undefined)
       .then(() => self.skipWaiting()),
   );
@@ -41,10 +58,13 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches
-      .keys()
-      .then((keys) => Promise.all(keys.filter((key) => key.startsWith('thereader-') && !CURRENT.has(key)).map((key) => caches.delete(key))))
-      .then(() => self.clients.claim()),
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(keys.filter((key) => key.startsWith('thereader-') && !CURRENT.has(key)).map((key) => caches.delete(key)));
+      // Starts the network request with the navigation, in parallel with the worker.
+      await self.registration.navigationPreload?.enable().catch(() => undefined);
+      await self.clients.claim();
+    })(),
   );
 });
 
@@ -54,6 +74,34 @@ function isApi(url) {
 
 function isStatic(url) {
   return url.origin === self.location.origin && (url.pathname.startsWith('/assets/') || url.pathname.startsWith('/fonts/'));
+}
+
+function isHtml(response) {
+  return !!response && response.ok && response.type === 'basic' && (response.headers.get('content-type') || '').includes('text/html');
+}
+
+/** The shell cached by an older worker version, if any. */
+async function previousShellHtml() {
+  for (const key of await caches.keys()) {
+    if (!key.startsWith('thereader-shell-') || key === SHELL_CACHE) continue;
+    const cached = await (await caches.open(key)).match(SHELL_URL);
+    if (cached) return cached.text();
+  }
+  return null;
+}
+
+/** Copies bundles cached by an older worker version, so a VERSION bump refetches nothing unchanged. */
+async function carryOverStatic() {
+  const target = await caches.open(STATIC_CACHE);
+  for (const key of await caches.keys()) {
+    if (!key.startsWith('thereader-static-') || key === STATIC_CACHE) continue;
+    const source = await caches.open(key);
+    for (const request of await source.keys()) {
+      if (await target.match(request)) continue;
+      const response = await source.match(request);
+      if (response) await target.put(request, response);
+    }
+  }
 }
 
 /** Same-origin asset URLs referenced by the HTML, JS or CSS file at `base`. */
@@ -87,12 +135,10 @@ function referencesIn(text, base) {
 }
 
 /**
- * Walks the asset graph from the shell and caches every file not cached
- * yet. After a complete crawl, hashed bundles no longer referenced (older
- * deployments) are removed.
+ * Walks the asset graph from a shell, caching every file not cached yet.
+ * Returns the paths reached, or null if a file could not be fetched.
  */
-async function precache(html) {
-  const cache = await caches.open(STATIC_CACHE);
+async function crawl(cache, html) {
   const origin = self.location.origin;
   const seen = new Set();
   let queue = [...referencesIn(html, `${origin}/index.html`)];
@@ -122,11 +168,28 @@ async function precache(html) {
       }),
     );
   }
-  if (!complete || queue.length > 0) return;
+  return complete && queue.length === 0 ? seen : null;
+}
+
+/**
+ * Precaches `html`'s asset graph; true once every file is cached. After a
+ * complete crawl, hashed bundles that neither it nor the `previous` shell
+ * references are removed.
+ */
+async function precache(html, previous) {
+  const cache = await caches.open(STATIC_CACHE);
+  const keep = await crawl(cache, html);
+  if (!keep) return false;
+  if (previous && previous !== html) {
+    const older = await crawl(cache, previous);
+    if (!older) return true;
+    for (const path of older) keep.add(path);
+  }
   for (const request of await cache.keys()) {
     const path = new URL(request.url).pathname;
-    if (path.startsWith('/assets/') && !seen.has(path)) await cache.delete(request);
+    if (path.startsWith('/assets/') && !keep.has(path)) await cache.delete(request);
   }
+  return true;
 }
 
 async function refresh(cache, request) {
@@ -156,25 +219,43 @@ async function cacheFirst(request) {
   return response;
 }
 
-async function networkFirstShell(event) {
+/**
+ * Stores a newer shell once all its bundles are cached (so it always opens
+ * offline), then tells open pages. `previousText` is the cached shell's HTML.
+ */
+async function adoptShell(response, previousText) {
+  if (!isHtml(response)) return;
+  const html = await response.clone().text();
+  const previous = await previousText;
+  if (previous === html) return;
+  if (!(await precache(html, previous).catch(() => false)) && previous !== null) return;
   const cache = await caches.open(SHELL_CACHE);
-  try {
-    const response = await fetch(event.request);
-    // Every SPA route serves index.html; keep the latest copy as the shell.
-    if (response.ok && response.type === 'basic' && (response.headers.get('content-type') || '').includes('text/html')) {
-      const html = await response.clone().text();
-      const previous = await cache.match(SHELL_URL);
-      const changed = !previous || (await previous.text()) !== html;
-      await cache.put(SHELL_URL, response.clone());
-      // A new deployment: precache its bundles while the page loads.
-      if (changed) event.waitUntil(precache(html).catch(() => undefined));
-    }
-    return response;
-  } catch (error) {
-    const cached = (await cache.match(SHELL_URL)) || (await cache.match('/'));
-    if (cached) return cached;
-    throw error;
+  await cache.put(SHELL_URL, response);
+  if (previous === null) return;
+  for (const client of await self.clients.matchAll({ type: 'window' })) client.postMessage({ type: UPDATED_MESSAGE });
+}
+
+async function networkShell(event) {
+  const preloaded = await event.preloadResponse?.catch(() => undefined);
+  return preloaded || fetch(event.request);
+}
+
+async function appShell(event) {
+  const cache = await caches.open(SHELL_CACHE);
+  const cached = (await cache.match(SHELL_URL)) || (await cache.match('/'));
+  if (cached) {
+    // Every SPA route serves index.html; refresh it without making the launch wait.
+    const previousText = cached.clone().text();
+    event.waitUntil(
+      networkShell(event)
+        .then((response) => adoptShell(response, previousText))
+        .catch(() => undefined),
+    );
+    return cached;
   }
+  const response = await networkShell(event);
+  event.waitUntil(adoptShell(response.clone(), null).catch(() => undefined));
+  return response;
 }
 
 self.addEventListener('fetch', (event) => {
@@ -183,7 +264,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin || isApi(url)) return;
   if (request.mode === 'navigate') {
-    event.respondWith(networkFirstShell(event));
+    event.respondWith(appShell(event));
     return;
   }
   if (isStatic(url)) event.respondWith(cacheFirst(request));

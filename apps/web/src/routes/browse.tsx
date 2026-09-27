@@ -34,9 +34,10 @@ export function BrowseScreen() {
   const sentinel = useRef<HTMLDivElement>(null);
   const menu = useContextMenu();
 
+  // Loads an idle catalog, or refreshes the cached listing behind its items.
   useEffect(() => {
-    if (catalog.status === 'idle') void services.catalog.refresh();
-  }, [catalog.status, services.catalog]);
+    void services.catalog.revalidate();
+  }, [catalog.status, catalog.origin, services.catalog]);
 
   // `/` focuses search, like most desktop web apps.
   useEffect(() => {
@@ -167,6 +168,15 @@ export function BrowseScreen() {
         </ul>
         {catalog.isLoadingMore ? (
           <LoadingLine />
+        ) : catalog.error && catalog.cachedAt && !catalog.refreshing ? (
+          // Offline with cached results: say so quietly instead of the error screen.
+          <div className="load-more">
+            <p className="t-body-sm load-more-note">
+              {catalog.error.isNetwork ? `Can't reach ${origin}.` : 'The API returned an error.'} Showing results saved{' '}
+              {new Date(catalog.cachedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}.
+            </p>
+            <QuietButton label="Try again" onClick={() => void services.catalog.refresh()} />
+          </div>
         ) : catalog.hasMore ? (
           <div className="load-more">
             <QuietButton label="Load more" onClick={() => void services.catalog.loadMore()} />
@@ -183,7 +193,16 @@ export function BrowseScreen() {
       <ScreenHeader
         title="Browse"
         size="sm"
-        trailing={<IconButton icon={TuneIcon} label="Library API settings" tone="muted" tooltipSide="left" onClick={() => void navigate({ to: '/settings' })} />}
+        trailing={
+          <>
+            {catalog.refreshing && (
+              <span className="browse-refreshing">
+                <ProgressRing value={null} size={16} label="Refreshing the catalog" />
+              </span>
+            )}
+            <IconButton icon={TuneIcon} label="Library API settings" tone="muted" tooltipSide="left" onClick={() => void navigate({ to: '/settings' })} />
+          </>
+        }
       />
       <div className="browse-controls">
         <TextField

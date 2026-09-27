@@ -49,7 +49,7 @@ function build(): AppServices {
   let storage: StorageStoreImpl | null = null;
   const library = new LibraryStoreImpl({ kv, books, bus, currentOrigin, clientFor, onDownloaded: () => storage?.downloaded() });
   storage = new StorageStoreImpl(books, library);
-  const catalog = new CatalogStoreImpl(currentOrigin, clientFor);
+  const catalog = new CatalogStoreImpl(currentOrigin, clientFor, kv);
   const covers = new CoverStoreImpl(coverKv, (origin, path) => clientFor(origin).resolve(path));
   const highlights = new HighlightStoreImpl(kv, bus);
   // The import pipeline (zip parsing, MOBI conversion) loads on first use.
@@ -84,6 +84,8 @@ function build(): AppServices {
     load().catch((error) => console.error(`Could not load ${name}`, error));
   const ready = (async () => {
     await step('settings', () => settings.load());
+    // The cached listing only: no request until Browse is shown.
+    await step('catalog', () => catalog.load());
     await step('library', () => library.load());
     await step('imports', () => imports.load());
     await step('highlights', () => highlights.load());
