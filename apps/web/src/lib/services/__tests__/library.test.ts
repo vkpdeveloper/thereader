@@ -203,3 +203,68 @@ describe('persistence', () => {
     expect(s.library.entry(id)).toBeUndefined();
   });
 });
+
+describe('storage efficiency', () => {
+  class CountingKv extends MemoryKv {
+    sets = 0;
+    override async set(key: string, value: unknown): Promise<void> {
+      this.sets++;
+      await super.set(key, value);
+    }
+  }
+
+  test('a burst of progress saves shares IndexedDB writes and keeps the latest', async () => {
+    const epub = bytesOf('bytes');
+    const book = await bookFor(epub);
+    const kv = new CountingKv();
+    const library = new LibraryStoreImpl({
+      kv,
+      books: new MemoryKv(),
+      currentOrigin: () => ORIGIN,
+      clientFor: () => ({ openDownload: async () => streamResponse(epub) }),
+    });
+    await library.load();
+    await library.download(book);
+    const id = library.entryFor(book)!.id;
+    const before = kv.sets;
+    const saves = [];
+    for (let i = 1; i <= 20; i++) saves.push(library.saveProgress(id, { ...locator, progression: i / 20 }, book.sha256));
+    await Promise.all(saves);
+    expect(kv.sets - before).toBeLessThanOrEqual(2);
+    const stored = (await kv.get<{ entries: Array<{ progress: { locator: { progression: number } } }> }>('library.v1'))!;
+    expect(stored.entries[0]!.progress.locator.progression).toBe(1);
+  });
+
+  test('another tab saving an unchanged library emits no snapshot and keeps entry objects', async () => {
+    const epub = bytesOf('bytes');
+    const book = await bookFor(epub);
+    const kv = new MemoryKv();
+    const listeners = new Set<(topic: string) => void>();
+    const bus = { post: () => undefined, listen: (fn: (topic: string) => void) => (listeners.add(fn), () => listeners.delete(fn)) };
+    const library = new LibraryStoreImpl({
+      kv,
+      books: new MemoryKv(),
+      bus: bus as never,
+      currentOrigin: () => ORIGIN,
+      clientFor: () => ({ openDownload: async () => streamResponse(epub) }),
+    });
+    await library.load();
+    await library.download(book);
+    const snapshot = library.getSnapshot();
+    let emits = 0;
+    library.subscribe(() => emits++);
+    for (const fn of listeners) fn('library');
+    await new Promise((r) => setTimeout(r, 5));
+    expect(emits).toBe(0);
+    expect(library.getSnapshot()).toBe(snapshot);
+
+    // A real change from the other tab: only that entry is replaced.
+    const stored = (await kv.get<{ entries: Array<Record<string, unknown>> }>('library.v1'))!;
+    stored.entries[0]!.lastOpenedAt = '2026-09-30T00:00:00.000Z';
+    await kv.set('library.v1', stored);
+    for (const fn of listeners) fn('library');
+    await new Promise((r) => setTimeout(r, 5));
+    expect(emits).toBe(1);
+    expect(library.getSnapshot().entries[0]!.lastOpenedAt).toBe('2026-09-30T00:00:00.000Z');
+  });
+});

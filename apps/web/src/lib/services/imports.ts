@@ -3,6 +3,7 @@ import { ImportError, type InspectFile, type UploadBook } from '../import/contra
 import { ApiError, type ImportStore, type ImportsSnapshot } from './contract';
 import type { KeyValueStore } from './kv';
 import { bookBlobKey, type LibraryStoreImpl } from './library';
+import { EPUB_TYPE } from './progressiveDownload';
 import { entryIdentity, isActive, isReady, isRecord, nowIso, parseBook } from './models';
 import { Emitter, WriteQueue } from './observable';
 import { createMemoryLocks, noopBus, type Locks, type TabBus } from './tabs';
@@ -228,7 +229,8 @@ export class ImportStoreImpl extends Emitter<ImportsSnapshot> implements ImportS
     if (inspected.epub.size !== book.fileSize) throw new ImportProblem('The EPUB changed while importing.');
 
     const path = bookBlobKey(id, sha);
-    const blob = inspected.epub.type === 'application/epub+zip' ? inspected.epub : new Blob([inspected.epub], { type: 'application/epub+zip' });
+    // Re-typing is a zero-copy slice; the bytes are not duplicated in memory.
+    const blob = inspected.epub.type === EPUB_TYPE ? inspected.epub : inspected.epub.slice(0, inspected.epub.size, EPUB_TYPE);
     let stored = false;
     let queued = false;
     try {

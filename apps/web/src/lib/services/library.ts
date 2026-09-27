@@ -16,6 +16,7 @@ import {
   nowIso,
   parseEntry,
   sameBookJson,
+  stableStringify,
 } from './models';
 import { Emitter, WriteQueue } from './observable';
 import {
@@ -77,6 +78,7 @@ export class LibraryStoreImpl extends Emitter<LibrarySnapshot> implements Librar
   /** A verified edition kept while its replacement downloads. */
   private readonly verifiedBeforeUpdate = new Map<string, LibraryEntry>();
   private readonly writes = new WriteQueue();
+  private queuedWrite: Promise<void> | null = null;
   private readonly bus: TabBus;
   private readonly now: () => number;
 
@@ -175,25 +177,38 @@ export class LibraryStoreImpl extends Emitter<LibrarySnapshot> implements Librar
         }
         if (local.lastOpenedAt && isAfter(local.lastOpenedAt, s.lastOpenedAt)) next = { ...next, lastOpenedAt: local.lastOpenedAt };
       }
+      // Unchanged records keep their object so rows do not re-render.
+      if (local && stableStringify(entryToJson(local)) === stableStringify(entryToJson(next))) next = local;
       merged.set(id, next);
     }
     for (const [id, local] of this.entries) {
       if (!merged.has(id) && isActive(local.download)) merged.set(id, local);
     }
+    const unchanged =
+      merged.size === this.entries.size && [...merged].every(([id, e]) => this.entries.get(id) === e);
     this.entries = merged;
-    this.publish();
+    if (!unchanged) this.publish();
   }
 
+  /**
+   * Saves the library. Calls made while a write is still queued share it:
+   * the snapshot is taken when the write starts, so it includes every change
+   * so far and a burst of progress saves costs one IndexedDB write.
+   */
   private persist(): Promise<void> {
-    const snapshot = {
-      entries: [...this.entries.values()].map((e) =>
-        entryToJson(isActive(e.download) ? this.verifiedBeforeUpdate.get(e.id) ?? e : e),
-      ),
-    };
-    return this.writes.run(async () => {
+    if (this.queuedWrite) return this.queuedWrite;
+    const write = this.writes.run(async () => {
+      this.queuedWrite = null;
+      const snapshot = {
+        entries: [...this.entries.values()].map((e) =>
+          entryToJson(isActive(e.download) ? this.verifiedBeforeUpdate.get(e.id) ?? e : e),
+        ),
+      };
       await this.deps.kv.set(LIBRARY_KEY, snapshot);
       this.bus.post('library');
     });
+    this.queuedWrite = write;
+    return write;
   }
 
   flush(): Promise<void> {
