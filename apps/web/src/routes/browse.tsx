@@ -93,7 +93,8 @@ export function BrowseScreen() {
         items.push({
           label: d?.status === 'failed' ? 'Try download again' : `Download · ${formatBytes(book.fileSize)}`,
           icon: ArrowDownwardIcon,
-          onSelect: () => void services.library.download(book, { origin }),
+          // A failed entry retries from its own origin (the same one here).
+          onSelect: () => void (entry ? services.library.downloadEntry(entry.id, book) : services.library.download(book, { origin })),
         });
       } else if (entry.book.sha256 !== book.sha256) {
         items.push({ label: 'Update to this edition', icon: ArrowDownwardIcon, onSelect: () => void services.library.downloadEntry(entry.id, book) });

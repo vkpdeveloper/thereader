@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import type { AppServices } from '../lib/services/contract';
 import { useServices } from '../lib/services/react';
 import { useInView } from '../lib/hooks';
 import type { Book } from '../lib/types';
@@ -17,27 +18,37 @@ export function CoverArt({ book, origin, width, className }: { book: Book; origi
   const services = useServices();
   const frame = useRef<HTMLDivElement>(null);
   const visible = useInView(frame, '300px');
-  const [state, setState] = useState<CoverState>({ kind: 'loading' });
+  // The first frame comes from the store's synchronous answer, so a remounted
+  // or re-keyed cover shows its image (or plate) at once instead of flashing.
+  const key = `${origin}\n${book.id}\n${book.sha256}`;
+  const [shown, setShown] = useState<{ key: string; cover: CoverState }>(() => ({ key, cover: peeked(services, book, origin) }));
+  let state = shown.cover;
+  if (shown.key !== key) {
+    state = peeked(services, book, origin);
+    setShown({ key, cover: state });
+  }
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (!visible) return;
     let cancelled = false;
-    setState({ kind: 'loading' });
+    const set = (cover: CoverState) => !cancelled && setShown({ key, cover });
+    const known = services.covers.peek(book, origin);
+    if (known !== undefined) {
+      set(known ? { kind: 'image', url: known } : { kind: 'plate' });
+      return;
+    }
+    set({ kind: 'loading' });
     services.covers.load(book, origin).then(
-      (url) => {
-        if (!cancelled) setState(url ? { kind: 'image', url } : { kind: 'plate' });
-      },
-      () => {
-        if (!cancelled) setState({ kind: 'failed' });
-      },
+      (url) => set(url ? { kind: 'image', url } : { kind: 'plate' }),
+      () => set({ kind: 'failed' }),
     );
     return () => {
       cancelled = true;
     };
     // A new edition (sha) or origin reloads; `attempt` drives retries.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, services, book.sha256, book.id, origin, attempt]);
+  }, [visible, services, key, attempt]);
 
   // Failed loads and undecodable images retry quietly, like mobile.
   useEffect(() => {
@@ -46,11 +57,17 @@ export function CoverArt({ book, origin, width, className }: { book: Book; origi
     return () => window.clearTimeout(t);
   }, [state, visible]);
 
+  // The browser could not decode the cached cover: drop it so the retry refetches.
+  const onImageError = () => {
+    setShown({ key, cover: { kind: 'failed' } });
+    void services.covers.reject(book, origin).catch(() => undefined);
+  };
+
   const style: CSSProperties | undefined = width ? { width } : undefined;
   return (
     <div ref={frame} className={['cover', className].filter(Boolean).join(' ')} style={style} role="img" aria-label={`Cover of ${book.title}`}>
       {state.kind === 'image' && (
-        <img src={state.url} alt="" draggable={false} decoding="async" onError={() => setState({ kind: 'failed' })} />
+        <img src={state.url} alt="" draggable={false} decoding="async" onError={onImageError} />
       )}
       {state.kind === 'plate' && <CoverPlate book={book} />}
       {(state.kind === 'loading' || state.kind === 'failed') && (
@@ -60,6 +77,11 @@ export function CoverArt({ book, origin, width, className }: { book: Book; origi
       )}
     </div>
   );
+}
+
+function peeked(services: AppServices, book: Book, origin: string): CoverState {
+  const known = services.covers.peek(book, origin);
+  return known === undefined ? { kind: 'loading' } : known === null ? { kind: 'plate' } : { kind: 'image', url: known };
 }
 
 const accentVars = ['var(--blue)', 'var(--purple)', 'var(--green)', 'var(--orange)', 'var(--cyan)', 'var(--pink)'];
