@@ -307,6 +307,7 @@ export function readerPreferencesToJson(p: ReaderPreferences): Json {
 /** Font family ids known to both apps, with their legacy serif/sans class. */
 export const FONT_FAMILY_CLASSES: Record<string, 'serif' | 'sans'> = {
   'system-serif': 'serif',
+  libron: 'serif',
   literata: 'serif',
   'source-serif-4': 'serif',
   'system-sans': 'sans',

@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-import { applyD1Migrations, reset } from "cloudflare:test";
+import { applyD1Migrations, createExecutionContext, reset, waitOnExecutionContext } from "cloudflare:test";
 import { beforeEach, describe, expect, it } from "vitest";
 import worker from "../src/index";
 import { CATALOG_KEY } from "../src/catalog";
@@ -67,7 +67,7 @@ async function seed(options: {
 }
 
 function request(path: string, init?: RequestInit): Promise<Response> {
-  return worker.fetch(new Request(`${origin}${path}`, init), env);
+  return worker.fetch(new Request(`${origin}${path}`, init), env, createExecutionContext());
 }
 
 async function body(response: Response): Promise<any> {
@@ -365,7 +365,7 @@ describe("EPUB download", () => {
       new Request(`${origin}${book.downloadUrl}`, {
         headers: { "If-Range": `"${checksum}"`, Range: "bytes=0-3" },
       }),
-      { BOOKS: fakeBucket, DB: env.DB } satisfies Env,
+      { BOOKS: fakeBucket, CDN: env.CDN, DB: env.DB } satisfies Env,
       book,
     );
 
@@ -419,7 +419,7 @@ describe("EPUB download", () => {
 
     const response = await downloadBook(
       new Request(`${origin}${book.downloadUrl}`, { headers: { Range: "bytes=2-8" } }),
-      { BOOKS: fakeBucket, DB: env.DB } satisfies Env,
+      { BOOKS: fakeBucket, CDN: env.CDN, DB: env.DB } satisfies Env,
       book,
     );
 
@@ -458,5 +458,42 @@ describe("EPUB download", () => {
     const response = await request("/v1/books/the-quiet-hour/cover");
     expect(response.status).toBe(404);
     expect((await body(response)).error.code).toBe("NOT_FOUND");
+  });
+});
+
+describe("CDN assets", () => {
+  const key = "fonts/libron/v0.25/Libron-Regular.woff2";
+  const fontBytes = new Uint8Array([0x77, 0x4f, 0x46, 0x32, 1, 2, 3, 4]);
+
+  it("serves R2 objects as immutable, edge-cached responses", async () => {
+    await env.CDN.put(key, fontBytes, { httpMetadata: { contentType: "font/woff2" } });
+    const ctx = createExecutionContext();
+    const first = await worker.fetch(new Request(`${origin}/cdn/${key}`), env, ctx);
+    await waitOnExecutionContext(ctx);
+
+    expect(first.status).toBe(200);
+    expect(first.headers.get("Content-Type")).toBe("font/woff2");
+    expect(first.headers.get("Cache-Control")).toBe("public, max-age=31536000, immutable");
+    expect(first.headers.get("Access-Control-Allow-Origin")).toBe("*");
+    expect(new Uint8Array(await first.arrayBuffer())).toEqual(fontBytes);
+    const etag = first.headers.get("ETag")!;
+
+    await env.CDN.delete(key);
+    const cached = await request(`/cdn/${key}`);
+    expect(cached.status).toBe(200);
+    expect(new Uint8Array(await cached.arrayBuffer())).toEqual(fontBytes);
+
+    const revalidated = await request(`/cdn/${key}`, { headers: { "If-None-Match": etag } });
+    expect(revalidated.status).toBe(304);
+    const head = await request(`/cdn/${key}`, { method: "HEAD" });
+    expect(head.status).toBe(200);
+    expect(head.headers.get("Content-Length")).toBe(String(fontBytes.length));
+  });
+
+  it("rejects missing objects, traversal, and writes", async () => {
+    expect((await request("/cdn/fonts/missing.woff2")).status).toBe(404);
+    expect((await request("/cdn/fonts/%2e%2e/catalog/v1/manifest.json")).status).toBe(404);
+    expect((await request("/cdn/.hidden")).status).toBe(404);
+    expect((await request(`/cdn/${key}`, { method: "PUT", body: "x" })).status).toBe(405);
   });
 });

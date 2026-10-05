@@ -1,4 +1,5 @@
 import { loadCatalog, toPublicBook, validateBookId } from "./catalog";
+import { CDN_PREFIX, serveCdn } from "./cdn";
 import { downloadBook } from "./download";
 import { ApiError, errorResponse } from "./errors";
 import { linkPreview } from "./link-preview";
@@ -95,9 +96,11 @@ async function getCover(request: Request, env: Env, book: CatalogBook): Promise<
   return new Response(body, { headers });
 }
 
-async function route(request: Request, env: Env): Promise<Response> {
+async function route(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const url = new URL(request.url);
   if (request.method === "OPTIONS") return new Response(null, { status: 204 });
+
+  if (url.pathname.startsWith(CDN_PREFIX)) return serveCdn(request, env, ctx);
 
   if (url.pathname === "/health") {
     if (request.method !== "GET" && request.method !== "HEAD") {
@@ -182,9 +185,9 @@ async function route(request: Request, env: Env): Promise<Response> {
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     try {
-      return withCors(await route(request, env));
+      return withCors(await route(request, env, ctx));
     } catch (error) {
       if (error instanceof ApiError) return withCors(errorResponse(error, request.method === "HEAD"));
       console.error("Unhandled request error", error instanceof Error ? error.message : "Unknown error");

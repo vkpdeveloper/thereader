@@ -43,11 +43,11 @@ void main() {
     await pause(tester, 3);
 
     // Cycle through a few fonts and close.
-    await tester.tap(find.text(ReaderFonts.systemSerif.label));
+    await tester.tap(find.text(ReaderFonts.libron.label));
     await pause(tester, 2);
     await tester.tap(find.text(ReaderFonts.atkinson.label));
     await pause(tester, 2);
-    await tester.tap(find.text(ReaderFonts.systemSerif.label).last);
+    await tester.tap(find.text(ReaderFonts.libron.label).last);
     await pause(tester, 2);
     await tester.tapAt(const Offset(200, 40));
     await pause(tester, 2);

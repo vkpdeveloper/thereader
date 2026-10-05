@@ -60,11 +60,11 @@ void main() {
     await pause(tester, 3);
     // The Font row shows the current family; it opens the picker, where a
     // choice applies immediately. The sheet's tile is the last match.
-    await tester.tap(find.text(ReaderFonts.systemSerif.label));
+    await tester.tap(find.text(ReaderFonts.libron.label));
     await pause(tester, 3);
     await tester.tap(find.text(ReaderFonts.atkinson.label));
     await pause(tester, 3);
-    await tester.tap(find.text(ReaderFonts.systemSerif.label).last);
+    await tester.tap(find.text(ReaderFonts.libron.label).last);
     await pause(tester, 1);
     // Close the picker above its 85% height, then the sheet and the book.
     await tester.tapAt(const Offset(200, 40));

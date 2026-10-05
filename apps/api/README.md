@@ -47,6 +47,11 @@ bunx wrangler deploy --dry-run
 - `covers/<sha256>.<ext>` contains immutable embedded cover bytes extracted from
   a verified uploaded edition. D1 records the cover ID, object key, MIME type,
   byte length and R2 ETag.
+- The separate `CDN` bucket (`thereader-cdn`) holds public static files such
+  as the web app's Libron faces, mirrored from `cdn/` by
+  `bun run cdn:publish`. The Worker serves `GET /cdn/<key>` with immutable
+  caching and keeps each object in the edge cache after its first R2 read.
+  Keys are versioned and never overwritten.
 - D1 stores uploaded catalog rows, pending upload metadata, and the shared sync
   state. Apply `migrations/*.sql` before starting the Worker.
 

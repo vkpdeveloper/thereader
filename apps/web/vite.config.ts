@@ -10,6 +10,7 @@ export default defineConfig({
     proxy: {
       '/v1': { target: api, changeOrigin: true },
       '/health': { target: api, changeOrigin: true },
+      '/cdn': { target: api, changeOrigin: true },
     },
   },
   preview: {
@@ -17,6 +18,7 @@ export default defineConfig({
     proxy: {
       '/v1': { target: api, changeOrigin: true },
       '/health': { target: api, changeOrigin: true },
+      '/cdn': { target: api, changeOrigin: true },
     },
   },
   build: {

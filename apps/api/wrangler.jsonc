@@ -7,6 +7,10 @@
     {
       "binding": "BOOKS",
       "bucket_name": "thereader-books-example"
+    },
+    {
+      "binding": "CDN",
+      "bucket_name": "thereader-cdn-example"
     }
   ],
   "d1_databases": [
@@ -23,7 +27,7 @@
   "assets": {
     "directory": "../web/dist",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/v1/*", "/health"]
+    "run_worker_first": ["/v1/*", "/health", "/cdn/*"]
   },
   "env": {
     "production": {
@@ -35,7 +39,8 @@
         { "pattern": "reader.ordinity.com", "custom_domain": true }
       ],
       "r2_buckets": [
-        { "binding": "BOOKS", "bucket_name": "thereader-books" }
+        { "binding": "BOOKS", "bucket_name": "thereader-books" },
+        { "binding": "CDN", "bucket_name": "thereader-cdn" }
       ],
       "d1_databases": [
         {
@@ -49,7 +54,7 @@
       "assets": {
         "directory": "../web/dist",
         "not_found_handling": "single-page-application",
-        "run_worker_first": ["/v1/*", "/health"]
+        "run_worker_first": ["/v1/*", "/health", "/cdn/*"]
       }
     }
   }

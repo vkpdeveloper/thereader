@@ -95,12 +95,27 @@ abstract final class ReaderFonts {
     description: "Your device's built-in sans-serif.",
   );
 
+  /// The default reading face. Static Regular and Bold, each with an italic.
+  static const libron = ReaderFontFamily(
+    id: 'libron',
+    label: 'Libron',
+    cssFamily: 'Libron',
+    fontClass: ReaderFont.serif,
+    recommended: true,
+    description: 'Calm, neutral book serif with small caps, made for reading.',
+    faces: [
+      ReaderFontFace(asset: 'assets/fonts/Libron-Regular.ttf', minWeight: 400, maxWeight: 400),
+      ReaderFontFace(asset: 'assets/fonts/Libron-Italic.ttf', italic: true, minWeight: 400, maxWeight: 400),
+      ReaderFontFace(asset: 'assets/fonts/Libron-Bold.ttf', minWeight: 700, maxWeight: 700),
+      ReaderFontFace(asset: 'assets/fonts/Libron-BoldItalic.ttf', italic: true, minWeight: 700, maxWeight: 700),
+    ],
+  );
+
   static const literata = ReaderFontFamily(
     id: 'literata',
     label: 'Literata',
     cssFamily: 'Literata',
     fontClass: ReaderFont.serif,
-    recommended: true,
     description: 'Book serif drawn for long reading on screens.',
     faces: [
       ReaderFontFace(asset: 'assets/fonts/Literata.ttf', minWeight: 200, maxWeight: 900),
@@ -155,7 +170,7 @@ abstract final class ReaderFonts {
   );
 
   /// Picker order.
-  static const List<ReaderFontFamily> all = [literata, sourceSerif, atkinson, lexend, inter, systemSerif, systemSans];
+  static const List<ReaderFontFamily> all = [libron, literata, sourceSerif, atkinson, lexend, inter, systemSerif, systemSans];
 
   static List<ReaderFontFamily> get bundled => [for (final f in all) if (f.isBundled) f];
 
@@ -168,12 +183,12 @@ abstract final class ReaderFonts {
 
   /// The family to render. A known id applies only while its class matches
   /// the synced `font`; otherwise (no id, unknown id, or an older build
-  /// changed the class) the system family of that class is used, which is
-  /// what every build before font ids rendered natively.
+  /// changed the class) serif renders Libron, the default, and sans the
+  /// system sans. An explicit `system-serif` choice is kept.
   static ReaderFontFamily resolve(ReaderPreferences p) {
     final chosen = byId(p.fontFamilyId);
     if (chosen != null && chosen.fontClass == p.font) return chosen;
-    return p.font == ReaderFont.serif ? systemSerif : systemSans;
+    return p.font == ReaderFont.serif ? libron : systemSans;
   }
 
   /// Preferences after choosing [family]: the id is always written, even

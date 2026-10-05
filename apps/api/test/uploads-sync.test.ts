@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-import { applyD1Migrations, reset } from "cloudflare:test";
+import { applyD1Migrations, createExecutionContext, reset } from "cloudflare:test";
 import { beforeEach, describe, expect, it } from "vitest";
 import worker from "../src/index";
 import { CATALOG_KEY } from "../src/catalog";
@@ -164,7 +164,7 @@ async function sha256(bytes: Uint8Array): Promise<string> {
 }
 
 function request(path: string, init?: RequestInit): Promise<Response> {
-  return worker.fetch(new Request(`${origin}${path}`, init), env);
+  return worker.fetch(new Request(`${origin}${path}`, init), env, createExecutionContext());
 }
 
 function jsonRequest(path: string, value: unknown): Promise<Response> {

@@ -27,11 +27,12 @@ final bool _hasNode = () {
 
 void main() {
   group('font preferences stay compatible with older clients', () {
-    test('existing users keep their default and legacy class', () {
+    test('users without a choice read Libron and keep their legacy class', () {
       const p = ReaderPreferences();
       expect(p.fontFamilyId, isNull);
       expect(p.toJson().containsKey('fontFamilyId'), isFalse);
-      expect(ReaderFonts.resolve(p), same(ReaderFonts.systemSerif));
+      expect(ReaderFonts.resolve(p), same(ReaderFonts.libron));
+      expect(ReaderFonts.resolve(ReaderFonts.select(p, ReaderFonts.systemSerif)), same(ReaderFonts.systemSerif));
       expect(ReaderFonts.resolve(p.copyWith(font: ReaderFont.sans)), same(ReaderFonts.systemSans));
     });
 
@@ -57,7 +58,7 @@ void main() {
       expect(p.flow, ReaderFlow.scrolled);
       expect(p.fontFamilyId, 'future-serif-2');
       expect(p.toJson()['fontFamilyId'], 'future-serif-2');
-      expect(ReaderFonts.resolve(p), same(ReaderFonts.systemSerif));
+      expect(ReaderFonts.resolve(p), same(ReaderFonts.libron));
       expect(ReaderPreferences.fromJson({'fontFamilyId': 7}).fontFamilyId, isNull);
     });
 
@@ -65,7 +66,7 @@ void main() {
       final chosen = ReaderFonts.select(const ReaderPreferences(), ReaderFonts.inter);
       // Older builds only know `font`; the server keeps the id.
       final older = ReaderPreferences.fromJson({...chosen.toJson(), 'font': 'serif'});
-      expect(ReaderFonts.resolve(older), same(ReaderFonts.systemSerif));
+      expect(ReaderFonts.resolve(older), same(ReaderFonts.libron));
     });
 
     test('the repository persists a choice', () async {
@@ -116,15 +117,15 @@ void main() {
         expect(epub.fontFamily, f.readiumFamily);
         expect(epub.fontFamily, isNot(contains(',')));
       }
-      expect(ReadiumReaderController.toEpubPreferences(const ReaderPreferences(), colors).fontFamily, 'serif');
+      expect(ReadiumReaderController.toEpubPreferences(const ReaderPreferences(), colors).fontFamily, 'Libron');
       final declared = ReadiumReaderController.readiumFontFamilies;
       expect(declared.map((d) => d['name']), ReaderFonts.bundled.map((f) => f.cssFamily));
       expect(declared.first['fallback'], 'serif');
       expect((declared.first['faces'] as List).first, {
-        'asset': 'assets/fonts/Literata.ttf',
+        'asset': 'assets/fonts/Libron-Regular.ttf',
         'style': 'normal',
-        'minWeight': 200,
-        'maxWeight': 900,
+        'minWeight': 400,
+        'maxWeight': 400,
       });
     });
 
@@ -315,7 +316,7 @@ void main() {
       expect(label.style?.fontFamily, f.flutterFamily, reason: f.id);
     }
     expect(find.text('Recommended'), findsOneWidget);
-    expect(find.text(ReaderFonts.systemSerif.description), findsOneWidget);
+    expect(find.text(ReaderFonts.libron.description), findsOneWidget);
 
     await tester.tap(find.text(ReaderFonts.atkinson.label));
     await tester.pumpAndSettle();

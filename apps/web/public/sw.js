@@ -15,7 +15,8 @@
  *   background; a changed shell is precached first, then stored, then open
  *   pages get a `thereader:shell-updated` message and apply it when idle.
  *   With no cached shell yet (first visit), the network.
- * - /assets/* (hashed Vite bundles) and /fonts/*: cache first.
+ * - /assets/* (hashed Vite bundles), /fonts/* and /cdn/* (immutable, versioned
+ *   R2 objects such as the Libron faces): cache first.
  * - The web manifest and icons: cached copy first, refreshed in the background.
  * Bump VERSION to drop every older cache on activation. */
 
@@ -73,7 +74,7 @@ function isApi(url) {
 }
 
 function isStatic(url) {
-  return url.origin === self.location.origin && (url.pathname.startsWith('/assets/') || url.pathname.startsWith('/fonts/'));
+  return url.origin === self.location.origin && (url.pathname.startsWith('/assets/') || url.pathname.startsWith('/fonts/') || url.pathname.startsWith('/cdn/'));
 }
 
 function isHtml(response) {

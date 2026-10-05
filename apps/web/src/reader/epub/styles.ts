@@ -9,17 +9,32 @@ interface FontFamily {
   id: string;
   fontClass: 'serif' | 'sans';
   css: string | null;
-  faces: { file: string; italic: boolean; weights: string }[];
+  /** Same-origin paths; Libron comes from the R2-backed `/cdn/` route. */
+  faces: { url: string; italic: boolean; weights: string }[];
 }
 
+/** The default serif. */
+const LIBRON: FontFamily = {
+  id: 'libron',
+  fontClass: 'serif',
+  css: 'Libron',
+  faces: [
+    { url: '/cdn/fonts/libron/v0.25/Libron-Regular.woff2', italic: false, weights: '400' },
+    { url: '/cdn/fonts/libron/v0.25/Libron-Italic.woff2', italic: true, weights: '400' },
+    { url: '/cdn/fonts/libron/v0.25/Libron-Bold.woff2', italic: false, weights: '700' },
+    { url: '/cdn/fonts/libron/v0.25/Libron-BoldItalic.woff2', italic: true, weights: '700' },
+  ],
+};
+
 const FAMILIES: FontFamily[] = [
+  LIBRON,
   {
     id: 'literata',
     fontClass: 'serif',
     css: 'Literata',
     faces: [
-      { file: 'Literata.ttf', italic: false, weights: '200 900' },
-      { file: 'Literata-Italic.ttf', italic: true, weights: '200 900' },
+      { url: '/fonts/Literata.ttf', italic: false, weights: '200 900' },
+      { url: '/fonts/Literata-Italic.ttf', italic: true, weights: '200 900' },
     ],
   },
   {
@@ -27,8 +42,8 @@ const FAMILIES: FontFamily[] = [
     fontClass: 'serif',
     css: 'SourceSerif4',
     faces: [
-      { file: 'SourceSerif4.ttf', italic: false, weights: '200 900' },
-      { file: 'SourceSerif4-Italic.ttf', italic: true, weights: '200 900' },
+      { url: '/fonts/SourceSerif4.ttf', italic: false, weights: '200 900' },
+      { url: '/fonts/SourceSerif4-Italic.ttf', italic: true, weights: '200 900' },
     ],
   },
   {
@@ -36,19 +51,19 @@ const FAMILIES: FontFamily[] = [
     fontClass: 'sans',
     css: 'AtkinsonHyperlegibleNext',
     faces: [
-      { file: 'AtkinsonHyperlegibleNext.ttf', italic: false, weights: '200 800' },
-      { file: 'AtkinsonHyperlegibleNext-Italic.ttf', italic: true, weights: '200 800' },
+      { url: '/fonts/AtkinsonHyperlegibleNext.ttf', italic: false, weights: '200 800' },
+      { url: '/fonts/AtkinsonHyperlegibleNext-Italic.ttf', italic: true, weights: '200 800' },
     ],
   },
   // Lexend has no italic; the browser slants it.
-  { id: 'lexend', fontClass: 'sans', css: 'Lexend', faces: [{ file: 'Lexend.ttf', italic: false, weights: '100 900' }] },
+  { id: 'lexend', fontClass: 'sans', css: 'Lexend', faces: [{ url: '/fonts/Lexend.ttf', italic: false, weights: '100 900' }] },
   {
     id: 'inter',
     fontClass: 'sans',
     css: 'Inter',
     faces: [
-      { file: 'Inter.ttf', italic: false, weights: '100 900' },
-      { file: 'Inter-Italic.ttf', italic: true, weights: '100 900' },
+      { url: '/fonts/Inter.ttf', italic: false, weights: '100 900' },
+      { url: '/fonts/Inter-Italic.ttf', italic: true, weights: '100 900' },
     ],
   },
   { id: 'system-serif', fontClass: 'serif', css: null, faces: [] },
@@ -58,10 +73,10 @@ const FAMILIES: FontFamily[] = [
 const SERIF_STACK = `Georgia, "Iowan Old Style", "Palatino Linotype", "Times New Roman", serif`;
 const SANS_STACK = `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`;
 
-/** Same rule as `ReaderFonts.resolve`: an id applies only while its class matches `font`. */
+/** Same rule as `ReaderFonts.resolve`: an id applies only while its class matches `font`; serif defaults to Libron. */
 export function resolveFontStack(prefs: ReaderPreferences): string {
   const chosen = FAMILIES.find((f) => f.id === prefs.fontFamilyId);
-  const family = chosen && chosen.fontClass === prefs.font ? chosen : null;
+  const family = chosen?.fontClass === prefs.font ? chosen : prefs.font === 'serif' ? LIBRON : null;
   const generic = prefs.font === 'sans' ? SANS_STACK : SERIF_STACK;
   return family?.css ? `"${family.css}", ${generic}` : generic;
 }
@@ -71,7 +86,7 @@ export function fontFaceCss(origin: string): string {
   for (const f of FAMILIES) {
     for (const face of f.faces) {
       out.push(
-        `@font-face{font-family:"${f.css}";src:url("${origin}/fonts/${face.file}") format("truetype");` +
+        `@font-face{font-family:"${f.css}";src:url("${origin}${face.url}") format("${face.url.endsWith('.woff2') ? 'woff2' : 'truetype'}");` +
           `font-style:${face.italic ? 'italic' : 'normal'};font-weight:${face.weights};font-display:swap;}`,
       );
     }

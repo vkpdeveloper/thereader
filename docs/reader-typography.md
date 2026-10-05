@@ -9,7 +9,8 @@ immediately.
 
 | id | Label | Class | Files (SHA-256 prefix) | Source |
 |---|---|---|---|---|
-| `literata` (Recommended) | Literata | serif | `Literata.ttf` b41138c9, `-Italic` d483dfae | google/fonts OFL (already bundled) |
+| `libron` (Recommended, default) | Libron | serif | `Libron-Regular.ttf` 18995ba8, `-Italic` 1c229bfc, `-Bold` 0258c7de, `-BoldItalic` cd346608 | nicoverbruggen/libron v0.25 (46cf11c8), `Libron.zip` |
+| `literata` | Literata | serif | `Literata.ttf` b41138c9, `-Italic` d483dfae | google/fonts OFL (already bundled) |
 | `source-serif-4` | Source Serif 4 | serif | `SourceSerif4.ttf` 97b2d4da, `-Italic` 15fbc7e4 | adobe-fonts/source-serif b3980ade, via google/fonts e44c4b0 |
 | `atkinson-hyperlegible-next` | Atkinson Hyperlegible | sans | `AtkinsonHyperlegibleNext.ttf` 5a455d1c, `-Italic` ce9cffed | googlefonts/atkinson-hyperlegible-next 7925f50f, via google/fonts e44c4b0 |
 | `lexend` | Lexend | sans | `Lexend.ttf` 3add53e6 | googlefonts/lexend 20491885, via google/fonts e44c4b0 |
@@ -17,7 +18,9 @@ immediately.
 | `system-serif` | System serif | serif | none | platform generic `serif` |
 | `system-sans` | System sans | sans | none | platform generic `sans-serif` |
 
-- All bundled files are variable TTFs under the SIL Open Font License 1.1. The
+- Libron ships static Regular, Italic, Bold and Bold Italic files; every
+  other bundled family is a variable TTF. All are under the SIL Open Font
+  License 1.1. The
   license text sits next to each file (`assets/fonts/<Family>OFL.txt`) and is
   listed as an asset in `pubspec.yaml`.
 - The license files are verbatim upstream copies. Line 21 ends in a trailing
@@ -41,7 +44,8 @@ immediately.
     not relaxed.
 - Readium's `fontFamily` preference always receives one declared name:
   `serif`, `sans-serif` or a bundled `cssFamily`. It never receives a list.
-- Bold and italic come from the variable weight axis and the italic files.
+- Bold and italic come from the variable weight axis and the italic files
+  (Libron: its static 400 and 700 faces).
   Code keeps the publisher's or ReadiumCSS monospace.
 
 ### Sync schema and compatibility
@@ -60,10 +64,11 @@ only `serif` or `sans`. The design keeps them working:
 - `ReaderFonts.resolve` applies a known id only while its class matches
   `font`. If an older build switches serif to sans, that change wins, and the
   reader shows the system family of the new class.
-- An unknown id, from a future build, falls back to the system family of
-  `font`. The id is still kept in local JSON so it can round-trip.
-- Existing users have no id, so they keep the system serif or sans they
-  already had natively.
+- An unknown id, from a future build, falls back to the default of `font`:
+  Libron for serif, the system sans for sans. The id is still kept in local
+  JSON so it can round-trip.
+- Users with no id read Libron (serif) or the system sans. Choosing System
+  serif writes `system-serif`, which is kept.
 - The Dart fallback engine now renders legacy `serif` as system serif. It
   used to render Literata, which did not match native.
 
@@ -189,3 +194,20 @@ Dart fallback engine (`dart_reader_view.dart`):
      error in the log. A visually similar fallback does not count.
 5. Use a local test account only, and never your real cloud reading
    position.
+
+## Web delivery of Libron
+
+The web app does not bundle Libron. The WOFF2 faces from `Libron_Web.zip` live
+in `apps/api/cdn/fonts/libron/v0.25/` and are uploaded to the `thereader-cdn`
+R2 bucket by `bun run cdn:publish` (also part of `bun run deploy`). The Worker
+serves them same-origin at `/cdn/<key>`:
+
+- `Cache-Control: public, max-age=31536000, immutable`, so a browser never
+  revalidates a face once it has it. Keys are versioned; publish new bytes
+  under a new version path, never over an existing key.
+- The first request in each Cloudflare data centre reads R2 and stores the
+  response in that edge's cache; later requests there skip R2.
+- The service worker treats `/cdn/*` like `/fonts/*`: cache first, and
+  precached on install because `index.css` declares the faces.
+- Same origin means no extra DNS or TLS handshake and no CORS, and the book
+  frame's `font-src` already allows it.

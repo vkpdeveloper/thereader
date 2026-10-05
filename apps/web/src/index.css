@@ -33,6 +33,35 @@
   font-weight: 200 900;
   font-display: swap;
 }
+/* Libron, the default reading face, from the R2-backed /cdn/ route (immutable, edge cached). */
+@font-face {
+  font-family: 'Libron';
+  src: url('/cdn/fonts/libron/v0.25/Libron-Regular.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Libron';
+  src: url('/cdn/fonts/libron/v0.25/Libron-Italic.woff2') format('woff2');
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Libron';
+  src: url('/cdn/fonts/libron/v0.25/Libron-Bold.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Libron';
+  src: url('/cdn/fonts/libron/v0.25/Libron-BoldItalic.woff2') format('woff2');
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+}
 /* Reading families, for the font picker's previews. Fetched only when used. */
 @font-face {
   font-family: 'SourceSerif4';
