@@ -1,0 +1,2948 @@
+[
+  {
+    "id": "pg-great-work",
+    "url": "https://paulgraham.com/greatwork.html",
+    "tier": 1,
+    "category": "simple-blog",
+    "language": "en",
+    "notes": "Paul Graham essay: table layout, <br><br> paragraphs, Notes section; page has NO boilerplate text at all (nav and title are images), so mustExclude is empty and cannot reach 3; Notes section = footnotes, ends with Thanks line",
+    "title": "How to Do Great Work",
+    "mustInclude": [
+      "If you collected lists of techniques for doing great work in a lot of different fields",
+      "Knowledge expands fractally, and from a distance its edges look smooth",
+      "When an idea seems simultaneously novel and obvious, it's probably a good one.",
+      "The really dangerous kind of copying, the kind that gives copying a bad name",
+      "The discoveries are out there, waiting to be made. Why not by you?",
+      "A lot of standup comedy is based on noticing anomalies in everyday life."
+    ],
+    "mustExclude": [],
+    "hasFootnotes": true,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "pg-do-things",
+    "url": "https://paulgraham.com/ds.html",
+    "tier": 1,
+    "category": "simple-blog",
+    "language": "en",
+    "notes": "Paul Graham essay: table layout, <br> paragraphs; section labels (Recruit, Fragile...) are bold text, not h-tags; Notes = footnotes; translation links after Thanks line",
+    "title": "Do Things that Don't Scale",
+    "mustInclude": [
+      "One of the most common types of advice we give at Y Combinator is to do things that don't scale.",
+      "Making a better mousetrap is not an atomic operation.",
+      "The Pebbles assembled the first several hundred watches themselves.",
+      "All you need from a launch is some initial core of users.",
+      "if you have to work hard to delight users when you only have a handful of them",
+      "Google grew big on the back of Yahoo, but that wasn't a partnership."
+    ],
+    "mustExclude": [
+      "Want to start a startup? Get funded by Y Combinator.",
+      "Japanese Translation",
+      "Russian Translation",
+      "Korean Translation"
+    ],
+    "hasFootnotes": true,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "pg-hard-work",
+    "url": "https://paulgraham.com/hwh.html",
+    "tier": 1,
+    "category": "simple-blog",
+    "language": "en",
+    "notes": "Paul Graham essay: table layout, <br> paragraphs; only boilerplate text on the page is a single 'Arabic Translation' link (nav/title are images), so mustExclude has 1 entry; Notes = footnotes",
+    "title": "How to Work Hard",
+    "mustInclude": [
+      "It might not seem there's much to learn about how to work hard.",
+      "The one precisely dateable landmark I have is when I stopped watching TV, at age 13.",
+      "The only way to find the limit is by crossing it.",
+      "A deep interest in a topic makes people work harder than any amount of discipline can.",
+      "But if you're consistently honest and clear-sighted, it will automatically assume an optimal shape",
+      "The thing kids do in school that's most like the real version is sports."
+    ],
+    "mustExclude": [
+      "Arabic Translation"
+    ],
+    "hasFootnotes": true,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "danluu-input-lag",
+    "url": "https://danluu.com/input-lag/",
+    "tier": 1,
+    "category": "simple-blog",
+    "language": "en",
+    "notes": "Dan Luu: minimal HTML, long data table; two large data tables (computers, mobile); appendices are part of the article; last paragraph ends with a mailing address (Recurse Center) followed by Thanks line",
+    "title": "Computer latency: 1977-2017",
+    "mustInclude": [
+      "so I carried around a high-speed camera and measured the response latency of devices",
+      "If we look at overall results, the fastest machines are ancient.",
+      "Almost every computer and mobile device that people buy today is slower than common models of computers",
+      "a moderately quick page turn in a physical book appears to be about 200 ms.",
+      "If you have a device you’d like to donate for testing, feel free to mail it to"
+    ],
+    "mustExclude": [
+      "Fsyncgate: errors on fsync are unrecovarable",
+      "How good are decisions? Evaluating decision quality in domains where evaluation is easy",
+      "Archive Patreon Mastodon",
+      "Bluesky Twitter RSS"
+    ],
+    "minHeadings": 10,
+    "minTables": 2,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "danluu-web-bloat",
+    "url": "https://danluu.com/web-bloat/",
+    "tier": 2,
+    "category": "simple-blog",
+    "language": "en",
+    "notes": "Dan Luu: minimal HTML, tables, footnotes; two pandas-generated data tables (main table ~50kB); one footnote in div.footnotes after Thanks line; h3+h4 sections",
+    "title": "How web bloat impacts users with slow connections",
+    "mustInclude": [
+      "I took a road trip from Wisconsin to Washington and mostly stayed in rural hotels on the way.",
+      "If you think browsing on a 56k connection is bad, try a 16k connection from Ethiopia!",
+      "loading codinghorror once will cost you more than 10% of the daily per capita GNI.",
+      "It's particularly galling that airbnb doesn't test this stuff, because traveling is pretty much the whole point of the site",
+      "There's no reason for me to use AMP pages because AMP is slower than my current setup",
+      "Many of the sites are IE only and don’t even work in edge."
+    ],
+    "mustExclude": [
+      "Startup options v. cash",
+      "HN comments are underrated",
+      "Archive Patreon Mastodon",
+      "Bluesky Twitter RSS"
+    ],
+    "minHeadings": 10,
+    "minTables": 2,
+    "hasFootnotes": true,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "joel-test",
+    "url": "https://www.joelonsoftware.com/2000/08/09/the-joel-test-12-steps-to-better-code/",
+    "tier": 1,
+    "category": "simple-blog",
+    "language": "en",
+    "notes": "Classic WordPress blog; WordPress article; numbered section labels are bold p, not h-tags; sidebar widgets come BEFORE the article in the DOM",
+    "title": "The Joel Test: 12 Steps to Better Code",
+    "mustInclude": [
+      "So I’ve come up with my own, highly irresponsible, sloppy test to rate the quality of a software team.",
+      "The very first version of Microsoft Word for Windows was considered a “death march” project.",
+      "Writing specs is like flossing: everybody agrees that it’s a good thing, but nobody does it.",
+      "For this example, lets put two programmers, Jeff and Mutt, in open cubicles next to each other",
+      "Even if your UI design skills are lacking, as long as you force yourself to do hallway usability tests"
+    ],
+    "mustExclude": [
+      "Ready to level up? Stack Overflow Jobs is the job site that puts the needs of developers first.",
+      "If you want to know when I publish something new, I recommend getting an RSS reader like NewsBlur",
+      "In 2000 I co-founded Fog Creek Software, where we created lots of cool things like the FogBugz bug tracker",
+      "Proudly powered by WordPress",
+      "Read the archives in dead-tree format!"
+    ],
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "joel-unicode",
+    "url": "https://www.joelonsoftware.com/2003/10/08/the-absolute-minimum-every-software-developer-absolutely-positively-must-know-about-unicode-and-character-sets-no-excuses/",
+    "tier": 2,
+    "category": "simple-blog",
+    "language": "en",
+    "notes": "WordPress, images, inline code; WordPress; section labels are bold p, not h-tags; 6 content images (plus 3 tiny inline gimel glyph images); sidebar widgets precede article in DOM",
+    "title": "The Absolute Minimum Every Software Developer Absolutely, Positively Must Know About Unicode and Character Sets (No Excuses!)",
+    "mustInclude": [
+      "Ever wonder about that mysterious Content-Type tag? You know, the one you’re supposed to put in HTML",
+      "a beta tester for FogBUGZ was wondering whether it could handle incoming email in Japanese.",
+      "It is the single most common myth about Unicode, so if you thought that, don’t feel bad.",
+      "In UTF-8, every code point from 0-127 is stored in a single byte.",
+      "using antibiotics instead of leeches and spells, a task to which I will leave you now."
+    ],
+    "mustExclude": [
+      "Looking to hire smart programmers who get things done?",
+      "If you want to know when I publish something new, I recommend getting an RSS reader like NewsBlur",
+      "I also worked with Jeff Atwood to create Stack",
+      "Proudly powered by WordPress"
+    ],
+    "minImages": 5,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "codinghorror-no-code",
+    "url": "https://blog.codinghorror.com/the-best-code-is-no-code-at-all/",
+    "tier": 1,
+    "category": "simple-blog",
+    "language": "en",
+    "notes": "Ghost blog with Discourse comments; Ghost; Discourse comments are NOT in the snapshot (JS-loaded); first paragraph is only 7 words so first snippet comes from the opening blockquote; 1 figure image, 1 tiny pre",
+    "title": "The Best Code is No Code At All",
+    "mustInclude": [
+      "Code is bad. It rots. It requires periodic maintenance. It has bugs that need to be found.",
+      "The code, like a newborn babe, is blameless and innocent the minute it is written into the world.",
+      "To be a master programmer is to understand the nature of these trade-offs",
+      "Every new line of code you willingly bring into the world is code that has to be debugged",
+      "you’ll love it enough to write as little of it as possible."
+    ],
+    "mustExclude": [
+      "software development concepts programming languages technical practices",
+      "Indoor enthusiast. Co-founder of Stack Overflow, Discourse, and staygold.us.",
+      "Gates and Jobs, Then and Now",
+      "Every programmer ever born thinks whatever idea just popped out of their head into their editor",
+      "Powered by Ghost · Themed by Obox"
+    ],
+    "minCodeBlocks": 1,
+    "minImages": 1,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "hillel-engineers",
+    "url": "https://www.hillelwayne.com/post/are-we-really-engineers/",
+    "tier": 1,
+    "category": "simple-blog",
+    "language": "en",
+    "notes": "Hugo blog, footnotes; Hugo; Appendix: Methodology is part of the article and is followed by div.footnotes; 1 content image (pie chart); blockquoted interview quotes",
+    "title": "Are We Really Engineers?",
+    "mustInclude": [
+      "I sat in front of Mat, idly chatting about tech and cuisine.",
+      "“My personal blog has better security than some $100 million mining projects.”",
+      "Nobody I read in these arguments, not one single person, ever worked as a “real” engineer.",
+      "licenses are a political and social construct, not a fact of nature.",
+      "The majority of the interviewees were either in the US or the UK",
+      "In all engineering fields people have a nasty tendency to look down people who are not engineers"
+    ],
+    "mustExclude": [
+      "New: Logic for Programmers is out in print! Learn more and buy it here.",
+      "Tags: The Crossover Project, Interviews",
+      "Previous post: There's Always More History",
+      "Newsletter (Article updates & weekly+ essays)",
+      "© 2026 Hillel Wayne"
+    ],
+    "minImages": 1,
+    "minHeadings": 7,
+    "hasFootnotes": true,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "fowler-two-hard",
+    "url": "https://martinfowler.com/bliki/TwoHardThings.html",
+    "tier": 1,
+    "category": "simple-blog",
+    "language": "en",
+    "notes": "Very short bliki page with heavy site chrome; tiny bliki entry (a handful of quotes) inside heavy nav menu that is repeated before and after the article; Revisions and Acknowledgements sections follow the appendix paragraph; nav labels are one word per block so mustExclude uses label sequences spanning blocks",
+    "title": "Two Hard Things",
+    "mustInclude": [
+      "There are only two hard things in Computer Science: cache invalidation and naming things.",
+      "Long a favorite saying of mine, one for which I couldn't find a satisfactory URL.",
+      "There are 2 hard problems in computer science: cache invalidation, naming things, and off-by-1 errors.",
+      "there's two hard problems in computer science: we only have one joke and it's not funny.",
+      "The first place anyone found it on the internet was in Tim Bray's blog."
+    ],
+    "mustExclude": [
+      "Videos Content Index Fragments Board Games Photography",
+      "Home Insights Careers Radar Engineering",
+      "RSS Mastodon LinkedIn Bluesky",
+      "© Martin Fowler | Disclosures"
+    ],
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "sqlite-whentouse",
+    "url": "https://www.sqlite.org/whentouse.html",
+    "tier": 1,
+    "category": "docs",
+    "language": "en",
+    "notes": "Plain hand-written HTML doc; article lives in div.fancy; the 3 section headings are <h1> in the source (minHeadings 3 assumes extractors demote them to h2; drop it if h1 should not count); sub-section labels are bold p; TOC widget (details.fancy_toc) is boilerplate; ends with 'last updated' line",
+    "title": "Appropriate Uses For SQLite",
+    "mustInclude": [
+      "SQLite is not directly comparable to client/server SQL database engines such as MySQL, Oracle, PostgreSQL, or SQL Server",
+      "SQLite does not compete with client/server databases. SQLite competes with fopen().",
+      "it handles about 400K to 500K HTTP requests per day",
+      "A good rule of thumb is to avoid using SQLite in situations where the same database will be accessed directly",
+      "with low writer concurrency and less than a terabyte of content, SQLite is almost always a better solution"
+    ],
+    "mustExclude": [
+      "Small. Fast. Reliable.",
+      "Choose any three.",
+      "Search Documentation Search Changelog",
+      "Table Of Contents",
+      "Documentation Download License Support Purchase"
+    ],
+    "minHeadings": 3,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "waitbutwhy-tail-end",
+    "url": "https://waitbutwhy.com/2015/12/the-tail-end.html",
+    "tier": 2,
+    "category": "simple-blog",
+    "language": "en",
+    "notes": "WordPress, many images, comments, share widgets; WordPress; 12 chart images in entry-content; article ends at '3) Quality time matters'; the in-content tail (PDF promo, 'More things to reflect on' links, email signup, Patreon) is boilerplate; one footnote; no comments in snapshot",
+    "title": "The Tail End",
+    "mustInclude": [
+      "In a post last year, we laid out the human lifespan visually. By years:",
+      "Each of those dots is only a single Tuesday or Friday or Sunday",
+      "During my first 18 years, I spent some time with my parents during at least 90% of my days.",
+      "I’m now enjoying the last 5% of that time. We’re in the tail end.",
+      "keep that fact in the front of your mind when you’re with them",
+      "please mentally add an “If I’m really lucky” before each of the following statements."
+    ],
+    "mustExclude": [
+      "We made a fancy PDF of this post for printing and offline viewing.",
+      "If you like Wait But Why, sign up for our email list and we’ll send you new posts when they come out.",
+      "To support Wait But Why, visit our Patreon page.",
+      "How to Pick a Career (That Actually Fits You)",
+      "© WaitButWhy 2026"
+    ],
+    "minImages": 10,
+    "hasFootnotes": true,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "simonw-llms-2024",
+    "url": "https://simonwillison.net/2024/Dec/31/llms-in-2024/",
+    "tier": 2,
+    "category": "simple-blog",
+    "language": "en",
+    "notes": "Django blog, long post with many headings and links; title is an h2 inside div.entryPage (site name is the h1); 20 h4 section headings; in-article 'In this article' link list and the closing 'Everything tagged llms' post list are part of the post; 4 images, 1 shell pre; sidebar metabox/series/tags after the article",
+    "title": "Things we learned about LLMs in 2024",
+    "mustInclude": [
+      "A lot has happened in the world of Large Language Models over the course of 2024.",
+      "That’s so absurdly cheap I had to run the numbers three times to confirm I got it right.",
+      "LLMs are power-user tools—they’re chainsaws disguised as kitchen knives.",
+      "Slop was even in the running for Oxford Word of the Year 2024, but it lost to brain rot.",
+      "Those of us who understand this stuff have a duty to help everyone else figure it out.",
+      "(This list generated using Django SQL Dashboard with a SQL query written for me by Claude.)"
+    ],
+    "mustExclude": [
+      "Sponsored by: Deepgram — Flux TTS remembers the conversation, so your agent sounds right on reply 20.",
+      "We're going to need default hard budget caps on pretty much everything",
+      "Part of series LLMs annual review",
+      "Sponsor me for $10/month and get a curated email digest of the month's most important LLM developments.",
+      "Next: Ending a year long posting streak"
+    ],
+    "minCodeBlocks": 1,
+    "minImages": 4,
+    "minHeadings": 20,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "karpathy-rnn",
+    "url": "https://karpathy.github.io/2015/05/21/rnn-effectiveness/",
+    "tier": 2,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "Jekyll, code blocks, images, long; Jekyll; 19 pre blocks (3 python, 3 c, 13 plaintext samples); 12 images with div.imgcap captions; main text ends with 'See you next time!' followed by an author 'EDIT (extra links)' link list (part of post-content, not used for snippets); Disqus comments not in snapshot",
+    "title": "The Unreasonable Effectiveness of Recurrent Neural Networks",
+    "mustInclude": [
+      "I still remember when I trained my first recurrent network for Image Captioning.",
+      "If training vanilla neural nets is optimization over functions, training recurrent nets is optimization over programs.",
+      "We downloaded the raw Latex source file (a 16MB file) and trained a multilayer LSTM.",
+      "The highlighted neuron here gets very excited when the RNN is inside the [[ ]] markdown environment",
+      "You can confidently expect a large amount of innovation in the space of RNNs",
+      "Yes, the post was about RNN and how well it works, so clearly this works :). See you next time!"
+    ],
+    "mustExclude": [
+      "comments powered by Disqus",
+      "Musings of a Computer Scientist.",
+      "Andrej Karpathy blog"
+    ],
+    "minCodeBlocks": 19,
+    "codeLanguages": [
+      "python",
+      "c"
+    ],
+    "minImages": 12,
+    "minHeadings": 15,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "eli-concurrent",
+    "url": "https://eli.thegreenplace.net/2017/concurrent-servers-part-1-introduction/",
+    "tier": 2,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "Pelican blog, C code, comments; Pelican/reST; protocol state diagram is an SVG <object> (not an img, so no minImages); 3 pre (2 C, 1 shell transcript, no language classes); footnotes are docutils table.footnote layout tables (not data tables); no comments section in snapshot (only 'send me an email')",
+    "title": "Concurrent Servers: Part 1 - Introduction",
+    "mustInclude": [
+      "This is the first post in a series about concurrent network servers.",
+      "written in C without using any libraries beyond standard POSIX fare for sockets.",
+      "Clearly, this is not a scalable strategy. In our case, the client causes the delay",
+      "If anything remains unclear, please let me know by email. On to concurrent servers!",
+      "The In/Out notation on state transitions denotes a Mealy machine."
+    ],
+    "mustExclude": [
+      "For comments, please send me an email.",
+      "© 2003-2026 Eli Bendersky",
+      "Toggle navigation Eli Bendersky's website",
+      "About Projects Archives"
+    ],
+    "minCodeBlocks": 3,
+    "codeLanguages": [
+      "c"
+    ],
+    "minHeadings": 4,
+    "hasFootnotes": true,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "rsc-regexp",
+    "url": "https://swtch.com/~rsc/regexp/regexp1.html",
+    "tier": 2,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "Classic hand-written HTML, C code, images, references; hand-written HTML with no wrapper; headline is two h1s (title + '(but is slow in Java, Perl, PHP, Python, Ruby, ...)' subtitle), byline/date are h2.au; 25 diagram images (figures in 3 layout tables, not data tables); 23 pre (mostly C); Summary is the last main-text section, then Acknowledgements and a References list; almost no boilerplate (only copyright, URL, discussion links)",
+    "title": "Regular Expression Matching Can Be Simple And Fast",
+    "mustInclude": [
+      "This is a tale of two approaches to regular expression matching.",
+      "Notice that Perl requires over sixty seconds to match a 29-character string.",
+      "but Ken Thompson introduced them to programmers in his implementation of the text editor QED for CTSS.",
+      "NFAs derived from regular expressions tend to exhibit good locality",
+      "The fourth article, “Regular Expression Matching with a Trigram Index,” explains how Google Code Search was implemented."
+    ],
+    "mustExclude": [
+      "Copyright © 2007 Russ Cox. All Rights Reserved.",
+      "Discussion on reddit and perlmonks and LtU",
+      "https://swtch.com/~rsc/regexp/"
+    ],
+    "minCodeBlocks": 20,
+    "codeLanguages": [
+      "c"
+    ],
+    "minImages": 25,
+    "minHeadings": 13,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "norvig-spell",
+    "url": "https://norvig.com/spell-correct.html",
+    "tier": 2,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "Hand-written HTML, Python code, tables; whole <body> is the article: no wrapper, several paragraphs are bare text nodes directly in body (no <p>); NO boilerplate text at all (only date, h1, byline address), so mustExclude is empty and cannot reach 3; 'Other Computer Languages' (data table of ports) and 'Other Natural Languages' (translations) are authored h2 sections, treated as article; 18 pre (Python and REPL output)",
+    "title": "How to Write a Spelling Corrector",
+    "mustInclude": [
+      "One week in 2007, two friends (Dean and Bill) independently told me they were amazed at Google's spelling correction.",
+      "The answer is that P(c|w) is already conflating two factors",
+      "When I started to write this program, sitting on a plane in 2007, I had no data on spelling errors",
+      "In conclusion, I met my goals for brevity, development time, and runtime speed, but not for accuracy.",
+      "I believe that a spelling corrector that scores 90% accuracy will need to use the context of the surrounding words",
+      "Thanks to all the authors for creating these implementations and translations."
+    ],
+    "mustExclude": [],
+    "minCodeBlocks": 18,
+    "codeLanguages": [
+      "python"
+    ],
+    "minHeadings": 8,
+    "minTables": 1,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "gruber-markdown",
+    "url": "https://daringfireball.net/projects/markdown/syntax",
+    "tier": 2,
+    "category": "docs",
+    "language": "en",
+    "notes": "Long single page with many code samples; div.article holds the doc; in-article project submenu (Main/Basics/Syntax/License/Dingus) and the TOC link list are boilerplate; 82 pre samples; 4 h2 + 15 h3; page ends with a pre (backslash escape list), last prose paragraph is the line introducing it; snapshot has Cloudflare '[email protected]' obfuscation in the autolink examples",
+    "title": "Markdown: Syntax",
+    "mustInclude": [
+      "Markdown is intended to be as easy-to-read and easy-to-write as is feasible.",
+      "A Markdown-formatted document should be publishable as-is, as plain text, without looking like it’s been marked up",
+      "Each subsequent paragraph in a list item must be indented by either 4 spaces or one tab:",
+      "A code block continues until it reaches a line that is not indented (or the end of the article).",
+      "but an address published in this way will probably eventually start receiving spam.",
+      "Markdown provides backslash escapes for the following characters:"
+    ],
+    "mustExclude": [
+      "WorkOS: How SSO works and the fastest way to add it.",
+      "The Talk Show Dithering Projects Contact Colophon",
+      "Main Basics Syntax License Dingus",
+      "Display Preferences",
+      "Copyright © 2002–2026 The Daring Fireball Company LLC."
+    ],
+    "minCodeBlocks": 80,
+    "minHeadings": 19,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "brendangregg-crisis",
+    "url": "https://www.brendangregg.com/blog/2024-03-24/linux-crisis-tools.html",
+    "tier": 2,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "Static blog, table of tools, shell commands; title is h2.big (h1 is the blog name); site nav + recent-posts list appear both before (desktop) and after (mobile copy) the post; 1 data table of packages with a 'Some longer notes: [1]' note list (plain-text marker, not counted as hasFootnotes); no pre blocks despite original note (commands are inline); Disqus comments not loaded, only the button text",
+    "title": "Linux Crisis Tools",
+    "mustInclude": [
+      "you don't want to lose precious time just to install the tools needed to diagnose it.",
+      "The main downside of adding these packages is their on-disk size.",
+      "You SSH to one server to dig deeper, but SSH takes forever to login.",
+      "I've fortunately not experienced the 12:50am event, but the others are based on real world experiences.",
+      "I'd recommend Linux distros add these crisis tools to their enterprise Linux variants"
+    ],
+    "mustExclude": [
+      "Click here for Disqus comments (ad supported).",
+      "You are welcome to comment here, but I've been meaning to switch comment systems one day",
+      "Intel is listening, don't waste your shot",
+      "When to Hire a Computer Performance Engineering Team (2025) part 1 of 2",
+      "Copyright 2025 Brendan Gregg."
+    ],
+    "minHeadings": 2,
+    "minTables": 1,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "matklad-fast-rust",
+    "url": "https://matklad.github.io/2021/09/04/fast-rust-builds.html",
+    "tier": 2,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "Minimal Jekyll blog, Rust and TOML code; clean article>section structure; series note aside and '/r/rust' discussion link at the end left neutral",
+    "title": "Fast Rust Builds",
+    "mustInclude": [
+      "It’s common knowledge that Rust code is slow to compile.",
+      "For from-scratch builds, incremental adds an extra dependency-tracking overhead.",
+      "generics in Rust can lead to accidentally-quadratic compilation times across many crates!",
+      "compile times are as big part of ergonomics, as the syntax used to call the function.",
+      "Build times are a big factor in the overall productivity of the humans working on the project."
+    ],
+    "mustExclude": [
+      "matkladAboutLinksBlogroll",
+      "Fix typoSubscribe",
+      "All postsGet in touch"
+    ],
+    "minCodeBlocks": 13,
+    "codeLanguages": [
+      "rust",
+      "toml"
+    ],
+    "minImages": 1,
+    "minHeadings": 13,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "jvns-float",
+    "url": "https://jvns.ca/blog/2023/02/08/why-does-0-1-plus-0-2-equal-0-30000000000000004/",
+    "tier": 2,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "Hugo blog, Python/C code; article.hentry > main holds the body (h3 headings, 23 <pre>); math is $$TeX$$ rendered by KaTeX; prev/next post links in article footer",
+    "title": "Why does 0.1 + 0.2 = 0.30000000000000004?",
+    "mustInclude": [
+      "I was trying to write about floating point yesterday, and I found myself wondering about this calculation",
+      "But of course computers don’t do these calculations in decimal – they’re done in a base 2 representation.",
+      "The way I’ve described the operations here isn’t literally exactly what happens when you do floating point addition",
+      "PHP’s algorithm for displaying floating point numbers is less precise than Python’s",
+      "I kind of doubt that anyone had the patience to follow all of that arithmetic"
+    ],
+    "mustExclude": [
+      "Want a weekly digest of this blog?",
+      "Print copies of The Pocket Guide to Debugging have arrived",
+      "If you like this, you may like Ulia Ea",
+      "You might also like the Recurse Center, my very favorite programming community"
+    ],
+    "minCodeBlocks": 23,
+    "codeLanguages": [
+      "python"
+    ],
+    "minHeadings": 17,
+    "hasMath": true,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "jvns-git-config",
+    "url": "https://jvns.ca/blog/2024/02/16/popular-git-config-options/",
+    "tier": 2,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "Hugo blog, many headings, git config code; article.hentry > main; in-article TOC list of links at the top is authored content (left neutral); 20 h3, 8 <pre> (git config/diff snippets, no language classes)",
+    "title": "Popular git config options",
+    "mustInclude": [
+      "I always wish that command line tools came with data about how popular their various options are",
+      "to avoid accidentally creating a merge commit when you run git pull on a branch",
+      "I often accidentally clone the HTTP version of a repository instead of the SSH version",
+      "I’ve learned to be cautious about setting new config options",
+      "I might also ask people about aliases later, there were a bunch of great ones that I left out"
+    ],
+    "mustExclude": [
+      "Want a weekly digest of this blog?",
+      "Dealing with diverged git branches How HEAD works in git",
+      "If you like this, you may like Ulia Ea",
+      "You might also like the Recurse Center, my very favorite programming community"
+    ],
+    "minCodeBlocks": 8,
+    "minHeadings": 20,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "overreacted-memo",
+    "url": "https://overreacted.io/before-you-memo/",
+    "tier": 2,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "Next.js static blog, JSX code; short post; article > div.markdown holds body, 'Pay what you like' donation widget appears above and below body inside article; 5 <pre> (data-language=jsx)",
+    "title": "Before You memo()",
+    "mustInclude": [
+      "There are many articles written about React performance optimizations.",
+      "I could put memo() on it and call it a day, but there are many existing articles",
+      "But it still has the same children prop it got from the App last time",
+      "Using the children prop to split up components usually makes the data flow of your application easier to follow",
+      "It’s simple enough that it’s underappreciated, and deserves a bit more love."
+    ],
+    "mustExclude": [
+      "Pay what you like",
+      "Fork on Tangled",
+      "overreactedby"
+    ],
+    "minCodeBlocks": 5,
+    "codeLanguages": [
+      "javascript"
+    ],
+    "minHeadings": 5,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "overreacted-useeffect",
+    "url": "https://overreacted.io/a-complete-guide-to-useeffect/",
+    "tier": 3,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "Very long, many JSX code blocks; very long single article in article > div.markdown; 62 <pre> (data-language=jsx), 22 h2, 12 content images/GIF diagrams; 'Pay what you like' donation widget inside article top and bottom",
+    "title": "A Complete Guide to useEffect",
+    "mustInclude": [
+      "You wrote a few components with Hooks. Maybe even a small app.",
+      "Kingdoms will rise and turn into ashes, the Sun will shed its outer layers to be a white dwarf",
+      "One of my favorite things about React is that it unifies describing the initial render result and the updates.",
+      "A reducer lets you decouple expressing the “actions” that happened in your component",
+      "I’d love to hear from you on Twitter! Thanks for reading."
+    ],
+    "mustExclude": [
+      "Pay what you like",
+      "Fork on Tangled",
+      "overreactedby"
+    ],
+    "minCodeBlocks": 62,
+    "codeLanguages": [
+      "javascript"
+    ],
+    "minImages": 12,
+    "minHeadings": 22,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "fasterthanlime-rust",
+    "url": "https://fasterthanli.me/articles/a-half-hour-to-learn-rust",
+    "tier": 3,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "Dozens of Rust code blocks; body in div.page-html-padded.markup-container; code blocks are figure.code-block > code (data-lang=rust), NO <pre> in the HTML: 146 blocks; 65 h2/h3 headings (in a.anchor); sponsor list above body, random 'another article' teaser + TOC nav after it",
+    "title": "A half-hour to learn Rust",
+    "mustInclude": [
+      "In order to increase fluency in a programming language, one has to read a lot of it.",
+      "Rust has tuples, which you can think of as “fixed-length collections of values of different types”.",
+      "Some traits are markers - they don’t say that a type implements some methods",
+      "This allows returning references whose lifetime depend on the lifetime of the arguments:",
+      "Writing Rust is a very different experience from reading Rust.",
+      "I also blog about Rust and post a lot about Rust on Mastodon and Twitter a lot"
+    ],
+    "mustExclude": [
+      "Thanks to my sponsors: Zac Harrold, Tanner Muro",
+      "Did you know I also make videos? Check them out on YouTube!",
+      "The bottom emoji breaks rust-analyzer",
+      "Some bugs are merely fun. Others are simply delicious!",
+      "About Legal Notice Privacy Policy Terms and Conditions"
+    ],
+    "minCodeBlocks": 146,
+    "codeLanguages": [
+      "rust"
+    ],
+    "minHeadings": 65,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "go-loopvar",
+    "url": "https://go.dev/blog/loopvar-preview",
+    "tier": 2,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "Go blog, Go code; div.Article > div.markdown is the body; heavy header nav/mobile drawer, prev/next links, footer, cookie notice; 7 <pre> (Go, no language classes), 5 h2",
+    "title": "Fixing For Loops in Go 1.22",
+    "mustInclude": [
+      "Go 1.21 includes a preview of a change to for loop scoping that we plan to ship in Go 1.22",
+      "One of these two diffs is a bug fix; the other is an unnecessary change.",
+      "We patched our internal Go toolchain at Google to force this mode during all builds",
+      "the FAQ has links to examples and details about using a tool we’ve written",
+      "For more information about the change, see the design document and the FAQ."
+    ],
+    "mustExclude": [
+      "go.dev uses cookies from Google to deliver and enhance the quality of its services",
+      "Next article: Deconstructing Type Parameters",
+      "Common problems companies solve with Go",
+      "Connect Bluesky Mastodon Twitter GitHub Slack r/golang Meetup Golang Weekly"
+    ],
+    "minCodeBlocks": 7,
+    "codeLanguages": [
+      "go"
+    ],
+    "minHeadings": 5,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "rust-blog-185",
+    "url": "https://blog.rust-lang.org/2025/02/20/Rust-1.85.0/",
+    "tier": 2,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "Rust release notes, Rust/console code, lists; headline is a header > h2 (no h1); body in div.post; long bullet lists of edition changes / stabilized APIs; 9 <pre> (5 data-lang=rust, 4 plain), 10 h2-h4 headings",
+    "title": "Announcing Rust 1.85.0 and Rust 2024",
+    "mustInclude": [
+      "The Rust team is happy to announce a new version of Rust, 1.85.0.",
+      "This is the largest edition we have released.",
+      "you could already approximate this with a regular closure and an asynchronous block",
+      "has been deprecated for years, because it can give surprising results in some Windows configurations",
+      "Many people came together to create Rust 1.85.0. We couldn't have done it without all of you."
+    ],
+    "mustExclude": [
+      "Maintained by the Rust Team. See a typo? Send a fix here!",
+      "Logo Policy and Media Guide",
+      "Contact the Rust Team"
+    ],
+    "minCodeBlocks": 9,
+    "codeLanguages": [
+      "rust"
+    ],
+    "minHeadings": 10,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "v8-pointer-compression",
+    "url": "https://v8.dev/blog/pointer-compression",
+    "tier": 3,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "C++/JS code, figures, tables; main#main > article; 25 <pre> (9 language-cpp, 8 language-asm, 2 language-js, 6 plain; some asm pre sit inside the 3 code-comparison tables), 13 SVG figures with captions, 23 h2-h4; article ends with a bullet list, byline footer 'Posted by…' is neutral",
+    "title": "Pointer Compression in V8",
+    "mustInclude": [
+      "There is a constant battle between memory and performance.",
+      "Once we updated the pattern matching to be aware of the new compression/decompression nodes we got another 11% improvement.",
+      "a bit of fine-tuning of the decompression elimination optimization in TurboFan gave another 1% performance improvement.",
+      "In them, we observed that Pointer Compression reduces V8 heap size up to 43%!",
+      "Explore the idea of supporting bigger heaps, in the 8 to 16 GB range."
+    ],
+    "mustExclude": [
+      "Branding Terms Privacy Twitter Edit this page on GitHub",
+      "any code samples from the V8 project are licensed under V8’s BSD-style license",
+      "Retweet this article!",
+      "JS/Wasm features"
+    ],
+    "minCodeBlocks": 25,
+    "codeLanguages": [
+      "cpp",
+      "asm"
+    ],
+    "minImages": 13,
+    "minHeadings": 23,
+    "minTables": 3,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "fowler-microservices",
+    "url": "https://martinfowler.com/articles/microservices.html",
+    "tier": 3,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "Long article, sidebars, figures, footnotes; body in main > div.paperBody; editorial aside.sidebar boxes (How big is a microservice?, etc.) and footnotes are inline (footnotes repeated in div.appendix list) - sidebars left neutral; front matter has author bios + contents list; 'Microservice Trade-Offs' related card and Sam Newman book box inside the last section; 6 content figures, 11 h2/h3 body headings (excl. sidebars, appendix)",
+    "title": "Microservices",
+    "mustInclude": [
+      "yet another new term on the crowded streets of software architecture.",
+      "At the most abstract level, it means that the conceptual model of the world will differ between systems.",
+      "applications need to be designed so that they can tolerate the failure of services.",
+      "New techniques tend to be adopted by more skillful teams.",
+      "So far, we've seen enough about the microservice style to feel that it can be a worthwhile road to tread.",
+      "We can't resist mentioning Jim Webber's statement that ESB stands for “Erroneous Spaghetti Box”."
+    ],
+    "mustExclude": [
+      "Martin Fowler is an author, speaker, and general loud-mouth on software development.",
+      "James Lewis is a Principal Consultant at Thoughtworks and member of the Technology Advisory Board.",
+      "But other teams have found them to be a productivity-sapping burden.",
+      "© Martin Fowler | Disclosures"
+    ],
+    "minImages": 6,
+    "minHeadings": 11,
+    "hasFootnotes": true,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "cloudflare-pingora",
+    "url": "https://blog.cloudflare.com/pingora-open-source/",
+    "tier": 3,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "Cloudflare blog, Rust code, images; body in div.article-content; ~800-item tag dropdown in the post header breadcrumb, newsletter form, mega footer, duplicated mobile menu; 6 pre.shiki (Rust + curl output, no language classes), 2 diagrams (each preceded by an SVG placeholder img), 6 h2/h3",
+    "title": "Open sourcing Pingora: our Rust framework for building programmable network services",
+    "mustInclude": [
+      "Today, we are proud to open source Pingora, the Rust framework we have been using to build services",
+      "Behind the scenes, the Pingora proxy framework takes care of connection pooling, TLS handshakes, reading, writing, parsing requests",
+      "Pingora is the engine that powers a car, not the car itself.",
+      "Support for non-Unix based operating systems is not currently on the roadmap.",
+      "Whether you're building production web services or experimenting with network technologies we hope you find value in Pingora."
+    ],
+    "mustExclude": [
+      "Subscribe to receive notifications of new posts",
+      "We’ll never share your email address.",
+      "© 2026 Cloudflare, Inc.",
+      "Cloudflare for Campaigns"
+    ],
+    "minCodeBlocks": 6,
+    "codeLanguages": [
+      "rust"
+    ],
+    "minImages": 2,
+    "minHeadings": 6,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "cloudflare-quic",
+    "url": "https://blog.cloudflare.com/the-road-to-quic/",
+    "tier": 3,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "Cloudflare blog, diagrams; same Cloudflare blog template as pingora (huge tag dropdown in header, newsletter, mega footer); body in div.article-content, 8 h3, 7 diagrams (each preceded by an SVG placeholder img), no code blocks",
+    "title": "The Road to QUIC",
+    "mustInclude": [
+      "QUIC (Quick UDP Internet Connections) is a new encrypted-by-default Internet transport protocol",
+      "This can dramatically reduce the time required to, for example, render complete web pages",
+      "network operators might need to employ smarter layer 4 load balancing solutions",
+      "This kind of attack can be very effective when the response sent by the server happens to be larger",
+      "Cloudflare engineers are already hard at work to provide the benefits of QUIC to all of our customers."
+    ],
+    "mustExclude": [
+      "Subscribe to receive notifications of new posts",
+      "We’ll never share your email address.",
+      "© 2026 Cloudflare, Inc.",
+      "HTTP2IETFQUICSecuritySpeed & ReliabilityTLS"
+    ],
+    "minImages": 7,
+    "minHeadings": 8,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "github-git-256",
+    "url": "https://github.blog/open-source/git/highlights-from-git-2-56/",
+    "tier": 3,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "GitHub blog, shell code, footnotes, heavy chrome; WordPress body in section.col-md-8 (p.wp-block-paragraph); no footnotes in this snapshot (only '[source]' link lines) despite original note; only 1 <pre> - other commands are inline <code> inside list items split by <br>; 1 content figure (animation) + hero cover image; 5 h2; heavy chrome: mega-menu, sidebar TOC/'More on Git', related posts, 'Explore more', newsletter, footer",
+    "title": "Highlights from Git 2.56",
+    "mustInclude": [
+      "The open source Git project just released Git 2.56.0 with features and bug fixes from over 104 contributors",
+      "Resolving a merge conflict has two distinct parts.",
+      "Imagine painting commits reachable from one side blue and commits from the other side red.",
+      "they remove two important adoption blockers, making it possible for large repository hosts to evaluate",
+      "That’s just a sample of changes from the latest release. For more, check out the release notes for 2.56"
+    ],
+    "mustExclude": [
+      "Elijah Newren is a Staff Software Engineer at GitHub.",
+      "OpenClaw went viral. Meet the maintainers building and securing it.",
+      "What are git worktrees, and why should I use them?",
+      "Discover tips, technical guides, and best practices in our biweekly newsletter",
+      "© 2026 GitHub, Inc."
+    ],
+    "minCodeBlocks": 1,
+    "minImages": 1,
+    "minHeadings": 5,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "github-android-vulns",
+    "url": "https://github.blog/security/how-we-found-24-android-vulnerabilities-using-our-open-source-ai-security-agent/",
+    "tier": 3,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "GitHub blog, security post; same github.blog WordPress template as git-256; body in section.col-md-8; one section heading is an h1 (not counted), 6 h2 + 2 h3; 7 pre.language-plaintext (Java/Kotlin/log snippets), 2 figures; sidebar TOC + 'More on GitHub Security Lab', related posts, newsletter, footer",
+    "title": "How we found 24 Android vulnerabilities using our open source AI security agent",
+    "mustInclude": [
+      "our team created the GitHub Security Lab Taskflow Agent as a way for security researchers to easily automate",
+      "In total, we have found and reported 24 vulnerabilities so far.",
+      "we can also obtain the origin and destination for every route a user takes on OsmAnd",
+      "As these examples show, LLMs can find logic vulnerabilities with critical impact, not just generic bug classes.",
+      "Run these taskflows against your own app and take the first step toward AI-assisted security!"
+    ],
+    "mustExclude": [
+      "6 security settings every GitHub maintainer should enable this week",
+      "OpenClaw went viral. Meet the maintainers building and securing it.",
+      "In this blog post, I explain how to use the new fuzzing taskflow",
+      "Discover tips, technical guides, and best practices in our biweekly newsletter",
+      "© 2026 GitHub, Inc."
+    ],
+    "minCodeBlocks": 7,
+    "minImages": 2,
+    "minHeadings": 8,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "stripe-idempotency",
+    "url": "https://stripe.com/blog/idempotency",
+    "tier": 3,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "Stripe blog, curl/Ruby code; body in section.BlogPost__body; huge mega-nav (repeated h1 group titles) and country picker; no Ruby code in snapshot: the 2 code snippets are curl, and their text sits in a hidden div[data-js-target=CodeEditor.finalCode] (data-js-language-mode=bash) next to an empty JS-typed <pre> shell containing only '~'; 5 h2, 1 figure; article ends with a 3-item principles list",
+    "title": "Designing robust and predictable APIs with idempotency",
+    "mustInclude": [
+      "Networks are unreliable. We’ve all experienced trouble connecting to Wi-Fi, or had a phone call drop",
+      "When performing a request, a client generates a unique ID to identify just that operation",
+      "you can safely retry it with the same idempotency key, and the customer is charged only once.",
+      "We can address thundering herd by adding some amount of random “jitter” to each client’s wait time.",
+      "Use techniques like exponential backoff and random jitter. Be considerate of servers that may be stuck in a degraded state."
+    ],
+    "mustExclude": [
+      "Stay connected with Stripe and receive new blog posts in your inbox.",
+      "Stripe builds financial tools and economic infrastructure for the internet.",
+      "CA residents: +1 888 926 2289",
+      "© 2026 Stripe, LLC"
+    ],
+    "minCodeBlocks": 2,
+    "codeLanguages": [
+      "bash"
+    ],
+    "minImages": 1,
+    "minHeadings": 5,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "discord-go-rust",
+    "url": "https://discord.com/blog/why-discord-is-switching-from-go-to-rust",
+    "tier": 4,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "Webflow marketing site, images, charts; Webflow: body in article.article_rich-text-2; 9 h3, 4 chart images (figures, alt=\"\"), one blockquote, no code; endnotes [1]-[5] are plain <p> at the end of the rich text (last prose paragraph is the 'fun fact' one); placeholder 'Lorem ipsum' newsletter widget above the title, author frame, huge 'related articles' grid, language picker, footer",
+    "title": "Why Discord is switching from Go to Rust",
+    "mustInclude": [
+      "Rust is becoming a first class language in a variety of domains.",
+      "In Go, on cache key eviction, memory is not immediately freed.",
+      "Rust does not have garbage collection, so we figured it would not have the same latency spikes Go had.",
+      "The latency of the Rust version was just as good as Go’s and had no latency spikes!",
+      "Also, a fun fact: the Rust team uses Discord to coordinate.",
+      "To be clear, we don’t think you should rewrite everything in rust just because."
+    ],
+    "mustExclude": [
+      "Cauldron Bubble w/o the Trouble? It’s Discord Halloween, Witches",
+      "Every Voice and Video Call on Discord Is Now End-to-End Encrypted",
+      "Staff Software Engineer, Infrastructure",
+      "AboutJobsBrandNewsroom"
+    ],
+    "minImages": 4,
+    "minHeadings": 9,
+    "hasFootnotes": true,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "figma-multiplayer",
+    "url": "https://www.figma.com/blog/how-figmas-multiplayer-technology-works/",
+    "tier": 4,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "Next.js marketing site, figures",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "webdev-vitals",
+    "url": "https://web.dev/articles/vitals",
+    "tier": 3,
+    "category": "docs",
+    "language": "en",
+    "notes": "web.dev (DevSite), JS code, figures",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "lilian-agents",
+    "url": "https://lilianweng.github.io/posts/2023-06-23-agent/",
+    "tier": 3,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "Hugo PaperMod, images, code, citations",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "lilian-diffusion",
+    "url": "https://lilianweng.github.io/posts/2021-07-11-diffusion-models/",
+    "tier": 4,
+    "category": "academic",
+    "language": "en",
+    "notes": "Math-heavy (MathJax/KaTeX), figures; body is div.post-content inside article.post-single; sections use h1 (8) plus h2 (9)/h3 (3); TeX left as $...$ in raw HTML for client-side MathJax; ends with Quick Summary, Citation (bibtex pre) and References list; toc widget and paginav excluded",
+    "title": "What are Diffusion Models?",
+    "mustInclude": [
+      "So far, I’ve written about three types of generative models, GAN, VAE, and Flow-based models.",
+      "They define a Markov chain of diffusion steps to slowly add random noise to data",
+      "explored both guiding strategies, CLIP guidance and classifier-free guidance, and found that the latter is more preferred",
+      "runs the diffusion process in the latent space instead of pixel space, making training cost lower and inference speed faster",
+      "There are two common backbone architecture choices for diffusion models: U-Net and Transformer.",
+      "New methods have been proposed to make the process much faster, but the sampling is still slower than GAN."
+    ],
+    "mustExclude": [
+      "© 2026 Lil'Log Powered by Hugo & PaperMod",
+      "How to Train Really Large Models on Many GPUs?",
+      "Contrastive Representation Learning"
+    ],
+    "minImages": 16,
+    "minHeadings": 12,
+    "hasMath": true,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "comeau-css-reset",
+    "url": "https://www.joshwcomeau.com/css/custom-css-reset/",
+    "tier": 4,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "MDX + interactive widgets, CSS code; body is main > article (CSS-in-JS hashed classes); in-article ToC nav, interactive Code Playgrounds (token-line divs + iframe results), quiz and toggle widgets; aside notes are content; ends with Going deeper + Changelog list; footer has newsletter form; 20 shiki pre blocks, 4 h2 + 10 numbered h3",
+    "title": "A Modern CSS Reset",
+    "mustInclude": [
+      "the first order of business is to sand down some of the rough edges in the CSS language",
+      "So here's a weird thing: images are considered \"inline\" elements.",
+      "My CSS reset is quite short, with only 12 CSS declarations",
+      "everything becomes so much more intuitive and predictable. I love writing CSS these days!",
+      "If you wish you were one of those people who liked/understood CSS, I made this course specifically for you!",
+      "June 2023 — I removed the height: 100% from html and body."
+    ],
+    "mustExclude": [
+      "Enter your email to join my free newsletter",
+      "© 2018-present Joshua Comeau. All Rights Reserved.",
+      "Are you a human? If so, please ignore this checkbox",
+      "Browse By Category"
+    ],
+    "minCodeBlocks": 18,
+    "codeLanguages": [
+      "css"
+    ],
+    "minImages": 3,
+    "minHeadings": 12,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "comeau-rerenders",
+    "url": "https://www.joshwcomeau.com/react/why-react-re-renders/",
+    "tier": 4,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "MDX, interactive playgrounds, JSX code; body is main > article; in-article ToC nav, Sandpack playgrounds (code in pre.sp-pre-placeholder + UI chrome), interactive render-graph widgets; ends with 'Bonus: Performance tips' list; 7 shiki pre + 4 Sandpack pre; 5 h2 + 3 h3 (excluding ToC and 'Last updated'/'# of hits' h3s)",
+    "title": "Why React Re-Renders",
+    "mustInclude": [
+      "I had been working professionally with React for years without really understanding how React's re-rendering process worked.",
+      "Re-renders only affect the component that owns the state + its descendants (if any).",
+      "You might be familiar with React.memo, or the React.PureComponent class component.",
+      "One of the subtle mind-bending things about React is that components are JavaScript functions.",
+      "Performance optimization in React is a huge topic, and I could easily write several blog posts about it.",
+      "These tools are best used in response to a performance problem, if things start feeling a bit sluggish."
+    ],
+    "mustExclude": [
+      "Want to know when I publish new content?",
+      "© 2018-present Joshua Comeau. All Rights Reserved.",
+      "Are you a human? If so, please ignore this checkbox",
+      "Browse By Category"
+    ],
+    "minCodeBlocks": 9,
+    "codeLanguages": [
+      "javascript"
+    ],
+    "minImages": 2,
+    "minHeadings": 7,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "smashing-container-queries",
+    "url": "https://www.smashingmagazine.com/2026/09/stop-treating-css-container-queries-traditional-media-queries/",
+    "tier": 3,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "Smashing: CSS code, newsletter boxes, ads; body is div#article__content > div.c-garfield-the-cat (summary dek, paragraphs, 12 pre, 2 'Large preview' figures, 4 CodePen p.codepen placeholders that JS turns into iframes, so hasEmbeds not set); author bio, newsletter box and ad panels sit before the body inside the same column; feature-panel book ad is injected mid-article; ends with Conclusion before the (gg, yk) signature",
+    "title": "Stop Treating CSS Container Queries Like Traditional Media Queries",
+    "mustInclude": [
+      "To be completely honest with you, I missed the news when CSS Container Queries first shipped.",
+      "Media queries are what gave us the illusion that screen width alone is responsible for how responsive apps adapt",
+      "Media queries only observe the browser window, as they can’t see internal changes.",
+      "I don’t think any project should wholesale use @container instead of @media.",
+      "the core reason why container queries look incredibly similar to media queries is simply familiarity",
+      "adjusting styles based on its content, as it should be when that component can exist in multiple contexts"
+    ],
+    "mustExclude": [
+      "Meet Image Optimization, Addy Osmani’s new practical guide to optimizing and delivering high-quality images on the web.",
+      "I Code. I Write. Meme Rules.",
+      "Founded by Vitaly Friedman and Sven Lennartz. 2006–2026.",
+      "Tips on front-end & UX, delivered weekly in your inbox.",
+      "Browse All Smashing Magazine Topics"
+    ],
+    "minCodeBlocks": 11,
+    "codeLanguages": [
+      "css"
+    ],
+    "minImages": 2,
+    "minHeadings": 10,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "csstricks-flexbox",
+    "url": "https://css-tricks.com/snippets/css/a-guide-to-flexbox/",
+    "tier": 3,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "Huge CSS guide, images, code, comments; title from the on-page h1 (<title> says 'A Complete Guide to CSS Flexbox'); body is article#post-21059 > div.article-content (two-column property reference with h4 per property, 12 SVG diagrams, 20 language-css/scss pre, 18 CodePen iframes); header dek and ToC widget precede it; 'Flexbox Tricks!' section holds in-article teaser cards for other posts (excluded) and a 'More Flexbox Resources' link list closes the body (last prose paragraph is the Sass @mixin intro); then a huge comment thread, comment form, footer",
+    "title": "A Complete CSS Flexbox Layout Guide",
+    "mustInclude": [
+      "provides a more efficient way to lay out, align and distribute space among items in a container",
+      "A flex container expands items to fill available free space or shrinks them to prevent overflow.",
+      "This is the shorthand for flex-grow, flex-shrink and flex-basis combined.",
+      "Let’s see what all that information looks like in practice with a fairly simple example.",
+      "write in the new (and final) syntax and run your CSS through Autoprefixer, which handles the fallbacks very well",
+      "which also gives you an idea of what kind of things need to be done"
+    ],
+    "mustExclude": [
+      "Adaptive Photo Layout with Flexbox",
+      "Yay. Less javascript and more CSS. What’s not to like?",
+      "Toggle All Comments (there are a lot)",
+      "CSS-Tricks is powered by DigitalOcean.",
+      "Get Curated Front-End Roundups Right in Your Inbox"
+    ],
+    "minCodeBlocks": 18,
+    "codeLanguages": [
+      "css",
+      "scss"
+    ],
+    "minImages": 11,
+    "minHeadings": 25,
+    "hasEmbeds": true,
+    "annotationConfidence": "medium"
+  },
+  {
+    "id": "devto-cve",
+    "url": "https://dev.to/kozhevniko/detection-and-verification-for-cve-2026-102795-in-apache-traffic-server-1h3p",
+    "tier": 3,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "dev.to (Forem), code blocks, comments, sidebars; no code blocks in this post despite the original note; body is div#article-body (repeats the title as an in-body h1, 7 h2, one version table, remediation list, short References list); left reaction sidebar, comments form, 'More from' sidebar and footer are boilerplate; last prose block taken from the remediation list before References",
+    "title": "Detection and verification for CVE-2026-102795 in Apache Traffic Server",
+    "mustInclude": [
+      "CVE-2026-102795 is an improper access control flaw in Apache Traffic Server, published 2 October 2026.",
+      "This is not a vulnerability that produces a distinctive log line, so detection starts with configuration and version truth",
+      "The absence of exploitation reports is not evidence that exposure is theoretical",
+      "Use the first figure to size the inventory effort and the second to remind yourself that index coverage lags disclosure.",
+      "Remove catch-all virtual hosts so an unexpected name fails closed."
+    ],
+    "mustExclude": [
+      "Drupal Contributed Modules: 36 CVEs in One September 2026 Advisory Batch",
+      "Templates let you quickly answer FAQs or store snippets for re-use.",
+      "Built on Forem — the open source software that powers DEV and other inclusive communities.",
+      "Made with love and Ruby on Rails. DEV Community © 2016 - 2026."
+    ],
+    "minHeadings": 6,
+    "minTables": 1,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "devto-react-signup",
+    "url": "https://dev.to/ryanlee91/react-signup-tests-need-a-run-scoped-email-contract-3cfg",
+    "tier": 3,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "dev.to (Forem), code; body is div#article-body (6 h2, 4 pre.highlight.typescript, two lists); comments form, 'More from ryanlee' sidebar with near-duplicate teaser titles, footer are boilerplate",
+    "title": "React Signup Tests Need a Run-Scoped Email Contract",
+    "mustInclude": [
+      "Signup tests often fail in a way that is hard to reproduce.",
+      "It needs a run ID, a known lifecycle, and an observable result.",
+      "It is that the transition from submitted to message-found carries evidence from the fixture.",
+      "A global hook may not know which worker owns a leaked resource",
+      "The suite can move faster, fail more honestly, and tell you what to fix next."
+    ],
+    "mustExclude": [
+      "React Test Emails Need a Run-Scoped Contract",
+      "TypeScript Contracts for Reliable Email Test Fixtures",
+      "Templates let you quickly answer FAQs or store snippets for re-use.",
+      "Made with love and Ruby on Rails. DEV Community © 2016 - 2026."
+    ],
+    "minCodeBlocks": 4,
+    "codeLanguages": [
+      "typescript"
+    ],
+    "minHeadings": 6,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "hashnode-docs-license",
+    "url": "https://townhall.hashnode.com/hashnode-docs-free-license-for-open-source-projects",
+    "tier": 3,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "Hashnode blog (Next.js); title from the on-page h1 (<title>/og say 'Free Hashnode License for Open Source Projects'); body is div.prose (3 h2, feature lists rendered as p, two x.com embed-card links plus one YouTube iframe); ends with 'Pay it forward' paragraph, a tweet embed and the 'Team Hashnode' sign-off; author bio box, 'On this page' ToC, comments, 'More from this blog' cards and footer are boilerplate",
+    "title": "Hashnode docs free license for open source projects",
+    "mustInclude": [
+      "We have recently launched Docs by Hashnode - the content engine for your API documentation and product guides.",
+      "We have included everything you need to write excellent documentation, from customization options to API support, AI tools, and insights.",
+      "By offering it for free, we're not just providing a tool, we're investing in the future of open source.",
+      "While you focus on the content, Hashnode does the heavy lifting for you.",
+      "Thank the creators by sharing this article or tagging them in the tweet below."
+    ],
+    "mustExclude": [
+      "Developer advocate by profession. Previously at Appwrite and Microsoft.",
+      "the backlinks to docs don't resolve",
+      "Breaking Apps Hackathon Winners",
+      "© 2026 Town Hall - The official Hashnode blog"
+    ],
+    "minHeadings": 3,
+    "hasEmbeds": true,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "acx-neuralese",
+    "url": "https://www.astralcodexten.com/p/the-specter-of-neuralese",
+    "tier": 3,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "Substack with footnotes, subscribe boxes, comments; body is div.available-content > div.body.markup (4 roman-numeral h4 sections, 10 captioned images, 5 footnotes at the end); subtitle h3 is just '...'; comments are not in the raw HTML (only the '164 Comments' header); no in-body subscribe widgets in this snapshot; footer/Ready for more boilerplate",
+    "title": "The Specter Of Neuralese",
+    "mustInclude": [
+      "some people accused us of misleading readers by positing “neuralese recurrence”, a hypothetical technology",
+      "it has to encode them into twenty-six glyphs invented by Phoenician turquoise miners in 1800 BC",
+      "A looped transformer model like Astra uses loops as a hack to add more layers.",
+      "But taboos only work when there are clear boundaries defining what is versus isn’t within the tabooed area.",
+      "please also read this essay by Redwood Research, which explains some of the relevant concepts and technologies in more detail",
+      "There is an architecture called COCONUT that can do this, but it’s not very good."
+    ],
+    "mustExclude": [
+      "Substack is the home for great culture",
+      "© 2026 Scott Alexander · Privacy ∙ Terms ∙ Collection notice",
+      "Ready for more?"
+    ],
+    "minImages": 8,
+    "minHeadings": 4,
+    "hasFootnotes": true,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "acx-lky-review",
+    "url": "https://www.astralcodexten.com/p/your-book-review-lee-kuan-yews-memoirs",
+    "tier": 4,
+    "category": "simple-blog",
+    "language": "en",
+    "notes": "Very long Substack post with footnotes; body is div.available-content > div.body.markup: bracketed contest preface, two in-body h1 'Book 1/Book 2' parts with 8 h2 sections, 5 blockquotes, 1 image, 36 footnotes at the end; comments not in raw HTML; Substack footer/'Ready for more?' boilerplate",
+    "title": "Your Book Review: Lee Kuan Yew's Memoirs",
+    "mustInclude": [
+      "He was also, as it turns out, a surprisingly compelling writer.",
+      "They were seen to lose, in a way that made them look selfish and cowardly and weak.",
+      "Unlike the more ideological postcolonial countries, Singapore actively sought out western investment wherever possible",
+      "Singapore famously banned gum, because the government thought it was net negative for society to have it.",
+      "Lee had more modest ideals, but he successfully lived up to the ones he did.",
+      "Okay yes, Google probably used internal pubsub implementations and not literally Kafka."
+    ],
+    "mustExclude": [
+      "Substack is the home for great culture",
+      "© 2026 Scott Alexander · Privacy ∙ Terms ∙ Collection notice",
+      "Ready for more?"
+    ],
+    "minImages": 1,
+    "minHeadings": 8,
+    "hasFootnotes": true,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "projectzero-nso",
+    "url": "https://googleprojectzero.blogspot.com/2021/12/a-deep-dive-into-nso-zero-click.html",
+    "tier": 3,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "Blogger template, code, images; URL now redirects to projectzero.google (static site, not Blogger); body is article > section.post-content > div.post-body (Google-Docs export: section headings are plain p.c3 with no h tags, the C++ snippet is a one-cell layout table of p lines, no pre; 10 images with p.c12 captions); boilerplate is only the header nav and a two-line footer",
+    "title": "A deep dive into an NSO zero-click iMessage exploit: Remote Code Execution",
+    "mustInclude": [
+      "In this two-part blog post series we will describe for the first time how an in-the-wild zero-click iMessage exploit works.",
+      "This means that a victim can be targeted just using their phone number or AppleID username.",
+      "JBIG2 tries to segment each page into glyphs then uses simple pattern matching",
+      "A NAND gate is an example of a universal logic gate",
+      "In a future post (currently being finished), we'll take a look at exactly how they escape the IMTranscoderAgent sandbox."
+    ],
+    "mustExclude": [
+      "0day: Root Cause Analyses",
+      "vulnerability disclosure policy",
+      "reporting transparency",
+      "Make zeroday hard."
+    ],
+    "minImages": 8,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "mdn-array-map",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map",
+    "tier": 3,
+    "category": "docs",
+    "language": "en",
+    "notes": "MDN reference page, JS code, compat table; body is main#content: intro paragraph in layout__header plus div.layout__body sections (Try it, Syntax with dl parameters, Description, Examples, Specifications table, Browser compatibility heading only - compat table is JS-rendered and absent from raw HTML, See also list); 18 pre (brush: js); right 'In this article' ToC, left sidebar API list, baseline widget, mega-nav, article-footer and footer are boilerplate; last prose block is the Array.from() note before Specifications",
+    "title": "Array.prototype.map()",
+    "mustInclude": [
+      "creates a new array populated with the results of calling a provided function on every element in the calling array",
+      "It calls a provided callbackFn function once for each element in an array",
+      "Since map builds a new array, calling it without using the returned array is an anti-pattern",
+      "This is not recommended, because copying methods are best used with pure functions.",
+      "You can also use Array.from() to transform elems to an array, and then access the map() method."
+    ],
+    "mustExclude": [
+      "View this page on GitHub • Report a problem with this content",
+      "Check out the video course from Scrimba, our partner",
+      "Your blueprint for a better internet.",
+      "Portions of this content are ©1998–2026 by individual mozilla.org contributors."
+    ],
+    "minCodeBlocks": 16,
+    "codeLanguages": [
+      "javascript"
+    ],
+    "minHeadings": 14,
+    "minTables": 1,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "mdn-using-fetch",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch",
+    "tier": 3,
+    "category": "docs",
+    "language": "en",
+    "notes": "MDN guide, many JS code blocks; body is main#content: intro paragraphs + first code example live in div.layout__header, rest in div.layout__body (4 h2 incl. See also, 14 h3, 23 pre brush: js); 'In this article' ToC, left sidebar, mega-nav, article-footer and footer are boilerplate; last prose block is the service-worker cache paragraph before the final code block and See also list",
+    "title": "Using the Fetch API",
+    "mustInclude": [
+      "The Fetch API provides a JavaScript interface for making HTTP requests and processing the responses.",
+      "Fetch is promise-based and is integrated with features of the modern web such as service workers",
+      "You cannot include a body with GET requests, but it's useful for requests that send content to the server",
+      "Opaque responses and opaque redirect responses have a status of 0, an empty header list, and a null body.",
+      "This is good for memory efficiency, because the browser doesn't have to buffer the entire response in memory",
+      "This is a common pattern when implementing an offline cache with service workers."
+    ],
+    "mustExclude": [
+      "View this page on GitHub • Report a problem with this content",
+      "Check out the video course from Scrimba, our partner",
+      "Your blueprint for a better internet.",
+      "Portions of this content are ©1998–2026 by individual mozilla.org contributors."
+    ],
+    "minCodeBlocks": 20,
+    "codeLanguages": [
+      "javascript"
+    ],
+    "minHeadings": 16,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "python-controlflow",
+    "url": "https://docs.python.org/3/tutorial/controlflow.html",
+    "tier": 2,
+    "category": "docs",
+    "language": "en",
+    "notes": "Sphinx docs, Python code; body is div.body > section#more-control-flow-tools (10 h2, 8 h3, 5 h4, 57 pre Python examples, coding-style list rendered as p, one footnote at the end); mobile nav + sphinxsidebar duplicate the ToC, related nav bars and footer are boilerplate; title drops the Sphinx pilcrow",
+    "title": "4. More Control Flow Tools",
+    "mustInclude": [
+      "As well as the while statement just introduced, Python uses a few more that we will encounter in this chapter.",
+      "Python’s for statement iterates over the items of any sequence (a list or a string), in the order that they appear",
+      "Making it easy for others to read your code is always a good idea",
+      "don’t use non-ASCII characters in identifiers if there is only the slightest chance people speaking a different language will read",
+      "Actually, call by object reference would be a better description, since if a mutable object is passed"
+    ],
+    "mustExclude": [
+      "© Copyright 2001 Python Software Foundation.",
+      "The Python Software Foundation is a non-profit corporation. Please donate.",
+      "3. An Informal Introduction to Python",
+      "Created using Sphinx 8.2.3."
+    ],
+    "minCodeBlocks": 50,
+    "codeLanguages": [
+      "python"
+    ],
+    "minHeadings": 20,
+    "hasFootnotes": true,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "python-asyncio-task",
+    "url": "https://docs.python.org/3/library/asyncio-task.html",
+    "tier": 3,
+    "category": "docs",
+    "language": "en",
+    "notes": "Sphinx API reference, many code blocks; body is div.body > section#coroutines-and-tasks: API reference with dl.py function/class/method entries, 15 h2 + 1 h3, 34 pre, 20 admonitions/version notes, one data table of wait() constants; in-body local contents nav (ToC widget), mobile nav, sphinxsidebar, related bars and footer are boilerplate; ends with Task.cancelling() description",
+    "title": "Coroutines and tasks",
+    "mustInclude": [
+      "This section outlines high-level asyncio APIs to work with coroutines and Tasks.",
+      "Coroutines declared with the async/await syntax is the preferred way of writing asyncio applications.",
+      "This ensures that a asyncio.CancelledError will be raised at the next await, so the cancellation is not lost.",
+      "Return an asynchronous context manager that can be used to limit the amount of time spent waiting on something.",
+      "isn’t expected to be used by end-user code. See uncancel() for more details."
+    ],
+    "mustExclude": [
+      "© Copyright 2001 Python Software Foundation.",
+      "The Python Software Foundation is a non-profit corporation. Please donate.",
+      "Networking and Interprocess Communication »",
+      "Created using Sphinx 8.2.3."
+    ],
+    "minCodeBlocks": 30,
+    "codeLanguages": [
+      "python"
+    ],
+    "minHeadings": 14,
+    "minTables": 1,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "rustbook-ownership",
+    "url": "https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html",
+    "tier": 3,
+    "category": "docs",
+    "language": "en",
+    "notes": "mdBook, Rust code, figures",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "react-thinking",
+    "url": "https://react.dev/learn/thinking-in-react",
+    "tier": 4,
+    "category": "docs",
+    "language": "en",
+    "notes": "react.dev Next.js, sandpack code",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "react-usestate",
+    "url": "https://react.dev/reference/react/useState",
+    "tier": 4,
+    "category": "docs",
+    "language": "en",
+    "notes": "react.dev reference, many code blocks, tabs",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "docusaurus-codeblocks",
+    "url": "https://docusaurus.io/docs/markdown-features/code-blocks",
+    "tier": 4,
+    "category": "docs",
+    "language": "en",
+    "notes": "Docusaurus, code blocks with titles, tabs",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "jest-getting-started",
+    "url": "https://jestjs.io/docs/getting-started",
+    "tier": 3,
+    "category": "docs",
+    "language": "en",
+    "notes": "Docusaurus, npm/yarn tabs; article = div.theme-doc-markdown; 7 npm/Yarn/pnpm/Bun tab groups (21 hidden tabpanels), 40 <pre> total but only 12 outside tab groups (+7 visible tabs); one collapsed <details> with Babel config; last block is 'Or use eslint-plugin-jest' + JSON code",
+    "title": "Getting Started",
+    "mustInclude": [
+      "Let's get started by writing a test for a hypothetical function that adds two numbers.",
+      "Most of the time you do not need to do anything special to work with different bundlers",
+      "Jest is not supported by Vite due to incompatibilities with the Vite plugin system.",
+      "ts-jest is a TypeScript preprocessor with source map support for Jest that lets you use Jest",
+      "Jest can be used with ESLint without any further configuration as long as you import the Jest global helpers",
+      "Or use eslint-plugin-jest, which has a similar effect:"
+    ],
+    "mustExclude": [
+      "Help Provide Humanitarian Aid to Ukraine",
+      "Testing Asynchronous Code",
+      "Copyright OpenJS Foundation and Jest contributors. All rights reserved.",
+      "The OpenJS Foundation | Terms of Use | Privacy Policy | Bylaws",
+      "Built with Docusaurus."
+    ],
+    "minCodeBlocks": 12,
+    "codeLanguages": [
+      "bash",
+      "javascript",
+      "typescript",
+      "json"
+    ],
+    "minHeadings": 12,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "mkdocs-admonitions",
+    "url": "https://squidfunk.github.io/mkdocs-material/reference/admonitions/",
+    "tier": 4,
+    "category": "docs",
+    "language": "en",
+    "notes": "MkDocs Material, admonitions, tabs; article = article.md-content__inner; 17 <pre> incl. tabbed sets (CSS tabs, all in DOM) and code inside collapsed <details>; 'Supported types' is a dl of lorem-ipsum demo admonitions; one footnote (fn:1); contributor avatars and feedback form inside <article> are boilerplate; last prose block is 'After applying the customization...' followed by a demo",
+    "title": "Admonitions",
+    "mustInclude": [
+      "Admonitions, also known as call-outs, are an excellent choice for including side content without significantly interrupting the document flow.",
+      "Admonitions can also be rendered as inline blocks (e.g., for sidebars), placing them to the right",
+      "Important: admonitions that use the inline modifiers must be declared prior to the content block",
+      "Prior to version 8.5.6, admonitions had a slightly different appearance:",
+      "After applying the customization, you can use the custom admonition type:",
+      "Previously, some of the supported types defined more than one qualifier."
+    ],
+    "mustExclude": [
+      "A modern static site generator built by the Material for MkDocs team",
+      "Setting up site analytics",
+      "Thanks for your feedback! Help us improve this page by telling us what you're missing.",
+      "Copyright © 2016 - 2025 Martin Donath",
+      "Made with Material for MkDocs Insiders"
+    ],
+    "minCodeBlocks": 10,
+    "codeLanguages": [
+      "yaml",
+      "markdown",
+      "css"
+    ],
+    "minHeadings": 12,
+    "hasFootnotes": true,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "fastapi-first-steps",
+    "url": "https://fastapi.tiangolo.com/tutorial/first-steps/",
+    "tier": 3,
+    "category": "docs",
+    "language": "en",
+    "notes": "MkDocs Material, Python/bash code, images; article = article.md-content__inner; 21 <pre> (Python + terminal output, tabbed sets have a single 'Python 3.10+' tab), 2 screenshots (Swagger UI, ReDoc); ends with the 'Recap' bullet list; announcement banner and sponsor strip are boilerplate",
+    "title": "First Steps",
+    "mustInclude": [
+      "The simplest FastAPI file could look like this:",
+      "That line shows the URL where your app is being served on your local machine.",
+      "A \"schema\" is a definition or description of something. Not the code that implements it",
+      "In the HTTP protocol, you can communicate to each path using one (or more) of these \"methods\".",
+      "It will be called by FastAPI whenever it receives a request to the URL \"/\" using a GET operation.",
+      "Run the development server using the command fastapi dev."
+    ],
+    "mustExclude": [
+      "Subscribe to the FastAPI and friends newsletter",
+      "Query Parameters and String Validations",
+      "Concurrency and async / await",
+      "The FastAPI trademark is owned by @tiangolo and is registered in the US",
+      "Made with Zensical"
+    ],
+    "minCodeBlocks": 18,
+    "codeLanguages": [
+      "python"
+    ],
+    "minImages": 2,
+    "minHeadings": 24,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "vitepress-markdown",
+    "url": "https://vitepress.dev/guide/markdown",
+    "tier": 4,
+    "category": "docs",
+    "language": "en",
+    "notes": "VitePress, code groups, containers; article = div.vp-doc (incl. section.footnotes); mostly Input/Output demos: many md/js/ts code blocks, 2 code groups (CSS-tab blocks all in DOM), demo containers, demo TOC nav (part of the article output), 2 tables (GFM demo + Maxwell equations), MathJax <math> output, 2 footnotes; last prose is 'See full list of configurable properties...'",
+    "title": "Markdown Extensions",
+    "mustInclude": [
+      "Headers automatically get anchor links applied. Rendering of anchors can be configured using the markdown.anchor option.",
+      "This data will be available to the rest of the page, along with all custom and theming components.",
+      "VitePress also supports GitHub-flavored alerts to render as callouts. They will be rendered the same as the custom containers.",
+      "Note that the included lines are inserted verbatim (indentation is preserved), and content containing backticks needs a longer outer fence.",
+      "See full list of configurable properties in Config Reference: App Config.",
+      "Definitions can contain markdown and are rendered at the end of the page."
+    ],
+    "mustExclude": [
+      "Extending the Default Theme",
+      "Build-Time Data Loading",
+      "Edit this page on GitHub",
+      "Released under the MIT License.",
+      "Copyright © 2019-present Evan You"
+    ],
+    "minCodeBlocks": 50,
+    "codeLanguages": [
+      "markdown",
+      "javascript",
+      "typescript"
+    ],
+    "minHeadings": 30,
+    "minTables": 2,
+    "hasMath": true,
+    "hasFootnotes": true,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "vue-reactivity",
+    "url": "https://vuejs.org/guide/essentials/reactivity-fundamentals.html",
+    "tier": 4,
+    "category": "docs",
+    "language": "en",
+    "notes": "VitePress, API-style toggles, code; article = div.vt-doc.guide; content is duplicated per API style: div.options-api and div.composition-api blocks are both in the raw HTML and toggled by a <html> class set by JS (default prefer-composition), so mustInclude has snippets from shared blocks plus both variants; the very last block in document order is Options-API ('Stateful Methods'), the last Composition-API block is the {{ object.id.value }} paragraph; 'Are you an LLM?' banner inside vt-doc is boilerplate",
+    "title": "Reactivity Fundamentals",
+    "mustInclude": [
+      "With the Options API, we use the data option to declare reactive state of a component.",
+      "In Composition API, the recommended way to declare reactive state is using the ref() function:",
+      "When you mutate reactive state, the DOM is updated automatically.",
+      "Due to these limitations, we recommend using ref() as the primary API for declaring reactive state.",
+      "This is just a convenience feature of text interpolation and is equivalent to",
+      "To keep each component instance's debounced function independent of the others, we can create the debounced version"
+    ],
+    "mustExclude": [
+      "Are you an LLM? You can read better optimized documentation",
+      "Class and Style Bindings",
+      "Help Us Translate!",
+      "Become a Sponsor",
+      "Edit this page on GitHub"
+    ],
+    "minCodeBlocks": 20,
+    "codeLanguages": [
+      "javascript",
+      "html",
+      "vue"
+    ],
+    "minHeadings": 12,
+    "annotationConfidence": "medium"
+  },
+  {
+    "id": "k8s-pods",
+    "url": "https://kubernetes.io/docs/concepts/workloads/pods/",
+    "tier": 3,
+    "category": "docs",
+    "language": "en",
+    "notes": "Hugo Docsy, YAML code; article = div.td-content up to div#pre-footer (feedback widget); 4 <pre> (3 YAML samples + kubectl command), 1 diagram figure; 4 of the h4s are 'Note:' alert headings; ends with the What's next list and the prior-art list (Aurora, Borg...)",
+    "title": "Pods",
+    "mustInclude": [
+      "Pods are the smallest deployable units of computing that you can create and manage in Kubernetes.",
+      "Restarting a container in a Pod should not be confused with restarting a Pod.",
+      "Controllers for workload resources create Pods from a pod template and manage those Pods on your behalf.",
+      "Static Pods are always bound to one Kubelet on a specific node.",
+      "You can read more about probes in the Pod Lifecycle documentation.",
+      "To understand the context for why Kubernetes wraps a common Pod API in other resources"
+    ],
+    "mustExclude": [
+      "Join us for four days of incredible opportunities to collaborate, learn and share with the cloud native community.",
+      "Bootstrapping clusters with kubeadm",
+      "Thanks for the feedback. If you have a specific, answerable question",
+      "The Kubernetes Authors | Documentation Distributed under CC BY 4.0"
+    ],
+    "minCodeBlocks": 4,
+    "codeLanguages": [
+      "yaml"
+    ],
+    "minImages": 1,
+    "minHeadings": 20,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "k8s-kubectl-linux",
+    "url": "https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/",
+    "tier": 4,
+    "category": "docs",
+    "language": "en",
+    "notes": "Hugo Docsy with tabs, shell code; article = div.td-content up to div#pre-footer; many Bootstrap tab groups (x86-64/ARM64, Debian/Red Hat/SUSE, Snap/Homebrew, Bash/Fish/Zsh) whose panes are all in the DOM (no hidden attr); 46 <pre> shell blocks; 10 of 11 h4 are 'Note:' alert headings; ends with What's next list",
+    "title": "Install and Set Up kubectl on Linux",
+    "mustInclude": [
+      "You must use a kubectl version that is within one minor version difference of your cluster.",
+      "If you see a URL response, kubectl is correctly configured to access your cluster.",
+      "There could also be other causes for the same error message that are unrelated to that change.",
+      "kubectl provides autocompletion support for Bash, Zsh, Fish, and PowerShell, which can save you a lot of typing.",
+      "If you do not see an error, it means the plugin is successfully installed.",
+      "If you need access to a cluster you didn't create, see the Sharing Cluster Access document."
+    ],
+    "mustExclude": [
+      "Join us for four days of incredible opportunities to collaborate, learn and share with the cloud native community.",
+      "Bootstrapping clusters with kubeadm",
+      "Thanks for the feedback. If you have a specific, answerable question",
+      "The Kubernetes Authors | Documentation Distributed under CC BY 4.0"
+    ],
+    "minCodeBlocks": 30,
+    "codeLanguages": [
+      "bash"
+    ],
+    "minHeadings": 14,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "mslearn-csharp",
+    "url": "https://learn.microsoft.com/en-us/dotnet/csharp/tour-of-csharp/",
+    "tier": 3,
+    "category": "docs",
+    "language": "en",
+    "notes": "Microsoft Learn, C# code; NOT-ARTICLE: the tour-of-csharp URL now serves the 'C# documentation' landing hub (meta page_type=landing, ms.topic=landing-page): only a dek plus boxes of link lists, no prose and no code; mustInclude picks the dek and link-list items (short, so length warnings are expected)",
+    "title": "C# documentation",
+    "mustInclude": [
+      "Learn how to write any application using the C# programming language.",
+      "New to programming? Start with beginner tutorials",
+      "Experienced developer? A tour of C#",
+      "Breaking changes in the C# compiler"
+    ],
+    "mustExclude": [
+      "This browser is no longer supported.",
+      "Upgrade to Microsoft Edge to take advantage of the latest features",
+      "Your Privacy Choices",
+      "Consumer Health Privacy"
+    ],
+    "annotationConfidence": "low"
+  },
+  {
+    "id": "requests-quickstart",
+    "url": "https://requests.readthedocs.io/en/latest/user/quickstart/",
+    "tier": 2,
+    "category": "docs",
+    "language": "en",
+    "notes": "Read the Docs (Sphinx alabaster), Python code; article = section#quickstart (Sphinx alabaster div.body); 36 <pre> Python REPL blocks, 15 h2 sections, admonitions; clean boundary, sidebar after body",
+    "title": "Quickstart",
+    "mustInclude": [
+      "Eager to get started? This page gives a good introduction in how to get started with Requests.",
+      "Note that any dictionary key whose value is None will not be added to the URL’s query string.",
+      "The gzip and deflate transfer-encodings are automatically decoded for you.",
+      "Please note that the above code will NOT add the Content-Type header",
+      "By default Requests will perform location redirection for all verbs except HEAD.",
+      "Ready for more? Check out the advanced section."
+    ],
+    "mustExclude": [
+      "Requests is an elegant and simple HTTP library for Python, built for human beings.",
+      "Recommended Packages and Extensions",
+      "Previous: Installation of Requests",
+      "©Kenneth Reitz and contributors."
+    ],
+    "minCodeBlocks": 30,
+    "codeLanguages": [
+      "python"
+    ],
+    "minHeadings": 15,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "rtd-tutorial",
+    "url": "https://docs.readthedocs.io/en/stable/tutorial/index.html",
+    "tier": 3,
+    "category": "docs",
+    "language": "en",
+    "notes": "Read the Docs, images, code; redirected to docs.readthedocs.com/platform/stable/tutorial/; article = section#read-the-docs-tutorial (sphinx_rtd_theme); 15 screenshot figures with captions, 6 <pre> (mostly .readthedocs.yaml); very last paragraph is 'Happy documenting!' (too short), so the end snippet is the last item of the final resources list",
+    "title": "Read the Docs tutorial",
+    "mustInclude": [
+      "In this tutorial you will learn how to host a public documentation project on Read the Docs Community.",
+      "Read the Docs will build your project documentation right after you create it.",
+      "The Admin tab of the project home has some global configuration settings for your project.",
+      "Read the Docs has traffic and search analytics tools to help you find answers to these questions.",
+      "Join a global community of fellow documentarians in Write the Docs and its Slack workspace.",
+      "Contribute to Read the Docs in Contributing to Read the Docs, we appreciate it!"
+    ],
+    "mustExclude": [
+      "Best practices for linking to your documentation",
+      "Security considerations for documentation pages",
+      "© Copyright Read the Docs, Inc & contributors.",
+      "Built with Sphinx using a theme provided by Read the Docs."
+    ],
+    "minCodeBlocks": 5,
+    "codeLanguages": [
+      "yaml"
+    ],
+    "minImages": 12,
+    "minHeadings": 18,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "numpy-beginners",
+    "url": "https://numpy.org/doc/stable/user/absolute_beginners.html",
+    "tier": 3,
+    "category": "docs",
+    "language": "en",
+    "notes": "pydata-sphinx-theme, very long, Python code, images; article = article.bd-article (pydata-sphinx-theme); very long: 27 h2 sections, 138 <pre> doctest blocks, 26 diagram images (np_*.png), 2 div.math TeX blocks used as array illustrations; final 'Image credits: Jay Alammar' line is neutral, so the end snippet is the Matplotlib docs paragraph before it",
+    "title": "NumPy: the absolute basics for beginners",
+    "mustInclude": [
+      "NumPy (Numerical Python) is an open source Python library that’s widely used in science and engineering.",
+      "All elements of the array must be of the same type of data.",
+      "The fixed, total number of elements in array is contained in the size attribute.",
+      "When you use flatten, changes to your new array won’t change the parent array.",
+      "If you need to generate a plot for your values, it’s very simple with Matplotlib.",
+      "To read more about Matplotlib and what it can do, take a look at the official documentation."
+    ],
+    "mustExclude": [
+      "Writing Performant NumPy Code with Multi-Core CPUs",
+      "Under-the-hood documentation for developers",
+      "© Copyright 2008-2026, NumPy Developers.",
+      "Built with the PyData Sphinx Theme 0.17.1."
+    ],
+    "minCodeBlocks": 120,
+    "codeLanguages": [
+      "python"
+    ],
+    "minImages": 22,
+    "minHeadings": 26,
+    "hasMath": true,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "go-effective",
+    "url": "https://go.dev/doc/effective_go",
+    "tier": 3,
+    "category": "docs",
+    "language": "en",
+    "notes": "Very long single page, Go code; article = article.Doc.Article; very long single page: 16 h2 + 43 h3, 153 <pre> Go/output blocks (no language classes); header mega-menu with descriptions, cookie notice and link-column footer are boilerplate; editorial div.Note at top is part of the article",
+    "title": "Effective Go",
+    "mustInclude": [
+      "Go is an open-source programming language that focuses on simplicity, reliability, and efficiency",
+      "Formatting issues are the most contentious but the least consequential.",
+      "Finally, the convention in Go is to use MixedCaps or mixedCaps rather than underscores to write multiword names.",
+      "Another handy format is %T, which prints the type of a value.",
+      "This is only an example but real library functions should avoid panic.",
+      "And there you have it: a useful web server in a few lines of code plus some data-driven HTML text."
+    ],
+    "mustExclude": [
+      "Common problems companies solve with Go",
+      "Tips for writing clear, performant, and idiomatic Go code",
+      "Learn and network with Go developers from around the world",
+      "go.dev uses cookies from Google to deliver and enhance the quality of its services"
+    ],
+    "minCodeBlocks": 140,
+    "codeLanguages": [
+      "go"
+    ],
+    "minHeadings": 55,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "node-fs",
+    "url": "https://nodejs.org/api/fs.html",
+    "tier": 5,
+    "category": "docs",
+    "language": "en",
+    "notes": "Huge single API page, JS code, ESM/CJS toggles; article = div#apicontent (starts at h2 'File system'); page <h1> is the site header 'Node.js v26.10.0 documentation', so the expected title is the section h2; huge: 105 <pre> (each holding both ESM and CJS variants), ~300 h3-h6 API headings, 123 tables (mostly version-History tables inside collapsed <details>, plus fs.constants tables); left module nav (#column2) and the TOC/picker header (#gtoc, details#toc) are boilerplate",
+    "title": "File system",
+    "mustInclude": [
+      "The node:fs module enables interacting with the file system in a way modeled on standard POSIX functions.",
+      "Promise-based operations return a promise that is fulfilled when the asynchronous operation is complete.",
+      "To be notified when the file was modified, not just accessed, it is necessary to compare curr.mtimeMs and prev.mtimeMs.",
+      "On Linux, positional writes don't work when the file is opened in append mode.",
+      "A call to fs.ftruncate() or filehandle.truncate() can be used to reset the file contents."
+    ],
+    "mustExclude": [
+      "Asynchronous context tracking",
+      "Single executable applications",
+      "Code repository and issue tracker",
+      "View on single page"
+    ],
+    "minCodeBlocks": 95,
+    "codeLanguages": [
+      "javascript"
+    ],
+    "minHeadings": 250,
+    "minTables": 5,
+    "annotationConfidence": "medium"
+  },
+  {
+    "id": "postgres-window",
+    "url": "https://www.postgresql.org/docs/current/tutorial-window.html",
+    "tier": 2,
+    "category": "docs",
+    "language": "en",
+    "notes": "PostgreSQL docs, SQL code, result tables; article = div#TUTORIAL-WINDOW.sect1 (headline is its h2 '3.5. Window Functions', page has no h1); 10 <pre> (6 SQL programlisting + 4 psql result 'screen' blocks; result tables are plain text in <pre>, not <table>); one footnote [5]; navheader/navfooter layout tables and 'Submit correction' box are boilerplate",
+    "title": "3.5. Window Functions",
+    "mustInclude": [
+      "A window function performs a calculation across a set of table rows that are somehow related to the current row.",
+      "A window function call always contains an OVER clause directly following the window function's name and argument(s).",
+      "We already saw that ORDER BY can be omitted if the ordering of rows is not important.",
+      "Window functions are permitted only in the SELECT list and the ORDER BY clause of the query.",
+      "More details about window functions can be found in Section 4.2.8, Section 9.22, Section 7.2.5, and the SELECT reference page.",
+      "There are options to define the window frame in other ways, but this tutorial does not cover them."
+    ],
+    "mustExclude": [
+      "September 24, 2026: PostgreSQL 19 Beta 4 Released!",
+      "Unsupported versions: 13 / 12 / 11 / 10 / 9.6",
+      "If you see anything in the documentation that is not correct, does not match your experience",
+      "Copyright © 1996-2026 The PostgreSQL Global Development Group"
+    ],
+    "minCodeBlocks": 10,
+    "codeLanguages": [
+      "sql"
+    ],
+    "hasFootnotes": true,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "tailwind-states",
+    "url": "https://tailwindcss.com/docs/hover-focus-and-other-states",
+    "tier": 4,
+    "category": "docs",
+    "language": "en",
+    "notes": "Next.js docs, HTML/CSS code, previews",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "github-docs-git",
+    "url": "https://docs.github.com/en/get-started/using-git/about-git",
+    "tier": 3,
+    "category": "docs",
+    "language": "en",
+    "notes": "GitHub Docs (Next.js)",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "stripe-docs-payment",
+    "url": "https://docs.stripe.com/payments/accept-a-payment",
+    "tier": 5,
+    "category": "docs",
+    "language": "en",
+    "notes": "Stripe docs: heavy JS, language tabs",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "whatwg-parsing",
+    "url": "https://html.spec.whatwg.org/multipage/parsing.html",
+    "tier": 5,
+    "category": "reference",
+    "language": "en",
+    "notes": "Huge spec page, algorithms, notes",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "wiki-fourier",
+    "url": "https://en.wikipedia.org/wiki/Fourier_transform",
+    "tier": 4,
+    "category": "reference",
+    "language": "en",
+    "notes": "Wikipedia, math-heavy (MathML + images), tables",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "wiki-tokyo",
+    "url": "https://en.wikipedia.org/wiki/Tokyo",
+    "tier": 4,
+    "category": "reference",
+    "language": "en",
+    "notes": "Wikipedia, infobox, tables, galleries; article = div.mw-parser-output up to 'See also'; last main-text section is 'Sister cities and states' (prose line + short list items); infobox/multi-image captions present; 4 wikitables (3 collapsible climate tables + 1 sortable)",
+    "title": "Tokyo",
+    "mustInclude": [
+      "is the capital and most populous city of Japan. The population of the city proper was over 14 million",
+      "On September 1, 1923, the Great Kanto Earthquake struck the city, and the earthquake and subsequent fire killed",
+      "Tokyo's business districts are concentrated in four central wards",
+      "The Hachijō dialect, spoken primarily in Hachijōjima and Aogashima, descended from 6th-8th century Eastern Old Japanese",
+      "Tokyo has twinning or friendship agreements with the following twelve cities and states"
+    ],
+    "mustExclude": [
+      "This page was last edited on 5 October 2026",
+      "Text is available under the Creative Commons Attribution-ShareAlike 4.0 License",
+      "From Wikipedia, the free encyclopedia",
+      "Articles related to Tokyo",
+      "Pages using the Kartographer extension"
+    ],
+    "minImages": 15,
+    "minHeadings": 30,
+    "minTables": 3,
+    "annotationConfidence": "medium"
+  },
+  {
+    "id": "wiki-largest-cities",
+    "url": "https://en.wikipedia.org/wiki/List_of_largest_cities",
+    "tier": 4,
+    "category": "reference",
+    "language": "en",
+    "notes": "Wikipedia, very long tables; short prose intro + Definitions section, then one huge sortable wikitable (the 'List' section) which is the end of the main text; last prose paragraph is the one-liner before the table; 'Human settlement' sidebar and navboxes are boilerplate",
+    "title": "List of largest cities",
+    "mustInclude": [
+      "The United Nations uses three definitions for what constitutes a city",
+      "may not include suburban areas where an important proportion of the population working or studying in the city lives",
+      "metropolitan areas are established either as a local administrative organisation or only for statistical purposes",
+      "an urban area is a continuously built up land mass of urban development that is within a labor market",
+      "There are 85 cities in the world with a population exceeding 5 million people"
+    ],
+    "mustExclude": [
+      "This page was last edited on 5 October 2026",
+      "Text is available under the Creative Commons Attribution-ShareAlike 4.0 License",
+      "From Wikipedia, the free encyclopedia",
+      "Settlement hierarchy",
+      "World's largest cities"
+    ],
+    "minImages": 1,
+    "minHeadings": 4,
+    "minTables": 1,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "wiki-turing",
+    "url": "https://en.wikipedia.org/wiki/Alan_Turing",
+    "tier": 3,
+    "category": "reference",
+    "language": "en",
+    "notes": "Wikipedia biography, references, infobox; article = mw-parser-output up to 'Further reading' (which precedes 'See also' here); last main-text paragraph is the 2023 fourth-plinth paragraph in 'Government apology and pardon'; many templatequote blockquotes; navboxes + authority control are boilerplate",
+    "title": "Alan Turing",
+    "mustInclude": [
+      "He formalised the concepts of algorithm and computation with the Turing machine, a model of a general-purpose computer",
+      "while his father, Julius Mathison Turing, was on leave from his position with the Indian Civil Service",
+      "Turing had specified an electromechanical machine called the bombe, which could break Enigma more effectively",
+      "On 8 June, Turing's housekeeper found him dead at his home at 43 Adlington Road, Wilmslow.",
+      "suggested Turing should be honoured with a permanent statue on the fourth plinth of Trafalgar Square"
+    ],
+    "mustExclude": [
+      "This page was last edited on 2 October 2026",
+      "Text is available under the Creative Commons Attribution-ShareAlike 4.0 License",
+      "Fellows of the Royal Society elected in 1951",
+      "Existential risk from artificial intelligence",
+      "Authority control databases"
+    ],
+    "minImages": 10,
+    "minHeadings": 20,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "plato-consciousness",
+    "url": "https://plato.stanford.edu/entries/consciousness/",
+    "tier": 3,
+    "category": "academic",
+    "language": "en",
+    "notes": "Stanford Encyclopedia, long academic, bibliography; article = #preamble + #main-text (sections 1-10, ends with '10. Conclusion'); Bibliography is a reference list (neutral); Academic Tools / Other Internet Resources / Related Entries / donation banner / footer menus are boilerplate; no images",
+    "title": "Consciousness",
+    "mustInclude": [
+      "Perhaps no aspect of mind is more familiar or more puzzling than consciousness",
+      "Neolithic burial practices appear to express spiritual beliefs and provide early evidence",
+      "If an organism senses and responds in apt ways to its world but lacks such qualia",
+      "Consciousness has been thought to open a realm of possibilities, a sphere of options",
+      "There is unlikely to be any single theoretical perspective that suffices"
+    ],
+    "mustExclude": [
+      "The Encyclopedia Now Needs Your Support",
+      "Look up topics and thinkers related to this entry at the Internet Philosophy Ontology Project",
+      "The Stanford Encyclopedia of Philosophy is copyright © 2026 by The Metaphysics Research Lab",
+      "Open access to the SEP is made possible by a world-wide funding initiative.",
+      "Info about mirror sites"
+    ],
+    "minHeadings": 40,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "arxiv-mistral",
+    "url": "https://arxiv.org/html/2310.06825",
+    "tier": 4,
+    "category": "academic",
+    "language": "en",
+    "notes": "arXiv HTML (LaTeXML), math, tables, figures; LaTeXML article: abstract + sections 1-6 + Acknowledgements, then References; last main-text paragraph = Conclusion; 6 figures (img), 5 tables (T1-T5), MathML, 4 inline ltx_note footnotes; report-issue modal, header nav and arXiv footer are boilerplate",
+    "title": "Mistral 7B",
+    "mustInclude": [
+      "We introduce Mistral 7B, a 7–billion-parameter language model engineered for superior performance and efficiency.",
+      "the race towards higher model performance often necessitates an escalation in model size",
+      "The main parameters of the architecture are summarized in Table 1.",
+      "we designed a self-reflection prompt that makes Mistral 7B classify a prompt or a generated answer",
+      "language models may compress knowledge more than what was previously thought"
+    ],
+    "mustExclude": [
+      "Instructions for reporting errors",
+      "We gratefully acknowledge support from our major funders",
+      "arXiv is now an independent nonprofit!",
+      "Content selection saved. Describe the issue below:",
+      "Tip: You can select the relevant text first, to include it in your report."
+    ],
+    "minImages": 5,
+    "minHeadings": 7,
+    "minTables": 4,
+    "hasMath": true,
+    "hasFootnotes": true,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "arxiv-mixtral",
+    "url": "https://arxiv.org/html/2401.04088",
+    "tier": 4,
+    "category": "academic",
+    "language": "en",
+    "notes": "arXiv HTML (LaTeXML), math, tables, figures; LaTeXML article: abstract + sections 1-6 + Acknowledgements, References, then 2 appendix figures (F9, F10) after the bibliography; last main-text paragraph = Conclusion; 8 figures before refs, 5 data tables + equation tables, MathML, 3 ltx_note footnotes",
+    "title": "Mixtral of Experts",
+    "mustInclude": [
+      "Mixtral has the same architecture as Mistral 7B, with the difference that each layer is composed of 8 feedforward blocks",
+      "It is a decoder-only model where the feedforward block picks from a set of 8 distinct groups of parameters.",
+      "we significantly upsample the proportion of multilingual data during pretraining",
+      "Only for DM Mathematics we note a marginally different distribution of experts.",
+      "the first mixture-of-experts network to reach a state-of-the-art performance among open-source models"
+    ],
+    "mustExclude": [
+      "Instructions for reporting errors",
+      "We gratefully acknowledge support from our major funders",
+      "arXiv is now an independent nonprofit!",
+      "Content selection saved. Describe the issue below:",
+      "Tip: You can select the relevant text first, to include it in your report."
+    ],
+    "minImages": 6,
+    "minHeadings": 10,
+    "minTables": 4,
+    "hasMath": true,
+    "hasFootnotes": true,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "distill-momentum",
+    "url": "https://distill.pub/2017/momentum/",
+    "tier": 5,
+    "category": "academic",
+    "language": "en",
+    "notes": "Distill: custom elements, math, interactive figures, footnotes; article = dt-article (ends with 'Onwards and Downwards') + dt-appendix footnotes (11 dt-fn; footnote text duplicated in hidden hover boxes); figures are JS/SVG interactive (no <img>), so no minImages; KaTeX math throughout; 'Updates and Corrections'/'Citations and Reuse'/Distill footer are boilerplate",
+    "title": "Why Momentum Really Works",
+    "mustInclude": [
+      "gradient descent is a man walking down a hill. He follows the steepest path downwards",
+      "The problem could be the optimizer’s old nemesis, pathological curvature.",
+      "This system is best imagined as a weight suspended on a spring.",
+      "Lowering the step-size, for example, decreases the stochastic error, but also slows down the rate of convergence.",
+      "The study of acceleration is seeing a small revival within the optimization community.",
+      "It is possible, however, to construct very specific counterexamples where momentum does not converge, even on convex functions."
+    ],
+    "mustExclude": [
+      "Distill is dedicated to clear explanations of machine learning",
+      "View all changes to this article since it was first published.",
+      "For attribution in academic contexts, please cite this work as",
+      "About Submit Prize Archive RSS GitHub Twitter ISSN 2476-0757"
+    ],
+    "minHeadings": 12,
+    "hasMath": true,
+    "hasFootnotes": true,
+    "annotationConfidence": "medium"
+  },
+  {
+    "id": "distill-augmented-rnns",
+    "url": "https://distill.pub/2016/augmented-rnns/",
+    "tier": 5,
+    "category": "academic",
+    "language": "en",
+    "notes": "Distill: custom elements, footnotes, citations; article = dt-article (ends with 'The Big Picture'); has dt-cite citations but no dt-fn footnotes, so hasFootnotes omitted; ~7 static <img> diagrams + inline SVG figures; two <pre> blocks are figure data, not code; Distill appendix (updates/citation) and footer are boilerplate",
+    "title": "Attention and Augmented Recurrent Neural Networks",
+    "mustInclude": [
+      "Recurrent neural networks are one of the staples of deep learning",
+      "When I’m translating a sentence, I pay special attention to the word I’m presently translating.",
+      "It’s a sigmoid neuron that looks at the RNN state and gives a halting weight",
+      "A human with a piece of paper is, in some sense, much smarter than a human without.",
+      "Augmented recurrent neural networks, and the underlying technique of attention, are incredibly exciting."
+    ],
+    "mustExclude": [
+      "Distill is dedicated to clear explanations of machine learning",
+      "View all changes to this article since it was first published.",
+      "For attribution in academic contexts, please cite this work as",
+      "About Submit Prize Archive RSS GitHub Twitter ISSN 2476-0757"
+    ],
+    "minImages": 5,
+    "minHeadings": 7,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "gwern-scaling",
+    "url": "https://gwern.net/scaling-hypothesis",
+    "tier": 5,
+    "category": "academic",
+    "language": "en",
+    "notes": "gwern.net: sidenotes, collapses, huge; article = #markdownBody: abstract, admonition, sections (top-level section headings are <h1>, subsections h2-h6: 13 of those), Appendix ('It From Byte' ... 'Ambient Agency') is part of the essay and its last paragraph is the end of the main text; then 34 footnotes; Backlinks/Similar/Bibliography are JS placeholders; 9 figures; sidenotes are JS-generated from footnotes",
+    "title": "The Scaling Hypothesis",
+    "mustInclude": [
+      "GPT-3, announced by OpenAI in May 2020, is the largest neural network ever trained, by over an order of magnitude.",
+      "Big models work because they encode a dizzyingly vast number of sub-models in an extremely high-dimensional abstract space",
+      "The implication here is that the final few bits are the most valuable bits",
+      "It turned out, it’s Hans Moravec’s world, and the rest of us were just living in a fool’s paradise.",
+      "other than to advise yet again to abandon the seductive, convenient, but wrong idea that tool AIs",
+      "BiT is now more accurate at predicting (cleaned, corrected) ImageNet labels than the original ImageNet labels are."
+    ],
+    "mustExclude": [
+      "Site Me New Blog Links Patreon Substack",
+      "Send Anonymous Feedback",
+      "adblock public service announcement",
+      "Similar links by topic",
+      "insight porn, AI safety, RL scaling, sociology, transhumanism"
+    ],
+    "minImages": 7,
+    "minHeadings": 10,
+    "hasFootnotes": true,
+    "annotationConfidence": "medium"
+  },
+  {
+    "id": "ciechanowski-watch",
+    "url": "https://ciechanow.ski/mechanical-watch/",
+    "tier": 5,
+    "category": "interactive",
+    "language": "en",
+    "notes": "Interactive WebGL article, sliders; all prose in raw HTML (div.article); section headings are <h1> (so minHeadings omitted); all demonstrations are JS/WebGL drawn at runtime (only <img> are anchor icons), so no minImages; ends with 'Final Words'",
+    "title": "Mechanical Watch",
+    "mustInclude": [
+      "merely a few decades ago the most convenient way to keep track of time",
+      "notice the two pinkish transparent parts at its end. These are jewels made from synthetic ruby",
+      "Personally, I think this entire mechanism known as the keyless works is a real mechanical marvel.",
+      "That rounded rectangle surrounding the watch corresponds to the size of a credit card",
+      "Mechanical watches are not as accurate as digital ones. They require maintenance and are more fragile."
+    ],
+    "mustExclude": [
+      "If you enjoy these articles, consider supporting on Patreon.",
+      "Copyright © 2026 Bartosz Ciechanowski",
+      "Blog Archives"
+    ],
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "ciechanowski-gps",
+    "url": "https://ciechanow.ski/gps/",
+    "tier": 5,
+    "category": "interactive",
+    "language": "en",
+    "notes": "Interactive WebGL article; all prose in raw HTML (div.article); section headings are <h1> (so minHeadings omitted); demonstrations are JS/WebGL (only <img> are anchor icons); one small table#message_table (navigation-message frame diagram) not counted as a data table; ends with 'Final Words'",
+    "title": "GPS",
+    "mustInclude": [
+      "Global Positioning System is, without a doubt, one of the most useful inventions of the late 20th century.",
+      "The process of calculating a location of a point using measurement of distances is called trilateration",
+      "We’re not only calculating the correct position, but also the exact value of the bias of our clock",
+      "GPS solves this problem by employing another binary code.",
+      "All of their work made GPS an indispensable tool in our everyday life."
+    ],
+    "mustExclude": [
+      "If you enjoy these articles, consider supporting on Patreon.",
+      "Copyright © 2026 Bartosz Ciechanowski",
+      "Blog Archives"
+    ],
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "guardian-skulls",
+    "url": "https://www.theguardian.com/science/2026/oct/05/skull-fractures-suggest-servants-of-egypts-ancient-kings-were-sacrificed",
+    "tier": 3,
+    "category": "news",
+    "language": "en",
+    "notes": "Guardian article; body = div.article-body-commercial-select (17 paragraphs, 2 inline captioned photos) plus lead photo above headline; standfirst is a dek; tag list, most viewed, newsletter pitch and footer are boilerplate",
+    "title": "Skull fractures suggest servants of Egypt’s ancient kings were sacrificed",
+    "mustInclude": [
+      "Court officials and craftspeople serving early Egyptian kings may have been sacrificed when their ruler died",
+      "excavated in the 1920s by the English Egyptologist Flinders Petrie, who believed them to be an example of human sacrifice",
+      "18 of the skulls showed signs of potentially lethal trauma such as fractures",
+      "The practice was short-lived, with people being replaced by statuettes.",
+      "While noting that the study only involved a small number of skulls from the burial site"
+    ],
+    "mustExclude": [
+      "Original reporting and incisive analysis, direct from the Guardian every morning",
+      "© 2026 Guardian News & Media Limited or its affiliated companies. All rights reserved.",
+      "Explore more on these topics",
+      "Prefer the Guardian on Google",
+      "Complaints & corrections"
+    ],
+    "minImages": 2,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "guardian-cambridge",
+    "url": "https://www.theguardian.com/news/2018/mar/17/cambridge-analytica-facebook-influence-us-election",
+    "tier": 3,
+    "category": "news",
+    "language": "en",
+    "notes": "Guardian long feature, embedded media; body = div.article-body-commercial-select; ends with the Bannon's-lawyer paragraph, followed by an Observer-archive note (boilerplate); lead media is a video; inline 'Profile' (key players) and 'Quick Guide' details-widgets and a pull quote sit inside the body (left out of both lists); two element-interactive embeds are JS placeholders (link to interactive.guim.co.uk embed.html, no iframe in raw HTML), so hasEmbeds omitted; 1 inline photo",
+    "title": "Revealed: 50 million Facebook profiles harvested for Cambridge Analytica in major data breach",
+    "mustInclude": [
+      "harvested millions of Facebook profiles of US voters, in one of the tech giant’s biggest ever data breaches",
+      "The data was collected through an app called thisisyourdigitallife, built by academic Aleksandr Kogan",
+      "They waited two years and did absolutely nothing to check that the data was deleted.",
+      "The algorithm and database together made a powerful political tool.",
+      "The first Mr Bannon heard of these reports was from media inquiries in the past few days."
+    ],
+    "mustExclude": [
+      "Online bookies accused of UK privacy breaches with use of cookie banners",
+      "Sign in or create your Guardian account to join the discussion",
+      "The Observer is now owned and operated by Tortoise Media.",
+      "Original reporting and incisive analysis, direct from the Guardian every morning",
+      "© 2026 Guardian News & Media Limited or its affiliated companies. All rights reserved."
+    ],
+    "minImages": 1,
+    "annotationConfidence": "medium"
+  },
+  {
+    "id": "guardian-gallery-theatres",
+    "url": "https://www.theguardian.com/stage/gallery/2026/oct/05/take-a-seat-the-ritzy-glamour-of-australias-historic-theatres-and-cinemas-in-pictures",
+    "tier": 4,
+    "category": "boilerplate",
+    "language": "en",
+    "notes": "Guardian photo gallery: captions are the content; gallery: standfirst + lead photo + 11 captioned photos (12 <figure>/<img> in main); captions are the content, last one is the Prince of Wales Opera House in Gulgong; 'More on this story', newsletter and footer are boilerplate",
+    "title": "Take a seat: the ritzy glamour of Australia’s historic theatres and cinemas – in pictures",
+    "mustInclude": [
+      "Photographer Gavin John’s new book, Australian Theatres & Cinemas, documents the country’s finest stage performance and picture palaces",
+      "The auditorium of the Palais theatre as seen from the stage in St Kilda, Victoria.",
+      "The orchestra pit and auditorium of His Majesty’s Theatre in Perth viewed from the stage, Western Australia.",
+      "The Wurlitzer and organ pipes viewed from the stalls of the Capri theatre in Goodwood, South Australia.",
+      "The auditorium of the Prince of Wales Opera House in Gulgong, NSW."
+    ],
+    "mustExclude": [
+      "Eliza review – an ambitious, unsettling play about the birth of AI",
+      "AI threatens to destroy so much of our culture. Our greatest loss might be our ability to listen",
+      "Original reporting and incisive analysis, direct from the Guardian every morning",
+      "© 2026 Guardian News & Media Limited or its affiliated companies. All rights reserved.",
+      "Rural and regional Australia"
+    ],
+    "minImages": 10,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "bbc-news-a",
+    "url": "https://www.bbc.co.uk/news/articles/cwj3413e5m1lo",
+    "tier": 3,
+    "category": "news",
+    "language": "en",
+    "notes": "BBC News article (Next.js); body = RichTextContainer paragraphs after the lead video; ends with the Diego Garcia paragraph before 'Related topics'; inline promo links ('What prompted...', 'What makes RAF Fairford...') inside the body are boilerplate; 1 inline map image (no caption text)",
+    "title": "Trump says 'threat' led US to pull bombers from RAF Fairford",
+    "mustInclude": [
+      "President Donald Trump has said the US moved its bombers out of RAF Fairford because of",
+      "Trump was asked if a \"specific threat\" had led the US to pull its bombers from the airbase.",
+      "sources in Washington speculated to the BBC it might have revolved around sabotage attempts",
+      "has been used as a forward operating location by the US air force for decades",
+      "The planes could potentially be sent to either Diego Garcia or bases in the Gulf"
+    ],
+    "mustExclude": [
+      "What makes RAF Fairford one of the UK's most important military sites?",
+      "What we know about RAF Fairford counter-terror probe",
+      "Watch our pick of standout clips from across the BBC",
+      "Copyright © 2026 BBC. The BBC is not responsible for the content of external sites.",
+      "Author and former politician Jeffrey Archer dies aged 86"
+    ],
+    "minImages": 1,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "bbc-news-b",
+    "url": "https://www.bbc.co.uk/news/articles/ckj0l401dvpgo",
+    "tier": 3,
+    "category": "news",
+    "language": "en",
+    "notes": "BBC News article (Next.js); body = RichTextContainer paragraphs after the lead video; ends with the Zahawi quote before 'Related topics'; inline obituary promo link is boilerplate; 1 inline photo (Archer with Thatcher)",
+    "title": "Author and former politician Jeffrey Archer dies aged 86",
+    "mustInclude": [
+      "Bestselling author and former politician Jeffrey Archer has died at the age of 86.",
+      "was jailed for perjury in 2001 after being found guilty of lying and cheating in his 1987 libel case",
+      "What I got a real thrill about when I was walking towards the library",
+      "the author had been at the Leicester Square Theatre in London on Sunday, signing books for fans",
+      "His gift for storytelling was matched by his wit, warmth and boundless energy."
+    ],
+    "mustExclude": [
+      "Jeffrey Archer obituary: successful novelist, disgraced politician and convicted liar",
+      "Watch our pick of standout clips from across the BBC",
+      "Copyright © 2026 BBC. The BBC is not responsible for the content of external sites.",
+      "US 'watching closely' after plague researcher dies in Russia",
+      "Fake blood and lots of mud: The designer bringing costumes to life"
+    ],
+    "minImages": 1,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "npr-ukraine",
+    "url": "https://www.npr.org/2026/10/05/nx-s1-5925803/drones-buzz-overhead-troops-hunker-underground-in-ukraines-hellish-kill-zone",
+    "tier": 3,
+    "category": "news",
+    "language": "en",
+    "notes": "NPR feature with photos; body = div#storytext (4 captioned photos, 3 h3 subheads, interleaved 'Sponsor Message' ad slots); last main paragraph is 'A kind of war...' followed by a contributor credit line; 'Ukraine invasion — explained' series box, hidden div.speakable summary, audio-player embed code, anti-fraud note and footer are boilerplate",
+    "title": "Drones buzz overhead, troops hunker underground in Ukraine's hellish kill zone",
+    "mustInclude": [
+      "The front line in the Russia-Ukraine war stretches the entire length of this country, from north to south.",
+      "Nightfall doesn't make it any safer to move because the drones have thermal cameras that detect body heat",
+      "Ukraine had no real drone industry at the start of the full-scale invasion in 2022.",
+      "Two years ago, Ukraine became the first country to establish drones as an independent branch of its military.",
+      "A kind of war, he predicts, that the world will see more often."
+    ],
+    "mustExclude": [
+      "NPR does not offer or accept money for coverage or interviews.",
+      "The roots of Russia's invasion of Ukraine go back decades and run deep.",
+      "Here are some helpful stories to make sense of it all.",
+      "Become an NPR sponsor",
+      "Keyboard shortcuts for audio player"
+    ],
+    "minImages": 4,
+    "minHeadings": 3,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "npr-hastert",
+    "url": "https://www.npr.org/2026/10/05/g-s1-146452/dennis-hastert-republican-house-speaker-dies-obit",
+    "tier": 3,
+    "category": "news",
+    "language": "en",
+    "notes": "NPR obituary (wire copy); AP wire copy in div#storytext, 1 lead photo; the first paragraph is duplicated verbatim in a hidden div.speakable, so the opening snippet is taken from paragraph 2; ends with 'Survivors include his wife, Jean, and two adult sons.'",
+    "title": "Dennis Hastert, longtime Republican House speaker who went to prison, dies at age 84",
+    "mustInclude": [
+      "Hastert, who was speaker from 1999 until 2007, died Saturday of natural causes at his home",
+      "In all, he paid more than $1.7 million out of $3.5 million that he had promised to Individual A",
+      "Hastert's aides briefed him on the possibility that he might become acting president",
+      "Hastert became wealthy largely through a complex web of transactions",
+      "Survivors include his wife, Jean, and two adult sons."
+    ],
+    "mustExclude": [
+      "NPR does not offer or accept money for coverage or interviews.",
+      "Become an NPR sponsor",
+      "Keyboard shortcuts for audio player",
+      "Wild Card with Rachel Martin",
+      "Your Privacy Choices"
+    ],
+    "minImages": 1,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "aljazeera-ethiopia",
+    "url": "https://www.aljazeera.com/news/2026/10/5/ethiopias-pm-insists-on-access-to-red-sea-despite-regional-conflict-threat",
+    "tier": 3,
+    "category": "news",
+    "language": "en",
+    "notes": "Al Jazeera English; body = div.wysiwyg (featured image + 1 inline photo); a 'Recommended Stories' list is injected inside the body after paragraph 2 (boilerplate); ends with the Foreign Ministry paragraph",
+    "title": "Ethiopia’s PM insists on access to Red Sea despite regional conflict threat",
+    "mustInclude": [
+      "Ethiopia’s Prime Minister Abiy Ahmed has insisted that his landlocked country must have access to the Red Sea",
+      "we will work diligently to ensure that Ethiopia has an outlet to the sea",
+      "violating a three-year-old peace deal that ended a devastating two-year war between the parties",
+      "Four of the five countries bordering the Red Sea – Egypt, Eritrea, Sudan and Somalia – met on Sunday",
+      "Ethiopia’s Foreign Ministry said discussions over the Red Sea must account for the country’s"
+    ],
+    "mustExclude": [
+      "Ethiopian gov’t forces advance in Tigray as rebels retreat: What to know",
+      "Somali president: Ethiopia can access our port, but must negotiate",
+      "© 2026 Al Jazeera Media Network",
+      "Al Jazeera Centre for Public Liberties & Human Rights",
+      "Add Al Jazeera on Google"
+    ],
+    "minImages": 2,
+    "annotationConfidence": "high"
+  },
+  {
+    "id": "propublica-machine-bias",
+    "url": "https://www.propublica.org/article/machine-bias-risk-assessments-in-criminal-sentencing",
+    "tier": 3,
+    "category": "news",
+    "language": "en",
+    "notes": "ProPublica long investigation, images, charts",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "propublica-enid",
+    "url": "https://www.propublica.org/article/enid-oklahoma-oil-disposal-well-plugged",
+    "tier": 3,
+    "category": "news",
+    "language": "en",
+    "notes": "ProPublica article, donation boxes",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "verge-wikipedia-bots",
+    "url": "https://www.theverge.com/news/1004929/wikipedia-openai-rogue-bots-wikimedia-foundation-outage",
+    "tier": 3,
+    "category": "news",
+    "language": "en",
+    "notes": "The Verge article, embeds",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "verge-decomps",
+    "url": "https://www.theverge.com/games/1004869/reverse-engineered-games-all-the-news-on-video-game-decomps-recomps-vr-and-web-and-3d-ports",
+    "tier": 5,
+    "category": "boilerplate",
+    "language": "en",
+    "notes": "The Verge StoryStream hub: list of many posts",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "quanta-fourth-dimension",
+    "url": "https://www.quantamagazine.org/what-does-the-fourth-dimension-actually-look-like-20261001/",
+    "tier": 3,
+    "category": "news",
+    "language": "en",
+    "notes": "Quanta: illustrations, pull quotes",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "quanta-ai-math",
+    "url": "https://www.quantamagazine.org/is-ai-the-end-of-math-as-we-know-it-20261005/",
+    "tier": 3,
+    "category": "news",
+    "language": "en",
+    "notes": "Quanta essay",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "aeon-intelligence",
+    "url": "https://aeon.co/essays/why-real-intelligence-is-something-more-than-optimisation",
+    "tier": 3,
+    "category": "news",
+    "language": "en",
+    "notes": "Aeon long essay (Next.js)",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "restofworld-memory",
+    "url": "https://restofworld.org/2026/ai-data-center-memory-chip-shortage-cheap-smartphones-digital-divide/",
+    "tier": 3,
+    "category": "news",
+    "language": "en",
+    "notes": "Rest of World article",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "wired-exoplanet",
+    "url": "https://www.wired.com/story/astronomers-confirm-discovery-of-youngest-known-exoplanet-ever/",
+    "tier": 4,
+    "category": "news",
+    "language": "en",
+    "notes": "Wired (Condé Nast), ads, newsletter, paywall overlay",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "techcrunch-openai-watermark",
+    "url": "https://techcrunch.com/2026/10/05/openai-will-start-watermarking-chatgpts-text-in-the-eu/",
+    "tier": 3,
+    "category": "news",
+    "language": "en",
+    "notes": "TechCrunch WordPress VIP",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "theregister-debian",
+    "url": "https://www.theregister.com/os-platforms/2026/10/05/debians-latest-kernel-security-update-has-1313-reasons-to-patch/5301124",
+    "tier": 3,
+    "category": "news",
+    "language": "en",
+    "notes": "The Register",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "engadget-wikimedia",
+    "url": "https://www.engadget.com/2278051/wikimedia-links-openai-agents-to-an-outage-and-unauthorized-activity/",
+    "tier": 3,
+    "category": "news",
+    "language": "en",
+    "notes": "Engadget",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "nasa-hubble",
+    "url": "https://science.nasa.gov/missions/hubble/suspected-second-generation-planet-solves-nasa-hubble-cold-case/",
+    "tier": 3,
+    "category": "news",
+    "language": "en",
+    "notes": "NASA science WordPress, images",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "foxnews-planet-fitness",
+    "url": "https://www.foxnews.com/us/convicted-child-predator-allegedly-attacks-two-women-inside-planet-fitness-womens-locker-room",
+    "tier": 4,
+    "category": "boilerplate",
+    "language": "en",
+    "notes": "Fox News: ads, related links, video",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "hn-debugbear",
+    "url": "https://www.debugbear.com/blog/example-dot-com-redesign-history",
+    "tier": 3,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "Marketing blog post, screenshots",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "zenn-npm",
+    "url": "https://zenn.dev/npm_tech/articles/c589433eb5ef52",
+    "tier": 3,
+    "category": "non-english",
+    "language": "ja",
+    "notes": "Zenn (Next.js), Japanese, code",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "zenn-tokium",
+    "url": "https://zenn.dev/tokium_dev/articles/4dbec90075dab0",
+    "tier": 3,
+    "category": "non-english",
+    "language": "ja",
+    "notes": "Zenn, Japanese, code",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "qiita-a",
+    "url": "https://qiita.com/shirakurak/items/ee7565d212fd3ae1adcb",
+    "tier": 3,
+    "category": "non-english",
+    "language": "ja",
+    "notes": "Qiita, Japanese, code",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "qiita-b",
+    "url": "https://qiita.com/suwa_nobu/items/5252da854dbebe02cccc",
+    "tier": 3,
+    "category": "non-english",
+    "language": "ja",
+    "notes": "Qiita, Japanese, code",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "ruanyifeng-commit",
+    "url": "https://www.ruanyifeng.com/blog/2016/01/commit_message_change_log.html",
+    "tier": 2,
+    "category": "non-english",
+    "language": "zh",
+    "notes": "Ruan Yifeng blog, Chinese, code, comments",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "ruanyifeng-weekly",
+    "url": "https://www.ruanyifeng.com/blog/2026/09/weekly-issue-413.html",
+    "tier": 3,
+    "category": "non-english",
+    "language": "zh",
+    "notes": "Weekly digest: Chinese, many images and links",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "sspai-post",
+    "url": "https://sspai.com/post/115308",
+    "tier": 4,
+    "category": "non-english",
+    "language": "zh",
+    "notes": "sspai (Vue), Chinese",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "zhwiki-great-wall",
+    "url": "https://zh.wikipedia.org/wiki/长城",
+    "tier": 4,
+    "category": "non-english",
+    "language": "zh",
+    "notes": "Chinese Wikipedia",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "yna-news",
+    "url": "https://www.yna.co.kr/view/AKR20261006025300008",
+    "tier": 3,
+    "category": "non-english",
+    "language": "ko",
+    "notes": "Yonhap, Korean news",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "hani-news",
+    "url": "https://www.hani.co.kr/arti/society/environment/1281038.html",
+    "tier": 3,
+    "category": "non-english",
+    "language": "ko",
+    "notes": "Hankyoreh, Korean news",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "kowiki-hangul",
+    "url": "https://ko.wikipedia.org/wiki/한글",
+    "tier": 4,
+    "category": "non-english",
+    "language": "ko",
+    "notes": "Korean Wikipedia",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "bbc-arabic",
+    "url": "https://www.bbc.com/arabic/articles/cr5yn3n7xdv9o",
+    "tier": 3,
+    "category": "non-english",
+    "language": "ar",
+    "notes": "BBC Arabic, RTL",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "aljazeera-arabic",
+    "url": "https://www.aljazeera.net/news/2026/10/6/%d8%aa%d8%b1%d9%85%d8%a8-%d9%8a%d8%b9%d8%b1%d8%b6-%d9%85%d8%b3%d8%a7%d8%b9%d8%af%d8%a9-%d8%b1%d9%88%d8%b3%d9%8a%d8%a7-%d9%81%d9%8a-%d8%a7%d8%ad%d8%aa%d9%88%d8%a7%d8%a1-%d8%ae%d8%b7%d8%b1",
+    "tier": 3,
+    "category": "non-english",
+    "language": "ar",
+    "notes": "Al Jazeera Arabic, RTL",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "ynet-news",
+    "url": "https://www.ynet.co.il/news/article/rjvbshbigg",
+    "tier": 4,
+    "category": "non-english",
+    "language": "he",
+    "notes": "ynet Hebrew, RTL, heavy ads",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "hewiki-jerusalem",
+    "url": "https://he.wikipedia.org/wiki/ירושלים",
+    "tier": 4,
+    "category": "non-english",
+    "language": "he",
+    "notes": "Hebrew Wikipedia, RTL",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "bbc-hindi",
+    "url": "https://www.bbc.com/hindi/articles/cm62ydk1w52eo",
+    "tier": 3,
+    "category": "non-english",
+    "language": "hi",
+    "notes": "BBC Hindi, Devanagari",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "habr-a",
+    "url": "https://habr.com/ru/articles/1090772/",
+    "tier": 3,
+    "category": "non-english",
+    "language": "ru",
+    "notes": "Habr, Russian, code",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "habr-b",
+    "url": "https://habr.com/ru/articles/1090760/",
+    "tier": 3,
+    "category": "non-english",
+    "language": "ru",
+    "notes": "Habr, Russian, code",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "heise-github",
+    "url": "https://www.heise.de/news/Ausfall-bei-GitHub-Actions-Pages-und-Abrechnung-gestoert-11476876.html",
+    "tier": 3,
+    "category": "non-english",
+    "language": "de",
+    "notes": "heise online, German, cookie consent",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "spiegel-spain",
+    "url": "https://www.spiegel.de/ausland/wohnungskrise-in-spanien-gewerkschaften-rufen-zum-generalstreik-auf-a-21d19ec4-f67e-4c73-a11b-7e0c36481f34",
+    "tier": 3,
+    "category": "non-english",
+    "language": "de",
+    "notes": "Der Spiegel, German",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "linuxfr-debian",
+    "url": "https://linuxfr.org/news/debian-ia-vibe-coding-rsync-la-croisee-des-chemins",
+    "tier": 4,
+    "category": "non-english",
+    "language": "fr",
+    "notes": "LinuxFr news with long comment threads",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "frwiki-paris",
+    "url": "https://fr.wikipedia.org/wiki/Paris",
+    "tier": 4,
+    "category": "non-english",
+    "language": "fr",
+    "notes": "French Wikipedia",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "bbc-mundo",
+    "url": "https://www.bbc.com/mundo/articles/c8x234212407o",
+    "tier": 3,
+    "category": "non-english",
+    "language": "es",
+    "notes": "BBC Mundo, Spanish",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "elpais-vivienda",
+    "url": "https://elpais.com/economia/2026-10-05/los-sindicatos-ugt-y-cc-oo-iran-a-la-huelga-general-por-la-crisis-de-la-vivienda.html",
+    "tier": 3,
+    "category": "non-english",
+    "language": "es",
+    "notes": "El País, Spanish",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "dewiki-berlin",
+    "url": "https://de.wikipedia.org/wiki/Berlin",
+    "tier": 4,
+    "category": "non-english",
+    "language": "de",
+    "notes": "German Wikipedia",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "jawiki-tokyo",
+    "url": "https://ja.wikipedia.org/wiki/東京都",
+    "tier": 4,
+    "category": "non-english",
+    "language": "ja",
+    "notes": "Japanese Wikipedia",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "arwiki-cairo",
+    "url": "https://ar.wikipedia.org/wiki/القاهرة",
+    "tier": 4,
+    "category": "non-english",
+    "language": "ar",
+    "notes": "Arabic Wikipedia, RTL",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "ruwiki-moscow",
+    "url": "https://ru.wikipedia.org/wiki/Москва",
+    "tier": 4,
+    "category": "non-english",
+    "language": "ru",
+    "notes": "Russian Wikipedia",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "recipetineats-schnitzel",
+    "url": "https://www.recipetineats.com/oven-baked-chicken-schnitzel/",
+    "tier": 5,
+    "category": "boilerplate",
+    "language": "en",
+    "notes": "Recipe blog: ads, step photos, recipe card, comments",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "loveandlemons-pumpkin-soup",
+    "url": "https://www.loveandlemons.com/pumpkin-soup-recipe/",
+    "tier": 5,
+    "category": "boilerplate",
+    "language": "en",
+    "notes": "Recipe blog: ads, recipe card, comments",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "scottaaronson-post",
+    "url": "https://scottaaronson.blog/?p=10062",
+    "tier": 3,
+    "category": "boilerplate",
+    "language": "en",
+    "notes": "WordPress blog post with long comment wall",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "slashdot-wikipedia-bots",
+    "url": "https://news.slashdot.org/story/26/10/05/1932228/wikipedia-operator-says-openais-rogue-bots-may-be-linked-to-a-may-outage",
+    "tier": 4,
+    "category": "boilerplate",
+    "language": "en",
+    "notes": "Slashdot story: short summary, huge comment threads",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "lesswrong-how-would-we-know",
+    "url": "https://www.lesswrong.com/posts/ZjAEgv3mrimKNepa5/how-would-we-know-reflections-on-trying-to-make-ai-go-well",
+    "tier": 4,
+    "category": "tech-blog",
+    "language": "en",
+    "notes": "LessWrong (React SSR), footnotes, comments",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "noahpinion-sf-eras",
+    "url": "https://www.noahpinion.blog/p/four-eras-of-san-francisco-tech-culture",
+    "tier": 3,
+    "category": "simple-blog",
+    "language": "en",
+    "notes": "Substack custom domain, subscribe boxes, images",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  },
+  {
+    "id": "tagesschau-nobel",
+    "url": "https://www.tagesschau.de/wissen/gesundheit/optogenetik-nobelpreis-100.html",
+    "tier": 3,
+    "category": "non-english",
+    "language": "de",
+    "notes": "tagesschau.de, German news",
+    "title": "",
+    "mustInclude": [],
+    "mustExclude": []
+  }
+]
