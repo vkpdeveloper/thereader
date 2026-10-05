@@ -41,12 +41,9 @@ function blockText(block: Block, out: string[]): void {
       out.push(block.code);
       break;
     case 'figure':
-      if (block.caption) out.push(inlineText(block.caption));
-      if (block.credit) out.push(inlineText(block.credit));
-      break;
     case 'video':
     case 'audio':
-      if (block.caption) out.push(inlineText(block.caption));
+      // Captions belong to their media, not the running text (schema.org articleBody semantics).
       break;
     case 'embed':
       for (const child of block.blocks ?? []) blockText(child, out);
