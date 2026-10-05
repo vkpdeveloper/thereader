@@ -52,7 +52,7 @@ export function TopChrome({
       <IconButton icon={BorderColorIcon} label="Highlights" shortcut="H" onClick={() => onPanel('highlights')} {...tool('highlights')} />
       <IconButton icon={SearchIcon} label="Search book" shortcut="/" onClick={() => onPanel('search')} {...tool('search')} />
       <IconButton icon={TextFieldsIcon} label="Typography" shortcut="A" onClick={() => onPanel('typography')} {...tool('typography')} />
-      <IconButton className="desktop-only-flex" icon={KeyboardIcon} label="Keyboard shortcuts" shortcut="?" onClick={onShortcuts} />
+      <IconButton className="desktop-only-flex" icon={KeyboardIcon} label="Keyboard shortcuts" shortcut="?" tooltipSide="left" onClick={onShortcuts} />
       {fullscreen !== null && (
         <IconButton
           className="desktop-only-flex"

@@ -552,15 +552,16 @@ kbd {
 .desktop-only {
   display: none;
 }
-.desktop-only-flex {
-  display: none !important;
-}
 @media (min-width: 900px) {
   .desktop-only {
     display: block;
   }
+}
+/* Hidden on narrow screens only, so wider ones keep the element's own display
+   (an icon button's centring grid). */
+@media (max-width: 899.98px) {
   .desktop-only-flex {
-    display: inline-flex !important;
+    display: none !important;
   }
 }
 
