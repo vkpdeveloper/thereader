@@ -200,6 +200,13 @@ function sameSite(a: string, b: string): boolean {
   return host(a) !== '' && host(a) === host(b);
 }
 
+/** A canonical URL on the page's own host that only drops the https it was fetched over keeps https. */
+function keepHttps(url: string, pageUrl: string): string {
+  if (!/^http:\/\//i.test(url) || !/^https:\/\//i.test(pageUrl)) return url;
+  const host = (u: string) => /^https?:\/\/([^/?#]*)/i.exec(u)![1]!.toLowerCase();
+  return host(url) === host(pageUrl) ? 'https://' + url.slice(7) : url;
+}
+
 function pathOf(url: string): string {
   const m = /^https?:\/\/[^/?#]+([^?#]*)/i.exec(url);
   return m === null || m[1] === '' ? '/' : m[1]!;
@@ -307,7 +314,7 @@ export function readMetadata(doc: VDocument, pageUrl: string): Metadata {
     if (candidate === null) continue;
     const abs = resolveUrl(candidate, pageUrl);
     if (isAbsoluteHttp(abs) && sameSite(abs, pageUrl) && !(pathOf(abs) === '/' && pathOf(pageUrl) !== '/')) {
-      url = canonicalUrl(abs);
+      url = keepHttps(canonicalUrl(abs), pageUrl);
       break;
     }
   }

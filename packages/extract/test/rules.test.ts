@@ -56,3 +56,13 @@ test('an author block above the text is not a paragraph; author names further do
   expect(a.byline).toBe('Ann Lee');
   expect(a.blocks.map((b) => (b.type === 'paragraph' ? b.content.map((i) => ('text' in i ? i.text : '')).join('') : b.type))).toEqual([PROSE.trim(), 'Cited: Ann Lee and Bo Chen, An example, 2020.']);
 });
+
+test('a canonical URL that only drops https on the same host keeps https', () => {
+  const url = (canonical: string, page: string) => {
+    const html = `<html><head><title>Rule test page</title><link rel="canonical" href="${canonical}"></head><body><article><h1>Rule test page</h1><p>${PROSE}</p></article></body></html>`;
+    return extract(new JSDOM(html, { virtualConsole: new VirtualConsole() }).window.document, { url: page })!.url;
+  };
+  expect(url('http://distill.pub/2017/momentum', 'https://distill.pub/2017/momentum/')).toBe('https://distill.pub/2017/momentum');
+  expect(url('http://www.example.com/a', 'https://example.com/a')).toBe('http://www.example.com/a');
+  expect(url('http://example.com/a', 'http://example.com/b')).toBe('http://example.com/a');
+});

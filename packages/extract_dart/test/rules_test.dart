@@ -113,4 +113,18 @@ void main() {
       [_prose.trim(), 'Cited: Ann Lee and Bo Chen, An example, 2020.'],
     );
   });
+
+  test('a canonical URL that only drops https on the same host keeps https', () {
+    String url(String canonical, String page) => extractHtml(
+      '<html><head><title>Rule test page</title><link rel="canonical" href="$canonical"></head><body><article>'
+      '<h1>Rule test page</h1><p>$_prose</p></article></body></html>',
+      page,
+    )!.url;
+    expect(
+      url('http://distill.pub/2017/momentum', 'https://distill.pub/2017/momentum/'),
+      'https://distill.pub/2017/momentum',
+    );
+    expect(url('http://www.example.com/a', 'https://example.com/a'), 'http://www.example.com/a');
+    expect(url('http://example.com/a', 'http://example.com/b'), 'http://example.com/a');
+  });
 }

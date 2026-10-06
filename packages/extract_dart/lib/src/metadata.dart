@@ -293,6 +293,17 @@ bool _sameSite(String a, String b) {
 
 final _pathRe = RegExp(r'^https?:\/\/[^/?#]+([^?#]*)', caseSensitive: false);
 
+final _httpScheme = RegExp(r'^http://', caseSensitive: false);
+final _httpsScheme = RegExp(r'^https://', caseSensitive: false);
+final _authority = RegExp(r'^https?://([^/?#]*)', caseSensitive: false);
+
+/// A canonical URL on the page's own host that only drops the https it was fetched over keeps https.
+String _keepHttps(String url, String pageUrl) {
+  if (!_httpScheme.hasMatch(url) || !_httpsScheme.hasMatch(pageUrl)) return url;
+  String host(String u) => jsLower(_authority.firstMatch(u)![1]!);
+  return host(url) == host(pageUrl) ? 'https://${url.substring(7)}' : url;
+}
+
 String _pathOf(String url) {
   final m = _pathRe.firstMatch(url);
   return m == null || m[1] == '' ? '/' : m[1]!;
@@ -479,7 +490,7 @@ Metadata readMetadata(VDocument doc, String pageUrl) {
     if (candidate == null) continue;
     final abs = resolveUrl(candidate, pageUrl);
     if (_isAbsoluteHttp(abs) && _sameSite(abs!, pageUrl) && !(_pathOf(abs) == '/' && _pathOf(pageUrl) != '/')) {
-      url = canonicalUrl(abs);
+      url = _keepHttps(canonicalUrl(abs), pageUrl);
       break;
     }
   }
