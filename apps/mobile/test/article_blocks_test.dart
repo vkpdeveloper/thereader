@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:thereader/core/theme/app_colors.dart';
@@ -89,5 +90,51 @@ void main() {
         ?.fontStyle;
     expect(styleOf('A short quotation.'), FontStyle.italic);
     expect(styleOf('An abstract'), FontStyle.normal);
+  });
+
+  testWidgets('a note mark stays with its word and closing punctuation never starts a line', (tester) async {
+    final orphans = <double>[];
+    for (var width = 120.0; width <= 360; width += 3) {
+      await tester.pumpWidget(
+        blocksAt(width, [
+          ParagraphBlock([
+            const TextRun('多くの首都機能が集約しており、事実上の首都である'),
+            FootnoteRef(id: 'n2', label: '2'),
+            const TextRun('。そのため文献の中には東京都を首都だと明言するものもある'),
+            FootnoteRef(id: 'n12', label: '12'),
+            const TextRun('。'),
+          ]),
+        ]),
+      );
+      final paragraph = tester.renderObject<RenderParagraph>(find.byType(RichText).first);
+      final text = paragraph.text.toPlainText(includeSemanticsLabels: false);
+      double top(int i) => paragraph.getBoxesForSelection(TextSelection(baseOffset: i, extentOffset: i + 1)).first.top;
+      for (final mark in ['²', '¹²']) {
+        final at = text.indexOf(mark);
+        final dot = at + mark.length;
+        // The mark sits on its word's line and the full stop on the mark's.
+        if (top(at) > top(at - 2) + 1 || top(dot) > top(dot - 1) + 1) orphans.add(width);
+      }
+    }
+    expect(orphans, isEmpty);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('punctuation after inline math stays with the formula', (tester) async {
+    await tester.pumpWidget(
+      blocksAt(300, [
+        ParagraphBlock([
+          const TextRun('when optimizing a smooth function '),
+          InlineMath(tex: 'f', text: 'f'),
+          const TextRun(', we make a small step'),
+        ]),
+      ]),
+    );
+    await tester.pumpAndSettle();
+    final math = find.byType(Math);
+    final inline = find.ancestor(of: math, matching: find.byType(RichText)).first;
+    expect(tester.widget<RichText>(inline).text.toPlainText(), '￼,');
+    expect(find.textContaining(' we make a small step', findRichText: true), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }

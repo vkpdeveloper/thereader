@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -78,6 +79,16 @@ Widget screen(AppServices services) => AppScope(
   services: services,
   child: MaterialApp(theme: AppTheme.dark, home: ArticleScreen(summary: summary)),
 );
+
+/// Where [glyphs] are drawn, in the first paragraph that contains them.
+Offset glyphCenter(WidgetTester tester, String glyphs) {
+  final paragraph = tester
+      .renderObjectList<RenderParagraph>(find.byType(RichText))
+      .firstWhere((p) => p.text.toPlainText(includeSemanticsLabels: false).contains(glyphs));
+  final at = paragraph.text.toPlainText(includeSemanticsLabels: false).indexOf(glyphs);
+  final box = paragraph.getBoxesForSelection(TextSelection(baseOffset: at, extentOffset: at + glyphs.length)).first;
+  return paragraph.localToGlobal(box.toRect().center);
+}
 
 Finder rich(String text) => find.textContaining(text, findRichText: true);
 
@@ -160,7 +171,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(rich('The first note.'), findsNothing, reason: 'blocks build lazily');
-    await tester.tap(find.text('1'));
+    await tester.tapAt(glyphCenter(tester, '¹'));
     await tester.pumpAndSettle();
     final note = tester.getRect(rich('The first note.'));
     expect(note.top, inInclusiveRange(0, 844));

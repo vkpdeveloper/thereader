@@ -37,13 +37,74 @@ class _ArticleTextState extends State<ArticleText> {
     super.dispose();
   }
 
+  /// Closing punctuation that must stay on the line of what it follows.
+  static final _closing = RegExp(r'^[.,;:!?%)\]}»”’…。、，．：；！？）］｝」』〕〉》】〗〙〛]+');
+  static final _numeric = RegExp(r'^[0-9]+$');
+  static final _trailingSpace = RegExp(r'\s$');
+  static const _superscripts = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+
   @override
   Widget build(BuildContext context) {
     _clear();
     final scope = ArticleScope.of(context);
-    final children = [for (final node in widget.content) _span(node, scope)];
+    final content = widget.content;
+    final children = <InlineSpan>[];
+    for (var i = 0; i < content.length; i++) {
+      final node = content[i];
+      final previous = i > 0 ? content[i - 1] : null;
+      if (node case FootnoteRef(:final id, :final label) when _numeric.hasMatch(label)) {
+        final glued = previous is TextRun && !previous.text.contains(_trailingSpace);
+        children.add(_noteMark(id, label, glued, scope));
+        continue;
+      }
+      final span = _span(node, scope);
+      // The line may break on either side of an inline widget whatever its
+      // neighbours, so punctuation that closes it travels inside it rather
+      // than starting the next line.
+      final next = i + 1 < content.length ? content[i + 1] : null;
+      final closing = span is WidgetSpan && next is TextRun ? _closing.firstMatch(next.text)?.group(0) : null;
+      if (closing == null || next is! TextRun) {
+        children.add(span);
+        continue;
+      }
+      children.add(_withTrailing(span as WidgetSpan, _span(TextRun(closing, marks: next.marks, href: next.href), scope)));
+      if (next.text.length > closing.length) {
+        children.add(_span(TextRun(next.text.substring(closing.length), marks: next.marks, href: next.href), scope));
+      }
+      i++;
+    }
     return Text.rich(TextSpan(style: widget.style, children: children), textAlign: widget.textAlign);
   }
+
+  /// A numbered note reference as raised figures in the text itself, so it
+  /// breaks like text: a word joiner keeps it on the line of the word it
+  /// marks, and the punctuation after it never starts a line.
+  InlineSpan _noteMark(String id, String label, bool glued, ArticleScope scope) {
+    final recognizer = TapGestureRecognizer()..onTap = () => scope.onFootnote(id);
+    _recognizers.add(recognizer);
+    final figures = String.fromCharCodes(label.codeUnits.map((c) => _superscripts.codeUnitAt(c - 0x30)));
+    return TextSpan(
+      text: '${glued ? '\u2060' : ''}$figures',
+      semanticsLabel: 'Note $label',
+      recognizer: recognizer,
+      style: widget.style.copyWith(color: scope.style.colors.primary, fontWeight: FontWeight.w700),
+    );
+  }
+
+  /// [span] followed by [trailing] as one unbreakable inline.
+  WidgetSpan _withTrailing(WidgetSpan span, InlineSpan trailing) => WidgetSpan(
+        alignment: PlaceholderAlignment.baseline,
+        baseline: TextBaseline.alphabetic,
+        child: Text.rich(
+          TextSpan(
+            style: widget.style,
+            children: [WidgetSpan(alignment: span.alignment, baseline: span.baseline, child: span.child), trailing],
+          ),
+          // The enclosing paragraph already scales its inline widgets.
+          textScaler: TextScaler.noScaling,
+          softWrap: false,
+        ),
+      );
 
   InlineSpan _span(Inline node, ArticleScope scope) {
     final colors = scope.style.colors;
@@ -75,7 +136,7 @@ class _ArticleTextState extends State<ArticleText> {
                 border: Border.all(color: colors.borderActive.withValues(alpha: 0.6)),
                 borderRadius: BorderRadius.circular(4),
               ),
-              child: Text(text, style: style.copyWith(height: 1.3)),
+              child: Text(text, style: style.copyWith(height: 1.3), textScaler: TextScaler.noScaling),
             ),
           );
         }
@@ -104,7 +165,9 @@ class _ArticleTextState extends State<ArticleText> {
               tex,
               mathStyle: MathStyle.text,
               textStyle: base.copyWith(height: 1),
-              onErrorFallback: (_) => Text(text, style: base.copyWith(fontStyle: FontStyle.italic)),
+              textScaleFactor: 1,
+              onErrorFallback: (_) =>
+                  Text(text, style: base.copyWith(fontStyle: FontStyle.italic), textScaler: TextScaler.noScaling),
             ),
           ),
         );
@@ -126,6 +189,7 @@ class _ArticleTextState extends State<ArticleText> {
                   child: Text(
                     label,
                     style: base.copyWith(fontSize: size * 0.68, color: colors.primary, fontWeight: FontWeight.w700),
+                    textScaler: TextScaler.noScaling,
                   ),
                 ),
               ),
@@ -138,7 +202,10 @@ class _ArticleTextState extends State<ArticleText> {
   WidgetSpan _shifted(String text, TextStyle style, {required bool up, required double size}) => WidgetSpan(
         alignment: PlaceholderAlignment.baseline,
         baseline: TextBaseline.alphabetic,
-        child: Transform.translate(offset: Offset(0, up ? -size * 0.38 : size * 0.18), child: Text(text, style: style)),
+        child: Transform.translate(
+          offset: Offset(0, up ? -size * 0.38 : size * 0.18),
+          child: Text(text, style: style, textScaler: TextScaler.noScaling),
+        ),
       );
 
   static TextStyle _marked(TextRun run, TextStyle base, ArticleScope scope) {
