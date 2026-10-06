@@ -1,17 +1,24 @@
+/** Schemes a resolved URL may carry; decided after parsing, which strips the control characters that hide a scheme. */
+const SAFE_SCHEME = /^(?:https?|mailto|tel):/i;
+
 /**
- * Resolves `href` against `base`. Returns null for empty, script and
- * malformed values. Whitespace inside the value is percent-encoded first so
- * both implementations agree on sloppy publisher markup.
+ * Resolves `href` against `base`. Returns an http(s), `mailto:` or `tel:` URL,
+ * a `data:` value as written (callers keep only raster images), or null for
+ * empty, malformed and every other scheme. Whitespace inside the value is
+ * percent-encoded first so both implementations agree on sloppy publisher
+ * markup.
  */
 export function resolveUrl(href: string, base: string): string | null {
   const value = href.trim().replace(/[\t\n\r]/g, '').replace(/ /g, '%20');
-  if (value.length === 0 || /^(?:javascript|vbscript|about|blob):/i.test(value)) return null;
+  if (value.length === 0) return null;
   if (/^data:/i.test(value)) return value;
+  let url: string;
   try {
-    return new URL(value, base).href;
+    url = new URL(value, base).href;
   } catch {
     return null;
   }
+  return SAFE_SCHEME.test(url) ? url : null;
 }
 
 /** http(s) only. */

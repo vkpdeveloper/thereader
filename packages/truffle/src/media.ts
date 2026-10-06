@@ -41,7 +41,7 @@ export function parseSrcset(value: string, base: string): Candidate[] {
       descriptor = value.slice(start, i).trim();
     }
     const abs = resolveUrl(url, base);
-    if (abs === null || (!/^https?:/i.test(abs) && !/^data:image\/(?:jpe?g|png|webp|gif)/i.test(abs))) continue;
+    if (abs === null || (!/^https?:/i.test(abs) && !/^data:image\/(?:jpe?g|png|webp|gif)[;,]/i.test(abs))) continue;
     let width = 0;
     let density = 1;
     const w = /(\d+)w/.exec(descriptor);
@@ -233,7 +233,11 @@ export function youtubeVideo(id: string, title?: string): Video {
   return video;
 }
 
-/** A player iframe as a video, audio or embed block; null for anything else (ads, widgets). */
+/**
+ * A player iframe as a video, audio or embed block; null for anything else
+ * (ads, widgets). `src` must already be resolved to http(s): several providers
+ * keep it as their URL.
+ */
 export function mediaFromFrame(src: string, title: string | undefined): Video | Audio | Embed | null {
   let m = YOUTUBE.exec(src);
   if (m !== null) return youtubeVideo(m[1]!, title);
@@ -257,12 +261,14 @@ export function mediaFromFrame(src: string, title: string | undefined): Video | 
   if (m !== null) return withTitle({ type: 'audio', provider: 'spotify', url: 'https://open.spotify.com/' + m[1] + '/' + m[2], embedUrl: 'https://open.spotify.com/embed/' + m[1] + '/' + m[2] });
   m = SOUNDCLOUD.exec(src);
   if (m !== null) {
-    let url = m[1]!;
+    let target = m[1]!;
     try {
-      url = decodeURIComponent(url);
+      target = decodeURIComponent(target);
     } catch {
       /* keep encoded */
     }
+    // The track page when the player names an absolute http(s) one, else the player itself.
+    const url = (/^https?:\/\//i.test(target) ? resolveHttp(target, src) : null) ?? src;
     return withTitle({ type: 'audio', provider: 'soundcloud', url, embedUrl: src });
   }
   m = APPLE_PODCASTS.exec(src);
@@ -405,10 +411,10 @@ export function mediaFromElement(el: VElement, base: string): Video | Audio | nu
     src = source?.attrs['src'] ?? source?.attrs['data-src'];
   }
   if (src === undefined) return null;
-  const frame = mediaFromFrame(src, undefined);
-  if (frame !== null && frame.type !== 'embed') return frame;
   const url = resolveHttp(src, base);
   if (url === null) return null;
+  const frame = mediaFromFrame(url, undefined);
+  if (frame !== null && frame.type !== 'embed') return frame;
   if (el.tag === 'audio') return { type: 'audio', provider: 'file', url };
   const video: Video = { type: 'video', provider: 'file', url };
   const poster = el.attrs['poster'] !== undefined ? resolveHttp(el.attrs['poster'], base) : null;
@@ -427,8 +433,9 @@ export function lazyVideo(el: VElement): Video | null {
     const m = /"videoId"\s*:\s*"([\w-]{11})"/.exec(attrs);
     if (m !== null) return youtubeVideo(m[1]!);
   }
-  if (el.tag === 'lite-vimeo' && el.attrs['videoid'] !== undefined) {
-    return { type: 'video', provider: 'vimeo', url: 'https://vimeo.com/' + el.attrs['videoid'], embedUrl: 'https://player.vimeo.com/video/' + el.attrs['videoid'] };
+  const vimeo = el.attrs['videoid'];
+  if (el.tag === 'lite-vimeo' && vimeo !== undefined && /^\d+$/.test(vimeo)) {
+    return { type: 'video', provider: 'vimeo', url: 'https://vimeo.com/' + vimeo, embedUrl: 'https://player.vimeo.com/video/' + vimeo };
   }
   return null;
 }

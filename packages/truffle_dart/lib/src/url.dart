@@ -7,18 +7,24 @@ import 'dart:convert';
 import 'js.dart';
 
 final _strip = RegExp(r'[\t\n\r]');
-final _unsafeScheme = RegExp(r'^(?:javascript|vbscript|about|blob):', caseSensitive: false);
 final _dataScheme = RegExp(r'^data:', caseSensitive: false);
 final _httpScheme = RegExp(r'^https?:\/\/', caseSensitive: false);
 
-/// Resolves [href] against [base]. Returns null for empty, script and
-/// malformed values. Whitespace inside the value is percent-encoded first so
-/// both implementations agree on sloppy publisher markup.
+/// Schemes a resolved URL may carry; decided after parsing, which strips the
+/// control characters that hide a scheme.
+final _safeScheme = RegExp(r'^(?:https?|mailto|tel):', caseSensitive: false);
+
+/// Resolves [href] against [base]. Returns an http(s), `mailto:` or `tel:`
+/// URL, a `data:` value as written (callers keep only raster images), or null
+/// for empty, malformed and every other scheme. Whitespace inside the value is
+/// percent-encoded first so both implementations agree on sloppy publisher
+/// markup.
 String? resolveUrl(String href, String base) {
   final value = jsTrim(href).replaceAll(_strip, '').replaceAll(' ', '%20');
-  if (value.isEmpty || _unsafeScheme.hasMatch(value)) return null;
+  if (value.isEmpty) return null;
   if (_dataScheme.hasMatch(value)) return value;
-  return whatwgHref(value, base);
+  final url = whatwgHref(value, base);
+  return url != null && _safeScheme.hasMatch(url) ? url : null;
 }
 
 /// http(s) only.

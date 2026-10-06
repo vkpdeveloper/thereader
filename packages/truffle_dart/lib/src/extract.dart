@@ -29,7 +29,7 @@ Article? extractHtml(String html, String url) => extractTree(fromDocument(html_p
 /// copied into a [VDocument]. Mutates [doc].
 Article? extractTree(VDocument doc, String url) {
   final pageUrl = url;
-  final base = doc.baseHref != null ? resolveUrl(doc.baseHref!, pageUrl) ?? pageUrl : pageUrl;
+  final base = doc.baseHref != null ? resolveHttp(doc.baseHref!, pageUrl) ?? pageUrl : pageUrl;
   final meta = readMetadata(doc, pageUrl);
   var title = _chooseTitle(meta, doc.body, pageUrl);
   final titleMatched = title != _titleFallback(meta, pageUrl);

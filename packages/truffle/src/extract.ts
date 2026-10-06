@@ -4,7 +4,7 @@ import { normalizeDate, readMetadata, type Metadata } from './metadata';
 import { ARTICLE_SCHEMA, type Article, type Block, type ExtractOptions, type Image, type Inline } from './model';
 import { blocksText, countWords, inlineText } from './text';
 import { collapse, fromDom, textOf, walk, type VDocument, type VElement } from './tree';
-import { hostOf, resolveUrl } from './url';
+import { hostOf, resolveHttp } from './url';
 
 /**
  * Extracts the readable article from a parsed page. Mutates `doc` nowhere:
@@ -23,7 +23,7 @@ export function extractHtml(html: string, options: ExtractOptions & { parse?: (h
 /** Platform-independent part of the pipeline (the Dart port mirrors everything from here on). */
 export function extractTree(doc: VDocument, options: ExtractOptions): Article | null {
   const pageUrl = options.url;
-  const base = doc.baseHref !== null ? resolveUrl(doc.baseHref, pageUrl) ?? pageUrl : pageUrl;
+  const base = doc.baseHref !== null ? resolveHttp(doc.baseHref, pageUrl) ?? pageUrl : pageUrl;
   const meta = readMetadata(doc, pageUrl);
   let title = chooseTitle(meta, doc.body, pageUrl);
   const titleMatched = title !== titleFallback(meta, pageUrl);

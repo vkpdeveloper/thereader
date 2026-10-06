@@ -3,7 +3,7 @@ import { detectLanguage, languageFromClass, normalizeLanguage } from './language
 import { frameBlock, imageFrom, isDecorativeImage, isSmallImage, lazyVideo, mediaFromElement, socialProvider, TWEET } from './media';
 import type { Block, Callout, Definition, Figure, Footnote, Image, Inline, ListItem, Mark, Table, TableCell, TableRow, TextRun } from './model';
 import { collapse, firstElement, rawText, walk, type VElement, type VNode } from './tree';
-import { resolveUrl } from './url';
+import { resolveHttp, resolveUrl } from './url';
 
 /** TeX left for MathJax/KaTeX: $$…$$ and \[…\] display, \(…\) inline. */
 const TEX_DELIMITED = /\$\$([^$]+?)\$\$|\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)/g;
@@ -777,7 +777,8 @@ export class Converter {
           return;
         }
         b.flush();
-        if (ctx.href !== null && image.href === undefined && ctx.href !== image.src && /\.(?:jpe?g|png|webp|gif|avif)(?:$|[?#])/i.test(ctx.href)) image.href = ctx.href;
+        // A linked full-size file; `mailto:`/`tel:` stay on text.
+        if (ctx.href !== null && image.href === undefined && ctx.href !== image.src && /^https?:/i.test(ctx.href) && /\.(?:jpe?g|png|webp|gif|avif)(?:$|[?#])/i.test(ctx.href)) image.href = ctx.href;
         out.push({ type: 'figure', images: [image] });
         return;
       }
@@ -1084,13 +1085,17 @@ export class Converter {
     const links: string[] = [];
     walk(el, (e) => {
       if (e.tag === 'a' && e.attrs['href'] !== undefined) {
-        const abs = resolveUrl(e.attrs['href'], this.base);
+        const abs = resolveHttp(e.attrs['href'], this.base);
         if (abs !== null) links.push(abs);
       }
       return true;
     });
     if (provider === 'twitter') url = links.filter((l) => TWEET.test(l)).pop() ?? null;
-    url ??= el.attrs['data-instgrm-permalink'] ?? el.attrs['cite'] ?? el.attrs['data-bluesky-uri'] ?? el.attrs['data-href'] ?? links[links.length - 1] ?? null;
+    for (const key of ['data-instgrm-permalink', 'cite', 'data-bluesky-uri', 'data-href']) {
+      const value = el.attrs[key];
+      url ??= value !== undefined ? resolveHttp(value, this.base) : null;
+    }
+    url ??= links[links.length - 1] ?? null;
     const blocks: Block[] = [];
     this.children(el, blocks);
     let author: string | undefined;

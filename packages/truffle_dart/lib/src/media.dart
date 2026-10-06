@@ -55,7 +55,7 @@ class _Candidate {
 final _space = RegExp(r'\s');
 final _trailingCommas = RegExp(r',+$');
 final _httpScheme = RegExp(r'^https?:', caseSensitive: false);
-final _dataImage = RegExp(r'^data:image\/(?:jpe?g|png|webp|gif)', caseSensitive: false);
+final _dataImage = RegExp(r'^data:image\/(?:jpe?g|png|webp|gif)[;,]', caseSensitive: false);
 final _wDesc = RegExp(r'(\d+)w');
 final _xDesc = RegExp(r'([\d.]+)x');
 
@@ -332,7 +332,11 @@ VideoBlock youtubeVideo(String id, [String? title]) {
   return video;
 }
 
-/// A player iframe as a video, audio or embed block; null for anything else (ads, widgets).
+final _httpUrl = RegExp(r'^https?:\/\/', caseSensitive: false);
+
+/// A player iframe as a video, audio or embed block; null for anything else
+/// (ads, widgets). [src] must already be resolved to http(s): several
+/// providers keep it as their URL.
 Block? mediaFromFrame(String src, String? title) {
   var m = _youtube.firstMatch(src);
   if (m != null) return youtubeVideo(m.group(1)!, title);
@@ -382,8 +386,10 @@ Block? mediaFromFrame(String src, String? title) {
   }
   m = _soundcloud.firstMatch(src);
   if (m != null) {
-    final url = m.group(1)!;
-    return audio('soundcloud', jsDecodeUriComponent(url) ?? url, src);
+    final target = jsDecodeUriComponent(m.group(1)!) ?? m.group(1)!;
+    // The track page when the player names an absolute http(s) one, else the player itself.
+    final url = (_httpUrl.hasMatch(target) ? resolveHttp(target, src) : null) ?? src;
+    return audio('soundcloud', url, src);
   }
   m = _applePodcasts.firstMatch(src);
   if (m != null) return audio('apple-podcasts', 'https://podcasts.apple.com/${m[1]}', src);
@@ -538,10 +544,10 @@ Block? mediaFromElement(VElement el, String base) {
     src = source?.attrs['src'] ?? source?.attrs['data-src'];
   }
   if (src == null) return null;
-  final frame = mediaFromFrame(src, null);
-  if (frame != null && frame is! EmbedBlock) return frame;
   final url = resolveHttp(src, base);
   if (url == null) return null;
+  final frame = mediaFromFrame(url, null);
+  if (frame != null && frame is! EmbedBlock) return frame;
   if (el.tag == 'audio') return AudioBlock(provider: 'file', url: url);
   final video = VideoBlock(provider: 'file', url: url);
   final poster = el.attrs['poster'] != null ? resolveHttp(el.attrs['poster']!, base) : null;
@@ -550,6 +556,7 @@ Block? mediaFromElement(VElement el, String base) {
 }
 
 final _youtubeId = RegExp(r'^[\w-]{11}$');
+final _digits = RegExp(r'^\d+$');
 final _videoClass = ClassPattern(r'youtube|yt-|video');
 final _videoIdJson = RegExp(r'"videoId"\s*:\s*"([\w-]{11})"');
 
@@ -566,11 +573,12 @@ VideoBlock? lazyVideo(VElement el) {
     final m = _videoIdJson.firstMatch(attrs);
     if (m != null) return youtubeVideo(m.group(1)!);
   }
-  if (el.tag == 'lite-vimeo' && el.attrs['videoid'] != null) {
+  final vimeo = el.attrs['videoid'];
+  if (el.tag == 'lite-vimeo' && vimeo != null && _digits.hasMatch(vimeo)) {
     return VideoBlock(
       provider: 'vimeo',
-      url: 'https://vimeo.com/${el.attrs['videoid']}',
-      embedUrl: 'https://player.vimeo.com/video/${el.attrs['videoid']}',
+      url: 'https://vimeo.com/$vimeo',
+      embedUrl: 'https://player.vimeo.com/video/$vimeo',
     );
   }
   return null;

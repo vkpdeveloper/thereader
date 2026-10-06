@@ -103,6 +103,7 @@ final _footnoteNumber = ClassPattern(r'footnote-number');
 final _footnoteContent = ClassPattern(r'footnote-content');
 final _mathFallback = ClassPattern(r'mwe-math-fallback-image');
 final _imageLink = RegExp(r'\.(?:jpe?g|png|webp|gif|avif)(?:$|[?#])', caseSensitive: false);
+final _httpLink = RegExp(r'^https?:', caseSensitive: false);
 final _labelBrackets = RegExp(r'^\[|\]$');
 final _backArrow = RegExp(r'^[↩↑^]');
 final _permalinkText = RegExp(r'^[#¶§🔗]?$', unicode: true);
@@ -960,7 +961,14 @@ class Converter {
         }
         b.flush();
         final href = ctx.href;
-        if (href != null && image.href == null && href != image.src && _imageLink.hasMatch(href)) image.href = href;
+        // A linked full-size file; `mailto:`/`tel:` stay on text.
+        if (href != null &&
+            image.href == null &&
+            href != image.src &&
+            _httpLink.hasMatch(href) &&
+            _imageLink.hasMatch(href)) {
+          image.href = href;
+        }
         out.add(FigureBlock(images: [image]));
         return;
       case 'math':
@@ -1307,7 +1315,7 @@ class Converter {
     walk(el, (e) {
       final href = e.attrs['href'];
       if (e.tag == 'a' && href != null) {
-        final abs = resolveUrl(href, base);
+        final abs = resolveHttp(href, base);
         if (abs != null) links.add(abs);
       }
       return true;
@@ -1316,12 +1324,11 @@ class Converter {
       final tweets = links.where(tweet.hasMatch).toList();
       url = tweets.isEmpty ? null : tweets.last;
     }
-    url ??=
-        el.attrs['data-instgrm-permalink'] ??
-        el.attrs['cite'] ??
-        el.attrs['data-bluesky-uri'] ??
-        el.attrs['data-href'] ??
-        (links.isEmpty ? null : links.last);
+    for (final key in const ['data-instgrm-permalink', 'cite', 'data-bluesky-uri', 'data-href']) {
+      final value = el.attrs[key];
+      url ??= value != null ? resolveHttp(value, base) : null;
+    }
+    url ??= links.isEmpty ? null : links.last;
     final blocks = <Block>[];
     children(el, blocks);
     String? author;
