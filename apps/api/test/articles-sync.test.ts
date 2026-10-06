@@ -260,6 +260,27 @@ describe("article bodies", () => {
     expect(cached.status).toBe(304);
   });
 
+  it("streams large chunked uploads in pieces", async () => {
+    const blocks = Array.from({ length: 4_000 }, (_, index) => ({ type: "paragraph", content: [{ type: "text", text: `Paragraph ${index} über café 日本語. ${"Words ".repeat(40)}` }] }));
+    const plain = encoder.encode(JSON.stringify({ ...article, blocks }));
+    expect(plain.byteLength).toBeGreaterThan(1024 * 1024);
+    const sha = await sha256(plain);
+    const compressed = await gzip(plain);
+    // No Content-Length, delivered in uneven pieces.
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        for (let offset = 0; offset < compressed.byteLength; offset += 7_919) controller.enqueue(compressed.slice(offset, offset + 7_919));
+        controller.close();
+      },
+    });
+    const response = await request(`/v1/article-bodies/${sha}`, { method: "PUT", headers: { "Content-Type": "application/gzip" }, body });
+    expect(response.status).toBe(201);
+    expect(await response.json()).toEqual({ sha256: sha, size: plain.byteLength, created: true });
+    const stored = await env.BOOKS.get(`articles/${sha}`);
+    expect(new Uint8Array(await stored!.arrayBuffer())).toEqual(compressed);
+    expect(stored!.customMetadata).toEqual({ size: String(plain.byteLength) });
+  });
+
   it("accepts plain JSON uploads", async () => {
     const plain = encoder.encode(JSON.stringify(article));
     const sha = await sha256(plain);
@@ -275,22 +296,48 @@ describe("article bodies", () => {
     expect(mismatch.status).toBe(422);
     expect((await mismatch.json() as any).error.code).toBe("CHECKSUM_MISMATCH");
 
-    for (const value of [{ ...article, schema: 2 }, { ...article, blocks: "no" }, [1, 2], "text"]) {
-      const bytes = encoder.encode(JSON.stringify(value));
-      const response = await put(await sha256(bytes), await gzip(bytes));
-      expect(response.status).toBe(422);
-      expect((await response.json() as any).error.code).toBe("INVALID_ARTICLE");
+    // The shape check looks at the document's ends only: `{"schema":1,` first
+    // (both clients serialize `schema` first, compactly) and `}` last.
+    const json = JSON.stringify(article);
+    const { schema, ...rest } = article;
+    const notArticles = [
+      JSON.stringify({ ...article, schema: 2 }),
+      JSON.stringify({ ...article, schema: 10 }),
+      JSON.stringify({ ...rest, schema }),
+      JSON.stringify(article, null, 2),
+      `${json}\n`,
+      json.slice(0, -1),
+      JSON.stringify([1, 2]),
+      JSON.stringify("text"),
+      "{nope",
+    ];
+    for (const value of notArticles) {
+      const bytes = encoder.encode(value);
+      for (const response of [await put(await sha256(bytes), await gzip(bytes)), await put(await sha256(bytes), bytes, "application/json")]) {
+        expect(response.status, value.slice(0, 40)).toBe(422);
+        expect((await response.json() as any).error.code).toBe("INVALID_ARTICLE");
+      }
     }
-    const notJson = encoder.encode("{nope");
-    expect((await put(await sha256(notJson), notJson, "application/json")).status).toBe(422);
+    // Not UTF-8 within the checked head.
+    const latin1 = new Uint8Array([...encoder.encode('{"schema":1,"url":"'), 0xe9, ...encoder.encode('"}')]);
+    expect((await put(await sha256(latin1), latin1, "application/json")).status).toBe(422);
+    const empty = new Uint8Array(0);
+    expect((await put(await sha256(empty), await gzip(empty))).status).toBe(422);
     const garbage = encoder.encode("not gzip at all");
     expect((await put(await sha256(garbage), garbage)).status).toBe(422);
+    const truncated = (await gzip(encoder.encode(json))).slice(0, -12);
+    expect((await put(await sha256(encoder.encode(json)), truncated)).status).toBe(422);
 
     // 8 MB is measured on the uncompressed document, so a small gzip bomb fails too.
     const huge = encoder.encode(JSON.stringify({ ...article, padding: "x".repeat(8 * 1024 * 1024) }));
     const bomb = await put(await sha256(huge), await gzip(huge));
     expect(bomb.status).toBe(413);
     expect((await put(await sha256(huge), huge, "application/json")).status).toBe(413);
+
+    // A highly compressible bomb is cut off while inflating, not after.
+    const zeros = await gzip(new Uint8Array(64 * 1024 * 1024));
+    expect(zeros.byteLength).toBeLessThan(1024 * 1024);
+    expect((await put("1".repeat(64), zeros)).status).toBe(413);
 
     const text = await put(await sha256(plain), plain, "text/plain");
     expect(text.status).toBe(415);
