@@ -466,6 +466,11 @@ export class Converter {
 
   /** Converts a container's children: phrasing runs become paragraphs, blocks convert in place. */
   children(el: VElement, out: Block[]): void {
+    const lone = loneCode(el);
+    if (lone !== null) {
+      this.code(lone, out);
+      return;
+    }
     const inline = new InlineBuilder(this, out);
     const ctx: Ctx = { marks: [], href: null };
     const kids = el.children;
@@ -1406,6 +1411,33 @@ function isAncestorOf(ancestor: VElement, node: VElement): boolean {
 }
 
 const NOTE_ITEM = /(?:^|[\s_-])(?:footnote|endnote)(?:$|[\s_-])/;
+
+/**
+ * A multi-line <code> that is all its container holds is a listing even
+ * without <pre> (`figure.code-block > code`, styled with white-space: pre).
+ */
+function loneCode(el: VElement): VElement | null {
+  let code: VElement | null = null;
+  for (const child of el.children) {
+    if (child.kind === 0) {
+      if (child.text.trim().length > 0) return null;
+      continue;
+    }
+    if (child.skip) continue;
+    if (code !== null || child.tag !== 'code') {
+      // Empty decorations (a language tag, a copy button) do not count.
+      if (child.tag !== 'img' && child.textLen < 20 && rawText(child).replace(ZERO_WIDTH, '').trim().length === 0 && !hasDescendant(child, 'img')) continue;
+      return null;
+    }
+    code = child;
+  }
+  if (code === null) return null;
+  const text = rawText(code).trim();
+  // One line is a listing too when the wrapper says so (a figure, a language, a code-block class).
+  return text.indexOf('\n') > 0 || el.tag === 'figure' || el.attrs['data-lang'] !== undefined || CODE_WRAPPER.test(el.matchString) ? code : null;
+}
+
+const CODE_WRAPPER = /(?:^|[\s_-])(?:code-?block|highlight|codehilite|sourcecode|code-snippet)(?:$|[\s_-])/;
 
 function isNoteItem(el: VElement): boolean {
   if (el.id.length === 0) return false;
