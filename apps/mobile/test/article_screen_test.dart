@@ -107,7 +107,8 @@ void main() {
     expect(rich('— Edsger W. Dijkstra'), findsOneWidget);
     expect(rich('Read slowly. The words will wait.'), findsOneWidget);
 
-    expect(find.text('fib.py  ·  Python'), findsOneWidget);
+    expect(find.text('fib.py'), findsOneWidget);
+    expect(find.text('Python'), findsOneWidget);
     expect(find.text('TypeScript'), findsOneWidget);
     expect(find.byTooltip('Copy code'), findsNWidgets(3));
     final python = tester.widget<RichText>(find.byWidgetPredicate((w) => w is RichText && w.text.toPlainText().startsWith('def fib')));

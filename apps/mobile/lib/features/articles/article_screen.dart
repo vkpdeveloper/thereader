@@ -528,7 +528,8 @@ class _Favicon extends StatelessWidget {
       );
 }
 
-/// Quiet corner readout of the share read, like the book reader's.
+/// Quiet corner readout of the share read, like the book reader's. Sits on a
+/// patch of paper so text and images scrolling beneath never run into it.
 class _ProgressReadout extends StatelessWidget {
   const _ProgressReadout({required this.percent});
 
@@ -536,17 +537,26 @@ class _ProgressReadout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => PositionedDirectional(
-        end: Space.gutter,
-        bottom: MediaQuery.paddingOf(context).bottom + Space.sm,
+        end: Space.gutter - 6,
+        bottom: MediaQuery.paddingOf(context).bottom + Space.sm - 2,
         child: IgnorePointer(
-          child: ValueListenableBuilder<double>(
-            valueListenable: percent,
-            builder: (context, p, _) => Text(
-              '${(p * 100).round()}%',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: context.colors.subtle,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: context.colors.paper,
+              borderRadius: const BorderRadius.all(Radii.sm),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              child: ValueListenableBuilder<double>(
+                valueListenable: percent,
+                builder: (context, p, _) => Text(
+                  '${(p * 100).round()}%',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: context.colors.subtle,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                ),
+              ),
             ),
           ),
         ),

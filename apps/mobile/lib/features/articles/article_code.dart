@@ -273,10 +273,8 @@ class _CodeBlockViewState extends State<CodeBlockView> {
     final colors = style.colors;
     final block = widget.block;
     final language = block.language ?? _code?.language;
-    final label = [
-      if (block.title != null) block.title!,
-      if (language != null) _labels[language] ?? language,
-    ].join('  ·  ');
+    final languageLabel = language == null ? null : _labels[language] ?? language;
+    final title = block.title;
     final tokens = _code?.tokens ?? [(block.code, null)];
     final spans = <TextSpan>[];
     for (var i = 0; i < tokens.length; i++) {
@@ -300,7 +298,17 @@ class _CodeBlockViewState extends State<CodeBlockView> {
               padding: const EdgeInsets.only(left: 14),
               child: Row(
                 children: [
-                  Expanded(child: Text(label, style: caption, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                  // A long file name gives way; the language always shows.
+                  Expanded(
+                    child: Row(
+                      children: [
+                        if (title != null)
+                          Flexible(child: Text(title, style: caption, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                        if (title != null && languageLabel != null) Text('  ·  ', style: caption),
+                        if (languageLabel != null) Text(languageLabel, style: caption, maxLines: 1),
+                      ],
+                    ),
+                  ),
                   IconButton(
                     onPressed: _copy,
                     tooltip: _copied ? 'Copied' : 'Copy code',

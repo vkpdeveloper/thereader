@@ -8,6 +8,9 @@ import 'article_media.dart';
 import 'article_style.dart';
 import 'article_text.dart';
 
+/// Characters beyond which a quote is set upright rather than in italics.
+const longQuote = 400;
+
 /// Draws one block of the article model with native widgets.
 class BlockView extends StatelessWidget {
   const BlockView({super.key, required this.block, this.depth = 0});
@@ -42,6 +45,9 @@ class BlockView extends StatelessWidget {
             ),
           );
         }
+        // Short quotes read as quotations; long ones (abstracts, excerpts that
+        // run for screens) stay upright in the body ink to remain readable.
+        final long = blocksText(blocks).length > longQuote;
         return Container(
           padding: EdgeInsetsDirectional.only(start: style.fontSize * 0.9),
           decoration: BoxDecoration(
@@ -50,7 +56,10 @@ class BlockView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              scope.restyled(style.derive(italic: true, ink: colors.muted), BlockColumn(blocks: blocks)),
+              if (long)
+                BlockColumn(blocks: blocks)
+              else
+                scope.restyled(style.derive(italic: true, ink: colors.muted), BlockColumn(blocks: blocks)),
               if (cite != null) ...[
                 SizedBox(height: style.innerGap),
                 ArticleText([const TextRun('— '), ...cite], style: style.caption),
@@ -77,14 +86,16 @@ class BlockView extends StatelessWidget {
         );
       case MathBlock(:final tex, :final text):
         final fallback = Text(text, style: style.body.copyWith(fontStyle: FontStyle.italic), textAlign: TextAlign.center);
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minWidth: MediaQuery.sizeOf(context).width - style.gutter * 2),
-            child: Center(
-              child: tex == null
-                  ? fallback
-                  : Math.tex(tex, textStyle: style.body.copyWith(height: 1), onErrorFallback: (_) => fallback),
+        return LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minWidth: constraints.maxWidth),
+              child: Center(
+                child: tex == null
+                    ? fallback
+                    : Math.tex(tex, textStyle: style.body.copyWith(height: 1), onErrorFallback: (_) => fallback),
+              ),
             ),
           ),
         );

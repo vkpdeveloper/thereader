@@ -95,13 +95,17 @@ class _ArticleTextState extends State<ArticleText> {
         );
       case InlineMath(:final tex, :final text):
         if (tex == null) return TextSpan(text: text, style: base.copyWith(fontStyle: FontStyle.italic));
+        // A formula wider than the line scrolls sideways instead of overflowing.
         return WidgetSpan(
           alignment: PlaceholderAlignment.middle,
-          child: Math.tex(
-            tex,
-            mathStyle: MathStyle.text,
-            textStyle: base.copyWith(height: 1),
-            onErrorFallback: (_) => Text(text, style: base.copyWith(fontStyle: FontStyle.italic)),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Math.tex(
+              tex,
+              mathStyle: MathStyle.text,
+              textStyle: base.copyWith(height: 1),
+              onErrorFallback: (_) => Text(text, style: base.copyWith(fontStyle: FontStyle.italic)),
+            ),
           ),
         );
       case FootnoteRef(:final id, :final label):
