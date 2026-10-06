@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test';
 import { JSDOM, VirtualConsole } from 'jsdom';
-import { extract, type Article, type Inline } from '../src/index';
+import { extract, inlineText, type Article, type Inline } from '../src/index';
 
 // Single rules on small pages; the same cases as packages/extract_dart/test/rules_test.dart.
 
@@ -89,4 +89,13 @@ test('a credit closing a caption goes to the credit; elements never glue a sente
       { type: 'text', text: ', see asyncio.TaskGroup.' },
     ],
   });
+});
+
+test('the lead of a topic-tag footer at the end goes; the same words inside the article stay', () => {
+  const blocks = (body: string) => {
+    const html = `<html><head><title>Rule test page</title></head><body><article><h1>Rule test page</h1><p>${PROSE}</p>${body}</article></body></html>`;
+    return extract(new JSDOM(html, { virtualConsole: new VirtualConsole() }).window.document, { url: 'https://example.com/a' })!.blocks.map((b) => (b.type === 'paragraph' ? inlineText(b.content) : b.type));
+  };
+  expect(blocks('<p>The play opens on Friday.</p><p>Explore more on these topics</p>')).toEqual([PROSE.trim(), 'The play opens on Friday.']);
+  expect(blocks('<p>Related topics:</p><p>The play opens on Friday.</p>')).toEqual([PROSE.trim(), 'Related topics:', 'The play opens on Friday.']);
 });

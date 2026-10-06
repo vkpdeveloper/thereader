@@ -317,6 +317,10 @@ bool _endsSentence(String text) {
 
 final _lowercaseStart = RegExp(r'^\s*\p{Ll}', unicode: true);
 final _closingLinkLine = RegExp(r'''[.!?]["'”’)]?$''');
+final _topicsLead = RegExp(
+  r'^(?:explore more on (?:these|this) topics?|more on (?:this|these) (?:story|stories|topics?)|(?:related )?topics|tags|filed under)\s*:?$',
+  caseSensitive: false,
+);
 final _updatedLabel = RegExp(r'^(?:last updated|updated|published|posted)(?: on)?:?$', caseSensitive: false);
 
 List<Block> _tidy(List<Block> input, String title, Metadata meta) {
@@ -454,6 +458,9 @@ List<Block> _tidy(List<Block> input, String title, Metadata meta) {
     final lastText = last is ParagraphBlock ? collapse(inlineText(last.content)) : '';
     if (last is ParagraphBlock &&
         (_isContactLine(lastText) || _isDateLine(jsLower(lastText)) || _updatedLabel.hasMatch(lastText))) {
+      blocks.removeLast();
+    } else if (last is ParagraphBlock && _topicsLead.hasMatch(lastText)) {
+      // The lead of a topic-tag footer whose links are gone ("Explore more on these topics").
       blocks.removeLast();
     } else if (last is ParagraphBlock &&
         lastText.length < 100 &&

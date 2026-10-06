@@ -132,11 +132,13 @@ void main() {
     String figure(String caption) =>
         '<figure><img src="https://example.com/${caption.length}.jpg" width="800" height="600"><figcaption>$caption</figcaption></figure>';
     final blocks = _blocks(
-      figure('The theatre in Perth, Western Australia.<small>Photograph: Gavin M John/The Guardian</small>') +
-          figure('The tomb of King Djer, in Abydos. Photograph: Mike P Shepherd/Alamy') +
-          figure('Image: Jose Mourinho, left, has replaced Mauricio Pochettino') +
-          '<p>Rep. Omar speaks at the Capitol on July 25, 2019.<span>J. Scott Applewhite / AP file</span> In '
-              '<code>asyncio.</code><code>TaskGroup</code>, see <span>asyncio.</span><span>TaskGroup</span>.</p>',
+      [
+        figure('The theatre in Perth, Western Australia.<small>Photograph: Gavin M John/The Guardian</small>'),
+        figure('The tomb of King Djer, in Abydos. Photograph: Mike P Shepherd/Alamy'),
+        figure('Image: Jose Mourinho, left, has replaced Mauricio Pochettino'),
+        '<p>Rep. Omar speaks at the Capitol on July 25, 2019.<span>J. Scott Applewhite / AP file</span> In '
+            '<code>asyncio.</code><code>TaskGroup</code>, see <span>asyncio.</span><span>TaskGroup</span>.</p>',
+      ].join(),
     );
     List<Object?> text(String t) => [
       {'type': 'text', 'text': t},
@@ -165,5 +167,25 @@ void main() {
         {'type': 'text', 'text': ', see asyncio.TaskGroup.'},
       ],
     });
+  });
+
+  test('the lead of a topic-tag footer at the end goes; the same words inside the article stay', () {
+    List<Object?> blocks(String body) => [
+      for (final b in extractHtml(
+        '<html><head><title>Rule test page</title></head><body><article><h1>Rule test page</h1><p>$_prose</p>$body'
+            '</article></body></html>',
+        'https://example.com/a',
+      )!.blocks)
+        b is ParagraphBlock ? inlineText(b.content) : b.toJson()['type'],
+    ];
+    expect(blocks('<p>The play opens on Friday.</p><p>Explore more on these topics</p>'), [
+      _prose.trim(),
+      'The play opens on Friday.',
+    ]);
+    expect(blocks('<p>Related topics:</p><p>The play opens on Friday.</p>'), [
+      _prose.trim(),
+      'Related topics:',
+      'The play opens on Friday.',
+    ]);
   });
 }

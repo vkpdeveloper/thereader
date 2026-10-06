@@ -371,6 +371,8 @@ function tidy(input: Block[], title: string, meta: Metadata): Block[] {
     const prev = blocks[blocks.length - 2]!;
     const lastText = last.type === 'paragraph' ? collapse(inlineText(last.content)) : '';
     if (last.type === 'paragraph' && (isContactLine(lastText) || isDateLine(lastText.toLowerCase()) || /^(?:last updated|updated|published|posted)(?: on)?:?$/i.test(lastText))) blocks.pop();
+    // The lead of a topic-tag footer whose links are gone ("Explore more on these topics").
+    else if (last.type === 'paragraph' && TOPICS_LEAD.test(lastText)) blocks.pop();
     else if (last.type === 'paragraph' && lastText.length < 100 && linkShare(last.content) >= 0.5 && !/[.!?]["'”’)]?$/.test(lastText)) blocks.pop();
     else if (isCallToAction(last)) blocks.pop();
     // The short benefits list under a sign-up pitch ("You get articles that match your needs").
@@ -407,6 +409,8 @@ function tidy(input: Block[], title: string, meta: Metadata): Block[] {
   blocks = out;
   return blocks;
 }
+
+const TOPICS_LEAD = /^(?:explore more on (?:these|this) topics?|more on (?:this|these) (?:story|stories|topics?)|(?:related )?topics|tags|filed under)\s*:?$/i;
 
 const BIO_ROLE = /\b(?:reporter|writer|editor|journalist|correspondent|columnist|contributor|author|producer|critic|fellow|researcher|consultant|engineer|developer|designer|professor|director|founder|photographer|analyst|scientist|lecturer|host|freelancer?|economist|historian|novelist|blogger|speaker|principal)\b/i;
 const BIO_NAME = /^(\p{Lu}[\p{L}'’.-]*(?:\s+\p{Lu}[\p{L}'’.-]*){0,3})\s+(?:is|was|has been)\s+(?:a|an|the)\s/u;
