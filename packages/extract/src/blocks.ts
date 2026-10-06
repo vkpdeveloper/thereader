@@ -2,7 +2,7 @@ import { isCallout, isDataTableCached, isFootnotes } from './content';
 import { detectLanguage, languageFromClass, normalizeLanguage } from './languages';
 import { frameBlock, imageFrom, isDecorativeImage, isSmallImage, lazyVideo, mediaFromElement, socialProvider, TWEET } from './media';
 import type { Block, Callout, Definition, Figure, Footnote, Image, Inline, ListItem, Mark, Table, TableCell, TableRow, TextRun } from './model';
-import { collapse, firstElement, rawText, textOf, walk, type VElement, type VNode } from './tree';
+import { collapse, firstElement, rawText, walk, type VElement, type VNode } from './tree';
 import { resolveUrl } from './url';
 
 /** TeX left for MathJax/KaTeX: $$…$$ and \[…\] display, \(…\) inline. */
@@ -656,7 +656,7 @@ export class Converter {
 
   private container(el: VElement, out: Block[]): void {
     if (CODE_TITLE.test(el.matchString) && el.textLen < 120 && !hasDescendant(el, 'pre')) {
-      const title = textOf(el);
+      const title = plainLabel(el);
       if (title.length > 0 && title.length < 120) this.pendingCodeTitle = title;
       return;
     }
@@ -1446,6 +1446,25 @@ const NOTE_ITEM = /(?:^|[\s_-])(?:footnote|endnote)(?:$|[\s_-])/;
  * A multi-line <code> that is all its container holds is a listing even
  * without <pre> (`figure.code-block > code`, styled with white-space: pre).
  */
+/** Text of a label without the widgets inside it (a language picker's label, options and "No results"). */
+function plainLabel(el: VElement): string {
+  let out = '';
+  const visit = (node: VElement): void => {
+    for (const child of node.children) {
+      if (child.kind === 0) out += child.text;
+      else if (!child.skip && !isWidget(child)) visit(child);
+    }
+  };
+  visit(el);
+  return collapse(out);
+}
+
+function isWidget(el: VElement): boolean {
+  if (el.tag === 'label' || el.tag === 'button' || el.tag === 'select' || el.tag === 'input' || el.attrs['aria-haspopup'] !== undefined) return true;
+  const role = el.attrs['role'];
+  return role !== undefined && role !== 'none' && role !== 'presentation' && role !== 'heading';
+}
+
 function loneCode(el: VElement): VElement | null {
   let code: VElement | null = null;
   for (const child of el.children) {
