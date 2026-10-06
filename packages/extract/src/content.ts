@@ -882,6 +882,10 @@ class Counts {
   headingText = 0;
   listText = 0;
   textishText = 0;
+  /** Figures holding an image, and the text and link text inside them (captions, credits). */
+  figures = 0;
+  figureText = 0;
+  figureLink = 0;
 }
 
 function cleanConditionally(root: VElement, flags: Flags): void {
@@ -914,6 +918,15 @@ function cleanConditionally(root: VElement, flags: Flags): void {
       c.headingText += HEADINGS.has(ct) ? k.text : k.headingText;
       c.listText += LISTS.has(ct) ? k.text : k.listText;
       c.textishText += TEXTISH.has(ct) ? k.text : k.textishText;
+      if (ct === 'figure' && k.img > 0) {
+        c.figures++;
+        c.figureText += k.text;
+        c.figureLink += k.link;
+      } else {
+        c.figures += k.figures;
+        c.figureText += k.figureText;
+        c.figureLink += k.figureLink;
+      }
     }
     el.textLen = c.text;
     el.linkLen = c.link;
@@ -928,6 +941,8 @@ function shouldRemove(el: VElement, c: Counts, flags: Flags): boolean {
   const tag = el.tag;
   if (tag === 'table' && isDataTableCached(el)) return false;
   if (c.protected > 0) return false;
+  // A wrapper around captioned figures (credit links and all) is media, not clutter.
+  if (c.figures > 0 && c.text - c.figureText < 25 && c.figureLink <= c.figureText * 0.5 && c.input === 0) return false;
 
   let isList = tag === 'ul' || tag === 'ol';
   if (!isList && c.text > 0) isList = c.listText / c.text > 0.9;
