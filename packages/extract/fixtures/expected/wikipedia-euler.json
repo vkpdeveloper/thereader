@@ -20,7 +20,7 @@
     "height": 1200
   },
   "favicon": "https://en.wikipedia.org/static/apple-touch/wikipedia.png",
-  "wordCount": 1550,
+  "wordCount": 1534,
   "readingMinutes": 7,
   "blocks": [
     {
@@ -2095,79 +2095,6 @@
             {
               "type": "text",
               "text": ". Moreover, it seems to be unknown who first stated the result explicitly"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "type": "heading",
-      "level": 2,
-      "content": [
-        {
-          "type": "text",
-          "text": "See also"
-        }
-      ],
-      "anchor": "See_also"
-    },
-    {
-      "type": "list",
-      "ordered": false,
-      "items": [
-        {
-          "blocks": [
-            {
-              "type": "paragraph",
-              "content": [
-                {
-                  "type": "text",
-                  "text": "De Moivre's formula",
-                  "href": "https://en.wikipedia.org/wiki/De_Moivre's_formula"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "blocks": [
-            {
-              "type": "paragraph",
-              "content": [
-                {
-                  "type": "text",
-                  "text": "Exponential function",
-                  "href": "https://en.wikipedia.org/wiki/Exponential_function"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "blocks": [
-            {
-              "type": "paragraph",
-              "content": [
-                {
-                  "type": "text",
-                  "text": "Gelfond's constant",
-                  "href": "https://en.wikipedia.org/wiki/Gelfond's_constant"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "blocks": [
-            {
-              "type": "paragraph",
-              "content": [
-                {
-                  "type": "text",
-                  "text": "List of topics named after Leonhard Euler",
-                  "href": "https://en.wikipedia.org/wiki/List_of_topics_named_after_Leonhard_Euler"
-                }
-              ]
             }
           ]
         }
