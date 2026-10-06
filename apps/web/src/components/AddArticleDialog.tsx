@@ -125,7 +125,7 @@ export function AddArticleDialog({ open, initialUrl, onClose }: { open: boolean;
         <div id="add-article-status" className="add-article-status" aria-live="polite">
           {busy ? (
             <>
-              <ProgressLine value={phase?.progress ?? null} label="Saving article" />
+              <ProgressLine value={phase?.progress ?? null} working={phase?.phase === 'extracting'} label="Saving article" />
               <span className="t-body-sm">{phaseText[phase?.phase ?? 'fetching']}</span>
             </>
           ) : error ? (

@@ -223,6 +223,29 @@ function yieldToPaint(): Promise<void> {
   });
 }
 
+/** Times one stage of a save (sync or async) as a `performance` measure (`article:fetch`, …), visible in DevTools. */
+function measured<T>(name: string, run: () => T): T {
+  if (typeof performance === 'undefined' || typeof performance.measure !== 'function') return run();
+  const start = performance.now();
+  const end = () => {
+    try {
+      performance.measure(`article:${name}`, { start, end: performance.now() });
+    } catch {
+      /* Older User Timing without options. */
+    }
+  };
+  let result: T;
+  try {
+    result = run();
+  } catch (error) {
+    end();
+    throw error;
+  }
+  if (result instanceof Promise) return result.finally(end) as T;
+  end();
+  return result;
+}
+
 type Extractor = (doc: Document, options: ExtractOptions) => Article | null | Promise<Article | null>;
 
 /** The extraction engine chunk (kept out of the entry bundle), fetched once. */
@@ -373,7 +396,9 @@ export class ArticleStoreImpl extends Emitter<ArticlesSnapshot> implements Artic
       this.progress(token, 'fetching', url, null);
       const extractor = this.deps.extract ? Promise.resolve(this.deps.extract) : loadExtractor();
       extractor.catch(() => undefined);
-      const source = await this.fetchSource(url, signal, (fraction) => this.progress(token, 'fetching', url, Math.round(fraction * 14) / 20));
+      const source = await measured('fetch', () =>
+        this.fetchSource(url, signal, (fraction) => this.progress(token, 'fetching', url, Math.round(fraction * 14) / 20)),
+      );
       const redirected = this.findByUrl([source.finalUrl]);
       if (redirected) return await this.alias(redirected, [url]);
 
@@ -387,12 +412,25 @@ export class ArticleStoreImpl extends Emitter<ArticlesSnapshot> implements Artic
       await yieldToPaint();
       check();
       let article: Article | null = null;
+      let doc: Document | null = null;
       try {
-        const html = decodeHtml(source.bytes, source.contentType);
-        const doc = (this.deps.parse ?? ((s: string) => new DOMParser().parseFromString(s, 'text/html')))(html);
-        article = await extract(doc, { url: source.finalUrl });
+        const html = measured('decode', () => decodeHtml(source.bytes, source.contentType));
+        const parse = this.deps.parse ?? ((s: string) => new DOMParser().parseFromString(s, 'text/html'));
+        doc = measured('parse', () => parse(html));
       } catch (error) {
-        console.warn('Article extraction failed', error);
+        console.warn('Article parsing failed', error);
+      }
+      if (doc) {
+        // Parsing and extraction each hold the main thread; the dialog paints between them.
+        this.progress(token, 'extracting', url, 0.82);
+        await yieldToPaint();
+        check();
+        const page = doc;
+        try {
+          article = await measured('extract', () => extract(page, { url: source.finalUrl }));
+        } catch (error) {
+          console.warn('Article extraction failed', error);
+        }
       }
       if (!article || article.blocks.length === 0) throw new ApiError("Couldn't find an article on that page.", 'NO_ARTICLE');
 
@@ -403,7 +441,7 @@ export class ArticleStoreImpl extends Emitter<ArticlesSnapshot> implements Artic
       check();
       this.progress(token, 'saving', url, 0.92);
       const summary = summarize(randomId(), article, urls, nowIso(this.now));
-      await this.deps.kv.set(articleKey(summary.id), { article });
+      await measured('store', () => this.deps.kv.set(articleKey(summary.id), { article }));
       this.remember(summary.id, article);
       this.items.set(summary.id, summary);
       this.publish();
