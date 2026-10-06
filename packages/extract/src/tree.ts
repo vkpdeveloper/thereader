@@ -66,6 +66,7 @@ export class VElement {
   }
 
   attr(name: string): string | null {
+    if (!Object.prototype.hasOwnProperty.call(this.attrs, name)) return null;
     const value = this.attrs[name];
     return value === undefined ? null : value;
   }
@@ -169,12 +170,13 @@ export function fromDom(doc: Document): VDocument {
       return null;
     }
 
-    // No prototype: an attribute named "__proto__" or "constructor" is just an attribute.
-    const attrs: Record<string, string> = Object.create(null) as Record<string, string>;
+    const attrs: Record<string, string> = {};
     const list = el.attributes;
     for (let i = 0; i < list.length; i++) {
       const a = list[i]!;
-      attrs[a.name] = a.value;
+      // An attribute named "__proto__" is an attribute, not the object's prototype.
+      if (a.name === '__proto__') Object.defineProperty(attrs, a.name, { value: a.value, enumerable: true, writable: true, configurable: true });
+      else attrs[a.name] = a.value;
     }
     const v = new VElement(tag, attrs);
 
