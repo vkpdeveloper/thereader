@@ -219,7 +219,18 @@ function tidy(input: Block[], title: string, meta: Metadata): Block[] {
       break;
     }
   }
-  if (meta.subtitle !== null && blocks.length > 0 && blocks[0]!.type === 'paragraph' && comparable(blockPlain(blocks[0]!)) === comparable(meta.subtitle)) blocks.shift();
+  // The subtitle, or a heading that repeats the page description (a dek set as <h2>), is header too.
+  const sub = meta.subtitle !== null ? comparable(meta.subtitle) : '';
+  const description = meta.excerpt !== null ? comparable(meta.excerpt) : '';
+  for (let i = 0; i < Math.min(blocks.length, 3); i++) {
+    const b = blocks[i]!;
+    if (b.type !== 'paragraph' && b.type !== 'heading') continue;
+    const c = comparable(blockPlain(b));
+    if (c.length > 0 && (c === sub || b.type === 'heading' && c === description)) {
+      blocks.splice(i, 1);
+      break;
+    }
+  }
 
   // Bylines and bare dates at the top repeat the header.
   const authors = meta.authors.map((a) => a.toLowerCase());
