@@ -1,0 +1,3578 @@
+{
+  "schema": 1,
+  "url": "https://en.wikipedia.org/wiki/Euler%27s_identity",
+  "title": "Euler's identity",
+  "subtitle": null,
+  "byline": "Contributors to Wikimedia projects",
+  "authors": [
+    "Contributors to Wikimedia projects"
+  ],
+  "siteName": "Wikimedia Foundation, Inc.",
+  "publishedAt": "2001-07-12T19:50:29Z",
+  "modifiedAt": "2026-10-01T06:11:19Z",
+  "language": "en",
+  "dir": "ltr",
+  "excerpt": "In mathematics, Euler's identity (also known as Euler's equation) is the equality e^{i\\pi }+1=0 where",
+  "leadImage": {
+    "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/71/Euler%27s_formula.svg/1280px-Euler%27s_formula.svg.png?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=thumbnail",
+    "alt": "",
+    "width": 1166,
+    "height": 1200
+  },
+  "favicon": "https://en.wikipedia.org/static/apple-touch/wikipedia.png",
+  "wordCount": 1545,
+  "readingMinutes": 7,
+  "blocks": [
+    {
+      "type": "figure",
+      "images": [
+        {
+          "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/71/Euler%27s_formula.svg/1280px-Euler%27s_formula.svg.png?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=thumbnail",
+          "alt": "",
+          "width": 1166,
+          "height": 1200
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "In "
+        },
+        {
+          "type": "text",
+          "text": "mathematics",
+          "href": "https://en.wikipedia.org/wiki/Mathematics"
+        },
+        {
+          "type": "text",
+          "text": ", "
+        },
+        {
+          "type": "text",
+          "text": "Euler's identity",
+          "marks": [
+            "bold"
+          ]
+        },
+        {
+          "type": "ref",
+          "id": "cite_note-3",
+          "label": "note 1"
+        },
+        {
+          "type": "text",
+          "text": " (also known as "
+        },
+        {
+          "type": "text",
+          "text": "Euler's equation",
+          "marks": [
+            "bold"
+          ]
+        },
+        {
+          "type": "text",
+          "text": ") is the "
+        },
+        {
+          "type": "text",
+          "text": "equality",
+          "href": "https://en.wikipedia.org/wiki/Equality_(mathematics)"
+        },
+        {
+          "type": "text",
+          "text": " "
+        },
+        {
+          "type": "math",
+          "text": "e^{i\\pi }+1=0",
+          "tex": "e^{i\\pi }+1=0",
+          "mathml": "<math display=\"block\" alttext=\"{\\displaystyle e^{i\\pi }+1=0}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n        <mo>+</mo>\n        <mn>1</mn>\n        <mo>=</mo>\n        <mn>0</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        },
+        {
+          "type": "text",
+          "text": " where"
+        }
+      ]
+    },
+    {
+      "type": "list",
+      "ordered": false,
+      "items": [
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "math",
+                  "text": "e",
+                  "tex": "e",
+                  "mathml": "<math alttext=\"{\\displaystyle e}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>e</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+                },
+                {
+                  "type": "text",
+                  "text": " is "
+                },
+                {
+                  "type": "text",
+                  "text": "Euler's number",
+                  "href": "https://en.wikipedia.org/wiki/E_(mathematical_constant)"
+                },
+                {
+                  "type": "text",
+                  "text": ", the base of "
+                },
+                {
+                  "type": "text",
+                  "text": "natural logarithms",
+                  "href": "https://en.wikipedia.org/wiki/Natural_logarithm"
+                },
+                {
+                  "type": "text",
+                  "text": ","
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "math",
+                  "text": "i",
+                  "tex": "i",
+                  "mathml": "<math alttext=\"{\\displaystyle i}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>i</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+                },
+                {
+                  "type": "text",
+                  "text": " is the "
+                },
+                {
+                  "type": "text",
+                  "text": "imaginary unit",
+                  "href": "https://en.wikipedia.org/wiki/Imaginary_unit"
+                },
+                {
+                  "type": "text",
+                  "text": ", which by definition satisfies "
+                },
+                {
+                  "type": "math",
+                  "text": "i^{2}=-1",
+                  "tex": "i^{2}=-1",
+                  "mathml": "<math alttext=\"{\\displaystyle i^{2}=-1}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>i</mi>\n          <mrow>\n            <mn>2</mn>\n          </mrow>\n        </msup>\n        <mo>=</mo>\n        <mo>−</mo>\n        <mn>1</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+                },
+                {
+                  "type": "text",
+                  "text": ", and"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "math",
+                  "text": "\\pi",
+                  "tex": "\\pi",
+                  "mathml": "<math alttext=\"{\\displaystyle \\pi }\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>π</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+                },
+                {
+                  "type": "text",
+                  "text": " is "
+                },
+                {
+                  "type": "text",
+                  "text": "pi",
+                  "href": "https://en.wikipedia.org/wiki/Pi"
+                },
+                {
+                  "type": "text",
+                  "text": ", the ratio of the "
+                },
+                {
+                  "type": "text",
+                  "text": "circumference",
+                  "href": "https://en.wikipedia.org/wiki/Circumference"
+                },
+                {
+                  "type": "text",
+                  "text": " of a circle to its "
+                },
+                {
+                  "type": "text",
+                  "text": "diameter",
+                  "href": "https://en.wikipedia.org/wiki/Diameter"
+                },
+                {
+                  "type": "text",
+                  "text": "."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Euler's identity is named after the Swiss mathematician "
+        },
+        {
+          "type": "text",
+          "text": "Leonhard Euler",
+          "href": "https://en.wikipedia.org/wiki/Leonhard_Euler"
+        },
+        {
+          "type": "text",
+          "text": ". It is a special case of "
+        },
+        {
+          "type": "text",
+          "text": "Euler's formula",
+          "href": "https://en.wikipedia.org/wiki/Euler's_formula"
+        },
+        {
+          "type": "text",
+          "text": " "
+        },
+        {
+          "type": "math",
+          "text": "e^{ix}=\\cos x+i\\sin x",
+          "tex": "e^{ix}=\\cos x+i\\sin x",
+          "mathml": "<math alttext=\"{\\displaystyle e^{ix}=\\cos x+i\\sin x}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>x</mi>\n          </mrow>\n        </msup>\n        <mo>=</mo>\n        <mi>cos</mi>\n        <mo>⁡</mo>\n        <mi>x</mi>\n        <mo>+</mo>\n        <mi>i</mi>\n        <mi>sin</mi>\n        <mo>⁡</mo>\n        <mi>x</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        },
+        {
+          "type": "text",
+          "text": " when evaluated for "
+        },
+        {
+          "type": "math",
+          "text": "x=\\pi",
+          "tex": "x=\\pi",
+          "mathml": "<math alttext=\"{\\displaystyle x=\\pi }\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>x</mi>\n        <mo>=</mo>\n        <mi>π</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        },
+        {
+          "type": "text",
+          "text": ". Euler's identity is considered an exemplar of "
+        },
+        {
+          "type": "text",
+          "text": "mathematical beauty",
+          "href": "https://en.wikipedia.org/wiki/Mathematical_beauty"
+        },
+        {
+          "type": "text",
+          "text": ", as it involves several of the most important numbers in mathematics."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Mathematical beauty"
+        }
+      ],
+      "anchor": "Mathematical_beauty"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "["
+        },
+        {
+          "type": "text",
+          "text": "edit",
+          "href": "https://en.wikipedia.org/w/index.php?title=Euler%27s_identity&action=edit&section=1"
+        },
+        {
+          "type": "text",
+          "text": "]"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Euler's identity is often cited as an example of deep "
+        },
+        {
+          "type": "text",
+          "text": "mathematical beauty",
+          "href": "https://en.wikipedia.org/wiki/Mathematical_beauty"
+        },
+        {
+          "type": "text",
+          "text": "."
+        },
+        {
+          "type": "ref",
+          "id": "cite_note-Gallagher2014-4",
+          "label": "3"
+        },
+        {
+          "type": "text",
+          "text": " Three of the basic "
+        },
+        {
+          "type": "text",
+          "text": "arithmetic",
+          "href": "https://en.wikipedia.org/wiki/Arithmetic"
+        },
+        {
+          "type": "text",
+          "text": " operations occur exactly once each: "
+        },
+        {
+          "type": "text",
+          "text": "addition",
+          "href": "https://en.wikipedia.org/wiki/Addition"
+        },
+        {
+          "type": "text",
+          "text": ", "
+        },
+        {
+          "type": "text",
+          "text": "multiplication",
+          "href": "https://en.wikipedia.org/wiki/Multiplication"
+        },
+        {
+          "type": "text",
+          "text": ", and "
+        },
+        {
+          "type": "text",
+          "text": "exponentiation",
+          "href": "https://en.wikipedia.org/wiki/Exponentiation"
+        },
+        {
+          "type": "text",
+          "text": ". The identity also links five fundamental "
+        },
+        {
+          "type": "text",
+          "text": "mathematical constants",
+          "href": "https://en.wikipedia.org/wiki/Mathematical_constant"
+        },
+        {
+          "type": "text",
+          "text": ":"
+        },
+        {
+          "type": "ref",
+          "id": "cite_note-5",
+          "label": "4"
+        }
+      ]
+    },
+    {
+      "type": "list",
+      "ordered": false,
+      "items": [
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "The "
+                },
+                {
+                  "type": "text",
+                  "text": "number 0",
+                  "href": "https://en.wikipedia.org/wiki/0"
+                },
+                {
+                  "type": "text",
+                  "text": ", the "
+                },
+                {
+                  "type": "text",
+                  "text": "additive identity",
+                  "href": "https://en.wikipedia.org/wiki/Additive_identity"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "The "
+                },
+                {
+                  "type": "text",
+                  "text": "number 1",
+                  "href": "https://en.wikipedia.org/wiki/1"
+                },
+                {
+                  "type": "text",
+                  "text": ", the "
+                },
+                {
+                  "type": "text",
+                  "text": "multiplicative identity",
+                  "href": "https://en.wikipedia.org/wiki/Multiplicative_identity"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "The "
+                },
+                {
+                  "type": "text",
+                  "text": "number ",
+                  "href": "https://en.wikipedia.org/wiki/Pi"
+                },
+                {
+                  "type": "text",
+                  "text": "π",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://en.wikipedia.org/wiki/Pi"
+                },
+                {
+                  "type": "text",
+                  "text": " (π = 3.14159...), the fundamental "
+                },
+                {
+                  "type": "text",
+                  "text": "circle",
+                  "href": "https://en.wikipedia.org/wiki/Circle"
+                },
+                {
+                  "type": "text",
+                  "text": " constant"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "The "
+                },
+                {
+                  "type": "text",
+                  "text": "number ",
+                  "href": "https://en.wikipedia.org/wiki/E_(mathematical_constant)"
+                },
+                {
+                  "type": "text",
+                  "text": "e",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://en.wikipedia.org/wiki/E_(mathematical_constant)"
+                },
+                {
+                  "type": "text",
+                  "text": " ("
+                },
+                {
+                  "type": "text",
+                  "text": "e",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": " = 2.71828...), also known as Euler's number, which occurs widely in "
+                },
+                {
+                  "type": "text",
+                  "text": "mathematical analysis",
+                  "href": "https://en.wikipedia.org/wiki/Mathematical_analysis"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "The "
+                },
+                {
+                  "type": "text",
+                  "text": "number ",
+                  "href": "https://en.wikipedia.org/wiki/Imaginary_unit"
+                },
+                {
+                  "type": "text",
+                  "text": "i",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://en.wikipedia.org/wiki/Imaginary_unit"
+                },
+                {
+                  "type": "text",
+                  "text": ", the "
+                },
+                {
+                  "type": "text",
+                  "text": "imaginary unit",
+                  "href": "https://en.wikipedia.org/wiki/Imaginary_unit"
+                },
+                {
+                  "type": "text",
+                  "text": " such that "
+                },
+                {
+                  "type": "text",
+                  "text": "i",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "2",
+                  "marks": [
+                    "sup"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": " = −1"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "The equation is often given in the form of an expression set equal to zero, which is common practice in several areas of mathematics."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Stanford University",
+          "href": "https://en.wikipedia.org/wiki/Stanford_University"
+        },
+        {
+          "type": "text",
+          "text": " mathematics professor "
+        },
+        {
+          "type": "text",
+          "text": "Keith Devlin",
+          "href": "https://en.wikipedia.org/wiki/Keith_Devlin"
+        },
+        {
+          "type": "text",
+          "text": " has said, \"like a Shakespearean "
+        },
+        {
+          "type": "text",
+          "text": "sonnet",
+          "href": "https://en.wikipedia.org/wiki/Sonnet"
+        },
+        {
+          "type": "text",
+          "text": " that captures the very essence of love, or a painting that brings out the beauty of the human form that is far more than just skin deep, Euler's equation reaches down into the very depths of existence\"."
+        },
+        {
+          "type": "ref",
+          "id": "cite_note-6",
+          "label": "5"
+        },
+        {
+          "type": "text",
+          "text": " "
+        },
+        {
+          "type": "text",
+          "text": "Paul Nahin",
+          "href": "https://en.wikipedia.org/wiki/Paul_Nahin"
+        },
+        {
+          "type": "text",
+          "text": ", a professor emeritus at the "
+        },
+        {
+          "type": "text",
+          "text": "University of New Hampshire",
+          "href": "https://en.wikipedia.org/wiki/University_of_New_Hampshire"
+        },
+        {
+          "type": "text",
+          "text": " who wrote a book dedicated to "
+        },
+        {
+          "type": "text",
+          "text": "Euler's formula",
+          "href": "https://en.wikipedia.org/wiki/Euler's_formula"
+        },
+        {
+          "type": "text",
+          "text": " and its applications in "
+        },
+        {
+          "type": "text",
+          "text": "Fourier analysis",
+          "href": "https://en.wikipedia.org/wiki/Fourier_analysis"
+        },
+        {
+          "type": "text",
+          "text": ", said Euler's identity is \"of exquisite beauty\"."
+        },
+        {
+          "type": "ref",
+          "id": "cite_note-7",
+          "label": "6"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Mathematics writer "
+        },
+        {
+          "type": "text",
+          "text": "Constance Reid",
+          "href": "https://en.wikipedia.org/wiki/Constance_Reid"
+        },
+        {
+          "type": "text",
+          "text": " has said that Euler's identity is \"the most famous formula in all mathematics\"."
+        },
+        {
+          "type": "ref",
+          "id": "cite_note-8",
+          "label": "7"
+        },
+        {
+          "type": "text",
+          "text": " "
+        },
+        {
+          "type": "text",
+          "text": "Benjamin Peirce",
+          "href": "https://en.wikipedia.org/wiki/Benjamin_Peirce"
+        },
+        {
+          "type": "text",
+          "text": ", a 19th-century American philosopher, mathematician, and professor at "
+        },
+        {
+          "type": "text",
+          "text": "Harvard University",
+          "href": "https://en.wikipedia.org/wiki/Harvard_University"
+        },
+        {
+          "type": "text",
+          "text": ", after proving Euler's identity during a lecture, said that it \"is absolutely paradoxical; we cannot understand it, and we don't know what it means, but we have proved it, and therefore we know it must be the truth\"."
+        },
+        {
+          "type": "ref",
+          "id": "cite_note-9",
+          "label": "8"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "A 1990 poll of readers by "
+        },
+        {
+          "type": "text",
+          "text": "The Mathematical Intelligencer",
+          "marks": [
+            "italic"
+          ],
+          "href": "https://en.wikipedia.org/wiki/The_Mathematical_Intelligencer"
+        },
+        {
+          "type": "text",
+          "text": " named Euler's identity the \"most beautiful theorem in mathematics\"."
+        },
+        {
+          "type": "ref",
+          "id": "cite_note-10",
+          "label": "9"
+        },
+        {
+          "type": "text",
+          "text": " In a 2004 poll of readers by "
+        },
+        {
+          "type": "text",
+          "text": "Physics World",
+          "marks": [
+            "italic"
+          ],
+          "href": "https://en.wikipedia.org/wiki/Physics_World"
+        },
+        {
+          "type": "text",
+          "text": ", Euler's identity tied with "
+        },
+        {
+          "type": "text",
+          "text": "Maxwell's equations",
+          "href": "https://en.wikipedia.org/wiki/Maxwell's_equations"
+        },
+        {
+          "type": "text",
+          "text": " (of "
+        },
+        {
+          "type": "text",
+          "text": "electromagnetism",
+          "href": "https://en.wikipedia.org/wiki/Electromagnetism"
+        },
+        {
+          "type": "text",
+          "text": ") as the \"greatest equation ever\"."
+        },
+        {
+          "type": "ref",
+          "id": "cite_note-11",
+          "label": "10"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "At least three books in "
+        },
+        {
+          "type": "text",
+          "text": "popular mathematics",
+          "href": "https://en.wikipedia.org/wiki/Popular_mathematics"
+        },
+        {
+          "type": "text",
+          "text": " have been published about Euler's identity:"
+        }
+      ]
+    },
+    {
+      "type": "list",
+      "ordered": false,
+      "items": [
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Dr. Euler's Fabulous Formula: Cures Many Mathematical Ills",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": ", by "
+                },
+                {
+                  "type": "text",
+                  "text": "Paul Nahin",
+                  "href": "https://en.wikipedia.org/wiki/Paul_Nahin"
+                },
+                {
+                  "type": "text",
+                  "text": " (2011)"
+                },
+                {
+                  "type": "ref",
+                  "id": "cite_note-12",
+                  "label": "11"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "A Most Elegant Equation: Euler's formula and the beauty of mathematics",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": ", by David Stipp (2017)"
+                },
+                {
+                  "type": "ref",
+                  "id": "cite_note-13",
+                  "label": "12"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Euler's Pioneering Equation: The most beautiful theorem in mathematics",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": ", by "
+                },
+                {
+                  "type": "text",
+                  "text": "Robin Wilson",
+                  "href": "https://en.wikipedia.org/wiki/Robin_Wilson_(mathematician)"
+                },
+                {
+                  "type": "text",
+                  "text": " (2018)"
+                },
+                {
+                  "type": "ref",
+                  "id": "cite_note-14",
+                  "label": "13"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "content": [
+        {
+          "type": "text",
+          "text": "Imaginary exponents"
+        }
+      ],
+      "anchor": "Imaginary_exponents"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "["
+        },
+        {
+          "type": "text",
+          "text": "edit",
+          "href": "https://en.wikipedia.org/w/index.php?title=Euler%27s_identity&action=edit&section=3"
+        },
+        {
+          "type": "text",
+          "text": "]"
+        }
+      ]
+    },
+    {
+      "type": "figure",
+      "images": [
+        {
+          "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0e/ExpIPi.gif/250px-ExpIPi.gif?utm_source=en.wikipedia.org&utm_campaign=parser&utm_content=thumbnail",
+          "alt": "",
+          "width": 250,
+          "height": 224,
+          "href": "https://en.wikipedia.org/wiki/File:ExpIPi.gif"
+        }
+      ],
+      "caption": [
+        {
+          "type": "text",
+          "text": "In this animation "
+        },
+        {
+          "type": "text",
+          "text": "N",
+          "marks": [
+            "italic"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " takes various increasing values from 1 to 100. The computation of (1 + "
+        },
+        {
+          "type": "text",
+          "text": "iπN",
+          "marks": [
+            "italic"
+          ]
+        },
+        {
+          "type": "text",
+          "text": ")"
+        },
+        {
+          "type": "text",
+          "text": "N",
+          "marks": [
+            "italic",
+            "sup"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " is displayed as the combined effect of "
+        },
+        {
+          "type": "text",
+          "text": "N",
+          "marks": [
+            "italic"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " repeated multiplications in the "
+        },
+        {
+          "type": "text",
+          "text": "complex plane",
+          "href": "https://en.wikipedia.org/wiki/Complex_plane"
+        },
+        {
+          "type": "text",
+          "text": ", with the final point being the actual value of (1 + "
+        },
+        {
+          "type": "text",
+          "text": "iπN",
+          "marks": [
+            "italic"
+          ]
+        },
+        {
+          "type": "text",
+          "text": ")"
+        },
+        {
+          "type": "text",
+          "text": "N",
+          "marks": [
+            "italic",
+            "sup"
+          ]
+        },
+        {
+          "type": "text",
+          "text": ". It can be seen that as "
+        },
+        {
+          "type": "text",
+          "text": "N",
+          "marks": [
+            "italic"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " gets larger (1 + "
+        },
+        {
+          "type": "text",
+          "text": "iπN",
+          "marks": [
+            "italic"
+          ]
+        },
+        {
+          "type": "text",
+          "text": ")"
+        },
+        {
+          "type": "text",
+          "text": "N",
+          "marks": [
+            "italic",
+            "sup"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " approaches a limit of −1."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Euler's identity asserts that "
+        },
+        {
+          "type": "math",
+          "text": "e^{i\\pi }",
+          "tex": "e^{i\\pi }",
+          "mathml": "<math alttext=\"{\\displaystyle e^{i\\pi }}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        },
+        {
+          "type": "text",
+          "text": " is equal to −1. The expression "
+        },
+        {
+          "type": "math",
+          "text": "e^{i\\pi }",
+          "tex": "e^{i\\pi }",
+          "mathml": "<math alttext=\"{\\displaystyle e^{i\\pi }}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        },
+        {
+          "type": "text",
+          "text": " is a special case of the expression "
+        },
+        {
+          "type": "math",
+          "text": "e^{z}",
+          "tex": "e^{z}",
+          "mathml": "<math alttext=\"{\\displaystyle e^{z}}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>z</mi>\n          </mrow>\n        </msup>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        },
+        {
+          "type": "text",
+          "text": ", where "
+        },
+        {
+          "type": "text",
+          "text": "z",
+          "marks": [
+            "italic"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " is any "
+        },
+        {
+          "type": "text",
+          "text": "complex number",
+          "href": "https://en.wikipedia.org/wiki/Complex_number"
+        },
+        {
+          "type": "text",
+          "text": ". In general, "
+        },
+        {
+          "type": "math",
+          "text": "e^{z}",
+          "tex": "e^{z}",
+          "mathml": "<math alttext=\"{\\displaystyle e^{z}}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>z</mi>\n          </mrow>\n        </msup>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        },
+        {
+          "type": "text",
+          "text": " is defined for complex "
+        },
+        {
+          "type": "text",
+          "text": "z",
+          "marks": [
+            "italic"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " by extending one of the "
+        },
+        {
+          "type": "text",
+          "text": "definitions of the exponential function",
+          "href": "https://en.wikipedia.org/wiki/Characterizations_of_the_exponential_function"
+        },
+        {
+          "type": "text",
+          "text": " from real exponents to complex exponents. For example, one common definition is:"
+        }
+      ]
+    },
+    {
+      "type": "math",
+      "text": "e^{z}=\\lim _{n\\to \\infty }\\left(1+{\\frac {z}{n}}\\right)^{n}.",
+      "tex": "e^{z}=\\lim _{n\\to \\infty }\\left(1+{\\frac {z}{n}}\\right)^{n}.",
+      "mathml": "<math display=\"block\" alttext=\"{\\displaystyle e^{z}=\\lim _{n\\to \\infty }\\left(1+{\\frac {z}{n}}\\right)^{n}.}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>z</mi>\n          </mrow>\n        </msup>\n        <mo>=</mo>\n        <munder>\n          <mo movablelimits=\"true\" form=\"prefix\">lim</mo>\n          <mrow>\n            <mi>n</mi>\n            <mo stretchy=\"false\">→</mo>\n            <mi mathvariant=\"normal\">∞</mi>\n          </mrow>\n        </munder>\n        <msup>\n          <mrow>\n            <mo>(</mo>\n            <mrow>\n              <mn>1</mn>\n              <mo>+</mo>\n              <mrow>\n                <mfrac>\n                  <mi>z</mi>\n                  <mi>n</mi>\n                </mfrac>\n              </mrow>\n            </mrow>\n            <mo>)</mo>\n          </mrow>\n          <mrow>\n            <mi>n</mi>\n          </mrow>\n        </msup>\n        <mo>.</mo>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Euler's identity therefore states that the limit, as "
+        },
+        {
+          "type": "text",
+          "text": "n",
+          "marks": [
+            "italic"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " approaches infinity, of "
+        },
+        {
+          "type": "math",
+          "text": "(1+{\\tfrac {i\\pi }{n}})^{n}",
+          "tex": "(1+{\\tfrac {i\\pi }{n}})^{n}",
+          "mathml": "<math alttext=\"{\\displaystyle (1+{\\tfrac {i\\pi }{n}})^{n}}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mo stretchy=\"false\">(</mo>\n        <mn>1</mn>\n        <mo>+</mo>\n        <mrow>\n          <mstyle displaystyle=\"false\" scriptlevel=\"0\">\n            <mfrac>\n              <mrow>\n                <mi>i</mi>\n                <mi>π</mi>\n              </mrow>\n              <mi>n</mi>\n            </mfrac>\n          </mstyle>\n        </mrow>\n        <msup>\n          <mo stretchy=\"false\">)</mo>\n          <mrow>\n            <mi>n</mi>\n          </mrow>\n        </msup>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        },
+        {
+          "type": "text",
+          "text": " is equal to −1. This limit is illustrated in the animation to the right."
+        }
+      ]
+    },
+    {
+      "type": "figure",
+      "images": [
+        {
+          "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/71/Euler%27s_formula.svg/250px-Euler%27s_formula.svg.png?utm_source=en.wikipedia.org&utm_campaign=parser&utm_content=thumbnail",
+          "alt": "",
+          "width": 250,
+          "height": 257,
+          "href": "https://en.wikipedia.org/wiki/File:Euler's_formula.svg"
+        }
+      ],
+      "caption": [
+        {
+          "type": "text",
+          "text": "Euler's formula for a general angle"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Euler's identity is a "
+        },
+        {
+          "type": "text",
+          "text": "special case",
+          "href": "https://en.wikipedia.org/wiki/Special_case"
+        },
+        {
+          "type": "text",
+          "text": " of "
+        },
+        {
+          "type": "text",
+          "text": "Euler's formula",
+          "href": "https://en.wikipedia.org/wiki/Euler's_formula"
+        },
+        {
+          "type": "text",
+          "text": ", which states that for any "
+        },
+        {
+          "type": "text",
+          "text": "real number",
+          "href": "https://en.wikipedia.org/wiki/Real_number"
+        },
+        {
+          "type": "text",
+          "text": " "
+        },
+        {
+          "type": "text",
+          "text": "x",
+          "marks": [
+            "italic"
+          ]
+        },
+        {
+          "type": "text",
+          "text": ","
+        }
+      ]
+    },
+    {
+      "type": "math",
+      "text": "e^{ix}=\\cos x+i\\sin x",
+      "tex": "e^{ix}=\\cos x+i\\sin x",
+      "mathml": "<math display=\"block\" alttext=\"{\\displaystyle e^{ix}=\\cos x+i\\sin x}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>x</mi>\n          </mrow>\n        </msup>\n        <mo>=</mo>\n        <mi>cos</mi>\n        <mo>⁡</mo>\n        <mi>x</mi>\n        <mo>+</mo>\n        <mi>i</mi>\n        <mi>sin</mi>\n        <mo>⁡</mo>\n        <mi>x</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "where the inputs of the "
+        },
+        {
+          "type": "text",
+          "text": "trigonometric functions",
+          "href": "https://en.wikipedia.org/wiki/Trigonometry"
+        },
+        {
+          "type": "text",
+          "text": " sine and cosine are given in "
+        },
+        {
+          "type": "text",
+          "text": "radians",
+          "href": "https://en.wikipedia.org/wiki/Radian"
+        },
+        {
+          "type": "text",
+          "text": "."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "In particular, when "
+        },
+        {
+          "type": "text",
+          "text": "x",
+          "marks": [
+            "italic"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " = "
+        },
+        {
+          "type": "text",
+          "text": "π",
+          "marks": [
+            "italic"
+          ]
+        },
+        {
+          "type": "text",
+          "text": ","
+        }
+      ]
+    },
+    {
+      "type": "math",
+      "text": "e^{i\\pi }=\\cos \\pi +i\\sin \\pi .",
+      "tex": "e^{i\\pi }=\\cos \\pi +i\\sin \\pi .",
+      "mathml": "<math display=\"block\" alttext=\"{\\displaystyle e^{i\\pi }=\\cos \\pi +i\\sin \\pi .}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n        <mo>=</mo>\n        <mi>cos</mi>\n        <mo>⁡</mo>\n        <mi>π</mi>\n        <mo>+</mo>\n        <mi>i</mi>\n        <mi>sin</mi>\n        <mo>⁡</mo>\n        <mi>π</mi>\n        <mo>.</mo>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Since"
+        }
+      ]
+    },
+    {
+      "type": "math",
+      "text": "\\cos \\pi =-1",
+      "tex": "\\cos \\pi =-1",
+      "mathml": "<math display=\"block\" alttext=\"{\\displaystyle \\cos \\pi =-1}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>cos</mi>\n        <mo>⁡</mo>\n        <mi>π</mi>\n        <mo>=</mo>\n        <mo>−</mo>\n        <mn>1</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "and"
+        }
+      ]
+    },
+    {
+      "type": "math",
+      "text": "\\sin \\pi =0,",
+      "tex": "\\sin \\pi =0,",
+      "mathml": "<math display=\"block\" alttext=\"{\\displaystyle \\sin \\pi =0,}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>sin</mi>\n        <mo>⁡</mo>\n        <mi>π</mi>\n        <mo>=</mo>\n        <mn>0</mn>\n        <mo>,</mo>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "it follows that"
+        }
+      ]
+    },
+    {
+      "type": "math",
+      "text": "e^{i\\pi }=-1+0i,",
+      "tex": "e^{i\\pi }=-1+0i,",
+      "mathml": "<math display=\"block\" alttext=\"{\\displaystyle e^{i\\pi }=-1+0i,}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n        <mo>=</mo>\n        <mo>−</mo>\n        <mn>1</mn>\n        <mo>+</mo>\n        <mn>0</mn>\n        <mi>i</mi>\n        <mo>,</mo>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "which yields Euler's identity:"
+        }
+      ]
+    },
+    {
+      "type": "math",
+      "text": "e^{i\\pi }+1=0.",
+      "tex": "e^{i\\pi }+1=0.",
+      "mathml": "<math display=\"block\" alttext=\"{\\displaystyle e^{i\\pi }+1=0.}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n        <mo>+</mo>\n        <mn>1</mn>\n        <mo>=</mo>\n        <mn>0.</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "content": [
+        {
+          "type": "text",
+          "text": "Geometric interpretation"
+        }
+      ],
+      "anchor": "Geometric_interpretation"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "["
+        },
+        {
+          "type": "text",
+          "text": "edit",
+          "href": "https://en.wikipedia.org/w/index.php?title=Euler%27s_identity&action=edit&section=4"
+        },
+        {
+          "type": "text",
+          "text": "]"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Any complex number "
+        },
+        {
+          "type": "math",
+          "text": "z=x+iy",
+          "tex": "z=x+iy",
+          "mathml": "<math alttext=\"{\\displaystyle z=x+iy}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>z</mi>\n        <mo>=</mo>\n        <mi>x</mi>\n        <mo>+</mo>\n        <mi>i</mi>\n        <mi>y</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        },
+        {
+          "type": "text",
+          "text": " can be represented by the point "
+        },
+        {
+          "type": "math",
+          "text": "(x,y)",
+          "tex": "(x,y)",
+          "mathml": "<math alttext=\"{\\displaystyle (x,y)}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mo stretchy=\"false\">(</mo>\n        <mi>x</mi>\n        <mo>,</mo>\n        <mi>y</mi>\n        <mo stretchy=\"false\">)</mo>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        },
+        {
+          "type": "text",
+          "text": " on the "
+        },
+        {
+          "type": "text",
+          "text": "complex plane",
+          "href": "https://en.wikipedia.org/wiki/Complex_plane"
+        },
+        {
+          "type": "text",
+          "text": ". This point can also be represented in "
+        },
+        {
+          "type": "text",
+          "text": "polar coordinates",
+          "href": "https://en.wikipedia.org/wiki/Complex_number#Polar_complex_plane"
+        },
+        {
+          "type": "text",
+          "text": " as "
+        },
+        {
+          "type": "math",
+          "text": "(r,\\theta )",
+          "tex": "(r,\\theta )",
+          "mathml": "<math alttext=\"{\\displaystyle (r,\\theta )}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mo stretchy=\"false\">(</mo>\n        <mi>r</mi>\n        <mo>,</mo>\n        <mi>θ</mi>\n        <mo stretchy=\"false\">)</mo>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        },
+        {
+          "type": "text",
+          "text": ", where "
+        },
+        {
+          "type": "text",
+          "text": "r",
+          "marks": [
+            "italic"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " is the absolute value of "
+        },
+        {
+          "type": "text",
+          "text": "z",
+          "marks": [
+            "italic"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " (distance from the origin), and "
+        },
+        {
+          "type": "math",
+          "text": "\\theta",
+          "tex": "\\theta",
+          "mathml": "<math alttext=\"{\\displaystyle \\theta }\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>θ</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        },
+        {
+          "type": "text",
+          "text": " is the argument of "
+        },
+        {
+          "type": "text",
+          "text": "z",
+          "marks": [
+            "italic"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " (angle counterclockwise from the positive "
+        },
+        {
+          "type": "text",
+          "text": "x",
+          "marks": [
+            "italic"
+          ]
+        },
+        {
+          "type": "text",
+          "text": "-axis). By the definitions of sine and cosine, this point has cartesian coordinates of "
+        },
+        {
+          "type": "math",
+          "text": "(r\\cos \\theta ,r\\sin \\theta )",
+          "tex": "(r\\cos \\theta ,r\\sin \\theta )",
+          "mathml": "<math alttext=\"{\\displaystyle (r\\cos \\theta ,r\\sin \\theta )}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mo stretchy=\"false\">(</mo>\n        <mi>r</mi>\n        <mi>cos</mi>\n        <mo>⁡</mo>\n        <mi>θ</mi>\n        <mo>,</mo>\n        <mi>r</mi>\n        <mi>sin</mi>\n        <mo>⁡</mo>\n        <mi>θ</mi>\n        <mo stretchy=\"false\">)</mo>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        },
+        {
+          "type": "text",
+          "text": ", implying that "
+        },
+        {
+          "type": "math",
+          "text": "z=r(\\cos \\theta +i\\sin \\theta )",
+          "tex": "z=r(\\cos \\theta +i\\sin \\theta )",
+          "mathml": "<math alttext=\"{\\displaystyle z=r(\\cos \\theta +i\\sin \\theta )}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>z</mi>\n        <mo>=</mo>\n        <mi>r</mi>\n        <mo stretchy=\"false\">(</mo>\n        <mi>cos</mi>\n        <mo>⁡</mo>\n        <mi>θ</mi>\n        <mo>+</mo>\n        <mi>i</mi>\n        <mi>sin</mi>\n        <mo>⁡</mo>\n        <mi>θ</mi>\n        <mo stretchy=\"false\">)</mo>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        },
+        {
+          "type": "text",
+          "text": ". According to Euler's formula, this is equivalent to saying "
+        },
+        {
+          "type": "math",
+          "text": "z=re^{i\\theta }",
+          "tex": "z=re^{i\\theta }",
+          "mathml": "<math alttext=\"{\\displaystyle z=re^{i\\theta }}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>z</mi>\n        <mo>=</mo>\n        <mi>r</mi>\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>θ</mi>\n          </mrow>\n        </msup>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        },
+        {
+          "type": "text",
+          "text": "."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Euler's identity says that "
+        },
+        {
+          "type": "math",
+          "text": "-1=e^{i\\pi }",
+          "tex": "-1=e^{i\\pi }",
+          "mathml": "<math alttext=\"{\\displaystyle -1=e^{i\\pi }}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mo>−</mo>\n        <mn>1</mn>\n        <mo>=</mo>\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        },
+        {
+          "type": "text",
+          "text": ". Since "
+        },
+        {
+          "type": "math",
+          "text": "e^{i\\pi }",
+          "tex": "e^{i\\pi }",
+          "mathml": "<math alttext=\"{\\displaystyle e^{i\\pi }}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        },
+        {
+          "type": "text",
+          "text": " is "
+        },
+        {
+          "type": "math",
+          "text": "re^{i\\theta }",
+          "tex": "re^{i\\theta }",
+          "mathml": "<math alttext=\"{\\displaystyle re^{i\\theta }}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>r</mi>\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>θ</mi>\n          </mrow>\n        </msup>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        },
+        {
+          "type": "text",
+          "text": " for "
+        },
+        {
+          "type": "text",
+          "text": "r",
+          "marks": [
+            "italic"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " = 1 and "
+        },
+        {
+          "type": "math",
+          "text": "\\theta =\\pi",
+          "tex": "\\theta =\\pi",
+          "mathml": "<math alttext=\"{\\displaystyle \\theta =\\pi }\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>θ</mi>\n        <mo>=</mo>\n        <mi>π</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        },
+        {
+          "type": "text",
+          "text": ", this can be interpreted as a fact about the number −1 on the complex plane: its distance from the origin is 1, and its angle from the positive "
+        },
+        {
+          "type": "text",
+          "text": "x",
+          "marks": [
+            "italic"
+          ]
+        },
+        {
+          "type": "text",
+          "text": "-axis is "
+        },
+        {
+          "type": "math",
+          "text": "\\pi",
+          "tex": "\\pi",
+          "mathml": "<math alttext=\"{\\displaystyle \\pi }\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>π</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        },
+        {
+          "type": "text",
+          "text": " radians."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Additionally, when any complex number "
+        },
+        {
+          "type": "text",
+          "text": "z",
+          "marks": [
+            "italic"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " is "
+        },
+        {
+          "type": "text",
+          "text": "multiplied",
+          "href": "https://en.wikipedia.org/wiki/Complex_number#Multiplication_and_division_in_polar_form"
+        },
+        {
+          "type": "text",
+          "text": " by "
+        },
+        {
+          "type": "math",
+          "text": "e^{i\\theta }",
+          "tex": "e^{i\\theta }",
+          "mathml": "<math alttext=\"{\\displaystyle e^{i\\theta }}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>θ</mi>\n          </mrow>\n        </msup>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        },
+        {
+          "type": "text",
+          "text": ", it has the effect of rotating "
+        },
+        {
+          "type": "math",
+          "text": "z",
+          "tex": "z",
+          "mathml": "<math alttext=\"{\\displaystyle z}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>z</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        },
+        {
+          "type": "text",
+          "text": " counterclockwise by an angle of "
+        },
+        {
+          "type": "math",
+          "text": "\\theta",
+          "tex": "\\theta",
+          "mathml": "<math alttext=\"{\\displaystyle \\theta }\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>θ</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        },
+        {
+          "type": "text",
+          "text": " on the complex plane. Since multiplication by −1 reflects a point across the origin, Euler's identity can be interpreted as saying that rotating any point "
+        },
+        {
+          "type": "math",
+          "text": "\\pi",
+          "tex": "\\pi",
+          "mathml": "<math alttext=\"{\\displaystyle \\pi }\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>π</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        },
+        {
+          "type": "text",
+          "text": " radians around the origin has the same effect as reflecting the point across the origin. Similarly, setting "
+        },
+        {
+          "type": "math",
+          "text": "\\theta",
+          "tex": "\\theta",
+          "mathml": "<math alttext=\"{\\displaystyle \\theta }\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>θ</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        },
+        {
+          "type": "text",
+          "text": " equal to "
+        },
+        {
+          "type": "math",
+          "text": "2\\pi",
+          "tex": "2\\pi",
+          "mathml": "<math alttext=\"{\\displaystyle 2\\pi }\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mn>2</mn>\n        <mi>π</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        },
+        {
+          "type": "text",
+          "text": " yields the related equation "
+        },
+        {
+          "type": "math",
+          "text": "e^{2\\pi i}=1",
+          "tex": "e^{2\\pi i}=1",
+          "mathml": "<math alttext=\"{\\displaystyle e^{2\\pi i}=1}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mn>2</mn>\n            <mi>π</mi>\n            <mi>i</mi>\n          </mrow>\n        </msup>\n        <mo>=</mo>\n        <mn>1</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        },
+        {
+          "type": "text",
+          "text": ", which can be interpreted as saying that rotating any point by one "
+        },
+        {
+          "type": "text",
+          "text": "turn",
+          "href": "https://en.wikipedia.org/wiki/Turn_(angle)"
+        },
+        {
+          "type": "text",
+          "text": " around the origin returns it to its original position."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Euler's identity is also a special case of the more general identity that the "
+        },
+        {
+          "type": "text",
+          "text": "n",
+          "marks": [
+            "italic"
+          ]
+        },
+        {
+          "type": "text",
+          "text": "th "
+        },
+        {
+          "type": "text",
+          "text": "roots of unity",
+          "href": "https://en.wikipedia.org/wiki/Roots_of_unity"
+        },
+        {
+          "type": "text",
+          "text": ", for "
+        },
+        {
+          "type": "text",
+          "text": "n",
+          "marks": [
+            "italic"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " > 1, add up to 0:"
+        }
+      ]
+    },
+    {
+      "type": "math",
+      "text": "\\sum _{k=0}^{n-1}e^{2\\pi i{\\frac {k}{n}}}=0.",
+      "tex": "\\sum _{k=0}^{n-1}e^{2\\pi i{\\frac {k}{n}}}=0.",
+      "mathml": "<math display=\"block\" alttext=\"{\\displaystyle \\sum _{k=0}^{n-1}e^{2\\pi i{\\frac {k}{n}}}=0.}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <munderover>\n          <mo>∑</mo>\n          <mrow>\n            <mi>k</mi>\n            <mo>=</mo>\n            <mn>0</mn>\n          </mrow>\n          <mrow>\n            <mi>n</mi>\n            <mo>−</mo>\n            <mn>1</mn>\n          </mrow>\n        </munderover>\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mn>2</mn>\n            <mi>π</mi>\n            <mi>i</mi>\n            <mrow>\n              <mfrac>\n                <mi>k</mi>\n                <mi>n</mi>\n              </mfrac>\n            </mrow>\n          </mrow>\n        </msup>\n        <mo>=</mo>\n        <mn>0.</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Euler's identity is the case where "
+        },
+        {
+          "type": "text",
+          "text": "n",
+          "marks": [
+            "italic"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " = 2."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "A similar identity also applies to "
+        },
+        {
+          "type": "text",
+          "text": "quaternion exponential",
+          "href": "https://en.wikipedia.org/wiki/Quaternion#Exponential,_logarithm,_and_power_functions"
+        },
+        {
+          "type": "text",
+          "text": ": let {"
+        },
+        {
+          "type": "text",
+          "text": "i",
+          "marks": [
+            "italic"
+          ]
+        },
+        {
+          "type": "text",
+          "text": ", "
+        },
+        {
+          "type": "text",
+          "text": "j",
+          "marks": [
+            "italic"
+          ]
+        },
+        {
+          "type": "text",
+          "text": ", "
+        },
+        {
+          "type": "text",
+          "text": "k",
+          "marks": [
+            "italic"
+          ]
+        },
+        {
+          "type": "text",
+          "text": "} be the basis "
+        },
+        {
+          "type": "text",
+          "text": "quaternions",
+          "href": "https://en.wikipedia.org/wiki/Quaternion"
+        },
+        {
+          "type": "text",
+          "text": "; then, "
+        },
+        {
+          "type": "math",
+          "text": "e^{{\\frac {1}{\\sqrt {3}}}(i\\pm j\\pm k)\\pi }+1=0.",
+          "tex": "e^{{\\frac {1}{\\sqrt {3}}}(i\\pm j\\pm k)\\pi }+1=0.",
+          "mathml": "<math display=\"block\" alttext=\"{\\displaystyle e^{{\\frac {1}{\\sqrt {3}}}(i\\pm j\\pm k)\\pi }+1=0.}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mrow>\n              <mfrac>\n                <mn>1</mn>\n                <msqrt>\n                  <mn>3</mn>\n                </msqrt>\n              </mfrac>\n            </mrow>\n            <mo stretchy=\"false\">(</mo>\n            <mi>i</mi>\n            <mo>±</mo>\n            <mi>j</mi>\n            <mo>±</mo>\n            <mi>k</mi>\n            <mo stretchy=\"false\">)</mo>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n        <mo>+</mo>\n        <mn>1</mn>\n        <mo>=</mo>\n        <mn>0.</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "More generally, let "
+        },
+        {
+          "type": "text",
+          "text": "q",
+          "marks": [
+            "italic"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " be a quaternion with a zero real part and a norm equal to 1; that is, "
+        },
+        {
+          "type": "math",
+          "text": "q=ai+bj+ck,",
+          "tex": "q=ai+bj+ck,",
+          "mathml": "<math alttext=\"{\\displaystyle q=ai+bj+ck,}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>q</mi>\n        <mo>=</mo>\n        <mi>a</mi>\n        <mi>i</mi>\n        <mo>+</mo>\n        <mi>b</mi>\n        <mi>j</mi>\n        <mo>+</mo>\n        <mi>c</mi>\n        <mi>k</mi>\n        <mo>,</mo>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        },
+        {
+          "type": "text",
+          "text": " with "
+        },
+        {
+          "type": "math",
+          "text": "a^{2}+b^{2}+c^{2}=1.",
+          "tex": "a^{2}+b^{2}+c^{2}=1.",
+          "mathml": "<math alttext=\"{\\displaystyle a^{2}+b^{2}+c^{2}=1.}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>a</mi>\n          <mrow>\n            <mn>2</mn>\n          </mrow>\n        </msup>\n        <mo>+</mo>\n        <msup>\n          <mi>b</mi>\n          <mrow>\n            <mn>2</mn>\n          </mrow>\n        </msup>\n        <mo>+</mo>\n        <msup>\n          <mi>c</mi>\n          <mrow>\n            <mn>2</mn>\n          </mrow>\n        </msup>\n        <mo>=</mo>\n        <mn>1.</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        },
+        {
+          "type": "text",
+          "text": " Then one has "
+        },
+        {
+          "type": "math",
+          "text": "e^{q\\pi }+1=0.",
+          "tex": "e^{q\\pi }+1=0.",
+          "mathml": "<math display=\"block\" alttext=\"{\\displaystyle e^{q\\pi }+1=0.}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>q</mi>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n        <mo>+</mo>\n        <mn>1</mn>\n        <mo>=</mo>\n        <mn>0.</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "The same formula applies to "
+        },
+        {
+          "type": "text",
+          "text": "octonions",
+          "href": "https://en.wikipedia.org/wiki/Octonion"
+        },
+        {
+          "type": "text",
+          "text": ", with a zero real part and a norm equal to 1. These formulas are a direct generalization of Euler's identity, since "
+        },
+        {
+          "type": "math",
+          "text": "i",
+          "tex": "i",
+          "mathml": "<math alttext=\"{\\displaystyle i}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>i</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        },
+        {
+          "type": "text",
+          "text": " and "
+        },
+        {
+          "type": "math",
+          "text": "-i",
+          "tex": "-i",
+          "mathml": "<math alttext=\"{\\displaystyle -i}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mo>−</mo>\n        <mi>i</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+        },
+        {
+          "type": "text",
+          "text": " are the only complex numbers with a zero real part and a norm (absolute value) equal to 1."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Euler's identity is a direct result of "
+        },
+        {
+          "type": "text",
+          "text": "Euler's formula",
+          "href": "https://en.wikipedia.org/wiki/Euler's_formula"
+        },
+        {
+          "type": "text",
+          "text": ", first published in his monumental 1748 work of mathematical analysis, "
+        },
+        {
+          "type": "text",
+          "text": "Introductio in analysin infinitorum",
+          "marks": [
+            "italic"
+          ],
+          "href": "https://en.wikipedia.org/wiki/Introductio_in_analysin_infinitorum"
+        },
+        {
+          "type": "text",
+          "text": ","
+        },
+        {
+          "type": "ref",
+          "id": "cite_note-15",
+          "label": "14"
+        },
+        {
+          "type": "text",
+          "text": " but it is questionable whether the particular concept of linking five fundamental constants in a compact form can be attributed to Euler himself, as he may never have expressed it."
+        },
+        {
+          "type": "ref",
+          "id": "cite_note-Sandifer2007-16",
+          "label": "15"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Robin Wilson",
+          "href": "https://en.wikipedia.org/wiki/Robin_Wilson_(mathematician)"
+        },
+        {
+          "type": "text",
+          "text": " writes:"
+        },
+        {
+          "type": "ref",
+          "id": "cite_note-17",
+          "label": "16"
+        }
+      ]
+    },
+    {
+      "type": "quote",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "We've seen how [Euler's identity] can easily be deduced from results of "
+            },
+            {
+              "type": "text",
+              "text": "Johann Bernoulli",
+              "href": "https://en.wikipedia.org/wiki/Johann_Bernoulli"
+            },
+            {
+              "type": "text",
+              "text": " and "
+            },
+            {
+              "type": "text",
+              "text": "Roger Cotes",
+              "href": "https://en.wikipedia.org/wiki/Roger_Cotes"
+            },
+            {
+              "type": "text",
+              "text": ", but that neither of them seem to have done so. Even Euler does not seem to have written it down explicitly—and certainly it doesn't appear in any of his publications—though he must surely have realized that it follows immediately from his identity [i.e. "
+            },
+            {
+              "type": "text",
+              "text": "Euler's formula",
+              "href": "https://en.wikipedia.org/wiki/Euler's_formula"
+            },
+            {
+              "type": "text",
+              "text": "], "
+            },
+            {
+              "type": "text",
+              "text": "e",
+              "marks": [
+                "italic"
+              ]
+            },
+            {
+              "type": "text",
+              "text": "ix",
+              "marks": [
+                "italic",
+                "sup"
+              ]
+            },
+            {
+              "type": "text",
+              "text": " = cos "
+            },
+            {
+              "type": "text",
+              "text": "x",
+              "marks": [
+                "italic"
+              ]
+            },
+            {
+              "type": "text",
+              "text": " + "
+            },
+            {
+              "type": "text",
+              "text": "i",
+              "marks": [
+                "italic"
+              ]
+            },
+            {
+              "type": "text",
+              "text": " sin "
+            },
+            {
+              "type": "text",
+              "text": "x",
+              "marks": [
+                "italic"
+              ]
+            },
+            {
+              "type": "text",
+              "text": ". Moreover, it seems to be unknown who first stated the result explicitly"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "list",
+      "ordered": false,
+      "items": [
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "De Moivre's formula",
+                  "href": "https://en.wikipedia.org/wiki/De_Moivre's_formula"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Exponential function",
+                  "href": "https://en.wikipedia.org/wiki/Exponential_function"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Gelfond's constant",
+                  "href": "https://en.wikipedia.org/wiki/Gelfond's_constant"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "List of topics named after Leonhard Euler",
+                  "href": "https://en.wikipedia.org/wiki/List_of_topics_named_after_Leonhard_Euler"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "footnotes",
+      "items": [
+        {
+          "id": "cite_note-3",
+          "label": "1",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "The term \"Euler's identity\" (or \"Euler identity\") is also used elsewhere to refer to other concepts, including the related general formula "
+                },
+                {
+                  "type": "text",
+                  "text": "e",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "ix",
+                  "marks": [
+                    "italic",
+                    "sup"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": " = cos "
+                },
+                {
+                  "type": "text",
+                  "text": "x",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": " + "
+                },
+                {
+                  "type": "text",
+                  "text": "i",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": " sin "
+                },
+                {
+                  "type": "text",
+                  "text": "x",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": ","
+                },
+                {
+                  "type": "ref",
+                  "id": "cite_note-1",
+                  "label": "1"
+                },
+                {
+                  "type": "text",
+                  "text": " and the "
+                },
+                {
+                  "type": "text",
+                  "text": "Euler product formula",
+                  "href": "https://en.wikipedia.org/wiki/Riemann_zeta_function#Euler's_product_formula"
+                },
+                {
+                  "type": "text",
+                  "text": "."
+                },
+                {
+                  "type": "ref",
+                  "id": "cite_note-EOM-2",
+                  "label": "2"
+                },
+                {
+                  "type": "text",
+                  "text": " See also "
+                },
+                {
+                  "type": "text",
+                  "text": "List of topics named after Leonhard Euler",
+                  "href": "https://en.wikipedia.org/wiki/List_of_topics_named_after_Leonhard_Euler"
+                },
+                {
+                  "type": "text",
+                  "text": "."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cite_note-1",
+          "label": "2",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Dunham, 1999, "
+                },
+                {
+                  "type": "text",
+                  "text": "p. xxiv",
+                  "href": "https://books.google.com/books?id=uKOVNvGOkhQC&pg=PR24"
+                },
+                {
+                  "type": "text",
+                  "text": "."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cite_note-EOM-2",
+          "label": "3",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Stepanov, S. A. (2001) [1994]. ",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "\"Euler identity\"",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://www.encyclopediaofmath.org/index.php?title=Euler_identity&oldid=33574"
+                },
+                {
+                  "type": "text",
+                  "text": ". ",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "Encyclopedia of Mathematics",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://en.wikipedia.org/wiki/Encyclopedia_of_Mathematics"
+                },
+                {
+                  "type": "text",
+                  "text": ". EMS Press.",
+                  "marks": [
+                    "italic"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cite_note-Gallagher2014-4",
+          "label": "4",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Gallagher, James (13 February 2014). ",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "\"Mathematics: Why the brain sees maths as beauty\"",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://www.bbc.co.uk/news/science-environment-26151062"
+                },
+                {
+                  "type": "text",
+                  "text": ". ",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "BBC News",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://en.wikipedia.org/wiki/BBC_News"
+                },
+                {
+                  "type": "text",
+                  "text": ". Retrieved 26 December 2017.",
+                  "marks": [
+                    "italic"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cite_note-5",
+          "label": "5",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Paulos, 1992, p. 117."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cite_note-6",
+          "label": "6",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Nahin, 2006, "
+                },
+                {
+                  "type": "text",
+                  "text": "p. 1",
+                  "href": "https://books.google.com/books?id=GvSg5HQ7WPcC&pg=PA1"
+                },
+                {
+                  "type": "text",
+                  "text": "."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cite_note-7",
+          "label": "7",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Nahin, 2006, p. xxxii."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cite_note-8",
+          "label": "8",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Reid, chapter "
+                },
+                {
+                  "type": "text",
+                  "text": "e",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cite_note-9",
+          "label": "9",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Maor, "
+                },
+                {
+                  "type": "text",
+                  "text": "p. 160",
+                  "href": "https://books.google.com/books?id=eIsyLD_bDKkC&pg=PA160"
+                },
+                {
+                  "type": "text",
+                  "text": ", and Kasner & Newman, "
+                },
+                {
+                  "type": "text",
+                  "text": "p. 103–104",
+                  "href": "https://books.google.com/books?id=Ad8hAx-6m9oC&pg=PA103"
+                },
+                {
+                  "type": "text",
+                  "text": "."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cite_note-10",
+          "label": "10",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Wells, 1990."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cite_note-11",
+          "label": "11",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Crease, 2004."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cite_note-12",
+          "label": "12",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Nahin, Paul (2011). Dr. Euler's fabulous formula: cures many mathematical ills. Princeton University Press. ",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "ISBN",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://en.wikipedia.org/wiki/ISBN_(identifier)"
+                },
+                {
+                  "type": "text",
+                  "text": " ",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "978-0-691-11822-2",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://en.wikipedia.org/wiki/Special:BookSources/978-0-691-11822-2"
+                },
+                {
+                  "type": "text",
+                  "text": ".",
+                  "marks": [
+                    "italic"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cite_note-13",
+          "label": "13",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Stipp, David (2017). A Most Elegant Equation: Euler's Formula and the Beauty of Mathematics (First ed.). Basic Books. ",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "ISBN",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://en.wikipedia.org/wiki/ISBN_(identifier)"
+                },
+                {
+                  "type": "text",
+                  "text": " ",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "978-0-465-09377-9",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://en.wikipedia.org/wiki/Special:BookSources/978-0-465-09377-9"
+                },
+                {
+                  "type": "text",
+                  "text": ".",
+                  "marks": [
+                    "italic"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cite_note-14",
+          "label": "14",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Wilson, Robin (2018). Euler's pioneering equation: the most beautiful theorem in mathematics. Oxford: Oxford University Press. ",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "ISBN",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://en.wikipedia.org/wiki/ISBN_(identifier)"
+                },
+                {
+                  "type": "text",
+                  "text": " ",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "978-0-19-879493-6",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://en.wikipedia.org/wiki/Special:BookSources/978-0-19-879493-6"
+                },
+                {
+                  "type": "text",
+                  "text": ".",
+                  "marks": [
+                    "italic"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cite_note-15",
+          "label": "15",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Conway & Guy, p. "
+                },
+                {
+                  "type": "text",
+                  "text": "254–255",
+                  "href": "https://books.google.com/books?id=0--3rcO7dMYC&pg=PA254"
+                },
+                {
+                  "type": "text",
+                  "text": "."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cite_note-Sandifer2007-16",
+          "label": "16",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Sandifer, p. 4."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cite_note-17",
+          "label": "17",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Wilson, p. 151-152."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "list",
+      "ordered": false,
+      "items": [
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Conway, John H.",
+                  "href": "https://en.wikipedia.org/wiki/John_Horton_Conway"
+                },
+                {
+                  "type": "text",
+                  "text": ", and "
+                },
+                {
+                  "type": "text",
+                  "text": "Guy, Richard K.",
+                  "href": "https://en.wikipedia.org/wiki/Richard_K._Guy"
+                },
+                {
+                  "type": "text",
+                  "text": " (1996), "
+                },
+                {
+                  "type": "text",
+                  "text": "The Book of Numbers",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://en.wikipedia.org/wiki/The_Book_of_Numbers_(math_book)"
+                },
+                {
+                  "type": "text",
+                  "text": ", Springer "
+                },
+                {
+                  "type": "text",
+                  "text": "ISBN",
+                  "href": "https://en.wikipedia.org/wiki/ISBN_(identifier)"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "978-0-387-97993-9",
+                  "href": "https://en.wikipedia.org/wiki/Special:BookSources/978-0-387-97993-9"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Crease, Robert P.",
+                  "href": "https://en.wikipedia.org/wiki/Robert_P._Crease"
+                },
+                {
+                  "type": "text",
+                  "text": " (10 May 2004), \""
+                },
+                {
+                  "type": "text",
+                  "text": "The greatest equations ever",
+                  "href": "http://physicsworld.com/cws/article/print/2004/may/10/the-greatest-equations-ever"
+                },
+                {
+                  "type": "text",
+                  "text": "\", "
+                },
+                {
+                  "type": "text",
+                  "text": "Physics World",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://en.wikipedia.org/wiki/Physics_World"
+                },
+                {
+                  "type": "text",
+                  "text": " [registration required]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Dunham, William",
+                  "href": "https://en.wikipedia.org/wiki/William_Dunham_(mathematician)"
+                },
+                {
+                  "type": "text",
+                  "text": " (1999), "
+                },
+                {
+                  "type": "text",
+                  "text": "Euler: The Master of Us All",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": ", "
+                },
+                {
+                  "type": "text",
+                  "text": "Mathematical Association of America",
+                  "href": "https://en.wikipedia.org/wiki/Mathematical_Association_of_America"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "ISBN",
+                  "href": "https://en.wikipedia.org/wiki/ISBN_(identifier)"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "978-0-88385-328-3",
+                  "href": "https://en.wikipedia.org/wiki/Special:BookSources/978-0-88385-328-3"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Euler, Leonhard",
+                  "href": "https://en.wikipedia.org/wiki/Euler,_Leonhard"
+                },
+                {
+                  "type": "text",
+                  "text": ", "
+                },
+                {
+                  "type": "text",
+                  "text": "Complete work.",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "Leonhardi Euleri opera omnia. 1, Opera mathematica. Volumen VIII, Leonhardi Euleri introductio in analysin infinitorum. Tomus primus",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "http://gallica.bnf.fr/ark:/12148/bpt6k69587.image.r=%22has+celeberrimas+formulas%22.f169.langEN"
+                },
+                {
+                  "type": "text",
+                  "text": ", Leipzig: B. G. Teubneri"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Kasner, E.",
+                  "href": "https://en.wikipedia.org/wiki/Edward_Kasner"
+                },
+                {
+                  "type": "text",
+                  "text": ", and "
+                },
+                {
+                  "type": "text",
+                  "text": "Newman, J.",
+                  "href": "https://en.wikipedia.org/wiki/James_R._Newman"
+                },
+                {
+                  "type": "text",
+                  "text": " (1940), "
+                },
+                {
+                  "type": "text",
+                  "text": "Mathematics and the Imagination",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://en.wikipedia.org/wiki/Mathematics_and_the_Imagination"
+                },
+                {
+                  "type": "text",
+                  "text": ", "
+                },
+                {
+                  "type": "text",
+                  "text": "Simon & Schuster",
+                  "href": "https://en.wikipedia.org/wiki/Simon_&_Schuster"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Maor, Eli",
+                  "href": "https://en.wikipedia.org/wiki/Eli_Maor"
+                },
+                {
+                  "type": "text",
+                  "text": " (1998), "
+                },
+                {
+                  "type": "text",
+                  "text": "e: The Story of a number",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": ", "
+                },
+                {
+                  "type": "text",
+                  "text": "Princeton University Press",
+                  "href": "https://en.wikipedia.org/wiki/Princeton_University_Press"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "ISBN",
+                  "href": "https://en.wikipedia.org/wiki/ISBN_(identifier)"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "0-691-05854-7",
+                  "href": "https://en.wikipedia.org/wiki/Special:BookSources/0-691-05854-7"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Nahin, Paul J. (2006), "
+                },
+                {
+                  "type": "text",
+                  "text": "Dr. Euler's Fabulous Formula: Cures Many Mathematical Ills",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": ", "
+                },
+                {
+                  "type": "text",
+                  "text": "Princeton University Press",
+                  "href": "https://en.wikipedia.org/wiki/Princeton_University_Press"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "ISBN",
+                  "href": "https://en.wikipedia.org/wiki/ISBN_(identifier)"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "978-0-691-11822-2",
+                  "href": "https://en.wikipedia.org/wiki/Special:BookSources/978-0-691-11822-2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Paulos, John Allen",
+                  "href": "https://en.wikipedia.org/wiki/John_Allen_Paulos"
+                },
+                {
+                  "type": "text",
+                  "text": " (1992), "
+                },
+                {
+                  "type": "text",
+                  "text": "Beyond Numeracy: An Uncommon Dictionary of Mathematics",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": ", "
+                },
+                {
+                  "type": "text",
+                  "text": "Penguin Books",
+                  "href": "https://en.wikipedia.org/wiki/Penguin_Books"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "ISBN",
+                  "href": "https://en.wikipedia.org/wiki/ISBN_(identifier)"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "0-14-014574-5",
+                  "href": "https://en.wikipedia.org/wiki/Special:BookSources/0-14-014574-5"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Reid, Constance (various editions), "
+                },
+                {
+                  "type": "text",
+                  "text": "From Zero to Infinity",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://en.wikipedia.org/wiki/From_Zero_to_Infinity"
+                },
+                {
+                  "type": "text",
+                  "text": ", "
+                },
+                {
+                  "type": "text",
+                  "text": "Mathematical Association of America",
+                  "href": "https://en.wikipedia.org/wiki/Mathematical_Association_of_America"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Sandifer, C. Edward (2007), "
+                },
+                {
+                  "type": "text",
+                  "text": "Euler's Greatest Hits",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://books.google.com/books?id=sohHs7ExOsYC&pg=PA4"
+                },
+                {
+                  "type": "text",
+                  "text": ", "
+                },
+                {
+                  "type": "text",
+                  "text": "Mathematical Association of America",
+                  "href": "https://en.wikipedia.org/wiki/Mathematical_Association_of_America"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "ISBN",
+                  "href": "https://en.wikipedia.org/wiki/ISBN_(identifier)"
+                },
+                {
+                  "type": "text",
+                  "text": " "
+                },
+                {
+                  "type": "text",
+                  "text": "978-0-88385-563-8",
+                  "href": "https://en.wikipedia.org/wiki/Special:BookSources/978-0-88385-563-8"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Stipp, David (2017). A Most Elegant Equation: Euler's formula and the beauty of mathematics. ",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "Basic Books",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://en.wikipedia.org/wiki/Basic_Books"
+                },
+                {
+                  "type": "text",
+                  "text": ".",
+                  "marks": [
+                    "italic"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Wells, David",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://en.wikipedia.org/wiki/David_G._Wells?action=edit&redlink=1"
+                },
+                {
+                  "type": "text",
+                  "text": " (1990). \"Are these the most beautiful?\". ",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "The Mathematical Intelligencer",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://en.wikipedia.org/wiki/The_Mathematical_Intelligencer"
+                },
+                {
+                  "type": "text",
+                  "text": ". ",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "12",
+                  "marks": [
+                    "bold",
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": " (3): 37–41. ",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "doi",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://en.wikipedia.org/wiki/Doi_(identifier)"
+                },
+                {
+                  "type": "text",
+                  "text": ":",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "10.1007/BF03024015",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://doi.org/10.1007%2FBF03024015"
+                },
+                {
+                  "type": "text",
+                  "text": ". ",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "S2CID",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://en.wikipedia.org/wiki/S2CID_(identifier)"
+                },
+                {
+                  "type": "text",
+                  "text": " ",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "121503263",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://api.semanticscholar.org/CorpusID:121503263"
+                },
+                {
+                  "type": "text",
+                  "text": ".",
+                  "marks": [
+                    "italic"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Wilson, Robin",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://en.wikipedia.org/wiki/Robin_Wilson_(mathematician)"
+                },
+                {
+                  "type": "text",
+                  "text": " (2018). Euler's Pioneering Equation: The most beautiful theorem in mathematics. ",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "Oxford University Press",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://en.wikipedia.org/wiki/Oxford_University_Press"
+                },
+                {
+                  "type": "text",
+                  "text": ". ",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "ISBN",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://en.wikipedia.org/wiki/ISBN_(identifier)"
+                },
+                {
+                  "type": "text",
+                  "text": " ",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "978-0-192-51406-6",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://en.wikipedia.org/wiki/Special:BookSources/978-0-192-51406-6"
+                },
+                {
+                  "type": "text",
+                  "text": ".",
+                  "marks": [
+                    "italic"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Zeki, S.",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://en.wikipedia.org/wiki/Semir_Zeki"
+                },
+                {
+                  "type": "text",
+                  "text": "; Romaya, J. P.; Benincasa, D. M. T.; ",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "Atiyah, M. F.",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://en.wikipedia.org/wiki/Michael_Atiyah"
+                },
+                {
+                  "type": "text",
+                  "text": " (2014). \"The experience of mathematical beauty and its neural correlates\". Frontiers in Human Neuroscience. ",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "8",
+                  "marks": [
+                    "bold",
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": ": 68. ",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "doi",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://en.wikipedia.org/wiki/Doi_(identifier)"
+                },
+                {
+                  "type": "text",
+                  "text": ":",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "10.3389/fnhum.2014.00068",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://doi.org/10.3389%2Ffnhum.2014.00068"
+                },
+                {
+                  "type": "text",
+                  "text": ". ",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "PMC",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://en.wikipedia.org/wiki/PMC_(identifier)"
+                },
+                {
+                  "type": "text",
+                  "text": " ",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "3923150",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3923150"
+                },
+                {
+                  "type": "text",
+                  "text": ". ",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "PMID",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://en.wikipedia.org/wiki/PMID_(identifier)"
+                },
+                {
+                  "type": "text",
+                  "text": " ",
+                  "marks": [
+                    "italic"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "24592230",
+                  "marks": [
+                    "italic"
+                  ],
+                  "href": "https://pubmed.ncbi.nlm.nih.gov/24592230"
+                },
+                {
+                  "type": "text",
+                  "text": ".",
+                  "marks": [
+                    "italic"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

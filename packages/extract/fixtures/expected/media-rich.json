@@ -1,0 +1,178 @@
+{
+  "schema": 1,
+  "url": "https://travel.example.org/2024/06/night-train",
+  "title": "The Return of the Night Train",
+  "subtitle": "Sleeper services are back, and they are full",
+  "byline": "Mary Shelley",
+  "authors": [
+    "Mary Shelley"
+  ],
+  "siteName": "Travel Weekly",
+  "publishedAt": "2024-06-01T06:00:00Z",
+  "modifiedAt": "2024-06-02T10:15:00Z",
+  "language": "en",
+  "dir": "ltr",
+  "excerpt": "Sleeper trains are back across Europe, and they are full.",
+  "leadImage": {
+    "src": "https://cdn.example.org/img/night-train-1200.jpg",
+    "alt": ""
+  },
+  "favicon": "https://travel.example.org/favicon.ico",
+  "wordCount": 142,
+  "readingMinutes": 1,
+  "blocks": [
+    {
+      "type": "figure",
+      "images": [
+        {
+          "src": "https://cdn.example.org/img/night-train-1600.webp",
+          "alt": "A sleeper train at dusk",
+          "width": 1600,
+          "height": 900,
+          "srcset": "https://cdn.example.org/img/night-train-800.webp 800w, https://cdn.example.org/img/night-train-1600.webp 1600w"
+        }
+      ],
+      "caption": [
+        {
+          "type": "text",
+          "text": "The Nightjet leaving Vienna."
+        }
+      ],
+      "credit": [
+        {
+          "type": "text",
+          "text": "Photo: J. Doe / Agency"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Ten years ago the night train looked finished. Budget airlines had undercut it, rail operators had stopped replacing the rolling stock, and one by one the famous routes went dark."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Now the sleepers are back. New lines link Vienna, Paris, Brussels and Berlin, and on summer weekends the couchettes sell out weeks in advance, as travellers trade an hour of flying for a night of rocking sleep."
+        }
+      ]
+    },
+    {
+      "type": "figure",
+      "images": [
+        {
+          "src": "https://travel.example.org/img/couchette.jpg",
+          "alt": "Inside a couchette",
+          "width": 800,
+          "height": 533
+        }
+      ],
+      "caption": [
+        {
+          "type": "text",
+          "text": "A six-berth couchette, made up for the night."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Operators say the economics have changed. Carbon-conscious travellers will pay a premium, and the new carriages fit more passengers into the same length of train. "
+        },
+        {
+          "type": "image",
+          "src": "https://travel.example.org/img/emoji-train.png",
+          "alt": "🚆",
+          "width": 16,
+          "height": 16
+        },
+        {
+          "type": "text",
+          "text": " Still, the margins are thin."
+        }
+      ]
+    },
+    {
+      "type": "figure",
+      "images": [
+        {
+          "src": "https://cdn.example.org/g/1.jpg",
+          "alt": "Dining car"
+        },
+        {
+          "src": "https://cdn.example.org/g/2.jpg",
+          "alt": "Corridor at night"
+        },
+        {
+          "src": "https://cdn.example.org/g/3.jpg",
+          "alt": "Breakfast tray"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Watch the route in ninety seconds:"
+        }
+      ]
+    },
+    {
+      "type": "video",
+      "provider": "youtube",
+      "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ",
+      "poster": "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg",
+      "title": "Night train timelapse"
+    },
+    {
+      "type": "video",
+      "provider": "youtube",
+      "url": "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/aqz-KE-bpKQ",
+      "poster": "https://i.ytimg.com/vi/aqz-KE-bpKQ/hqdefault.jpg",
+      "title": "Big Buck Bunny"
+    },
+    {
+      "type": "embed",
+      "provider": "twitter",
+      "url": "https://twitter.com/railfan/status/1234567890123456789",
+      "author": "Rail Fan (@railfan)",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Just booked the Paris to Berlin sleeper. Ten hours, one bunk, zero airports. Can not wait."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "video",
+      "provider": "file",
+      "url": "https://travel.example.org/media/clip.mp4",
+      "poster": "https://travel.example.org/media/poster.jpg"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Whether the boom lasts depends on subsidies, track access charges and a stubborn shortage of carriages. For now, the trains keep filling up."
+        }
+      ]
+    }
+  ]
+}

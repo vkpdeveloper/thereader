@@ -8,7 +8,23 @@
 export class VText {
   readonly kind = 0 as const;
   parent: VElement | null = null;
+  /** Cached `visibleLength(text)`; -1 until first asked. */
+  private len = -1;
+  private commaCount = 0;
   constructor(public text: string) {}
+
+  get length(): number {
+    if (this.len < 0) {
+      this.len = visibleLength(this.text);
+      this.commaCount = this.len > 0 ? countCommas(this.text) : 0;
+    }
+    return this.len;
+  }
+
+  get commas(): number {
+    if (this.len < 0) void this.length;
+    return this.commaCount;
+  }
 }
 
 export class VElement {
@@ -35,6 +51,8 @@ export class VElement {
   blockState = -1;
   /** Cached: data table (-1 unknown, 0 layout, 1 data). */
   tableState = -1;
+  /** Set by content normalization: has a block-level descendant. */
+  containsBlock = false;
 
   constructor(
     public tag: string,
@@ -77,7 +95,7 @@ export interface VDocument {
 
 /** Elements dropped with their content while copying the DOM. */
 const DROP = new Set([
-  'script', 'style', 'template', 'link', 'base', 'canvas', 'object', 'embed', 'applet', 'param',
+  'script', 'style', 'template', 'canvas', 'object', 'embed', 'applet', 'param',
   'select', 'option', 'optgroup', 'textarea', 'button', 'datalist', 'dialog', 'map', 'area',
   'frame', 'frameset', 'noembed', 'portal', 'slot', 'meter', 'progress', 'output',
 ]);

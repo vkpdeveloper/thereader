@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<title>Parsing JSON in Rust, Go and Python - Dev Notes</title>
+<meta property="og:site_name" content="Dev Notes">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Parsing JSON in Rust, Go and Python","author":[{"@type":"Person","name":"Grace Hopper"},{"@type":"Person","name":"Linus Torvalds"}],"datePublished":"2024-11-02","publisher":{"@type":"Organization","name":"Dev Notes"}}</script>
+</head>
+<body>
+<nav class="top-nav"><a href="/">Dev Notes</a> <a href="/tags">Tags</a></nav>
+<div class="layout">
+<div class="toc"><h4>On this page</h4><ul><li><a href="#rust">Rust</a></li><li><a href="#go">Go</a></li></ul></div>
+<article class="markdown-body">
+<h1>Parsing JSON in Rust, Go and Python</h1>
+<p>Every language has a favourite way to turn bytes into structured data. Here is the same small task, decoding a user record, written three ways, with the trade-offs each one makes explicit.</p>
+<h2 id="rust">Rust <a class="anchor" href="#rust" aria-hidden="true">#</a></h2>
+<p>Serde derives the decoder at compile time, so mistakes in field names are compile errors rather than runtime surprises.</p>
+<div class="highlight highlight-source-rust"><pre><span class="k">use</span> serde::Deserialize;
+
+<span class="nd">#[derive(Deserialize, Debug)]</span>
+<span class="k">struct</span> User {
+    name: String,
+    age: u32,
+}
+
+<span class="k">fn</span> main() {
+    <span class="k">let</span> user: User = serde_json::from_str(r#"{"name":"Ann","age":41}"#).unwrap();
+    println!("{:?}", user);
+}</pre></div>
+<h2 id="go">Go</h2>
+<p>Go uses struct tags and reflection. It is less strict than Serde, but the standard library is all you need and it compiles in a second.</p>
+<pre><code class="language-go">package main
+
+import (
+	"encoding/json"
+	"fmt"
+)
+
+type User struct {
+	Name string `json:"name"`
+	Age  int    `json:"age"`
+}
+
+func main() {
+	var u User
+	if err := json.Unmarshal([]byte(`{"name":"Ann","age":41}`), &amp;u); err != nil {
+		panic(err)
+	}
+	fmt.Println(u.Name)
+}</code></pre>
+<h2>Python</h2>
+<p>Python needs no declarations at all; the price is that nothing checks the shape until you touch it, which is why dataclasses and pydantic exist.</p>
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3
+4
+5</pre></div></td><td class="code"><div class="highlight"><pre><span class="kn">import</span> json
+<span class="kn">from</span> dataclasses <span class="kn">import</span> dataclass
+
+<span class="n">data</span> = json.loads(<span class="s">'{"name": "Ann", "age": 41}'</span>)
+<span class="nb">print</span>(data[<span class="s">"name"</span>])</pre></div></td></tr></table>
+<p>Unlabelled snippets are detected from their content. This one has no class at all:</p>
+<pre>def greet(name: str) -&gt; str:
+    return f"Hello, {name}!"
+
+if __name__ == "__main__":
+    print(greet("world"))</pre>
+<p>And a shell session with a prompt, plus a GitHub-style line table:</p>
+<pre><code>$ cargo add serde --features derive
+$ cargo run</code></pre>
+<table class="highlight js-file-line-container"><tr><td class="blob-num" data-line-number="1"></td><td class="blob-code blob-code-inner">const user = JSON.parse(text);</td></tr><tr><td class="blob-num" data-line-number="2"></td><td class="blob-code blob-code-inner">console.log(user.name);</td></tr></table>
+<p>Inline code like <code>json.loads</code> and keys like <kbd>Ctrl</kbd>+<kbd>C</kbd> stay inline.</p>
+<div class="code-block-title">config.toml</div>
+<pre><code class="language-toml">[package]
+name = "demo"
+version = "0.1.0"</code></pre>
+</article>
+</div>
+<footer>Dev Notes · <a href="/rss">RSS</a></footer>
+</body>
+</html>

@@ -1,4 +1,4 @@
-import { countCommas, textOf, visibleLength, VElement, VText, walk, type VNode } from './tree';
+import { textOf, visibleLength, VElement, walk, type VNode } from './tree';
 
 /**
  * Finds the article body. The scoring follows Mozilla Readability's proven
@@ -59,15 +59,12 @@ export function isPhrasing(node: VNode): boolean {
   return false;
 }
 
+/** Post-order: children were visited first, so their `containsBlock` is known. */
 function hasBlockChild(el: VElement): boolean {
   for (const child of el.children) {
-    if (child.kind === 1 && (BLOCKS.has(child.tag) || hasBlockChild(child))) return true;
+    if (child.kind === 1 && (BLOCKS.has(child.tag) || child.containsBlock)) return true;
   }
   return false;
-}
-
-function textLength(node: VText): number {
-  return visibleLength(node.text);
 }
 
 /** Bottom-up statistics over non-skipped nodes. */
@@ -78,9 +75,8 @@ export function measure(el: VElement): void {
   const isLink = el.tag === 'a';
   for (const child of el.children) {
     if (child.kind === 0) {
-      const len = textLength(child);
-      text += len;
-      if (len > 0) commas += countCommas(child.text);
+      text += child.length;
+      commas += child.commas;
     } else if (!child.skip) {
       measure(child);
       text += child.textLen;
@@ -169,9 +165,10 @@ export function normalize(body: VElement): void {
       const child = el.children[i]!;
       if (child.kind === 1) visit(child);
     }
+    el.containsBlock = hasBlockChild(el);
     const tag = el.tag;
     if (tag === 'div' || tag === 'section' || tag === 'article' || tag === 'main' || tag === 'center' || tag === 'form' || tag === 'body') {
-      if (!hasBlockChild(el)) {
+      if (!el.containsBlock) {
         if (tag === 'div') el.attrs['data-x-as-p'] = '';
         return;
       }
@@ -252,7 +249,12 @@ function markUnlikely(body: VElement, flags: Flags, state: { bylineRemoved: bool
         el.skip = true;
         return false;
       }
-      if (el.tag === 'nav' || el.tag === 'aside' && !isCallout(el)) {
+      if (el.tag === 'nav' || el.tag === 'aside' && !isCallout(el) && !isNoteMarkup(el)) {
+        el.skip = true;
+        return false;
+      }
+      // Several articles inside an article are a feed of other posts or comments.
+      if (el.tag === 'article' && el.parent !== null && countNestedArticles(el.parent) >= 2 && hasAncestor(el, ARTICLE)) {
         el.skip = true;
         return false;
       }
@@ -265,12 +267,33 @@ function markUnlikely(body: VElement, flags: Flags, state: { bylineRemoved: bool
   });
 }
 
+const ARTICLE = new Set(['article']);
+const QUOTE_OR_FIGURE = new Set(['blockquote', 'figure']);
+
+function countNestedArticles(parent: VElement): number {
+  let n = 0;
+  for (const child of parent.children) if (child.kind === 1 && child.tag === 'article') n++;
+  return n;
+}
+
 function isByline(el: VElement, match: string): boolean {
   const rel = el.attrs['rel'];
   const itemprop = el.attrs['itemprop'];
   if (!(rel === 'author' || (itemprop !== undefined && itemprop.indexOf('author') >= 0) || BYLINE.test(match))) return false;
   const len = visibleLength(textOf(el));
   return len > 0 && len < 100;
+}
+
+/** Footnote and endnote lists (Pandoc, Sphinx, Hugo, GitHub, Wikipedia, Substack). */
+export const FOOTNOTE_CONTAINER = /(?:^|[\s_-])(?:footnotes|footnote-list|footnotes-list|endnotes|references|reflist|refs|footnote-definitions|notes-list|fn-list)(?:$|[\s_-])/;
+
+export function isFootnotes(el: VElement): boolean {
+  return FOOTNOTE_CONTAINER.test(el.matchString) || el.attrs['role'] === 'doc-endnotes' || el.attrs['data-footnotes'] !== undefined;
+}
+
+/** A footnote list or one of its notes: kept even when marked up as <aside>. */
+function isNoteMarkup(el: VElement): boolean {
+  return isFootnotes(el) || el.attrs['role'] === 'doc-footnote' || el.attrs['role'] === 'doc-endnote' || /(?:^|\s)footnote(?:\s|$)/.test(el.className);
 }
 
 export function isCallout(el: VElement): boolean {
@@ -405,7 +428,7 @@ function grab(body: VElement, flags: Flags, articleBody: string | null): Attempt
   for (const root of roots) prepare(root, flags);
   let length = 0;
   for (const root of roots) {
-    measure(root);
+    if (!flags.cleanConditionally) measure(root);
     length += root.textLen;
   }
   return { roots, textLength: length };
@@ -518,19 +541,18 @@ function alignWithStructuredBody(body: VElement, current: VElement | null, artic
     const [recall, precision] = recallOf(current);
     if (recall > 0.8 && precision > 0.6) return current;
   }
-  // Smallest element holding most of the structured text.
+  // Smallest element holding most of the structured text. A descendant never
+  // recalls more than its ancestor, so failing subtrees are pruned.
   let best: VElement | null = null;
   let bestLen = Infinity;
   const minLen = Math.floor(articleBody.length * 0.6);
   walk(body, (el) => {
-    if (el.skip) return false;
-    if (el.textLen < minLen) return false;
-    if (el.textLen < bestLen) {
-      const [recall, precision] = recallOf(el);
-      if (recall > 0.85 && precision > 0.4) {
-        best = el;
-        bestLen = el.textLen;
-      }
+    if (el.skip || el.textLen < minLen) return false;
+    const [recall, precision] = recallOf(el);
+    if (recall <= 0.85) return false;
+    if (precision > 0.4 && el.textLen < bestLen) {
+      best = el;
+      bestLen = el.textLen;
     }
     return true;
   });
@@ -583,8 +605,8 @@ const BOILERPLATE = /(?:^|[\s_-])(?:share|sharing|social|social-links|sharedaddy
 /** Short stand-alone text that is UI, not prose. */
 const UI_TEXT = /^(?:text size|caption|image \d+ of \/? ?\d+|\d+ of \d+|photos?|gallery|enlarge( this image)?|view (full )?gallery|advertisement|ad|sponsored|share( this)?( article| story| post)?|tweet|email|print|copy link|copy|copied!?|loading\.*|read more|continue reading|subscribe|sign up|follow|listen( to this article)?|save|bookmark|comments?|reply|related|related articles|you may also like|recommended|more from .*|skip (to )?(main )?content|back to top|top|close|menu|toggle navigation|show more|load more|see more|×)$/i;
 
+/** Statistics from the attempt's `measure(body)` are still valid here. */
 function prepare(root: VElement, flags: Flags): void {
-  measure(root);
   const rootLen = Math.max(1, root.textLen);
 
   walk(root, (el) => {
@@ -592,7 +614,7 @@ function prepare(root: VElement, flags: Flags): void {
     if (el.skip) return false;
     const tag = el.tag;
     if (tag === 'pre' || tag === 'code' || tag === 'math' || tag === 'math-tex' || tag === 'table' && isDataTableCached(el)) return false;
-    if (tag === 'footer' || tag === 'aside' && !isCallout(el) || tag === 'nav' || tag === 'form' && el.textLen < 200) {
+    if (tag === 'footer' && !hasAncestor(el, QUOTE_OR_FIGURE) || tag === 'aside' && !isCallout(el) && !isNoteMarkup(el) || tag === 'nav' || tag === 'd-appendix' || tag === 'd-title' || tag === 'd-byline' || tag === 'form' && el.textLen < 200) {
       el.skip = true;
       return false;
     }
@@ -648,104 +670,107 @@ const MAYBE_CONTENT = /(?:^|[\s_-])(?:article-body|articlebody|entry-content|pos
 
 const CONDITIONAL = new Set(['form', 'fieldset', 'table', 'ul', 'ol', 'div', 'section', 'aside', 'header', 'dl']);
 
-function countTag(el: VElement, tags: Set<string> | string): number {
-  let n = 0;
-  walk(el, (e) => {
-    if (e.skip) return false;
-    if (e !== el && (typeof tags === 'string' ? e.tag === tags : tags.has(e.tag))) n++;
-    return true;
-  });
-  return n;
-}
-
 const HEADINGS = new Set(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']);
 const LISTS = new Set(['ul', 'ol']);
-
-function textIn(el: VElement, tags: Set<string>): number {
-  let n = 0;
-  walk(el, (e) => {
-    if (e.skip) return false;
-    if (e !== el && tags.has(e.tag)) {
-      n += e.textLen;
-      return false;
-    }
-    return true;
-  });
-  return n;
-}
-
-function cleanConditionally(root: VElement, flags: Flags): void {
-  // Bottom-up so inner junk goes first and containers are judged on what remains.
-  const visit = (el: VElement): void => {
-    for (const child of el.children) if (child.kind === 1 && !child.skip) visit(child);
-    if (el === root || !CONDITIONAL.has(el.tag)) return;
-    measure(el);
-    if (shouldRemove(el, flags)) el.skip = true;
-  };
-  visit(root);
-}
-
 const CODE_LIKE = new Set(['pre', 'code']);
 const EMBEDS = new Set(['object', 'embed', 'iframe']);
 const TEXTISH = new Set(['span', 'li', 'td', 'blockquote', 'dl', 'div', 'img', 'ol', 'p', 'pre', 'table', 'ul']);
 
-function shouldRemove(el: VElement, flags: Flags): boolean {
+/** Subtree counts for conditional cleaning, excluding removed descendants. */
+class Counts {
+  text = 0;
+  link = 0;
+  commas = 0;
+  p = 0;
+  img = 0;
+  li = 0;
+  input = 0;
+  /** pre, math or a data table: content that is never cleaned away. */
+  protected = 0;
+  embeds = 0;
+  headingText = 0;
+  listText = 0;
+  textishText = 0;
+}
+
+function cleanConditionally(root: VElement, flags: Flags): void {
+  const visit = (el: VElement, inProtected: boolean): Counts => {
+    const c = new Counts();
+    const tag = el.tag;
+    const isDataTable = tag === 'table' && isDataTableCached(el);
+    const protectedHere = inProtected || CODE_LIKE.has(tag) || isDataTable;
+    for (const child of el.children) {
+      if (child.kind === 0) {
+        c.text += child.length;
+        c.commas += child.commas;
+        continue;
+      }
+      if (child.skip) continue;
+      const k = visit(child, protectedHere);
+      if (child.skip) continue;
+      const ct = child.tag;
+      c.text += k.text;
+      c.link += ct === 'a' ? (((child.attrs['href'] ?? '').charCodeAt(0) === 35) ? k.text * 0.3 : k.text) : k.link;
+      c.commas += k.commas;
+      c.p += k.p + (ct === 'p' ? 1 : 0);
+      c.img += k.img + (ct === 'img' ? 1 : 0);
+      c.li += k.li + (ct === 'li' ? 1 : 0);
+      c.input += k.input + (ct === 'input' && (child.attrs['type'] ?? '').toLowerCase() !== 'checkbox' ? 1 : 0);
+      c.protected += k.protected + (ct === 'pre' || ct === 'math' || ct === 'math-tex' || ct === 'table' && isDataTableCached(child) ? 1 : 0);
+      c.embeds += k.embeds + (EMBEDS.has(ct) && !VIDEO_HOSTS.test(child.attrs['src'] ?? '') ? 1 : 0);
+      c.headingText += HEADINGS.has(ct) ? k.text : k.headingText;
+      c.listText += LISTS.has(ct) ? k.text : k.listText;
+      c.textishText += TEXTISH.has(ct) ? k.text : k.textishText;
+    }
+    el.textLen = c.text;
+    el.linkLen = c.link;
+    el.commas = c.commas;
+    if (el !== root && CONDITIONAL.has(tag) && !inProtected && shouldRemove(el, c, flags)) el.skip = true;
+    return c;
+  };
+  visit(root, false);
+}
+
+function shouldRemove(el: VElement, c: Counts, flags: Flags): boolean {
   const tag = el.tag;
   if (tag === 'table' && isDataTableCached(el)) return false;
-  for (let p = el.parent; p !== null; p = p.parent) {
-    if (CODE_LIKE.has(p.tag)) return false;
-    if (p.tag === 'table' && isDataTableCached(p)) return false;
-  }
-  if (countTag(el, 'pre') > 0 || countTag(el, 'math') > 0 || countTag(el, 'math-tex') > 0) return false;
-  if (tag !== 'table') {
-    let hasDataTable = false;
-    walk(el, (e) => {
-      if (e !== el && e.tag === 'table' && isDataTableCached(e)) hasDataTable = true;
-      return !hasDataTable;
-    });
-    if (hasDataTable) return false;
-  }
+  if (c.protected > 0) return false;
 
   let isList = tag === 'ul' || tag === 'ol';
-  if (!isList && el.textLen > 0) isList = textIn(el, LISTS) / el.textLen > 0.9;
+  if (!isList && c.text > 0) isList = c.listText / c.text > 0.9;
 
   const weight = classWeight(el, flags);
   if (weight < 0) return true;
-  if (el.commas >= 10) return false;
+  if (c.commas >= 10) return false;
 
-  const text = textOf(el);
-  if (AD_WORDS.test(text) || LOADING_WORDS.test(text)) return true;
+  if (c.text < 40) {
+    const text = textOf(el);
+    if (AD_WORDS.test(text) || LOADING_WORDS.test(text)) return true;
+  }
 
-  const p = countTag(el, 'p');
-  const img = countTag(el, 'img');
-  const li = countTag(el, 'li') - 100;
-  const input = countTag(el, 'input');
-  const headingDensity = el.textLen === 0 ? 0 : textIn(el, HEADINGS) / el.textLen;
-  let embeds = 0;
-  walk(el, (e) => {
-    if (e.skip) return false;
-    if (e !== el && EMBEDS.has(e.tag) && !VIDEO_HOSTS.test(e.attrs['src'] ?? '')) embeds++;
-    return true;
-  });
-  const contentLength = el.textLen;
-  const density = linkDensity(el);
-  const textDensity = el.textLen === 0 ? 0 : textIn(el, TEXTISH) / el.textLen;
+  const p = c.p;
+  const img = c.img;
+  const li = c.li - 100;
+  const headingDensity = c.text === 0 ? 0 : c.headingText / c.text;
+  const contentLength = c.text;
+  const density = c.text === 0 ? 0 : Math.min(1, c.link / c.text);
+  const textDensity = c.text === 0 ? 0 : c.textishText / c.text;
   const inFigure = hasAncestor(el, FIGURE);
 
   let remove = false;
   if (!inFigure && img > 1 && p / img < 0.5) remove = true;
   if (!isList && li > p) remove = true;
-  if (input > Math.floor(p / 3)) remove = true;
+  if (c.input > Math.floor(p / 3)) remove = true;
   if (!isList && !inFigure && headingDensity < 0.9 && contentLength < 25 && (img === 0 || img > 2) && density > 0) remove = true;
   if (!isList && weight < 25 && density > 0.2) remove = true;
   if (weight >= 25 && density > 0.5) remove = true;
-  if ((embeds === 1 && contentLength < 75) || embeds > 1) remove = true;
+  if ((c.embeds === 1 && contentLength < 75) || c.embeds > 1) remove = true;
   if (img === 0 && textDensity === 0 && contentLength === 0) remove = true;
 
   // Lists of images (galleries) stay.
   if (isList && remove) {
-    for (const child of el.children) if (child.kind === 1 && child.children.filter((c) => c.kind === 1).length > 1) return remove;
-    if (countTag(el, 'li') === img) return false;
+    for (const child of el.children) if (child.kind === 1 && !child.skip && child.children.filter((k) => k.kind === 1).length > 1) return remove;
+    if (c.li === img) return false;
   }
   return remove;
 }

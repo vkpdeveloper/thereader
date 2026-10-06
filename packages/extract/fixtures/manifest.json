@@ -1,0 +1,14 @@
+{
+  "blog-basic": "https://quiet.example.com/posts/small-teams",
+  "code-heavy": "https://dev.example.com/posts/parsing-json",
+  "media-rich": "https://travel.example.org/2024/06/night-train",
+  "structure": "https://guide.example.net/html-structure",
+  "rtl-arabic": "https://news.example.ae/world/night-trains",
+  "cjk-japanese": "https://blog.example.jp/posts/quiet-internet",
+  "table-layout-legacy": "http://essays.example.com/hp.html",
+  "jsonld-fallback": "https://citynews.example.com/2025/09/30/bike-lanes",
+  "wikipedia-euler": "https://en.wikipedia.org/wiki/Euler%27s_identity",
+  "python-docs-classes": "https://docs.python.org/3/tutorial/classes.html",
+  "rust-book-strings": "https://doc.rust-lang.org/book/ch08-02-strings.html",
+  "mdn-array-map": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map"
+}

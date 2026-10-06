@@ -202,8 +202,8 @@ const RULES: [string, Rule[]][] = [
     [/^\s*<\?xml\b/, 6], [/<\w+:\w+[\s>]/, 2], [/xmlns(:\w+)?="/, 3], [/<\/\w+>/, 0.5],
   ]],
   ['css', [
-    [/^\s*[.#:@]?[\w-]+(\s*[,>+~]?\s*[.#:]?[\w-]+(\([^)]*\))?)*\s*\{\s*$/m, 2], [/^\s*(color|margin|padding|display|font-(size|family|weight)|background(-color)?|border(-radius)?|width|height|position|flex|grid-template-columns|transition|transform)\s*:[^;]+;/m, 3],
-    [/@(media|import|keyframes|font-face|supports|layer)\b/, 3], [/:\s*(hover|focus|before|after|root|nth-child)/, 1], [/\b\d+(px|rem|em|vh|vw)\b/, 1], [/var\(--[\w-]+\)/, 2],
+    [/^[ \t]*[.#:@]?[\w-]+(?:(?:[ \t]*[,>+~][ \t]*|[ \t]+)[.#:]?[\w-]+|[.#:][\w-]+|\([^)\n]*\))*[ \t]*\{[ \t]*$/m, 2], [/^\s*(color|margin|padding|display|font-(size|family|weight)|background(-color)?|border(-radius)?|width|height|position|flex|grid-template-columns|transition|transform)\s*:[^;]+;/m, 3],
+    [/@(media|import|keyframes|font-face|supports|layer)\b/, 3], [/^[ \t]*-?[a-z]+(?:-[a-z]+)*[ \t]*:[ \t]*[^;{}\n]+;[ \t]*$/m, 2], [/:\s*(hover|focus|before|after|root|nth-child)/, 1], [/\b\d+(px|rem|em|vh|vw)\b/, 1], [/var\(--[\w-]+\)/, 2],
   ]],
   ['scss', [
     [/^\s*\$[\w-]+\s*:/m, 3], [/&(:|\.|-)\w/, 3], [/@(mixin|include|extend|use|forward)\b/, 4],
@@ -293,7 +293,7 @@ function looksLikeJson(code: string): boolean {
 
 /** Best guess for unlabelled code, or null when the evidence is weak. */
 export function detectLanguage(source: string): string | null {
-  const code = source.length > 20000 ? source.slice(0, 20000) : source.trim();
+  const code = (source.length > 5000 ? source.slice(0, 5000) : source).trim();
   if (code.length < 8) return null;
   if (looksLikeJson(code)) return 'json';
   let best: string | null = null;
@@ -315,6 +315,26 @@ export function detectLanguage(source: string): string | null {
   const c = scores.get('c') ?? 0;
   const cpp = scores.get('cpp') ?? 0;
   if (cpp >= 4) scores.set('cpp', cpp + c);
+  // Unified diffs without headers: most lines start with + or -, both present.
+  const lines = code.split('\n');
+  let plus = 0;
+  let minus = 0;
+  for (const line of lines) {
+    const c0 = line.charCodeAt(0);
+    const c1 = line.charCodeAt(1);
+    if (c0 === 43 && c1 !== 43) plus++;
+    else if (c0 === 45 && c1 !== 45) minus++;
+  }
+  if (plus > 0 && minus > 0 && lines.length >= 3 && plus + minus >= lines.length * 0.4) scores.set('diff', (scores.get('diff') ?? 0) + 6);
+  // Terminal sessions: most non-empty lines start with a prompt.
+  let prompts = 0;
+  let nonEmpty = 0;
+  for (const line of lines) {
+    if (line.trim().length === 0) continue;
+    nonEmpty++;
+    if (/^\s*(?:[$%❯>]|PS [A-Z]:\\[^>]*>|[\w.-]+@[\w.-]+:[^$#]*[$#])\s/.test(line)) prompts++;
+  }
+  if (prompts > 0 && prompts >= nonEmpty * 0.5 && !/^\s*>>>/m.test(code)) scores.set('shell', (scores.get('shell') ?? 0) + 4);
   const bash = scores.get('bash') ?? 0;
   const shell = scores.get('shell') ?? 0;
   if (shell >= 3) scores.set('shell', shell + bash);

@@ -180,7 +180,13 @@ export function isSmallImage(img: VElement, image: Image): boolean {
 }
 
 /** Avatars, logos and badges are chrome, not article images. */
-export function isDecorativeImage(img: VElement, image: Image): boolean {
+export function isDecorativeImage(img: VElement, image: Image, base: string): boolean {
+  // An image linking to the site's home page is its logo.
+  const link = img.parent !== null && img.parent.tag === 'a' ? img.parent : img.parent?.parent?.tag === 'a' ? img.parent.parent : null;
+  if (link !== null) {
+    const href = resolveHttp(link.attrs['href'] ?? '', base);
+    if (href !== null && /^https?:\/\/[^/]+\/?(?:index\.html?)?(?:[?#].*)?$/i.test(href)) return true;
+  }
   if (/(?:^|[\s_-])(?:avatar|gravatar|author-(?:photo|image|avatar|img)|logo|site-logo|badge|profile-(?:pic|photo|image)|headshot|byline-image|sponsor-logo|social-icon)(?:$|[\s_-])/.test(img.matchString)) return true;
   return /gravatar\.com\/avatar|\/avatars?\//i.test(image.src);
 }

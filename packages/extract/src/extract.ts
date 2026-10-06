@@ -96,6 +96,21 @@ export function cleanTitle(raw: string, siteName: string | null, host: string): 
   return cleaned.length >= 3 ? cleaned : title;
 }
 
+const PERMALINK_TEXT = /^[#¶§🔗]$/;
+
+/** Heading text without permalink anchors (`¶`, `#`). */
+function headingText(el: VElement): string {
+  let out = '';
+  const visit = (node: VElement): void => {
+    for (const child of node.children) {
+      if (child.kind === 0) out += child.text;
+      else if (!(child.tag === 'a' && PERMALINK_TEXT.test(collapse(textOf(child))))) visit(child);
+    }
+  };
+  visit(el);
+  return collapse(out).replace(/\s*[#¶§]$/, '');
+}
+
 function chooseTitle(meta: Metadata, body: VElement, pageUrl: string): string {
   const host = hostOf(pageUrl);
   const cleaned = meta.rawTitles.map((t) => cleanTitle(t, meta.siteName, host)).filter((t) => t.length > 0);
@@ -103,12 +118,22 @@ function chooseTitle(meta: Metadata, body: VElement, pageUrl: string): string {
   walk(body, (el) => {
     if (headings.length >= 8) return false;
     if (el.tag === 'h1' || el.tag === 'h2') {
-      const t = textOf(el);
+      const t = headingText(el);
       if (t.length >= 3 && t.length <= 300) headings.push(t);
       return false;
     }
     return true;
   });
+  // A heading equal to one segment of "Story - Section - Site".
+  for (const raw of meta.rawTitles) {
+    const segments = collapse(raw).split(SEPARATORS).map(comparable);
+    if (segments.length < 2) continue;
+    // The last segment is the site in "Story - Site" titles; never match it.
+    for (let i = 0; i < segments.length - 1; i++) {
+      if (segments[i]!.length < 3) continue;
+      for (const h of headings) if (comparable(h) === segments[i]) return h;
+    }
+  }
   // The visible heading that matches the page's declared title is the title as written.
   for (const candidate of cleaned) {
     const c = comparable(candidate);
@@ -161,6 +186,14 @@ function tidy(input: Block[], title: string, meta: Metadata): Block[] {
       break;
     }
   }
+  // Title set as an image (old sites): a lone inline image whose alt text is the title.
+  for (let i = 0; i < Math.min(blocks.length, 3); i++) {
+    const b = blocks[i]!;
+    if (b.type === 'paragraph' && b.content.length === 1 && b.content[0]!.type === 'image' && comparable(b.content[0]!.alt) === t && t.length > 0) {
+      blocks.splice(i, 1);
+      break;
+    }
+  }
   if (meta.subtitle !== null && blocks.length > 0 && blocks[0]!.type === 'paragraph' && comparable(blockPlain(blocks[0]!)) === comparable(meta.subtitle)) blocks.shift();
 
   // Bylines and bare dates at the top repeat the header.
@@ -183,7 +216,8 @@ function tidy(input: Block[], title: string, meta: Metadata): Block[] {
   // Contact lines, link lists and promo headings trailing the story.
   while (blocks.length > 1) {
     const last = blocks[blocks.length - 1]!;
-    if (last.type === 'paragraph' && isContactLine(collapse(inlineText(last.content)))) blocks.pop();
+    const lastText = last.type === 'paragraph' ? collapse(inlineText(last.content)) : '';
+    if (last.type === 'paragraph' && (isContactLine(lastText) || isDateLine(lastText.toLowerCase()) || /^(?:last updated|updated|published|posted)(?: on)?:?$/i.test(lastText))) blocks.pop();
     else if (last.type === 'list' && last.items.every((item) => item.blocks.length === 1 && item.blocks[0]!.type === 'paragraph' && linkShare((item.blocks[0] as { content: Inline[] }).content) > 0.8)) blocks.pop();
     else if (last.type === 'heading') blocks.pop();
     else break;
@@ -293,7 +327,7 @@ function excerptOf(description: string | null, blocks: Block[]): string | null {
   if (description !== null && description.length >= 20) return description.length > 400 ? description.slice(0, 397).replace(/\s+\S*$/, '') + '…' : description;
   for (const b of blocks) {
     if (b.type !== 'paragraph') continue;
-    const text = collapse(inlineText(b.content as Inline[]));
+    const text = collapse((b.content as Inline[]).map((n) => (n.type === 'text' ? n.text : n.type === 'math' ? n.text : n.type === 'break' ? ' ' : '')).join(''));
     if (text.length < 40) continue;
     return text.length > 300 ? text.slice(0, 297).replace(/\s+\S*$/, '') + '…' : text;
   }
