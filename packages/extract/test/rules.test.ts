@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test';
 import { JSDOM, VirtualConsole } from 'jsdom';
-import { extract, type Article } from '../src/index';
+import { extract, type Article, type Inline } from '../src/index';
 
 // Single rules on small pages; the same cases as packages/extract_dart/test/rules_test.dart.
 
@@ -65,4 +65,28 @@ test('a canonical URL that only drops https on the same host keeps https', () =>
   expect(url('http://distill.pub/2017/momentum', 'https://distill.pub/2017/momentum/')).toBe('https://distill.pub/2017/momentum');
   expect(url('http://www.example.com/a', 'https://example.com/a')).toBe('http://www.example.com/a');
   expect(url('http://example.com/a', 'http://example.com/b')).toBe('http://example.com/a');
+});
+
+test('a credit closing a caption goes to the credit; elements never glue a sentence to the next', () => {
+  const figure = (caption: string) => `<figure><img src="https://example.com/${caption.length}.jpg" width="800" height="600"><figcaption>${caption}</figcaption></figure>`;
+  const blocks = article(
+    figure('The theatre in Perth, Western Australia.<small>Photograph: Gavin M John/The Guardian</small>') +
+      figure('The tomb of King Djer, in Abydos. Photograph: Mike P Shepherd/Alamy') +
+      figure('Image: Jose Mourinho, left, has replaced Mauricio Pochettino') +
+      '<p>Rep. Omar speaks at the Capitol on July 25, 2019.<span>J. Scott Applewhite / AP file</span> In <code>asyncio.</code><code>TaskGroup</code>, see <span>asyncio.</span><span>TaskGroup</span>.</p>',
+  ).blocks;
+  const text = (t: string): Inline[] => [{ type: 'text', text: t }];
+  expect(blocks.slice(1, 4).map((b) => (b.type === 'figure' ? [b.caption, b.credit] : b))).toEqual([
+    [text('The theatre in Perth, Western Australia.'), text('Photograph: Gavin M John/The Guardian')],
+    [text('The tomb of King Djer, in Abydos.'), text('Photograph: Mike P Shepherd/Alamy')],
+    [text('Image: Jose Mourinho, left, has replaced Mauricio Pochettino'), undefined],
+  ]);
+  expect(blocks[4]).toEqual({
+    type: 'paragraph',
+    content: [
+      { type: 'text', text: 'Rep. Omar speaks at the Capitol on July 25, 2019. J. Scott Applewhite / AP file In ' },
+      { type: 'text', text: 'asyncio.TaskGroup', marks: ['code'] },
+      { type: 'text', text: ', see asyncio.TaskGroup.' },
+    ],
+  });
 });

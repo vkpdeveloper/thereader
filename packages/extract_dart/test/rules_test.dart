@@ -127,4 +127,43 @@ void main() {
     expect(url('http://www.example.com/a', 'https://example.com/a'), 'http://www.example.com/a');
     expect(url('http://example.com/a', 'http://example.com/b'), 'http://example.com/a');
   });
+
+  test('a credit closing a caption goes to the credit; elements never glue a sentence to the next', () {
+    String figure(String caption) =>
+        '<figure><img src="https://example.com/${caption.length}.jpg" width="800" height="600"><figcaption>$caption</figcaption></figure>';
+    final blocks = _blocks(
+      figure('The theatre in Perth, Western Australia.<small>Photograph: Gavin M John/The Guardian</small>') +
+          figure('The tomb of King Djer, in Abydos. Photograph: Mike P Shepherd/Alamy') +
+          figure('Image: Jose Mourinho, left, has replaced Mauricio Pochettino') +
+          '<p>Rep. Omar speaks at the Capitol on July 25, 2019.<span>J. Scott Applewhite / AP file</span> In '
+              '<code>asyncio.</code><code>TaskGroup</code>, see <span>asyncio.</span><span>TaskGroup</span>.</p>',
+    );
+    List<Object?> text(String t) => [
+      {'type': 'text', 'text': t},
+    ];
+    expect(
+      [for (final b in blocks.sublist(1, 4)) (b as Map)['caption']],
+      [
+        text('The theatre in Perth, Western Australia.'),
+        text('The tomb of King Djer, in Abydos.'),
+        text('Image: Jose Mourinho, left, has replaced Mauricio Pochettino'),
+      ],
+    );
+    expect(
+      [for (final b in blocks.sublist(1, 4)) (b as Map)['credit']],
+      [text('Photograph: Gavin M John/The Guardian'), text('Photograph: Mike P Shepherd/Alamy'), null],
+    );
+    expect(blocks[4], {
+      'type': 'paragraph',
+      'content': [
+        {'type': 'text', 'text': 'Rep. Omar speaks at the Capitol on July 25, 2019. J. Scott Applewhite / AP file In '},
+        {
+          'type': 'text',
+          'text': 'asyncio.TaskGroup',
+          'marks': ['code'],
+        },
+        {'type': 'text', 'text': ', see asyncio.TaskGroup.'},
+      ],
+    });
+  });
 }

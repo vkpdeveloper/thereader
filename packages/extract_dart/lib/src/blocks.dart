@@ -162,6 +162,9 @@ class _InlineBuilder {
   /// Id of an anchor that opens the current paragraph ("[<a name="f1n">1</a>] ...").
   String? anchor;
 
+  /// An element starts or ends here: text on either side comes from different elements.
+  bool edge = false;
+
   void text(String value, _Ctx ctx) {
     if (value.isEmpty) return;
     final text = _hasZeroWidth(value) ? value.replaceAll(_zeroWidth, '') : value;
@@ -176,6 +179,18 @@ class _InlineBuilder {
   }
 
   void _plain(String text, _Ctx ctx) {
+    if (edge) {
+      edge = false;
+      // Two elements shown as separate lines ("…Western Australia.<small>Photograph: …"): never one glued word.
+      final last = nodes.isEmpty ? null : nodes.last;
+      if (last is TextRun &&
+          _endsSentence(last.text) &&
+          _capital.hasMatch(text) &&
+          !ctx.marks.contains(Mark.code) &&
+          !last.has(Mark.code)) {
+        nodes[nodes.length - 1] = TextRun('${last.text} ', marks: last.marks, href: last.href);
+      }
+    }
     if (breaks > 0 && _onlyHtmlSpace(text)) return;
     breaks = 0;
     nodes.add(TextRun(text, marks: ctx.marks.isNotEmpty ? _sortMarks(ctx.marks) : null, href: ctx.href));
@@ -201,6 +216,7 @@ class _InlineBuilder {
   }
 
   void lineBreak() {
+    edge = false;
     breaks++;
     if (breaks >= 2 && out != null) {
       flush();
@@ -211,6 +227,7 @@ class _InlineBuilder {
   }
 
   void push(Inline node) {
+    edge = false;
     breaks = 0;
     // Display math is a block of its own: the sentence around it continues in the next paragraph.
     final out = this.out;
@@ -891,6 +908,12 @@ class Converter {
 
   void _inline(VElement el, _InlineBuilder b, _Ctx ctx, List<Block> out) {
     if (el.skip) return;
+    b.edge = true;
+    _inlineElement(el, b, ctx, out);
+    b.edge = true;
+  }
+
+  void _inlineElement(VElement el, _InlineBuilder b, _Ctx ctx, List<Block> out) {
     if (_caption(el, out, b)) return;
     final tag = el.tag;
     if (tag != 'a' &&
@@ -1122,7 +1145,9 @@ class Converter {
         if (_inlineTags.contains(tag)) {
           _inline(e, b, ctx, sink);
         } else {
+          b.edge = true;
           visit(e, ctx);
+          b.edge = true;
         }
         if (_blockTags.contains(tag)) b.lineBreak();
       }
@@ -1649,6 +1674,7 @@ class Converter {
       out.addAll(media);
       return;
     }
+    if (credit.isEmpty && caption.isNotEmpty) (caption, credit) = _splitCredit(caption);
     final figure = FigureBlock(images: images);
     if (caption.isNotEmpty) figure.caption = caption;
     if (credit.isNotEmpty) figure.credit = credit;
@@ -1956,6 +1982,72 @@ void _stripNoteLabel(List<Block> blocks, String label) {
     content.removeAt(0);
   }
   if (content.isEmpty) blocks.removeAt(0);
+}
+
+final _capital = RegExp(r'^\p{Lu}', unicode: true);
+
+/// Words ending a sentence: ".", "!" or "?", maybe inside closing quotes or brackets, after a space somewhere
+/// (`asyncio.` before `TaskGroup` is one name) and not an ellipsis ("Credit...").
+bool _endsSentence(String text) {
+  var i = text.length - 1;
+  while (i >= 0 && '"\')]”’»'.contains(text[i])) {
+    i--;
+  }
+  if (i < 0) return false;
+  final c = text[i];
+  if (c != '.' && c != '!' && c != '?') return false;
+  if (c == '.' && i > 0 && text[i - 1] == '.') return false;
+  return text.lastIndexOf(' ', i) >= 0;
+}
+
+/// "Photograph: …" as a run of its own (`<small>`) or the words after a sentence.
+final _creditLead = RegExp(
+  r'(?:^\s*|[.!?…”’")]\s+)((?:Photograph|Photo|Image|Picture|Illustration|Credit|Source|Graphic)s?\s*:\s*\S)',
+);
+final _sentenceAfter = RegExp(r'[.!?]\s+\p{Lu}', unicode: true);
+
+/// A short credit closing a caption, split off: (caption, credit); the caption is unchanged when there is none.
+(List<Inline>, List<Inline>) _splitCredit(List<Inline> caption) {
+  for (var i = 0; i < caption.length; i++) {
+    final run = caption[i];
+    if (run is! TextRun) continue;
+    final m = _creditLead.firstMatch(run.text);
+    if (m == null) continue;
+    final at = m.end - m[1]!.length;
+    final rest = <Inline>[TextRun(run.text.substring(at), marks: run.marks, href: run.href), ...caption.sublist(i + 1)];
+    final restText = _inlineTextOf(rest);
+    if (restText.length > 120 || _sentenceAfter.hasMatch(restText)) break;
+    // Marks every credit run shares are its wrapper's (`<small>`), not the credit's.
+    List<Mark>? shared;
+    for (final n in rest) {
+      if (n is TextRun) {
+        shared = shared == null
+            ? (n.marks ?? const [])
+            : [
+                for (final x in shared)
+                  if (n.marks != null && n.marks!.contains(x)) x,
+              ];
+      }
+    }
+    Inline unshared(Inline n) {
+      if (n is! TextRun || shared == null || shared.isEmpty) return n;
+      final marks = [
+        for (final x in n.marks!)
+          if (!shared.contains(x)) x,
+      ];
+      return TextRun(n.text, marks: marks.isNotEmpty ? marks : null, href: n.href);
+    }
+
+    final credit = [for (final n in rest) unshared(n)];
+    final before = normalizeInlines([
+      ...caption.sublist(0, i),
+      TextRun(run.text.substring(0, at), marks: run.marks, href: run.href),
+    ]);
+    // "Image: Jose Mourinho, left, …" alone is the caption, labelled.
+    if (before.isEmpty) break;
+    return (before, normalizeInlines(credit));
+  }
+  return (caption, const <Inline>[]);
 }
 
 String _inlineTextOf(List<Inline> content) {

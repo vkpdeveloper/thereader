@@ -13,7 +13,7 @@
   "excerpt": null,
   "leadImage": null,
   "favicon": "https://harbourdaily.example.com/favicon.ico",
-  "wordCount": 54,
+  "wordCount": 52,
   "readingMinutes": 1,
   "blocks": [
     {
@@ -30,13 +30,12 @@
         {
           "type": "text",
           "text": "The granite tower at Cape Dorn, lit every night since 1871."
-        },
+        }
+      ],
+      "credit": [
         {
           "type": "text",
-          "text": "Photograph: Ines Marlow",
-          "marks": [
-            "small"
-          ]
+          "text": "Photograph: Ines Marlow"
         }
       ]
     },

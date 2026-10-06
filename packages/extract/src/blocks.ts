@@ -60,6 +60,8 @@ class InlineBuilder {
   breaks = 0;
   /** Id of an anchor that opens the current paragraph ("[<a name="f1n">1</a>] ..."). */
   anchor: string | null = null;
+  /** An element starts or ends here: text on either side comes from different elements. */
+  edge = false;
 
   constructor(
     private readonly converter: Converter,
@@ -76,6 +78,14 @@ class InlineBuilder {
   }
 
   private plain(text: string, ctx: Ctx): void {
+    if (this.edge) {
+      this.edge = false;
+      // Two elements shown as separate lines ("…Western Australia.<small>Photograph: …"): never one glued word.
+      const last = this.nodes[this.nodes.length - 1];
+      if (last !== undefined && last.type === 'text' && endsSentence(last.text) && CAPITAL.test(text) && ctx.marks.indexOf('code') < 0 && (last.marks === undefined || last.marks.indexOf('code') < 0)) {
+        last.text += ' ';
+      }
+    }
     if (this.breaks > 0 && text.replace(SPACES, '').length === 0) return;
     this.breaks = 0;
     const run: TextRun = { type: 'text', text };
@@ -107,6 +117,7 @@ class InlineBuilder {
   }
 
   lineBreak(): void {
+    this.edge = false;
     this.breaks++;
     if (this.breaks >= 2 && this.out !== null) {
       this.flush();
@@ -117,6 +128,7 @@ class InlineBuilder {
   }
 
   push(node: Inline): void {
+    this.edge = false;
     this.breaks = 0;
     // Display math is a block of its own: the sentence around it continues in the next paragraph.
     if (node.type === 'math' && this.out !== null && this.converter.displayMath.has(node)) {
@@ -719,6 +731,12 @@ export class Converter {
 
   private inline(el: VElement, b: InlineBuilder, ctx: Ctx, out: Block[]): void {
     if (el.skip) return;
+    b.edge = true;
+    this.inlineElement(el, b, ctx, out);
+    b.edge = true;
+  }
+
+  private inlineElement(el: VElement, b: InlineBuilder, ctx: Ctx, out: Block[]): void {
     if (this.caption(el, out, b)) return;
     const tag = el.tag;
     if (tag !== 'a' && !this.inNote && el.matchString.indexOf('note') >= 0 && INLINE_NOTE.test(el.matchString) && this.inlineNote(el, b)) return;
@@ -933,7 +951,9 @@ export class Converter {
         if (INLINE_TAGS.has(tag)) {
           this.inline(child, b, ctx, sink);
         } else {
+          b.edge = true;
           visit(child, ctx);
+          b.edge = true;
         }
         if (BLOCK_TAGS.has(tag)) b.lineBreak();
       }
@@ -1378,6 +1398,7 @@ export class Converter {
       out.push(...media);
       return;
     }
+    if (credit.length === 0 && caption.length > 0) [caption, credit] = splitCredit(caption);
     const figure: Figure = { type: 'figure', images };
     if (caption.length > 0) figure.caption = caption;
     if (credit.length > 0) figure.credit = credit;
@@ -1611,6 +1632,55 @@ function stripNoteLabel(blocks: Block[], label: string): void {
     content.shift();
   }
   if (content.length === 0) blocks.shift();
+}
+
+const CAPITAL = /^\p{Lu}/u;
+
+/**
+ * Words ending a sentence: ".", "!" or "?", maybe inside closing quotes or brackets, after a space somewhere
+ * (`asyncio.` before `TaskGroup` is one name) and not an ellipsis ("Credit...").
+ */
+function endsSentence(text: string): boolean {
+  let i = text.length - 1;
+  while (i >= 0 && '"\')]”’»'.indexOf(text[i]!) >= 0) i--;
+  const c = text[i];
+  if (c !== '.' && c !== '!' && c !== '?') return false;
+  if (c === '.' && text[i - 1] === '.') return false;
+  return text.lastIndexOf(' ', i) >= 0;
+}
+
+/** "Photograph: …" as a run of its own (`<small>`) or the words after a sentence. */
+const CREDIT_LEAD = /(?:^\s*|[.!?…”’")]\s+)((?:Photograph|Photo|Image|Picture|Illustration|Credit|Source|Graphic)s?\s*:\s*\S)/;
+const SENTENCE_AFTER = /[.!?]\s+\p{Lu}/u;
+
+/** A short credit closing a caption, split off: [caption, credit]; the caption is unchanged when there is none. */
+function splitCredit(caption: Inline[]): [Inline[], Inline[]] {
+  for (let i = 0; i < caption.length; i++) {
+    const run = caption[i]!;
+    if (run.type !== 'text') continue;
+    const m = CREDIT_LEAD.exec(run.text);
+    if (m === null) continue;
+    const at = m.index + m[0].length - m[1]!.length;
+    const rest: Inline[] = [{ ...run, text: run.text.slice(at) }, ...caption.slice(i + 1)];
+    const restText = inlineTextOf(rest);
+    if (restText.length > 120 || SENTENCE_AFTER.test(restText)) break;
+    // Marks every credit run shares are its wrapper's (`<small>`), not the credit's.
+    let shared: Mark[] | null = null;
+    for (const n of rest) if (n.type === 'text') shared = shared === null ? n.marks ?? [] : shared.filter((x) => n.marks !== undefined && n.marks.indexOf(x) >= 0);
+    const credit = rest.map((n): Inline => {
+      if (n.type !== 'text' || shared === null || shared.length === 0) return n;
+      const run: TextRun = { type: 'text', text: n.text };
+      const marks = n.marks!.filter((x) => shared!.indexOf(x) < 0);
+      if (marks.length > 0) run.marks = marks;
+      if (n.href !== undefined) run.href = n.href;
+      return run;
+    });
+    const before = normalizeInlines([...caption.slice(0, i), { ...run, text: run.text.slice(0, at) }]);
+    // "Image: Jose Mourinho, left, …" alone is the caption, labelled.
+    if (before.length === 0) break;
+    return [before, normalizeInlines(credit)];
+  }
+  return [caption, []];
 }
 
 function inlineTextOf(content: Inline[]): string {
