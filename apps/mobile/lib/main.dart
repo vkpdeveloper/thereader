@@ -12,6 +12,7 @@ import 'data/articles/article_store.dart';
 import 'data/articles/page_fetcher.dart';
 import 'data/import/epub_import_service.dart';
 import 'data/repositories/article_repository.dart';
+import 'data/repositories/category_repository.dart';
 import 'data/repositories/highlight_repository.dart';
 import 'data/repositories/sync_repository.dart';
 import 'data/repositories/library_repository.dart';
@@ -70,6 +71,7 @@ Future<void> main() async {
     // Documents of articles saved on other devices download from the API.
     cloud: bundledCatalog ? null : () => ApiClient(baseUrl: settings.settings.apiBaseUrl),
   );
+  final categories = CategoryRepository(kv);
   final sync = bundledCatalog
       ? null
       : SyncRepository(
@@ -78,6 +80,7 @@ Future<void> main() async {
           settings: settings,
           highlights: highlights,
           articles: articles,
+          categories: categories,
           isUploadPending: (id) => imports?.isPending(id) ?? false,
           retryUploads: () => unawaited(imports?.retryPending()),
         );
@@ -89,6 +92,7 @@ Future<void> main() async {
     sync: sync,
     highlights: highlights,
     articles: articles,
+    categories: categories,
     readerService: ReaderService(
       engines: const [ReadiumReaderEngine(), DartReaderEngine()],
     ),
@@ -98,6 +102,7 @@ Future<void> main() async {
   // not for upload and sync setup, before opening the reader.
   final libraryReady = library.load();
   unawaited(articles.load());
+  unawaited(categories.load());
   Future<void> loadPersonalLibrary() async {
     await libraryReady;
     await imports?.load();
