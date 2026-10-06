@@ -2,6 +2,7 @@ import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, use
 import { useParams } from '@tanstack/react-router';
 import type { Article } from 'truffle';
 import { SiteIcon } from '../components/ArticleRow';
+import { BackToTop, quietBackToTop } from '../components/article/BackToTop';
 import { renderArticleBlocks } from '../components/article/Blocks';
 import { FootnotePreview, footnotePeekHtml, type FootnotePeek } from '../components/article/FootnotePreview';
 import { blockElements, readPosition, scrollToPosition } from '../components/article/position';
@@ -188,7 +189,10 @@ export function ArticleScreen() {
     if (!ready || !body) return;
     const target = ready.summary.progress ?? 0;
     const count = ready.article.blocks.length;
-    const apply = () => scrollToPosition(blockElements(body, blocksRef), count, target);
+    const apply = () => {
+      quietBackToTop();
+      scrollToPosition(blockElements(body, blocksRef), count, target);
+    };
     apply();
     if (target <= 0) return;
     let moved = false;
@@ -282,6 +286,7 @@ export function ArticleScreen() {
   const flash = useCallback(
     (el: HTMLElement | null, focus: HTMLElement | null) => {
       if (!el) return;
+      quietBackToTop();
       if (Math.abs(el.getBoundingClientRect().top) > window.innerHeight * 2 && bodyRef.current?.classList.contains('is-long')) {
         revealFar(el);
       } else {
@@ -455,6 +460,7 @@ export function ArticleScreen() {
           </div>
         </footer>
       </article>
+      <BackToTop key={id} body={bodyRef} count={article.blocks.length} blocked={panel != null || zoom != null || peek != null} reducedMotion={reducedMotion} />
 
       <Sheet open={panel != null} onClose={() => setPanel(null)} title="Typography">
         <div className="reader-panel-body">
