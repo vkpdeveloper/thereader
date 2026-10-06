@@ -20,7 +20,7 @@
     "height": 1200
   },
   "favicon": "https://en.wikipedia.org/static/apple-touch/wikipedia.png",
-  "wordCount": 1545,
+  "wordCount": 1550,
   "readingMinutes": 7,
   "blocks": [
     {
@@ -291,24 +291,6 @@
         }
       ],
       "anchor": "Mathematical_beauty"
-    },
-    {
-      "type": "paragraph",
-      "content": [
-        {
-          "type": "text",
-          "text": "["
-        },
-        {
-          "type": "text",
-          "text": "edit",
-          "href": "https://en.wikipedia.org/w/index.php?title=Euler%27s_identity&action=edit&section=1"
-        },
-        {
-          "type": "text",
-          "text": "]"
-        }
-      ]
     },
     {
       "type": "paragraph",
@@ -914,6 +896,17 @@
     },
     {
       "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Explanations"
+        }
+      ],
+      "anchor": "Explanations"
+    },
+    {
+      "type": "heading",
       "level": 3,
       "content": [
         {
@@ -922,24 +915,6 @@
         }
       ],
       "anchor": "Imaginary_exponents"
-    },
-    {
-      "type": "paragraph",
-      "content": [
-        {
-          "type": "text",
-          "text": "["
-        },
-        {
-          "type": "text",
-          "text": "edit",
-          "href": "https://en.wikipedia.org/w/index.php?title=Euler%27s_identity&action=edit&section=3"
-        },
-        {
-          "type": "text",
-          "text": "]"
-        }
-      ]
     },
     {
       "type": "figure",
@@ -1406,24 +1381,6 @@
       "content": [
         {
           "type": "text",
-          "text": "["
-        },
-        {
-          "type": "text",
-          "text": "edit",
-          "href": "https://en.wikipedia.org/w/index.php?title=Euler%27s_identity&action=edit&section=4"
-        },
-        {
-          "type": "text",
-          "text": "]"
-        }
-      ]
-    },
-    {
-      "type": "paragraph",
-      "content": [
-        {
-          "type": "text",
           "text": "Any complex number "
         },
         {
@@ -1750,6 +1707,17 @@
       ]
     },
     {
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Generalizations"
+        }
+      ],
+      "anchor": "Generalizations"
+    },
+    {
       "type": "paragraph",
       "content": [
         {
@@ -1966,6 +1934,17 @@
       ]
     },
     {
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "History"
+        }
+      ],
+      "anchor": "History"
+    },
+    {
       "type": "paragraph",
       "content": [
         {
@@ -2122,6 +2101,17 @@
       ]
     },
     {
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "See also"
+        }
+      ],
+      "anchor": "See_also"
+    },
+    {
       "type": "list",
       "ordered": false,
       "items": [
@@ -2182,6 +2172,17 @@
           ]
         }
       ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Notes"
+        }
+      ],
+      "anchor": "Notes"
     },
     {
       "type": "footnotes",
@@ -2288,7 +2289,23 @@
               ]
             }
           ]
-        },
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "References"
+        }
+      ],
+      "anchor": "References"
+    },
+    {
+      "type": "footnotes",
+      "items": [
         {
           "id": "cite_note-1",
           "label": "2",
@@ -2751,6 +2768,17 @@
           ]
         }
       ]
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "content": [
+        {
+          "type": "text",
+          "text": "Sources"
+        }
+      ],
+      "anchor": "Sources"
     },
     {
       "type": "list",

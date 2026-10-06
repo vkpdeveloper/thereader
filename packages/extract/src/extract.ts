@@ -115,25 +115,19 @@ function chooseTitle(meta: Metadata, body: VElement, pageUrl: string): string {
   const host = hostOf(pageUrl);
   const cleaned = meta.rawTitles.map((t) => cleanTitle(t, meta.siteName, host)).filter((t) => t.length > 0);
   const headings: string[] = [];
+  const h1s: string[] = [];
   walk(body, (el) => {
     if (headings.length >= 8) return false;
     if (el.tag === 'h1' || el.tag === 'h2') {
       const t = headingText(el);
-      if (t.length >= 3 && t.length <= 300) headings.push(t);
+      if (t.length > 0 && t.length <= 300 && (t.length >= 3 || el.tag === 'h1')) {
+        headings.push(t);
+        if (el.tag === 'h1') h1s.push(t);
+      }
       return false;
     }
     return true;
   });
-  // A heading equal to one segment of "Story - Section - Site".
-  for (const raw of meta.rawTitles) {
-    const segments = collapse(raw).split(SEPARATORS).map(comparable);
-    if (segments.length < 2) continue;
-    // The last segment is the site in "Story - Site" titles; never match it.
-    for (let i = 0; i < segments.length - 1; i++) {
-      if (segments[i]!.length < 3) continue;
-      for (const h of headings) if (comparable(h) === segments[i]) return h;
-    }
-  }
   // The visible heading that matches the page's declared title is the title as written.
   for (const candidate of cleaned) {
     const c = comparable(candidate);
@@ -151,18 +145,30 @@ function chooseTitle(meta: Metadata, body: VElement, pageUrl: string): string {
       if (hc.length >= 10 && (c.indexOf(hc) >= 0 && hc.length > c.length * 0.6 || hc.indexOf(c) >= 0 && c.length > hc.length * 0.6)) return h;
     }
   }
+  // A heading equal to one segment of "Story - Section - Site".
+  for (const raw of meta.rawTitles) {
+    const segments = collapse(raw).split(SEPARATORS).map(comparable);
+    if (segments.length < 2) continue;
+    // The last segment is the site in "Story - Site" titles; never match it.
+    for (let i = 0; i < segments.length - 1; i++) {
+      if (segments[i]!.length === 0) continue;
+      // Short (often CJK) titles only match the page's h1.
+      for (const h of segments[i]!.length < 3 ? h1s : headings) if (comparable(h) === segments[i]) return h;
+    }
+  }
   // Rewritten headlines ("Trump says..." vs "Donald Trump says a..."): the visible
   // heading that shares most of its words with the declared title.
   let best: string | null = null;
   let bestOverlap = 0.6;
   for (const candidate of cleaned) {
     const words = new Set(comparable(candidate).split(' '));
+    if (words.size < 3) continue;
     for (const h of headings) {
       const hw = comparable(h).split(' ');
       if (hw.length < 3) continue;
       let shared = 0;
       for (const w of hw) if (words.has(w)) shared++;
-      const overlap = shared / Math.min(hw.length, words.size);
+      const overlap = shared / Math.max(hw.length, words.size);
       if (overlap > bestOverlap) {
         bestOverlap = overlap;
         best = h;
@@ -322,7 +328,7 @@ function imageKey(src: string): string {
 /** Shows the page's lead image above the text when the body itself opens without one. */
 function addLeadImage(blocks: Block[], lead: Image | null): void {
   if (lead === null) return;
-  if (/(?:logo|default|placeholder|share|social|og-image|opengraph|fallback|favicon|icon|avatar|banner-default)[\w-]*\.(?:jpe?g|png|webp|gif|svg)/i.test(lead.src) || /\.svg(?:$|\?)/i.test(lead.src)) return;
+  if (/(?:logo|default|placeholder|share|social|og-image|opengraph|fallback|favicon|icon|avatar|banner-default)[\w.-]*\.(?:jpe?g|png|webp|gif|svg)/i.test(lead.src) || /\.svg(?:$|\?)/i.test(lead.src)) return;
   if (lead.width !== undefined && lead.width < 400) return;
   const key = imageKey(lead.src);
   for (const b of blocks) {

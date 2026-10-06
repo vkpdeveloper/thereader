@@ -1,5 +1,5 @@
 // Annotation aid: prints a snapshot's metadata and its text blocks with DOM paths.
-// bun run scripts/dump.ts <id> [--full] [--grep text]
+// bun run dump <id> [<id> ...] [--full] [--grep text]
 import { parseArgs } from 'node:util';
 import { BrowserPool } from '../src/browser';
 import { loadCurated, loadCuratedDocs } from '../src/corpus';

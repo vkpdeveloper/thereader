@@ -10,6 +10,8 @@ import { textOf, visibleLength, VElement, walk, type VNode } from './tree';
  */
 
 const UNLIKELY = /-ad-|ai2html|banner|breadcrumbs|combx|comment|community|cover-wrap|disqus|extra|footer|gdpr|header|legends|menu|related|remark|replies|rss|shoutbox|sidebar|skyscraper|social|sponsor|supplemental|ad-break|agegate|pagination|pager|popup|yom-remote|newsletter|subscribe|cookie|consent|signup|outbrain|taboola|recirc|trending|most-popular|mostpopular|promo/;
+/** Unlikely-candidate words that prose never overrides. */
+const UNLIKELY_HARD = /-ad-|ai2html|breadcrumbs|combx|comment|community|disqus|footer|gdpr|menu|related|replies|rss|shoutbox|sidebar|skyscraper|social|sponsor|ad-break|pagination|pager|popup|yom-remote|newsletter|subscribe|cookie|consent|signup|outbrain|taboola|recirc|trending|most-popular|mostpopular|promo/;
 const MAYBE = /and|article|body|column|content|main|mathjax|shadow|story|post-text|entry/;
 const POSITIVE = /article|body|content|entry|hentry|h-entry|main|page|pagination|post|text|blog|story|prose|markdown|rich-text|richtext/;
 const NEGATIVE = /-ad-|hidden|^hid$| hid$| hid |^hid |banner|combx|comment|com-|contact|footer|gdpr|masthead|media|meta|outbrain|promo|related|scroll|share|shoutbox|sidebar|skyscraper|sponsor|shopping|tags|widget|newsletter|subscribe|taboola|recirc|byline|author-bio|toolbar|breadcrumb|disclaimer|caption-credit/;
@@ -227,6 +229,7 @@ const TABLE_OR_CODE = new Set(['table', 'code', 'pre']);
 
 /** Pass 1 of an attempt: marks unlikely candidates, bylines and empty wrappers as skipped. */
 function markUnlikely(body: VElement, flags: Flags, state: { bylineRemoved: boolean }): void {
+  const totalProse = proseLength(body);
   walk(body, (el) => {
     if (el === body) return true;
     const match = el.matchString;
@@ -241,8 +244,13 @@ function markUnlikely(body: VElement, flags: Flags, state: { bylineRemoved: bool
     }
     if (flags.stripUnlikely) {
       if (UNLIKELY.test(match) && !MAYBE.test(match) && el.tag !== 'a' && el.tag !== 'body' && el.tag !== 'article' && el.tag !== 'main' && !hasAncestor(el, TABLE_OR_CODE)) {
-        el.skip = true;
-        return false;
+        // "header", "banner", "extra": weak signals that real prose overrides (MDN puts intros in a header).
+        // A layout wrapper holding most of the page's prose ("with-sidebar") is never unlikely.
+        const prose = proseLength(el);
+        if ((UNLIKELY_HARD.test(match) || prose < 400) && prose <= totalProse * 0.5) {
+          el.skip = true;
+          return false;
+        }
       }
       const role = el.attrs['role'];
       if (role !== undefined && UNLIKELY_ROLES.has(role)) {
@@ -273,6 +281,19 @@ const QUOTE_OR_FIGURE = new Set(['blockquote', 'figure']);
 function countNestedArticles(parent: VElement): number {
   let n = 0;
   for (const child of parent.children) if (child.kind === 1 && child.tag === 'article') n++;
+  return n;
+}
+
+/** Text of paragraphs inside `el` that is not link text (uses the attempt's fresh `measure`). */
+function proseLength(el: VElement): number {
+  let n = 0;
+  walk(el, (e) => {
+    if (e.tag === 'p') {
+      n += e.textLen - e.linkLen;
+      return false;
+    }
+    return true;
+  });
   return n;
 }
 
@@ -313,6 +334,7 @@ interface Attempt {
 
 function grab(body: VElement, flags: Flags, articleBody: string | null): Attempt {
   resetMarks(body);
+  measure(body);
   markUnlikely(body, flags, { bylineRemoved: false });
   measure(body);
 
@@ -412,17 +434,21 @@ function grab(body: VElement, flags: Flags, articleBody: string | null): Attempt
         const bonus = sibling.className !== '' && sibling.className === topCandidate.className ? topCandidate.score * 0.2 : 0;
         if (sibling.scored && sibling.score + bonus >= siblingThreshold) {
           append = true;
+        } else if (bonus > 0 && sibling.textLen > 50 && linkDensity(sibling) < 0.3) {
+          // Same component class as the body (CMS "text block" wrappers): more of the same.
+          append = true;
         } else if (sibling.tag === 'p' || sibling.attrs['data-x-as-p'] !== undefined) {
           const density = linkDensity(sibling);
           const len = sibling.textLen;
           if (len > 80 && density < 0.25) append = true;
           else if (len < 80 && len > 0 && density === 0 && /\.( |$)/.test(textOf(sibling))) append = true;
-        } else if (isLeadMedia(sibling, topCandidate)) {
+        } else if (isLeadMedia(sibling, topCandidate) || isAdjacentProse(sibling, topCandidate)) {
           append = true;
         }
       }
       if (append) roots.push(sibling);
     }
+    fillBetween(parent, roots);
   }
 
   for (const root of roots) prepare(root, flags);
@@ -468,6 +494,56 @@ function joinSplitBody(top: VElement, candidates: VElement[]): VElement {
   return top;
 }
 
+const STRUCTURE = new Set(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'figure', 'pre', 'table', 'blockquote', 'p', 'hr', 'picture', 'details', 'dl', 'ul', 'ol']);
+
+/**
+ * Joined siblings imply the parent is the article: headings, figures, code and
+ * prose between them (and a heading right before the first) belong to it too.
+ */
+function fillBetween(parent: VElement, roots: VElement[]): void {
+  if (roots.length < 2) return;
+  const kids = parent.children;
+  let first = kids.indexOf(roots[0]!);
+  const last = kids.indexOf(roots[roots.length - 1]!);
+  for (let k = first - 1; k >= 0; k--) {
+    const prev = kids[k]!;
+    if (prev.kind === 0) {
+      if (prev.text.trim().length > 0) break;
+      continue;
+    }
+    if (!prev.skip && /^h[1-6]$/.test(prev.tag)) first = k;
+    break;
+  }
+  const out: VElement[] = [];
+  for (let k = first; k <= last; k++) {
+    const child = kids[k]!;
+    if (child.kind !== 1 || child.skip) continue;
+    if (roots.indexOf(child) >= 0) {
+      out.push(child);
+      continue;
+    }
+    if (NEGATIVE.test(child.matchString) || BOILERPLATE.test(child.matchString)) continue;
+    if (!STRUCTURE.has(child.tag) && !(child.textLen < 400 && hasMedia(child))) continue;
+    if ((child.tag === 'ul' || child.tag === 'ol' || child.tag === 'dl') && linkDensity(child) > 0.5) continue;
+    out.push(child);
+  }
+  roots.length = 0;
+  roots.push(...out);
+}
+
+const MEDIA = new Set(['figure', 'img', 'picture', 'pre', 'table', 'video', 'iframe', 'audio', 'math', 'blockquote']);
+
+/** Wrapper of an image, video, table or code listing (CMS media blocks between text blocks). */
+function hasMedia(el: VElement): boolean {
+  let found = false;
+  walk(el, (e) => {
+    if (found || e.skip) return false;
+    if (e !== el && MEDIA.has(e.tag)) found = true;
+    return !found;
+  });
+  return found;
+}
+
 /** A figure or heading directly before the body (lead image, section title) belongs to it. */
 function isLeadMedia(sibling: VElement, top: VElement): boolean {
   const parent = top.parent;
@@ -489,6 +565,22 @@ function isLeadMedia(sibling: VElement, top: VElement): boolean {
     return images === 1 && !NEGATIVE.test(sibling.matchString);
   }
   return false;
+}
+
+/** A container of plain paragraphs right next to the body (an intro split from it). */
+function isAdjacentProse(sibling: VElement, top: VElement): boolean {
+  if (sibling.textLen < 200 || linkDensity(sibling) > 0.25 || NEGATIVE.test(sibling.matchString) || BOILERPLATE.test(sibling.matchString)) return false;
+  const parent = top.parent;
+  if (parent === null) return false;
+  const kids = parent.children;
+  const i = kids.indexOf(sibling);
+  const j = kids.indexOf(top);
+  const step = i < j ? 1 : -1;
+  for (let k = i + step; k !== j; k += step) {
+    const between = kids[k]!;
+    if (between.kind === 1 && !between.skip) return false;
+  }
+  return proseLength(sibling) >= sibling.textLen * 0.5 && proseLength(sibling) >= 200;
 }
 
 function liveChildren(el: VElement): number {
@@ -600,7 +692,7 @@ export function isDataTableCached(table: VElement): boolean {
 }
 
 /** Boilerplate inside an article: removed regardless of score when small relative to the article. */
-const BOILERPLATE = /(?:^|[\s_-])(?:share|sharing|social|social-links|sharedaddy|share-buttons|newsletter|subscribe|subscription|signup|sign-up|optin|opt-in|related|related-posts|related-articles|recommended|recommendations|more-stories|read-more|readmore|read-next|also-read|further-reading-promo|promo|promoted|sponsored|advert|advertisement|ad-container|ad-slot|ad-unit|ad-wrapper|adsbygoogle|dfp|gpt-ad|comments|comment-list|commentlist|disqus|breadcrumb|breadcrumbs|pagination|post-tags|entry-tags|tag-list|tags-list|article-tags|toc|table-of-contents|tableofcontents|cookie|consent|gdpr|regwall|inline-cta|cta|author-bio|about-author|author-box|authorbox|post-author-bio|byline|dateline|print|skip-link|toolbar|sticky|floating|modal|popup|overlay|outbrain|taboola|jp-relatedposts|wp-block-buttons|follow-us|listen|audio-player|article-audio|podcast-player|rating|reactions|clap|kudos)(?:$|[\s_-])/;
+const BOILERPLATE = /(?:^|[\s_-])(?:mw-editsection|editsection|edit-section|mw-jump-link|catlinks|printfooter|navbox|vertical-navbox|ambox|hatnote|noprint|share|sharing|social|social-links|sharedaddy|share-buttons|newsletter|subscribe|subscription|signup|sign-up|optin|opt-in|related|related-posts|related-articles|recommended|recommendations|more-stories|read-more|readmore|read-next|also-read|further-reading-promo|promo|promoted|sponsored|advert|advertisement|ad-container|ad-slot|ad-unit|ad-wrapper|adsbygoogle|dfp|gpt-ad|comments|comment-list|commentlist|disqus|breadcrumb|breadcrumbs|pagination|post-tags|entry-tags|tag-list|tags-list|article-tags|toc|table-of-contents|tableofcontents|cookie|consent|gdpr|regwall|inline-cta|cta|author-bio|about-author|author-box|authorbox|post-author-bio|byline|dateline|print|skip-link|toolbar|sticky|floating|modal|popup|overlay|outbrain|taboola|jp-relatedposts|wp-block-buttons|follow-us|listen|audio-player|article-audio|podcast-player|rating|reactions|clap|kudos)(?:$|[\s_-])/;
 
 /** Short stand-alone text that is UI, not prose. */
 const UI_TEXT = /^(?:text size|caption|image \d+ of \/? ?\d+|\d+ of \d+|photos?|gallery|enlarge( this image)?|view (full )?gallery|advertisement|ad|sponsored|share( this)?( article| story| post)?|tweet|email|print|copy link|copy|copied!?|loading\.*|read more|continue reading|subscribe|sign up|follow|listen( to this article)?|save|bookmark|comments?|reply|related|related articles|you may also like|recommended|more from .*|skip (to )?(main )?content|back to top|top|close|menu|toggle navigation|show more|load more|see more|×)$/i;
@@ -742,6 +834,8 @@ function shouldRemove(el: VElement, c: Counts, flags: Flags): boolean {
   const weight = classWeight(el, flags);
   if (weight < 0) return true;
   if (c.commas >= 10) return false;
+  // Heading wrappers (`div.mw-heading` with an edit link) are structure, not clutter.
+  if (c.headingText > 0 && c.text - c.link <= c.headingText * 1.2) return false;
 
   if (c.text < 40) {
     const text = textOf(el);

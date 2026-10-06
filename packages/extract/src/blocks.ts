@@ -560,8 +560,10 @@ export class Converter {
             b.push({ type: 'ref', id, label });
             return;
           }
-          if (BACKLINK.test(el.matchString) || /^[↩↑^]/.test(collapse(rawText(el)))) return;
-          if (PERMALINK.test(el.matchString) || /^[#¶§🔗]$/.test(collapse(rawText(el)))) return;
+          const linkText = collapse(rawText(el));
+          if (BACKLINK.test(el.matchString) || /^[↩↑^]/.test(linkText)) return;
+          // Permalink glyphs go; a permalink wrapping the heading's own words keeps them.
+          if (/^[#¶§🔗]?$/.test(linkText)) return;
           // Other in-page links read as plain text.
           this.inlineChildren(el, b, ctx, out);
           return;

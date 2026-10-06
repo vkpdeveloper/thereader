@@ -108,7 +108,8 @@ const SR_ONLY = /(?:^|\s)(?:sr-only|visually-hidden|visuallyhidden|screen-reader
 function isHidden(el: Element, tag: string): boolean {
   const cls = el.getAttribute('class');
   if (cls !== null && cls.indexOf('mwe-math-mathml') >= 0) return false;
-  if (el.hasAttribute('hidden') && tag !== 'input') return true;
+  // React streaming SSR parks finished Suspense boundaries in <div hidden id="S:n"> until JS swaps them in.
+  if (el.hasAttribute('hidden') && tag !== 'input' && !/^S:\d+$/.test(el.id)) return true;
   const style = el.getAttribute('style');
   if (style !== null && HIDDEN_STYLE.test(style)) return true;
   if (cls !== null && SR_ONLY.test(cls)) return true;
@@ -150,8 +151,9 @@ export function fromDom(doc: Document): VDocument {
     }
     if (DROP.has(tag)) return null;
     if (inHead && tag !== 'title' && tag !== 'meta' && tag !== 'link' && tag !== 'noscript') return null;
-    if (tag === 'meta' || tag === 'link') {
-      if (!inHead && !el.hasAttribute('itemprop')) return null;
+    // Streaming renderers (React 19, Next.js) emit <title>, <meta> and <link> inside <body>; keep them for metadata.
+    if (tag === 'meta' || tag === 'link' || tag === 'title') {
+      if (!inHead && tag === 'meta' && !el.hasAttribute('itemprop') && !el.hasAttribute('property') && !el.hasAttribute('name')) return null;
     } else if (!inHead && isHidden(el, tag)) {
       return null;
     }

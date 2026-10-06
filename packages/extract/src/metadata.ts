@@ -225,7 +225,7 @@ export function readMetadata(doc: VDocument, pageUrl: string): Metadata {
   if (doc.head !== null) walk(doc.head, (el) => readMeta(el));
   walk(doc.body, (el) => {
     if (el.tag === 'meta' || el.tag === 'link') readMeta(el);
-    else if (el.tag === 'title' && titleTag === null && doc.head === null) titleTag = textOf(el);
+    else if (el.tag === 'title' && titleTag === null) titleTag = textOf(el);
   });
 
   // JSON-LD: the article node, plus the page's publisher.

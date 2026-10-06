@@ -18,19 +18,19 @@
     "height": 1024
   },
   "favicon": "https://developer.mozilla.org/apple-touch-icon.png",
-  "wordCount": 1302,
+  "wordCount": 1339,
   "readingMinutes": 6,
   "blocks": [
     {
-      "type": "figure",
-      "images": [
+      "type": "heading",
+      "level": 2,
+      "content": [
         {
-          "src": "https://developer.mozilla.org/mdn-social-image.46ac2375.png",
-          "alt": "The MDN logo",
-          "width": 1024,
-          "height": 1024
+          "type": "text",
+          "text": "Try it"
         }
-      ]
+      ],
+      "anchor": "try_it"
     },
     {
       "type": "code",
@@ -39,19 +39,32 @@
       "languageSource": "markup"
     },
     {
-      "type": "paragraph",
+      "type": "heading",
+      "level": 2,
       "content": [
         {
           "type": "text",
-          "text": "js"
+          "text": "Syntax"
         }
-      ]
+      ],
+      "anchor": "syntax"
     },
     {
       "type": "code",
       "code": "map(callbackFn)\nmap(callbackFn, thisArg)",
       "language": "javascript",
       "languageSource": "markup"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "content": [
+        {
+          "type": "text",
+          "text": "Parameters"
+        }
+      ],
+      "anchor": "parameters"
     },
     {
       "type": "definitions",
@@ -220,6 +233,17 @@
       ]
     },
     {
+      "type": "heading",
+      "level": 3,
+      "content": [
+        {
+          "type": "text",
+          "text": "Return value"
+        }
+      ],
+      "anchor": "return_value"
+    },
+    {
       "type": "paragraph",
       "content": [
         {
@@ -227,6 +251,17 @@
           "text": "A new array with each element being the result of the callback function."
         }
       ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Description"
+        }
+      ],
+      "anchor": "description"
     },
     {
       "type": "paragraph",
@@ -398,6 +433,28 @@
       ]
     },
     {
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Examples"
+        }
+      ],
+      "anchor": "examples"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "content": [
+        {
+          "type": "text",
+          "text": "Mapping an array of numbers to an array of square roots"
+        }
+      ],
+      "anchor": "mapping_an_array_of_numbers_to_an_array_of_square_roots"
+    },
+    {
       "type": "paragraph",
       "content": [
         {
@@ -407,19 +464,21 @@
       ]
     },
     {
-      "type": "paragraph",
-      "content": [
-        {
-          "type": "text",
-          "text": "js"
-        }
-      ]
-    },
-    {
       "type": "code",
       "code": "const numbers = [1, 4, 9];\nconst roots = numbers.map((num) => Math.sqrt(num));\n\n// roots is now     [1, 2, 3]\n// numbers is still [1, 4, 9]",
       "language": "javascript",
       "languageSource": "markup"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "content": [
+        {
+          "type": "text",
+          "text": "Using map to reformat objects in an array"
+        }
+      ],
+      "anchor": "using_map_to_reformat_objects_in_an_array"
     },
     {
       "type": "paragraph",
@@ -431,19 +490,21 @@
       ]
     },
     {
-      "type": "paragraph",
-      "content": [
-        {
-          "type": "text",
-          "text": "js"
-        }
-      ]
-    },
-    {
       "type": "code",
       "code": "const kvArray = [\n  { key: 1, value: 10 },\n  { key: 2, value: 20 },\n  { key: 3, value: 30 },\n];\n\nconst reformattedArray = kvArray.map(({ key, value }) => ({ [key]: value }));\n\nconsole.log(reformattedArray); // [{ 1: 10 }, { 2: 20 }, { 3: 30 }]\nconsole.log(kvArray);\n// [\n//   { key: 1, value: 10 },\n//   { key: 2, value: 20 },\n//   { key: 3, value: 30 }\n// ]",
       "language": "javascript",
       "languageSource": "markup"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "content": [
+        {
+          "type": "text",
+          "text": "Using parseInt() with map()"
+        }
+      ],
+      "anchor": "using_parseint_with_map"
     },
     {
       "type": "paragraph",
@@ -451,15 +512,6 @@
         {
           "type": "text",
           "text": "It is common to use the callback with one argument (the element being traversed). Certain functions are also commonly used with one argument, even though they take additional optional arguments. These habits may lead to confusing behaviors. Consider:"
-        }
-      ]
-    },
-    {
-      "type": "paragraph",
-      "content": [
-        {
-          "type": "text",
-          "text": "js"
         }
       ]
     },
@@ -561,15 +613,6 @@
       ]
     },
     {
-      "type": "paragraph",
-      "content": [
-        {
-          "type": "text",
-          "text": "js"
-        }
-      ]
-    },
-    {
       "type": "code",
       "code": "/* first iteration  (index is 0): */ parseInt(\"1\", 0); // 1\n/* second iteration (index is 1): */ parseInt(\"2\", 1); // NaN\n/* third iteration  (index is 2): */ parseInt(\"3\", 2); // NaN",
       "language": "javascript",
@@ -581,15 +624,6 @@
         {
           "type": "text",
           "text": "To solve this, define another function that only takes one argument:"
-        }
-      ]
-    },
-    {
-      "type": "paragraph",
-      "content": [
-        {
-          "type": "text",
-          "text": "js"
         }
       ]
     },
@@ -621,15 +655,6 @@
       ]
     },
     {
-      "type": "paragraph",
-      "content": [
-        {
-          "type": "text",
-          "text": "js"
-        }
-      ]
-    },
-    {
       "type": "code",
       "code": "[\"1\", \"2\", \"3\"].map(Number); // [1, 2, 3]\n\n// But unlike parseInt(), Number() will also return a float or (resolved) exponential notation:\n[\"1.1\", \"2.2e2\", \"3e300\"].map(Number); // [1.1, 220, 3e+300]\n\n// For comparison, if we use parseInt() on the array above:\n[\"1.1\", \"2.2e2\", \"3e300\"].map((str) => parseInt(str, 10)); // [1, 2, 3]",
       "language": "javascript",
@@ -652,6 +677,17 @@
           "text": " by Allen Wirfs-Brock for more discussions."
         }
       ]
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "content": [
+        {
+          "type": "text",
+          "text": "Mapped array contains undefined"
+        }
+      ],
+      "anchor": "mapped_array_contains_undefined"
     },
     {
       "type": "paragraph",
@@ -710,19 +746,21 @@
       ]
     },
     {
-      "type": "paragraph",
-      "content": [
-        {
-          "type": "text",
-          "text": "js"
-        }
-      ]
-    },
-    {
       "type": "code",
       "code": "const numbers = [1, 2, 3, 4];\nconst filteredNumbers = numbers.map((num, index) => {\n  if (index < 3) {\n    return num;\n  }\n});\n\n// index goes from 0, so the filteredNumbers are 1,2,3 and undefined.\n// filteredNumbers is [1, 2, 3, undefined]\n// numbers is still [1, 2, 3, 4]",
       "language": "javascript",
       "languageSource": "markup"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "content": [
+        {
+          "type": "text",
+          "text": "Side-effectful mapping"
+        }
+      ],
+      "anchor": "side-effectful_mapping"
     },
     {
       "type": "paragraph",
@@ -730,15 +768,6 @@
         {
           "type": "text",
           "text": "The callback can have side effects."
-        }
-      ]
-    },
-    {
-      "type": "paragraph",
-      "content": [
-        {
-          "type": "text",
-          "text": "js"
         }
       ]
     },
@@ -754,15 +783,6 @@
         {
           "type": "text",
           "text": "This is not recommended, because copying methods are best used with pure functions. In this case, we can choose to iterate the array twice."
-        }
-      ]
-    },
-    {
-      "type": "paragraph",
-      "content": [
-        {
-          "type": "text",
-          "text": "js"
         }
       ]
     },
@@ -800,15 +820,6 @@
         {
           "type": "text",
           "text": " does is causing side effects."
-        }
-      ]
-    },
-    {
-      "type": "paragraph",
-      "content": [
-        {
-          "type": "text",
-          "text": "js"
         }
       ]
     },
@@ -861,15 +872,6 @@
       ]
     },
     {
-      "type": "paragraph",
-      "content": [
-        {
-          "type": "text",
-          "text": "js"
-        }
-      ]
-    },
-    {
       "type": "code",
       "code": "products.forEach((product) => {\n  product.price = 100;\n});",
       "language": "javascript",
@@ -885,19 +887,21 @@
       ]
     },
     {
-      "type": "paragraph",
-      "content": [
-        {
-          "type": "text",
-          "text": "js"
-        }
-      ]
-    },
-    {
       "type": "code",
       "code": "const productsWithPrice = products.map((product) => ({\n  ...product,\n  price: 100,\n}));",
       "language": "javascript",
       "languageSource": "markup"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "content": [
+        {
+          "type": "text",
+          "text": "Using the third argument of callbackFn"
+        }
+      ],
+      "anchor": "using_the_third_argument_of_callbackfn"
     },
     {
       "type": "paragraph",
@@ -942,15 +946,6 @@
       ]
     },
     {
-      "type": "paragraph",
-      "content": [
-        {
-          "type": "text",
-          "text": "js"
-        }
-      ]
-    },
-    {
       "type": "code",
       "code": "const numbers = [3, -1, 1, 4, 1, 5, 9, 2, 6];\nconst averaged = numbers\n  .filter((num) => num > 0)\n  .map((num, idx, arr) => {\n    // Without the arr argument, there's no way to easily access the\n    // intermediate array without saving it to a variable.\n    const prev = arr[idx - 1];\n    const next = arr[idx + 1];\n    let count = 1;\n    let total = num;\n    if (prev !== undefined) {\n      count++;\n      total += prev;\n    }\n    if (next !== undefined) {\n      count++;\n      total += next;\n    }\n    const average = total / count;\n    // Keep two decimal places\n    return Math.round(average * 100) / 100;\n  });\nconsole.log(averaged); // [2, 2.67, 2, 3.33, 5, 5.33, 5.67, 4]",
       "language": "javascript",
@@ -988,6 +983,17 @@
       ]
     },
     {
+      "type": "heading",
+      "level": 3,
+      "content": [
+        {
+          "type": "text",
+          "text": "Using map() on sparse arrays"
+        }
+      ],
+      "anchor": "using_map_on_sparse_arrays"
+    },
+    {
       "type": "paragraph",
       "content": [
         {
@@ -1008,19 +1014,21 @@
       ]
     },
     {
-      "type": "paragraph",
-      "content": [
-        {
-          "type": "text",
-          "text": "js"
-        }
-      ]
-    },
-    {
       "type": "code",
       "code": "console.log(\n  [1, , 3].map((x, index) => {\n    console.log(`Visit ${index}`);\n    return x * 2;\n  }),\n);\n// Visit 0\n// Visit 2\n// [2, empty, 6]",
       "language": "javascript",
       "languageSource": "markup"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "content": [
+        {
+          "type": "text",
+          "text": "Calling map() on non-array objects"
+        }
+      ],
+      "anchor": "calling_map_on_non-array_objects"
     },
     {
       "type": "paragraph",
@@ -1072,15 +1080,6 @@
         {
           "type": "text",
           "text": "."
-        }
-      ]
-    },
-    {
-      "type": "paragraph",
-      "content": [
-        {
-          "type": "text",
-          "text": "js"
         }
       ]
     },
@@ -1188,15 +1187,6 @@
       ]
     },
     {
-      "type": "paragraph",
-      "content": [
-        {
-          "type": "text",
-          "text": "js"
-        }
-      ]
-    },
-    {
       "type": "code",
       "code": "const elems = document.querySelectorAll(\"select option:checked\");\nconst values = Array.prototype.map.call(elems, ({ value }) => value);",
       "language": "javascript",
@@ -1244,6 +1234,17 @@
           "text": " method."
         }
       ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Specifications"
+        }
+      ],
+      "anchor": "specifications"
     },
     {
       "type": "table",
