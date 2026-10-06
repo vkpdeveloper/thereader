@@ -18,6 +18,9 @@ declare module 'bun:test' {
     toBeLessThanOrEqual(n: number): void;
     toMatch(pattern: RegExp | string): void;
     toThrow(expected?: unknown): void;
+    toMatchObject(expected: unknown): void;
+    toBeInstanceOf(expected: unknown): void;
+    toHaveProperty(path: string, value?: unknown): void;
     not: Matchers;
     rejects: { toThrow(expected?: unknown): Promise<void> };
   }

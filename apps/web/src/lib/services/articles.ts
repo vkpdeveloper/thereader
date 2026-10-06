@@ -1,10 +1,10 @@
 import type { Article, Block, ExtractOptions } from '@thereader/extract';
 import type { ArticleSummary } from '../types';
-import { errorFrom, type FetchLike } from './api';
+import { errorFrom, type ArticleBodyApi, type FetchLike } from './api';
 import { ApiError, type ArticlePhase, type ArticleStore, type ArticlesSnapshot } from './contract';
-import { randomId } from './hash';
+import { sha256Bytes, sha256Hex, toHex } from './hash';
 import type { KeyValueStore } from './kv';
-import { isRecord, isoOrder, nowIso, stableStringify } from './models';
+import { isAfter, isRecord, isoOrder, nowIso, parseIso, stableStringify } from './models';
 import { Emitter, WriteQueue } from './observable';
 import { noopBus, type TabBus } from './tabs';
 
@@ -14,6 +14,14 @@ export const articleKey = (id: string): string => `article:${id}`;
 
 export const ARTICLE_TIMEOUT_MS = 30_000;
 const CACHE_SIZE = 3;
+/** The API's cap on a synced document, measured on its JSON. */
+export const MAX_ARTICLE_BODY_BYTES = 8 * 1024 * 1024;
+/** Documents up to this size download during sync, so they open offline. */
+export const PREFETCH_MAX_BYTES = 1024 * 1024;
+const RETRY_MIN_MS = 2 * 60_000;
+const RETRY_MAX_MS = 6 * 60 * 60_000;
+/** Deletions are remembered this long to sync them; the server keeps them for good. */
+const TOMBSTONE_TTL_MS = 180 * 24 * 60 * 60_000;
 const tracking = /^(?:utm_\w+|fbclid|gclid|dclid|igshid|mc_cid|mc_eid|_hsenc|_hsmi|mkt_tok)$/i;
 
 // ---------------------------------------------------------------- URLs
@@ -56,15 +64,93 @@ export function findArticleUrl(text: string): string | null {
   return normalizeArticleUrl(t);
 }
 
-/** Same page for dedupe: scheme, `www.` and a trailing slash do not matter. */
-function urlKey(href: string): string {
-  try {
-    const u = new URL(href);
-    const path = u.pathname.length > 1 ? u.pathname.replace(/\/+$/, '') : '';
-    return `${u.hostname.replace(/^www\./, '')}${path}${u.search}`;
-  } catch {
-    return href;
-  }
+/**
+ * Same page, for dedupe and for the article's id: scheme, credentials,
+ * default port, `www.`, a trailing slash, fragment and tracking parameters do
+ * not matter. Plain string work, so the Dart app derives the same key
+ * (`articleUrlKey` in `article_repository.dart`) from the same URL.
+ */
+export function articleUrlKey(href: string): string {
+  const m = /^[a-z][a-z\d+.-]*:\/\/([^/?#]*)([^?#]*)(\?[^#]*)?/i.exec(href.trim());
+  if (!m) return href.trim();
+  const host = m[1]
+    .slice(m[1].lastIndexOf('@') + 1)
+    .toLowerCase()
+    .replace(/:(?:80|443)$/, '')
+    .replace(/^www\./, '');
+  const path = m[2].replace(/\/+$/, '');
+  const query = (m[3] ?? '')
+    .slice(1)
+    .split('&')
+    .filter((pair) => pair !== '' && !tracking.test(pair.split('=')[0]))
+    .join('&');
+  return `${host}${path}${query ? `?${query}` : ''}`;
+}
+
+/**
+ * The id every device gives the article at `url`: the first 128 bits of the
+ * SHA-256 of its `articleUrlKey`, in hex. The same story saved on two devices
+ * therefore syncs as one article.
+ */
+export function articleIdFor(url: string): string {
+  return sha256Hex(articleUrlKey(url)).slice(0, 32);
+}
+
+const urlKey = articleUrlKey;
+
+/** A reading position every device understands: top-level block, offset into it, share read. */
+export interface ArticlePosition {
+  block: number;
+  offset: number;
+  percent: number;
+}
+
+const unit = (v: number): number => (Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0);
+
+/** This app's block fraction as a shared position (block count unknown: the share only). */
+export function positionFromFraction(fraction: number, blockCount: number | undefined): ArticlePosition {
+  const f = unit(fraction);
+  const n = blockCount ?? 0;
+  if (n <= 0) return { block: 0, offset: 0, percent: f };
+  const at = f * n;
+  const block = Math.min(n - 1, Math.floor(at));
+  return { block, offset: Math.round(unit(at - block) * 10000) / 10000, percent: f };
+}
+
+export function fractionFromPosition(position: ArticlePosition, blockCount: number | undefined): number {
+  const n = blockCount ?? 0;
+  if (position.percent >= 0.995 || n <= 0) return Math.round(unit(position.percent) * 10000) / 10000;
+  return Math.round(unit((position.block + unit(position.offset)) / n) * 10000) / 10000;
+}
+
+/** An article row pulled from the cloud (see the API's `articles` sync list). */
+export interface RemoteArticle {
+  id: string;
+  url: string;
+  title: string;
+  siteName: string | null;
+  byline: string | null;
+  excerpt: string | null;
+  leadImage: string | null;
+  favicon: string | null;
+  language: string | null;
+  dir: 'ltr' | 'rtl';
+  wordCount: number;
+  readingMinutes: number;
+  blockCount: number;
+  publishedAt: string | null;
+  bodySha256: string | null;
+  bodySize: number | null;
+  position: ArticlePosition | null;
+  positionUpdatedAt: string | null;
+  updatedAt: string;
+  deleted: boolean;
+}
+
+/** The exact bytes every device hashes, uploads and verifies. */
+export function articleBody(article: Article): { bytes: Uint8Array; sha256: string } {
+  const bytes = new TextEncoder().encode(JSON.stringify(article));
+  return { bytes, sha256: toHex(sha256Bytes(bytes)) };
 }
 
 const hostLabel = (href: string): string => {
@@ -160,11 +246,25 @@ function stringOrNull(value: unknown): string | null {
   return typeof value === 'string' && value.trim() ? value : null;
 }
 
+const count = (value: unknown): number | undefined =>
+  typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : undefined;
+
 function parseSummary(json: unknown): ArticleSummary | null {
   if (!isRecord(json) || typeof json.id !== 'string' || typeof json.url !== 'string' || typeof json.addedAt !== 'string') return null;
   const urls = Array.isArray(json.urls) ? json.urls.filter((u): u is string => typeof u === 'string') : [];
   const progress = typeof json.progress === 'number' && Number.isFinite(json.progress) ? Math.min(1, Math.max(0, json.progress)) : null;
+  const sync: Partial<ArticleSummary> = {};
+  if (typeof json.progressUpdatedAt === 'string') sync.progressUpdatedAt = json.progressUpdatedAt;
+  if (json.stored === false) sync.stored = false;
+  if (typeof json.language === 'string') sync.language = json.language;
+  if (json.dir === 'rtl' || json.dir === 'ltr') sync.dir = json.dir;
+  if (count(json.wordCount) !== undefined) sync.wordCount = count(json.wordCount);
+  if (typeof json.publishedAt === 'string') sync.publishedAt = json.publishedAt;
+  if (count(json.blockCount) !== undefined) sync.blockCount = count(json.blockCount);
+  if (typeof json.bodySha256 === 'string' && /^[a-f0-9]{64}$/.test(json.bodySha256)) sync.bodySha256 = json.bodySha256;
+  if (count(json.bodySize) !== undefined) sync.bodySize = count(json.bodySize);
   return {
+    ...sync,
     id: json.id,
     url: json.url,
     urls: urls.length > 0 ? urls : [json.url],
@@ -184,6 +284,19 @@ function parseSummary(json: unknown): ArticleSummary | null {
 function firstImage(blocks: readonly Block[]): string | null {
   for (const block of blocks) if (block.type === 'figure' && block.images[0]) return block.images[0].src;
   return null;
+}
+
+/** Metadata only the document has, recorded on the summary so sync never reads the document. */
+function documentFields(article: Article, body: { bytes: Uint8Array; sha256: string }): Partial<ArticleSummary> {
+  return {
+    language: article.language,
+    dir: article.dir === 'rtl' ? 'rtl' : 'ltr',
+    wordCount: Math.max(0, Math.round(article.wordCount) || 0),
+    publishedAt: article.publishedAt,
+    blockCount: article.blocks.length,
+    bodySha256: body.sha256,
+    bodySize: body.bytes.byteLength,
+  };
 }
 
 function summarize(id: string, article: Article, urls: string[], addedAt: string): ArticleSummary {
@@ -243,6 +356,8 @@ function loadExtractor(): Promise<Extractor> {
 export interface ArticleDeps {
   kv: KeyValueStore;
   currentOrigin(): string;
+  /** Downloads documents saved on other devices. Without it, cloud-only articles cannot open. */
+  bodies?: (origin: string) => ArticleBodyApi;
   fetch?: FetchLike;
   /** Defaults to the browser's `DOMParser`. */
   parse?: (html: string) => Document;
@@ -258,9 +373,20 @@ export interface ArticleDeps {
  * decoded like a browser would, extracted on this device and stored as the
  * structured document plus a small summary in the Library index. Opening an
  * article reads IndexedDB only; it is never fetched or extracted again.
+ *
+ * Saved articles sync through the cloud: the sync store sends summaries,
+ * positions and deletions on its schedule and uploads each document once.
+ * Articles saved on other devices arrive as summaries (`stored: false`); their
+ * document downloads when opened (or during sync, when small), never
+ * re-extracted. Deletions keep a tombstone until they have had time to sync.
  */
 export class ArticleStoreImpl extends Emitter<ArticlesSnapshot> implements ArticleStore {
   private items = new Map<string, ArticleSummary>();
+  /** Deleted article ids and when; read by the sync store. */
+  private tombstones = new Map<string, string>();
+  private readonly downloads = new Map<string, Promise<Article>>();
+  /** Cloud documents that failed to download: when to try again, and the current wait. */
+  private readonly retryAt = new Map<string, { at: number; wait: number }>();
   private readonly writes = new WriteQueue();
   private queuedWrite: Promise<void> | null = null;
   /** Recently opened documents, so reopening is instant. */
@@ -278,31 +404,71 @@ export class ArticleStoreImpl extends Emitter<ArticlesSnapshot> implements Artic
     });
   }
 
+  get loaded(): boolean {
+    return this.snapshot.loaded;
+  }
+
   async load(): Promise<void> {
-    this.items = await this.readStored();
+    const { items, tombstones } = await this.readStored();
+    this.items = items;
+    this.tombstones = tombstones;
+    if (await this.migrate()) await this.persist();
     this.publish(true);
   }
 
-  private async readStored(): Promise<Map<string, ArticleSummary>> {
-    const map = new Map<string, ArticleSummary>();
+  private async readStored(): Promise<{ items: Map<string, ArticleSummary>; tombstones: Map<string, string> }> {
+    const items = new Map<string, ArticleSummary>();
+    const tombstones = new Map<string, string>();
     const json = await this.deps.kv.get<unknown>(INDEX_KEY).catch(() => null);
     const list = isRecord(json) && Array.isArray(json.items) ? json.items : [];
     for (const raw of list) {
       const summary = parseSummary(raw);
-      if (summary) map.set(summary.id, summary);
+      if (summary) items.set(summary.id, summary);
     }
-    return map;
+    const oldest = this.now() - TOMBSTONE_TTL_MS;
+    for (const [id, at] of Object.entries(isRecord(json) && isRecord(json.tombstones) ? json.tombstones : {})) {
+      if (typeof at === 'string' && parseIso(at) > oldest && !items.has(id)) tombstones.set(id, at);
+    }
+    return { items, tombstones };
+  }
+
+  /**
+   * Articles saved before sync had random ids and no document hash. Gives
+   * each its URL-derived id (moving the document) and records what sync needs.
+   */
+  private async migrate(): Promise<boolean> {
+    let changed = false;
+    for (const summary of [...this.items.values()]) {
+      if (summary.bodySha256 || summary.stored === false) continue;
+      changed = true;
+      this.items.delete(summary.id);
+      const record = await this.deps.kv.get<unknown>(articleKey(summary.id)).catch(() => null);
+      const article = isRecord(record) && isArticle(record.article) ? record.article : null;
+      if (!article) continue;
+      const id = articleIdFor(summary.url);
+      if (this.items.has(id)) {
+        await this.deps.kv.remove(articleKey(summary.id)).catch(() => undefined);
+        continue;
+      }
+      if (id !== summary.id) {
+        await this.deps.kv.set(articleKey(id), { article });
+        await this.deps.kv.remove(articleKey(summary.id)).catch(() => undefined);
+      }
+      this.items.set(id, { ...summary, ...documentFields(article, articleBody(article)), id });
+    }
+    return changed;
   }
 
   /** Another tab saved the index; unchanged summaries keep their objects so rows skip re-rendering. */
   private async reload(): Promise<void> {
-    const stored = await this.readStored();
+    const { items: stored, tombstones } = await this.readStored();
     for (const [id, summary] of stored) {
       const local = this.items.get(id);
       if (local && stableStringify(local) === stableStringify(summary)) stored.set(id, local);
     }
     for (const id of this.cache.keys()) if (!stored.has(id)) this.cache.delete(id);
     this.items = stored;
+    this.tombstones = tombstones;
     this.publish();
   }
 
@@ -316,7 +482,7 @@ export class ArticleStoreImpl extends Emitter<ArticlesSnapshot> implements Artic
     if (this.queuedWrite) return this.queuedWrite;
     const write = this.writes.run(async () => {
       this.queuedWrite = null;
-      await this.deps.kv.set(INDEX_KEY, { items: [...this.items.values()] });
+      await this.deps.kv.set(INDEX_KEY, { items: [...this.items.values()], tombstones: Object.fromEntries(this.tombstones) });
       this.bus.post('articles');
     });
     this.queuedWrite = write;
@@ -329,6 +495,16 @@ export class ArticleStoreImpl extends Emitter<ArticlesSnapshot> implements Artic
 
   summary(id: string): ArticleSummary | undefined {
     return this.items.get(id);
+  }
+
+  /** Every saved article, unsorted (the sync store's view). */
+  get all(): Iterable<ArticleSummary> {
+    return this.items.values();
+  }
+
+  /** Deleted ids and their deletion time, until they expire. */
+  get deleted(): ReadonlyMap<string, string> {
+    return this.tombstones;
   }
 
   private findByUrl(urls: string[]): ArticleSummary | undefined {
@@ -402,10 +578,18 @@ export class ArticleStoreImpl extends Emitter<ArticlesSnapshot> implements Artic
 
       check();
       this.progress(token, 'saving', url, 0.92);
-      const summary = summarize(randomId(), article, urls, nowIso(this.now));
-      await this.deps.kv.set(articleKey(summary.id), { article });
-      this.remember(summary.id, article);
-      this.items.set(summary.id, summary);
+      const draft = summarize('', article, urls, nowIso(this.now));
+      const id = articleIdFor(draft.url);
+      const same = this.items.get(id);
+      if (same) return await this.alias(same, urls);
+      // Saving a deleted article again brings it back, newer than its deletion.
+      const deletedAt = this.tombstones.get(id);
+      const addedAt = deletedAt && !isAfter(draft.addedAt, deletedAt) ? new Date(parseIso(deletedAt) + 1).toISOString() : draft.addedAt;
+      const summary: ArticleSummary = { ...draft, ...documentFields(article, articleBody(article)), id, addedAt };
+      await this.deps.kv.set(articleKey(id), { article });
+      this.remember(id, article);
+      this.tombstones.delete(id);
+      this.items.set(id, summary);
       this.publish();
       await this.persist();
       return summary;
@@ -461,6 +645,11 @@ export class ArticleStoreImpl extends Emitter<ArticlesSnapshot> implements Artic
     while (this.cache.size > CACHE_SIZE) this.cache.delete(this.cache.keys().next().value as string);
   }
 
+  /**
+   * The stored document. An article synced from another device downloads it
+   * once (verified against its hash) and keeps it for offline reading; that
+   * is the only request this makes. Null when the document is gone.
+   */
   async get(id: string): Promise<Article | null> {
     const cached = this.cache.get(id);
     if (cached) {
@@ -470,12 +659,92 @@ export class ArticleStoreImpl extends Emitter<ArticlesSnapshot> implements Artic
     const record = await this.deps.kv.get<unknown>(articleKey(id)).catch(() => null);
     const article = isRecord(record) && isArticle(record.article) ? record.article : null;
     if (article && this.items.has(id)) this.remember(id, article);
+    if (article) return article;
+    const summary = this.items.get(id);
+    if (summary?.stored !== false) return null;
+    return this.download(summary, true);
+  }
+
+  /** Downloads a cloud article's document; joins a download already running. */
+  private download(summary: ArticleSummary, interactive: boolean): Promise<Article> {
+    let running = this.downloads.get(summary.id);
+    if (!running) {
+      running = this.fetchDocument(summary).finally(() => this.downloads.delete(summary.id));
+      this.downloads.set(summary.id, running);
+    }
+    return running.catch((error: unknown) => {
+      if (!interactive) throw error;
+      throw downloadError(error);
+    });
+  }
+
+  private async fetchDocument(summary: ArticleSummary): Promise<Article> {
+    const sha = summary.bodySha256;
+    const client = this.deps.bodies?.(this.deps.currentOrigin());
+    if (!sha || !client) throw new ApiError("This article's text isn't on this device.", 'UNSUPPORTED');
+    if (offline()) throw new ApiError("You're offline. This article will open once it downloads.", 'OFFLINE', null, true);
+    let article: Article;
+    try {
+      const bytes = await client.getArticleBody(sha);
+      if (toHex(sha256Bytes(bytes)) !== sha) throw new ApiError('The synced copy of this article is damaged.', 'BAD_RESPONSE');
+      const json = JSON.parse(new TextDecoder().decode(bytes)) as unknown;
+      if (!isArticle(json)) throw new ApiError('The synced copy of this article is damaged.', 'BAD_RESPONSE');
+      article = json;
+    } catch (error) {
+      const previous = this.retryAt.get(summary.id)?.wait ?? 0;
+      const wait = Math.min(RETRY_MAX_MS, Math.max(RETRY_MIN_MS, previous * 2));
+      this.retryAt.set(summary.id, { at: this.now() + wait, wait });
+      throw error;
+    }
+    this.retryAt.delete(summary.id);
+    await this.deps.kv.set(articleKey(summary.id), { article });
+    const current = this.items.get(summary.id);
+    if (current && current.bodySha256 === sha) {
+      this.items.set(summary.id, { ...current, stored: true });
+      this.publish();
+      await this.persist();
+    }
+    this.remember(summary.id, article);
     return article;
+  }
+
+  /**
+   * Downloads up to `limit` small cloud documents that are due, one at a
+   * time, so recently synced articles open offline. Stops at the first
+   * network failure. Called by the sync store after a successful cycle.
+   */
+  async prefetch(limit: number): Promise<void> {
+    if (!this.deps.bodies) return;
+    const now = this.now();
+    const due = [...this.items.values()]
+      .filter((s) => s.stored === false && s.bodySha256 && (s.bodySize ?? Infinity) <= PREFETCH_MAX_BYTES && (this.retryAt.get(s.id)?.at ?? 0) <= now)
+      .sort((a, b) => isoOrder(b.addedAt) - isoOrder(a.addedAt))
+      .slice(0, limit);
+    for (const summary of due) {
+      try {
+        await this.download(summary, false);
+      } catch (error) {
+        if (error instanceof ApiError && error.isNetwork) return;
+      }
+    }
+  }
+
+  /** The exact document bytes to upload, or null when this device no longer has them. */
+  async bodyFor(id: string): Promise<{ bytes: Uint8Array; sha256: string } | null> {
+    const summary = this.items.get(id);
+    if (!summary || summary.stored === false) return null;
+    const article = this.cache.get(id) ?? (await this.deps.kv.get<unknown>(articleKey(id)).then((r) => (isRecord(r) && isArticle(r.article) ? r.article : null), () => null));
+    return article ? articleBody(article) : null;
   }
 
   async remove(id: string): Promise<void> {
     this.cache.delete(id);
-    if (this.items.delete(id)) {
+    const summary = this.items.get(id);
+    if (summary) {
+      this.items.delete(id);
+      // The deletion must sort after the save it removes, even if the clock went back.
+      const now = nowIso(this.now);
+      this.tombstones.set(id, isAfter(now, summary.addedAt) ? now : new Date(parseIso(summary.addedAt) + 1).toISOString());
       this.publish();
       await this.persist();
     }
@@ -487,9 +756,73 @@ export class ArticleStoreImpl extends Emitter<ArticlesSnapshot> implements Artic
     if (!summary || !Number.isFinite(fraction)) return;
     const progress = Math.round(Math.min(1, Math.max(0, fraction)) * 10000) / 10000;
     if (summary.progress === progress) return;
-    this.items.set(id, { ...summary, progress });
+    const now = nowIso(this.now);
+    const progressUpdatedAt = isAfter(now, summary.progressUpdatedAt) ? now : new Date(parseIso(summary.progressUpdatedAt!) + 1).toISOString();
+    this.items.set(id, { ...summary, progress, progressUpdatedAt });
     this.publish();
     await this.persist();
+  }
+
+  /**
+   * Applies articles changed on other devices. Saves and deletions are
+   * last-write-wins by their time; positions by theirs. A local copy of the
+   * document is kept when another device saved the same story again. An open
+   * article does not move: the reader holds its own position and saves it
+   * when it closes.
+   */
+  async applyRemote(remote: RemoteArticle[]): Promise<void> {
+    let changed = false;
+    const removed: string[] = [];
+    for (const r of remote) {
+      const local = this.items.get(r.id);
+      if (r.deleted) {
+        if (local && isAfter(r.updatedAt, local.addedAt)) {
+          this.items.delete(r.id);
+          this.cache.delete(r.id);
+          removed.push(r.id);
+          changed = true;
+        }
+        // A later deletion elsewhere supersedes this device's own, so it is not sent again.
+        const deletedAt = this.tombstones.get(r.id);
+        if (deletedAt && isAfter(r.updatedAt, deletedAt)) {
+          this.tombstones.set(r.id, r.updatedAt);
+          changed = true;
+        }
+        continue;
+      }
+      if (!r.bodySha256 || !normalizeArticleUrl(r.url)) continue;
+      const position =
+        r.position && r.positionUpdatedAt ? { progress: fractionFromPosition(r.position, r.blockCount), progressUpdatedAt: r.positionUpdatedAt } : {};
+      if (!local) {
+        const deletedAt = this.tombstones.get(r.id);
+        if (deletedAt && !isAfter(r.updatedAt, deletedAt)) continue; // This device's newer deletion is still to sync.
+        this.tombstones.delete(r.id);
+        this.items.set(r.id, { ...fromRemote(r), progress: null, progressUpdatedAt: null, ...position, lastOpenedAt: null, stored: false });
+        changed = true;
+        continue;
+      }
+      let next = local;
+      if (isAfter(r.updatedAt, local.addedAt)) {
+        // Saved again elsewhere: take its metadata, keep this device's document.
+        const metadata = fromRemote(r);
+        next = {
+          ...next,
+          ...metadata,
+          urls: [...new Set([...local.urls, ...metadata.urls])],
+          ...(local.stored === false ? {} : { bodySha256: local.bodySha256, bodySize: local.bodySize, blockCount: local.blockCount }),
+          stored: local.stored,
+        };
+      }
+      if ('progress' in position && isAfter(position.progressUpdatedAt, local.progressUpdatedAt)) next = { ...next, ...position };
+      if (next !== local) {
+        this.items.set(r.id, next);
+        changed = true;
+      }
+    }
+    if (!changed) return;
+    this.publish();
+    await this.persist();
+    for (const id of removed) await this.deps.kv.remove(articleKey(id)).catch(() => undefined);
   }
 
   async markOpened(id: string): Promise<void> {
@@ -499,6 +832,41 @@ export class ArticleStoreImpl extends Emitter<ArticlesSnapshot> implements Artic
     this.publish();
     await this.persist();
   }
+}
+
+function fromRemote(r: RemoteArticle): Omit<ArticleSummary, 'progress' | 'progressUpdatedAt' | 'lastOpenedAt' | 'stored'> {
+  return {
+    id: r.id,
+    url: r.url,
+    urls: [r.url],
+    title: r.title.trim() || hostLabel(r.url),
+    siteName: r.siteName?.trim() || hostLabel(r.url),
+    byline: r.byline,
+    excerpt: r.excerpt,
+    favicon: r.favicon,
+    image: r.leadImage,
+    readingMinutes: Math.max(1, r.readingMinutes),
+    addedAt: r.updatedAt,
+    language: r.language,
+    dir: r.dir,
+    wordCount: r.wordCount,
+    publishedAt: r.publishedAt,
+    blockCount: r.blockCount,
+    bodySha256: r.bodySha256,
+    bodySize: r.bodySize,
+  };
+}
+
+/** What the reader shows when a synced article cannot download yet. */
+function downloadError(error: unknown): ApiError {
+  if (!(error instanceof ApiError)) return new ApiError("Couldn't download this article. Try again.", 'NETWORK', null, true);
+  if (error.status === 404) {
+    return new ApiError("This article hasn't finished uploading from the device that saved it. Try again in a minute.", 'PENDING', 404, true);
+  }
+  if (error.code === 'TIMEOUT' || error.code === 'NETWORK') {
+    return new ApiError(offline() ? "You're offline. This article will open once it downloads." : "Couldn't download this article. Try again.", error.code, null, true);
+  }
+  return error;
 }
 
 async function readBody(response: Response, onProgress: (fraction: number) => void): Promise<Uint8Array> {

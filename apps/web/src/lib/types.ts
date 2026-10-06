@@ -143,4 +143,21 @@ export interface ArticleSummary {
    * above the reading line (1 at the end), or null before the first read.
    */
   progress: number | null;
+  /** When `progress` last changed; orders positions between devices. */
+  progressUpdatedAt?: string | null;
+  /**
+   * False while only the cloud has the document (saved on another device and
+   * not opened here yet); it downloads on open. Absent means stored.
+   */
+  stored?: boolean;
+  // Synced metadata, recorded when the article is saved or pulled.
+  language?: string | null;
+  dir?: 'ltr' | 'rtl';
+  wordCount?: number;
+  publishedAt?: string | null;
+  /** Top-level blocks, to translate reading positions between devices. */
+  blockCount?: number;
+  /** SHA-256 and byte size of the document JSON every device shares. */
+  bodySha256?: string | null;
+  bodySize?: number | null;
 }
