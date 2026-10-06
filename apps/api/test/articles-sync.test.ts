@@ -258,7 +258,7 @@ describe("article sync", () => {
       { deviceId, changes: [articleChange("x", ID_A, t0, { dir: "up" })] },
       { deviceId, changes: [articleChange("x", ID_A, t0, { schema: 2 })] },
       { deviceId, changes: [articleChange("x", ID_A, t0, { bodySha256: "nope" })] },
-      { deviceId, changes: [articleChange("x", ID_A, t0, { bodySize: 8 * 1024 * 1024 + 1 })] },
+      { deviceId, changes: [articleChange("x", ID_A, t0, { bodySize: 4 * 1024 * 1024 + 1 })] },
       { deviceId, changes: [articleChange("x", ID_A, t0, { readingMinutes: 0 })] },
       { deviceId, changes: [articleChange("x", ID_A, t0, { savedAt: "yesterday" })] },
       { deviceId, changes: [articleChange("x", ID_A, t0, { extra: true })] },
@@ -272,6 +272,9 @@ describe("article sync", () => {
       expect(response.status, JSON.stringify(value).slice(0, 200)).toBe(400);
       expect((await response.json() as any).error.code).toBe("INVALID_SYNC");
     }
+    // The size cap itself is accepted.
+    const largest = await sync({ deviceId, changes: [articleChange("x", ID_A, t0, { bodySize: 4 * 1024 * 1024 })] });
+    expect(largest.status).toBe(200);
   });
 });
 
@@ -375,11 +378,19 @@ describe("article bodies", () => {
     const truncated = (await gzip(encoder.encode(json))).slice(0, -12);
     expect((await put(await sha256(encoder.encode(json)), truncated)).status).toBe(422);
 
-    // 8 MB is measured on the uncompressed document, so a small gzip bomb fails too.
-    const huge = encoder.encode(JSON.stringify({ ...article, padding: "x".repeat(8 * 1024 * 1024) }));
+    // 4 MB is measured on the uncompressed document, so a small gzip bomb fails too.
+    const sized = (bytes: number) => {
+      const base = JSON.stringify({ ...article, padding: "" }).length;
+      return encoder.encode(JSON.stringify({ ...article, padding: "x".repeat(bytes - base) }));
+    };
+    const huge = sized(4 * 1024 * 1024 + 1);
+    expect(huge.byteLength).toBe(4 * 1024 * 1024 + 1);
     const bomb = await put(await sha256(huge), await gzip(huge));
     expect(bomb.status).toBe(413);
+    expect((await bomb.json() as any).error).toMatchObject({ code: "TOO_LARGE", message: "Article documents are limited to 4 MB." });
     expect((await put(await sha256(huge), huge, "application/json")).status).toBe(413);
+    const largest = sized(4 * 1024 * 1024);
+    expect((await put(await sha256(largest), await gzip(largest))).status).toBe(201);
 
     // A highly compressible bomb is cut off while inflating, not after.
     const zeros = await gzip(new Uint8Array(64 * 1024 * 1024));

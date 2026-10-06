@@ -42,7 +42,7 @@ const ARTICLE_POSITION_KEYS = new Set(["block", "offset", "percent"]);
 const MAX_ARTICLE_URL = 2_048;
 const MAX_ARTICLES_PAGE = 200;
 /** Uncompressed article document cap, shared with the body endpoint. */
-export const MAX_ARTICLE_BODY_BYTES = 8 * 1024 * 1024;
+export const MAX_ARTICLE_BODY_BYTES = 4 * 1024 * 1024;
 export const ARTICLE_SCHEMA = 1;
 /** Where an article document lives in R2: content-addressed and immutable. */
 export const articleBodyKey = (sha256: string): string => `articles/${sha256}`;

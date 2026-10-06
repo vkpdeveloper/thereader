@@ -8,7 +8,7 @@ import type { Env } from "./types";
  * it hashed, optionally gzip-compressed; other devices download them instead
  * of fetching and extracting the page again. The Worker never extracts or
  * parses: within the free plan's CPU budget it streams the uncompressed bytes
- * through the 8 MB cap and a native SHA-256, checks that the document has the
+ * through the 4 MB cap and a native SHA-256, checks that the document has the
  * shape of a schema-1 article at both ends, then stores the bytes as sent.
  *
  * The shape check is deliberately not a full parse (a multi-MB document would
@@ -33,7 +33,7 @@ const HEAD_BYTES = 256;
 const READ_CHUNK_BYTES = 256 * 1024;
 
 function tooLarge(): ApiError {
-  return new ApiError(413, "TOO_LARGE", "Article documents are limited to 8 MB.");
+  return new ApiError(413, "TOO_LARGE", "Article documents are limited to 4 MB.");
 }
 
 function invalidArticle(): ApiError {
@@ -108,7 +108,7 @@ function scanPlain(bytes: Uint8Array<ArrayBuffer>): Promise<Scan> {
 }
 
 // Inflates without materializing the document: each chunk is counted against
-// the cap (so a small gzip bomb stops at 8 MB) and handed to the native digest.
+// the cap (so a small gzip bomb stops at 4 MB) and handed to the native digest.
 
 async function scanGzip(bytes: Uint8Array<ArrayBuffer>): Promise<Scan> {
   const workerCrypto = crypto as typeof crypto & { DigestStream: typeof DigestStream };
