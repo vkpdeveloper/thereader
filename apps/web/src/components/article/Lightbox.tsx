@@ -15,7 +15,7 @@ export interface ZoomedImage {
 function ZoomedImg({ image }: { image: ZoomedImage }) {
   const media = useRelayedSrc(image.src);
   if (media.failed) return null;
-  return <img className="lightbox-image" src={media.src} alt={image.alt} referrerPolicy="no-referrer" decoding="async" onError={media.onError} />;
+  return <img ref={media.ref} className="lightbox-image" src={media.src} alt={image.alt} referrerPolicy="no-referrer" decoding="async" onError={media.onError} />;
 }
 
 /** A tapped article image at full size over a dark scrim; a click anywhere or Escape closes it. */

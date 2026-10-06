@@ -60,6 +60,7 @@ function InlineImageView({ image }: { image: InlineImage }) {
   if (media.failed) return <>{image.alt}</>;
   return (
     <img
+      ref={media.ref}
       className="article-inline-image"
       src={media.src}
       alt={image.alt}
@@ -164,6 +165,7 @@ export function ArticleImage({ image, sizes }: { image: Image; sizes: string }) 
   if (media.failed) return <span className="article-image-missing">{image.alt || 'Image unavailable'}</span>;
   return (
     <img
+      ref={media.ref}
       src={media.src}
       srcSet={media.relayed ? undefined : cleanSrcset(image.srcset)}
       sizes={image.srcset && !media.relayed ? sizes : undefined}

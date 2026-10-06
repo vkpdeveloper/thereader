@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { Audio, Video } from 'truffle';
 import { OpenInNewIcon, PlayArrowIcon } from '../icons';
 
@@ -58,20 +58,58 @@ export function mediaRelayUrl(origin: string, url: string): string | undefined {
 export const MediaRelayOrigin = createContext<string | null>(null);
 
 /**
+ * How long an image may stay unloaded while on screen, directly and then
+ * through the relay, before it counts as failed: a host that stalls or never
+ * answers must not leave an empty reserved box.
+ */
+const STALL_MS = { direct: 10_000, relayed: 20_000 } as const;
+
+const loaded = (img: HTMLImageElement) => img.complete && img.naturalWidth > 0;
+
+/**
  * A media source loaded directly first and, when that fails (hosts that
  * refuse to be embedded on other sites), once more through the API relay;
  * `failed` once neither loaded. The relay is never asked while the direct
- * load works, so most articles cost the API nothing.
+ * load works, so most articles cost the API nothing. An image given `ref`
+ * also fails over when it sits on screen without loading or erroring.
  */
-export function useRelayedSrc(src: string | undefined): { src: string | undefined; relayed: boolean; failed: boolean; onError: () => void } {
+export function useRelayedSrc(src: string | undefined): {
+  src: string | undefined;
+  relayed: boolean;
+  failed: boolean;
+  onError: () => void;
+  ref: (img: HTMLImageElement | null) => void;
+} {
   const origin = useContext(MediaRelayOrigin);
   const [stage, setStage] = useState<'direct' | 'relayed' | 'failed'>('direct');
+  const [img, setImg] = useState<HTMLImageElement | null>(null);
   const relay = origin && src ? mediaRelayUrl(origin, src) : undefined;
+  const onError = () => setStage((current) => (current === 'direct' && relay ? 'relayed' : 'failed'));
+
+  useEffect(() => {
+    if (!img || stage === 'failed' || typeof IntersectionObserver === 'undefined') return;
+    // Lazy images start loading near the viewport; the clock runs while one is on screen.
+    let timer: number | undefined;
+    const observer = new IntersectionObserver(([entry]) => {
+      window.clearTimeout(timer);
+      if (!entry?.isIntersecting || loaded(img)) return;
+      timer = window.setTimeout(() => {
+        if (!loaded(img)) setStage((current) => (current === 'direct' && relay ? 'relayed' : 'failed'));
+      }, STALL_MS[stage]);
+    });
+    observer.observe(img);
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(timer);
+    };
+  }, [img, stage, relay]);
+
   return {
     src: stage === 'direct' ? src : stage === 'relayed' ? relay : undefined,
     relayed: stage === 'relayed',
     failed: !src || stage === 'failed',
-    onError: () => setStage((current) => (current === 'direct' && relay ? 'relayed' : 'failed')),
+    onError,
+    ref: setImg,
   };
 }
 
@@ -181,6 +219,7 @@ export function VideoBlock({ video, caption }: { video: Video; caption: ReactNod
       <button type="button" className="article-video-facade" aria-label={label} onClick={() => setPlaying(true)}>
         {!poster.failed && (
           <img
+            ref={poster.ref}
             src={poster.src}
             alt=""
             loading="lazy"
@@ -193,7 +232,8 @@ export function VideoBlock({ video, caption }: { video: Video; caption: ReactNod
         <span className="article-play" aria-hidden="true">
           <PlayArrowIcon size={28} />
         </span>
-        <span className="article-video-name">{video.title ?? name}</span>
+        {/* A file's host name says nothing its caption does not. */}
+        {(video.title || !fileUrl) && <span className="article-video-name">{video.title ?? name}</span>}
       </button>
     );
   }
