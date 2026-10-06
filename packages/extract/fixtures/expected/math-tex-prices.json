@@ -1,0 +1,133 @@
+{
+  "schema": 1,
+  "url": "https://numbers.example.net/posts/pricing-a-ride",
+  "title": "Pricing a ride with a formula",
+  "subtitle": null,
+  "byline": null,
+  "authors": [],
+  "siteName": null,
+  "publishedAt": null,
+  "modifiedAt": null,
+  "language": "en",
+  "dir": "ltr",
+  "excerpt": "A city bike share charges a flat unlock fee and a per-minute rate, and the price of a ride of t minutes is a straight line that anyone can sketch on the back of a ticket.",
+  "leadImage": null,
+  "favicon": "https://numbers.example.net/favicon.ico",
+  "wordCount": 129,
+  "readingMinutes": 1,
+  "blocks": [
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "A city bike share charges a flat unlock fee and a per-minute rate, and the price of a ride of "
+        },
+        {
+          "type": "math",
+          "tex": "t",
+          "text": "t"
+        },
+        {
+          "type": "text",
+          "text": " minutes is a straight line that anyone can sketch on the back of a ticket."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "The unlock costs $1, so a ride of "
+        },
+        {
+          "type": "math",
+          "tex": "t",
+          "text": "t"
+        },
+        {
+          "type": "text",
+          "text": " minutes costs "
+        },
+        {
+          "type": "math",
+          "tex": "1 + 0.15\\,t",
+          "text": "1 + 0.15\\,t"
+        },
+        {
+          "type": "text",
+          "text": " in total."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Riders who pay $ "
+        },
+        {
+          "type": "math",
+          "tex": "p",
+          "text": "p"
+        },
+        {
+          "type": "text",
+          "text": " per month for a pass and ride "
+        },
+        {
+          "type": "math",
+          "tex": "n",
+          "text": "n"
+        },
+        {
+          "type": "text",
+          "text": " times pay "
+        },
+        {
+          "type": "math",
+          "tex": "p / n",
+          "text": "p / n"
+        },
+        {
+          "type": "text",
+          "text": " per ride, and the pass wins once "
+        },
+        {
+          "type": "math",
+          "tex": "n",
+          "text": "n"
+        },
+        {
+          "type": "text",
+          "text": " is large enough."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "A receipt filed under C:\\rides\\2024 keeps its backslashes, and a plain sum like $5 and $10 stays text."
+        }
+      ]
+    },
+    {
+      "type": "math",
+      "tex": "\\text{price}(t) = 1 + 0.15\\,t",
+      "text": "\\text{price}(t) = 1 + 0.15\\,t"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "With a monthly pass the per-minute rate drops to zero for the first thirty minutes, which changes the shape of the line for short rides."
+        }
+      ]
+    }
+  ]
+}
