@@ -65,3 +65,4 @@ conflict handling.
 
 [EPUB covers and themes](docs/covers-themes.md) documents cover extraction, offline
 image caching, the quiet Library, and selectable theme previews.
+[Drawing on articles](docs/article-pen.md) covers the web article reader's pen.

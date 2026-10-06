@@ -6,6 +6,7 @@ import { BackToTop, quietBackToTop } from '../components/article/BackToTop';
 import { renderArticleBlocks } from '../components/article/Blocks';
 import { FootnotePreview, footnotePeekHtml, type FootnotePeek } from '../components/article/FootnotePreview';
 import { useArticleHighlights } from '../components/article/highlights/useArticleHighlights';
+import { useArticleInk } from '../components/article/ink/useArticleInk';
 import { blockElements, readPosition, scrollToPosition } from '../components/article/position';
 import { Lightbox, type ZoomedImage } from '../components/article/Lightbox';
 import { safeHref } from '../components/article/media';
@@ -88,6 +89,8 @@ export function ArticleScreen() {
   const peekTimer = useRef<number | undefined>(undefined);
   const [bar, setBar] = useState({ hidden: false, titled: false });
   const titleRef = useRef<HTMLHeadingElement>(null);
+  const pageRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const progressFill = useRef<HTMLDivElement>(null);
   const fraction = useRef<number | null>(null);
@@ -231,6 +234,8 @@ export function ArticleScreen() {
   const keys = useRef<(e: KeyboardEvent) => void>(() => undefined);
   keys.current = (e) => {
     if (hasOpenOverlay() || isTypingTarget(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
+    // While drawing, Escape belongs to the pen (its shortcuts run through TanStack Hotkeys).
+    if (ink.active && e.key === 'Escape') return;
     if (highlights.onKey(e)) return;
     if (e.key === 'Escape') {
       e.preventDefault();
@@ -303,6 +308,7 @@ export function ArticleScreen() {
   );
 
   const highlights = useArticleHighlights({ id, ready, bodyRef, prefs, reveal: (el) => flash(el, null) });
+  const ink = useArticleInk({ id, ready: ready != null, pageRef, bodyRef, headerRef });
 
   const onArticleClick = (e: ReactMouseEvent) => {
     const target = e.target as Element;
@@ -380,7 +386,7 @@ export function ArticleScreen() {
   const meta = [article.byline, formatPublished(article.publishedAt), `${article.readingMinutes} min read`].filter((part): part is string => !!part);
 
   return (
-    <div className="article-page" style={style}>
+    <div ref={pageRef} className="article-page" style={style}>
       <div className="article-progress" aria-hidden="true">
         <div ref={progressFill} className="article-progress-fill" />
       </div>
@@ -390,6 +396,7 @@ export function ArticleScreen() {
           <SiteIcon src={article.favicon} size={14} />
           <span className="t-title-sm clamp-1">{article.title}</span>
         </div>
+        {ink.button}
         {highlights.button}
         <IconButton
           icon={TextFieldsIcon}
@@ -411,7 +418,7 @@ export function ArticleScreen() {
           if ((e.target as Element).closest('[data-fn]')) hidePeek();
         }}
       >
-        <header className="article-header">
+        <header ref={headerRef} className="article-header">
           <h1 ref={titleRef} className="article-title">
             {article.title}
           </h1>
@@ -449,7 +456,8 @@ export function ArticleScreen() {
           </div>
         </footer>
       </article>
-      <BackToTop key={id} body={bodyRef} count={article.blocks.length} blocked={panel != null || zoom != null || peek != null || highlights.busy} reducedMotion={reducedMotion} />
+      {ink.surface}
+      <BackToTop key={id} body={bodyRef} count={article.blocks.length} blocked={panel != null || zoom != null || peek != null || highlights.busy || ink.active} reducedMotion={reducedMotion} />
 
       <Sheet open={panel != null} onClose={() => setPanel(null)} title="Typography">
         <div className="reader-panel-body">
@@ -460,6 +468,7 @@ export function ArticleScreen() {
       {peek && <FootnotePreview key={peek.id} peek={peek} onEnter={keepPeek} onLeave={() => hidePeek()} />}
       {linkPreview}
       {highlights.layer}
+      {ink.toolbar}
     </div>
   );
 }

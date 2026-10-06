@@ -1,5 +1,6 @@
 import type { Article } from 'truffle';
 import type { AppSettings, ArticleSummary, Book, Highlight, LibraryEntry, ReaderPreferences, ReadingLocator } from '../types';
+import type { InkStroke } from './ink';
 
 /**
  * Contract between the data layer (`lib/services/*`, owned by one agent) and
@@ -171,6 +172,22 @@ export interface LibraryStore extends Observable<LibrarySnapshot> {
   openFile(id: string): Promise<BookFile>;
   markOpened(id: string, expectedSha256: string): Promise<void>;
   saveProgress(id: string, locator: ReadingLocator, expectedSha256: string): Promise<void>;
+}
+
+// ---------------------------------------------------------------- ink
+
+export interface InkSnapshot {
+  /** Bumped on every change; read pages through `strokes`. */
+  version: number;
+}
+
+/** Pen drawings over pages, kept on this device (they do not sync). */
+export interface InkStore extends Observable<InkSnapshot> {
+  strokes(docId: string): InkStroke[];
+  isOpen(docId: string): boolean;
+  open(docId: string): Promise<void>;
+  add(docId: string, strokes: InkStroke[]): Promise<void>;
+  remove(docId: string, ids: string[]): Promise<void>;
 }
 
 // ---------------------------------------------------------------- highlights
@@ -351,6 +368,7 @@ export interface AppServices {
   covers: CoverStore;
   storage: StorageStore;
   articles: ArticleStore;
+  ink: InkStore;
   /** Resolves once every store has loaded from IndexedDB. */
   ready: Promise<void>;
 }
