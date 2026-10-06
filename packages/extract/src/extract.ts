@@ -252,16 +252,30 @@ function tidy(input: Block[], title: string, meta: Metadata): Block[] {
 
   // "Read more:" promos and link-only lines are navigation, not text.
   blocks = blocks.filter((b) => !(b.type === 'paragraph' && isPromo(b.content)));
-  // Contact lines, link lists and promo headings trailing the story.
+  // Calls to action opening the story (a "buy the PDF" box).
+  for (let i = 0; i < Math.min(blocks.length, 3); i++) {
+    if (isCallToAction(blocks[i]!)) {
+      blocks.splice(i, 1);
+      i--;
+    }
+  }
+  // Contact lines, calls to action, link lists and promo headings trailing the story (before its notes).
+  const notes: Block[] = [];
+  while (blocks.length > 1 && blocks[blocks.length - 1]!.type === 'footnotes') notes.unshift(blocks.pop()!);
   while (blocks.length > 1) {
     const last = blocks[blocks.length - 1]!;
+    const prev = blocks[blocks.length - 2]!;
     const lastText = last.type === 'paragraph' ? collapse(inlineText(last.content)) : '';
     if (last.type === 'paragraph' && (isContactLine(lastText) || isDateLine(lastText.toLowerCase()) || /^(?:last updated|updated|published|posted)(?: on)?:?$/i.test(lastText))) blocks.pop();
     else if (last.type === 'paragraph' && lastText.length < 100 && linkShare(last.content) >= 0.5 && !/[.!?]["'”’)]?$/.test(lastText)) blocks.pop();
+    else if (isCallToAction(last)) blocks.pop();
+    // The short benefits list under a sign-up pitch ("You get articles that match your needs").
+    else if (last.type === 'list' && last.items.length <= 6 && isCallToAction(prev) && blocksText(last.items.flatMap((item) => item.blocks)).length < 400) blocks.pop();
     else if (last.type === 'list' && last.items.every((item) => item.blocks.length === 1 && item.blocks[0]!.type === 'paragraph' && linkShare((item.blocks[0] as { content: Inline[] }).content) > 0.8)) blocks.pop();
     else if (last.type === 'heading') blocks.pop();
     else break;
   }
+  blocks.push(...notes);
 
   // Heading levels start at 2 under the title, keeping their relative depth.
   let min = 7;
@@ -343,6 +357,20 @@ function isPromo(content: Inline[]): boolean {
   // A short line that is entirely a link to another page, or a stack of them.
   if (share >= 0.9 && (text.length < 160 || content.some((n) => n.type === 'break'))) return true;
   return false;
+}
+
+/** Sign-up, subscribe, app, membership and affiliate pitches, in the languages publishers use most. */
+const CALL_TO_ACTION = /\b(?:sign(?:ing)? up (?:for|to|here|now|today)|subscribe (?:to|for|now|here|today)|our (?:free |daily |weekly )?newsletter|email list|mailing list|register (?:as|for|now|today)|create (?:a |an )?(?:free )?account|download (?:the|our)|get (?:the|our) (?:\w+ )?app|follow (?:us|topics|authors|the authors)|support (?:us|our)|patreon page|on patreon|donate (?:to|now|today|here)|become a (?:member|patron|subscriber|supporter)|buy it here|we may earn (?:a )?(?:small )?commission|affiliate (?:links?|commission)|purchase through links)\b|suscr[ií]b(?:e|ete|irte)|descarga la|boletín|abonnez-vous|inscrivez-vous|téléchargez|abonnieren sie|jetzt herunterladen|assine|inscreva-se/i;
+
+/** A short pitch to sign up, subscribe, download, follow or support (a paragraph, a list of them, or a box). */
+function isCallToAction(b: Block): boolean {
+  let text: string;
+  if (b.type === 'paragraph') text = inlineText(b.content);
+  else if (b.type === 'callout' || b.type === 'list') text = blocksText([b]);
+  else return false;
+  text = collapse(text);
+  // Quoted speech that mentions subscriptions is reporting, not a pitch.
+  return text.length > 0 && text.length < 300 && !/^["“„«'‘]/.test(text) && CALL_TO_ACTION.test(text);
 }
 
 function isContactLine(text: string): boolean {
