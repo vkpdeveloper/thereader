@@ -664,7 +664,7 @@ describe("shared personal sync", () => {
     return { id, bookId: kind === "preferences" ? "_preferences" : bookId, sha256: kind === "preferences" ? "0".repeat(64) : sha256, kind, updatedAt, payload };
   }
 
-  it("merges LWW progress/library/preferences and retry-safe cumulative sessions", async () => {
+  it("merges LWW progress/library and retry-safe cumulative sessions", async () => {
     const now = new Date(Date.now() - 1_000).toISOString();
     const response = await jsonRequest("/v1/sync", {
       deviceId,
@@ -673,12 +673,11 @@ describe("shared personal sync", () => {
         change("progress", "progress-a", { href: "stale.xhtml", progression: 0.1 }, now),
         change("library", "library-1", { present: true, addedAt: now }, now),
         change("session", "session-1", { readingMilliseconds: 12_000 }, now),
-        change("preferences", "prefs-1", { value: { fontSize: 18, flow: "paginated" } }, now),
       ],
     });
     expect(response.status).toBe(200);
     const state: any = await response.json();
-    expect(state.acceptedChangeIds).toHaveLength(5);
+    expect(state.acceptedChangeIds).toHaveLength(4);
     expect(state.books).toEqual([
       expect.objectContaining({
         bookId,
@@ -689,7 +688,6 @@ describe("shared personal sync", () => {
         lastOpenedAt: now,
       }),
     ]);
-    expect(state.preferences).toEqual({ value: { fontSize: 18, flow: "paginated" }, updatedAt: now });
 
     const retry = await jsonRequest("/v1/sync", {
       deviceId,
@@ -748,22 +746,13 @@ describe("shared personal sync", () => {
     expect((await request("/v1/sync").then((value) => value.json()) as any).books).toEqual([]);
   });
 
-  it("rejects locator and reader preference values that the Flutter client cannot safely decode", async () => {
+  it("rejects locator values that the Flutter client cannot safely decode", async () => {
     const now = new Date(Date.now() - 1_000).toISOString();
     const invalidPayloads = [
       change("progress", "missing-progression", { href: "chapter.xhtml" }, now),
       change("progress", "bad-progression", { href: "chapter.xhtml", progression: 1.1 }, now),
       change("progress", "bad-total", { href: "chapter.xhtml", progression: 0.2, totalProgression: "half" }, now),
       change("progress", "bad-raw", { href: "chapter.xhtml", progression: 0.2, raw: [] }, now),
-      change("preferences", "bad-font-size", { value: { fontSize: 100 } }, now),
-      change("preferences", "bad-font", { value: { font: "comic" } }, now),
-      change("preferences", "bad-theme", { value: { themeId: "solarized" } }, now),
-      change("preferences", "bad-boolean", { value: { keepAwake: "yes" } }, now),
-      change("preferences", "bad-null", { value: { lineHeight: null } }, now),
-      change("preferences", "bad-font-family-id", { value: { fontFamilyId: "Comic Sans!" } }, now),
-      change("preferences", "bad-font-family-type", { value: { fontFamilyId: 7 } }, now),
-      change("preferences", "null-font-family-id", { value: { fontFamilyId: null } }, now),
-      change("preferences", "font-class-still-legacy", { value: { font: "literata", fontFamilyId: "literata" } }, now),
     ];
     for (const invalidChange of invalidPayloads) {
       const response = await jsonRequest("/v1/sync", { deviceId, changes: [invalidChange] });
@@ -782,44 +771,48 @@ describe("shared personal sync", () => {
           engine: "dart",
           raw: null,
         }, now),
-        change("preferences", "prefs", {
-          value: {
-            fontSize: 14,
-            lineHeight: 2.2,
-            font: "sans",
-            flow: "scrolled",
-            marginScale: 0.5,
-            justify: true,
-            keepAwake: false,
-            themeId: "catppuccin-mocha",
-            fontFamilyId: "atkinson-hyperlegible-next",
-            futureSetting: "retained",
-          },
-        }, now),
       ],
     });
     expect(valid.status).toBe(200);
-    expect((await valid.json() as any).preferences.value.futureSetting).toBe("retained");
+    expect((await valid.json() as any).books[0].progress).toMatchObject({ href: "chapter.xhtml", progression: 0 });
+  });
 
-    const olderClient = await jsonRequest("/v1/sync", {
-      deviceId: "older-client",
-      changes: [change("preferences", "older-prefs", { value: { fontSize: 20 } }, new Date(Date.now() - 500).toISOString())],
+  // Reader settings are per-device; installed clients may still push them.
+  it("acknowledges legacy preference changes without storing or returning them", async () => {
+    const now = new Date(Date.now() - 1_000).toISOString();
+    const response = await jsonRequest("/v1/sync", {
+      deviceId,
+      changes: [
+        change("preferences", "prefs-1", { value: { fontSize: 18, themeId: "nord" } }, now),
+        change("progress", "progress-1", { href: "chapter.xhtml", progression: 0.4 }, now),
+        // Payloads the old validation rejected are dropped just the same.
+        change("preferences", "prefs-2", { value: { fontSize: 100, futureSetting: null } }, now),
+        change("library", "library-1", { present: true, addedAt: now }, now),
+      ],
     });
-    expect(olderClient.status).toBe(200);
-    expect((await olderClient.json() as any).preferences.value).toMatchObject({
-      fontSize: 20,
-      themeId: "catppuccin-mocha",
-      // An older client that never sends fontFamilyId keeps the newer choice.
-      fontFamilyId: "atkinson-hyperlegible-next",
-    });
+    expect(response.status).toBe(200);
+    const state: any = await response.json();
+    expect(state.acceptedChangeIds).toEqual(["prefs-1", "progress-1", "prefs-2", "library-1"]);
+    expect(state).not.toHaveProperty("preferences");
+    expect(state.books).toEqual([
+      expect.objectContaining({ bookId, inLibrary: true, progress: { href: "chapter.xhtml", progression: 0.4 } }),
+    ]);
 
-    // An id this server has never heard of (a newer client's family) is kept.
-    const newerClient = await jsonRequest("/v1/sync", {
-      deviceId: "newer-client",
-      changes: [change("preferences", "newer-prefs", { value: { font: "serif", fontFamilyId: "future-serif-2" } }, new Date(Date.now() - 250).toISOString())],
+    const onlyPreferences = await jsonRequest("/v1/sync", {
+      deviceId,
+      changes: [change("preferences", "prefs-3", { value: { font: "sans" } }, now)],
     });
-    expect(newerClient.status).toBe(200);
-    expect((await newerClient.json() as any).preferences.value).toMatchObject({ font: "serif", fontFamilyId: "future-serif-2", fontSize: 20 });
+    expect(onlyPreferences.status).toBe(200);
+    expect((await onlyPreferences.json() as any).acceptedChangeIds).toEqual(["prefs-3"]);
+    expect(await request("/v1/sync").then((value) => value.json())).not.toHaveProperty("preferences");
+    expect(await env.DB.prepare("SELECT name FROM sqlite_master WHERE name = 'sync_preferences'").first()).toBeNull();
+
+    const wrongEdition = await jsonRequest("/v1/sync", {
+      deviceId,
+      changes: [{ ...change("preferences", "prefs-4", { value: {} }, now), bookId }],
+    });
+    expect(wrongEdition.status).toBe(400);
+    expect((await wrongEdition.json() as any).error.code).toBe("INVALID_SYNC");
   });
 
   it("rejects future timestamps and explicitly fails instead of truncating oversized state", async () => {
@@ -842,15 +835,6 @@ describe("shared personal sync", () => {
 
   it("does not return malformed D1 state that would break client decoding", async () => {
     const now = new Date(Date.now() - 1_000).toISOString();
-    await env.DB.prepare(
-      `INSERT INTO sync_preferences (slot, change_id, updated_at, updated_ms, value_json)
-       VALUES ('default', 'bad', ?, ?, '{"flow":"sideways"}')`,
-    ).bind(now, Date.parse(now)).run();
-    const preferences = await request("/v1/sync");
-    expect(preferences.status).toBe(500);
-    expect((await preferences.json() as any).error.code).toBe("SYNC_STATE_INVALID");
-
-    await env.DB.prepare("DELETE FROM sync_preferences").run();
     await env.DB.prepare(
       `INSERT INTO sync_progress (book_id, sha256, change_id, updated_at, updated_ms, payload_json)
        VALUES (?, ?, 'bad', ?, ?, '{"href":42,"progression":0.5}')`,
@@ -965,7 +949,7 @@ describe("shared personal sync", () => {
       expect(rest.highlights.items).toHaveLength(1);
     });
 
-    it("rejects malformed highlights, cursors and colour preferences", async () => {
+    it("rejects malformed highlights and cursors", async () => {
       const now = new Date(Date.now() - 1_000).toISOString();
       const invalid = [
         { deviceId, changes: [highlight("x", "uuid-x", now, { color: "#ff0" })] },
@@ -975,8 +959,6 @@ describe("shared personal sync", () => {
         { deviceId, changes: [highlight("x", "not a uuid!", now)] },
         { deviceId, changes: [highlight("x", "uuid-x", now, { createdAt: "yesterday" })] },
         { deviceId, changes: [highlight("x", "uuid-x", now, { extra: 1 })] },
-        { deviceId, changes: [change("preferences", "p", { value: { highlightColor: "Yellow" } }, now)] },
-        { deviceId, changes: [change("preferences", "p", { value: { highlightColor: null } }, now)] },
         { deviceId, highlightsSince: -1, changes: [] },
         { deviceId, highlightsSince: "0", changes: [] },
         { deviceId, highlightsSince: 1.5, changes: [] },
@@ -986,13 +968,6 @@ describe("shared personal sync", () => {
         expect(response.status).toBe(400);
         expect((await response.json() as any).error.code).toBe("INVALID_SYNC");
       }
-
-      const colour = await jsonRequest("/v1/sync", {
-        deviceId,
-        changes: [change("preferences", "p", { value: { highlightColor: "purple" } }, now)],
-      });
-      expect(colour.status).toBe(200);
-      expect((await colour.json() as any).preferences.value).toEqual({ highlightColor: "purple" });
     });
 
     it("refuses to move a highlight to another book", async () => {

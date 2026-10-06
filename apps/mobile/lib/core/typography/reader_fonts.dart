@@ -182,7 +182,7 @@ abstract final class ReaderFonts {
   }
 
   /// The family to render. A known id applies only while its class matches
-  /// the synced `font`; otherwise (no id, unknown id, or an older build
+  /// the stored `font`; otherwise (no id, unknown id, or an older build
   /// changed the class) serif renders Libron, the default, and sans the
   /// system sans. An explicit `system-serif` choice is kept.
   static ReaderFontFamily resolve(ReaderPreferences p) {
@@ -192,7 +192,7 @@ abstract final class ReaderFonts {
   }
 
   /// Preferences after choosing [family]: the id is always written, even
-  /// for system families, so a stale id cannot survive a cloud merge.
+  /// for system families, so a stale id from an earlier choice cannot linger.
   static ReaderPreferences select(ReaderPreferences p, ReaderFontFamily family) =>
       p.copyWith(font: family.fontClass, fontFamilyId: family.id);
 }

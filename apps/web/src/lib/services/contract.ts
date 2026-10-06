@@ -21,8 +21,8 @@ export interface Observable<T> {
 export interface SettingsSnapshot {
   loaded: boolean;
   settings: AppSettings;
+  /** Device-local: kept in this browser, shared by its tabs, never synced. */
   reader: ReaderPreferences;
-  readerUpdatedAt: string | null;
 }
 
 export interface SettingsStore extends Observable<SettingsSnapshot> {

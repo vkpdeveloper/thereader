@@ -189,7 +189,8 @@ The live protocol, validation limits and response examples are documented in
 - `PUT /v1/uploads/:sha/parts/:number`: resumable 8 MiB parts for larger EPUBs.
 - `POST /v1/uploads/:sha/complete`: whole-object SHA and EPUB validation.
 - `GET /v1/sync` and `POST /v1/sync`: library membership, locators, cumulative
-  reading sessions, typography preferences, highlights and saved articles.
+  reading sessions, highlights and saved articles. Reader settings are
+  per-device and never sync.
 
 Maximum EPUB size is 512 MiB. The mobile app first saves and verifies an imported
 file locally; it never downloads that same imported file to make it readable.

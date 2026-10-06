@@ -31,14 +31,17 @@ which retains their cloud membership, position and reading time.
 
 ## State and conflicts
 
-D1 stores library membership, locators, reading sessions and typography preferences
-for one shared personal profile. The app saves changes in an origin-scoped durable
+D1 stores library membership, locators and reading sessions for one shared
+personal profile. Reader settings (theme, font, size, spacing, highlight colour)
+are per-device: mobile keeps them in shared preferences and web in IndexedDB, and
+none of them sync. Servers acknowledge and discard `preferences` changes from
+older clients, and migration 0006 dropped the old `sync_preferences` table. The app saves changes in an origin-scoped durable
 outbox before sending them. It syncs at startup/resume, about two seconds after a
 change, every 30 seconds while foregrounded, and through Settings' Sync now action.
 Offline edits remain queued. Switching the configured API does not send another
 origin's queue to that server.
 
-Position and typography use timestamp ordering, with deterministic change-ID ties.
+Position uses timestamp ordering, with deterministic change-ID ties.
 UTC timestamps preserve up to six fractional digits; server validation rejects
 values more than five minutes in the future. Devices therefore need reasonably
 correct clocks. An already-open reader does not jump when another device changes
@@ -51,7 +54,8 @@ Stopwatch checkpoints occur every 15 seconds and on pause/exit. A forced process
 kill can lose the most recent uncheckpointed interval. Each session uses a stable
 ID and cumulative elapsed counter; D1 takes its maximum, preventing retries from
 double-counting. Sessions from different devices sum; simultaneous reading counts
-both devices' foreground time. API address and reader-engine selection stay local.
+both devices' foreground time. API address, reader engine and all reader settings
+stay local.
 
 Highlights and saved articles sync too (below and in the API README). Sync responses
 are bounded to 1,000 book editions and reject excess state explicitly; uploads and

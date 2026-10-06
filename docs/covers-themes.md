@@ -4,7 +4,8 @@ The current pure-black appearance is named **Default** and remains selected on
 fresh installs. Additional dark presets are Dracula, Nord, Tokyo Night,
 Catppuccin Mocha and Gruvbox. Settings shows miniature interface previews and the
 selected preset. The choice affects app surfaces, text, controls, sheets and the
-reading canvas; it is saved with reader preferences and syncs through D1.
+reading canvas; it is saved with reader preferences on each device and does not
+sync.
 The native launch screen remains the Default black surface.
 
 Palette references and attribution are in [theme presets](theme-presets.md).

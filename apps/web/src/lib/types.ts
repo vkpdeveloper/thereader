@@ -64,7 +64,10 @@ export interface LibraryEntry {
 export type ReaderFont = 'serif' | 'sans';
 export type ReaderFlow = 'scrolled' | 'paginated';
 
-/** Synced typography preferences. Field names and ranges match the API. */
+/**
+ * Typography and appearance preferences. They stay on this device and never
+ * sync; field names match the mobile app's so values read the same in both.
+ */
 export interface ReaderPreferences {
   fontSize: number;
   lineHeight: number;

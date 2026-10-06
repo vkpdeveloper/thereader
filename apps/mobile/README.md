@@ -89,3 +89,6 @@ connection; only complete, verified files are marked downloaded.
 
 See [import and cloud sync](../../docs/cloud-sync.md) for native book picking,
 local reading during upload, D1 state, offline retry and cross-device behavior.
+Books (library, progress, reading time), highlights and saved articles sync;
+reader settings (theme, typeface, size, spacing, highlight colour) are stored
+on each device and never sync.

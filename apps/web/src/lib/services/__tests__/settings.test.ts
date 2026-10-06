@@ -20,6 +20,7 @@ function linkedBuses(): [TabBus, TabBus] {
   return [bus(0), bus(1)];
 }
 
+const READER_KEY = 'reader_prefs.v1';
 const settle = () => new Promise((r) => setTimeout(r, 5));
 
 describe('settings store', () => {
@@ -29,7 +30,6 @@ describe('settings store', () => {
     const a = new SettingsStoreImpl(kv, 'http://api.test', undefined, clock.now);
     await a.load();
     expect(a.getSnapshot().reader).toEqual({ fontSize: 18, lineHeight: 1.6, font: 'serif', flow: 'scrolled', marginScale: 1, justify: false, keepAwake: true });
-    expect(a.readerUpdatedAt).toBeNull();
     await a.updateReader((p) => ({ ...p, fontSize: 40, lineHeight: 9, marginScale: 0 }));
     expect(a.reader.fontSize).toBe(28);
     expect(a.reader.lineHeight).toBe(2.2);
@@ -44,7 +44,6 @@ describe('settings store', () => {
     const b = new SettingsStoreImpl(kv, 'http://api.test');
     await b.load();
     expect(b.reader).toEqual(a.reader);
-    expect(b.readerUpdatedAt).toBe(a.readerUpdatedAt);
     expect(b.settings.apiBaseUrl).toBe('http://other.test/');
     expect(b.currentOrigin()).toBe('http://other.test');
 
@@ -55,32 +54,49 @@ describe('settings store', () => {
   });
 
   test('an edit that changes nothing is not stamped and does not notify', async () => {
+    const kv = new MemoryKv();
     const clock = new Clock();
-    const s = new SettingsStoreImpl(new MemoryKv(), 'http://api.test', undefined, clock.now);
+    const s = new SettingsStoreImpl(kv, 'http://api.test', undefined, clock.now);
     await s.load();
     await s.updateReader((p) => ({ ...p, justify: true }));
-    const stamp = s.readerUpdatedAt;
+    await s.flush();
+    const stamp = (await kv.get<{ _updatedAt: string }>(READER_KEY))!._updatedAt;
     let emits = 0;
     s.subscribe(() => emits++);
     clock.advance(1000);
     await s.updateReader((p) => ({ ...p }));
     await s.setApiBaseUrl('http://api.test');
+    await s.flush();
     expect(emits).toBe(0);
-    expect(s.readerUpdatedAt).toBe(stamp);
+    expect((await kv.get<{ _updatedAt: string }>(READER_KEY))!._updatedAt).toBe(stamp);
   });
 
-  test('stamps move forward past a pulled copy even when the clock is behind', async () => {
-    const clock = new Clock();
-    const s = new SettingsStoreImpl(new MemoryKv(), 'http://api.test', undefined, clock.now);
-    await s.load();
-    const future = new Date(clock.ms + 60_000).toISOString();
-    await s.applyCloudReader({ ...s.reader, fontSize: 24 }, future);
-    expect(s.reader.fontSize).toBe(24);
-    await s.updateReader((p) => ({ ...p, fontSize: 20 }));
-    expect(isoOrder(s.readerUpdatedAt)).toBeGreaterThan(isoOrder(future));
-    // An older cloud copy never replaces the local edit.
-    await s.applyCloudReader({ ...s.reader, fontSize: 16 }, future);
-    expect(s.reader.fontSize).toBe(20);
+  test('the latest edit wins across tabs, even when its clock is behind', async () => {
+    const kv = new MemoryKv();
+    const [busA, busB] = linkedBuses();
+    const clockA = new Clock();
+    const clockB = new Clock(clockA.ms - 60_000);
+    const a = new SettingsStoreImpl(kv, 'http://api.test', busA, clockA.now);
+    const b = new SettingsStoreImpl(kv, 'http://api.test', busB, clockB.now);
+    await a.load();
+    await b.load();
+
+    await a.updateReader((p) => ({ ...p, fontSize: 24 }));
+    await settle();
+    expect(b.reader.fontSize).toBe(24);
+    // B's clock is a minute behind, yet its later edit still wins in A.
+    await b.updateReader((p) => ({ ...p, fontSize: 20 }));
+    await settle();
+    expect(a.reader.fontSize).toBe(20);
+    const stored = (await kv.get<{ _updatedAt: string; fontSize: number }>(READER_KEY))!;
+    expect(stored.fontSize).toBe(20);
+    expect(isoOrder(stored._updatedAt)).toBeGreaterThan(clockA.ms * 1000);
+
+    // An older copy (an earlier edit whose save lands late) never undoes a newer one.
+    await kv.set(READER_KEY, { ...stored, fontSize: 16, _updatedAt: new Date(clockA.ms - 1).toISOString() });
+    busB.post('settings');
+    await settle();
+    expect(a.reader.fontSize).toBe(20);
   });
 
   test('another tab\'s change is adopted, and nothing is emitted when it changed nothing', async () => {

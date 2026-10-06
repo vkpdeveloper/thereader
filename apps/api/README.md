@@ -101,7 +101,7 @@ operator backfill path and requires no public maintenance endpoint.
 
 `GET /v1/sync` returns the full shared state. `POST /v1/sync` accepts up to 100
 edition-pinned changes in `{deviceId,changes}` and returns the merged state plus
-`acceptedChangeIds`. Progress, library membership, and preferences use
+`acceptedChangeIds`. Progress and library membership use
 last-write-wins ordering by `(updatedAt,id)`. Reading sessions use a stable
 device/session ID and cumulative milliseconds; retries take the maximum instead
 of adding time twice. Requests are atomic and state above 1,000 book editions
@@ -109,17 +109,13 @@ returns `SYNC_STATE_TOO_LARGE` instead of silently truncating.
 
 Progress payloads are Flutter `ReadingLocator` JSON: a non-empty `href` up to
 4,096 characters, `progression` in 0–1, and optional nullable
-`totalProgression`, `title`, `engine`, and object-valued `raw`. Preference
-payloads are `{value:{...}}`; known fields are checked against the app's reader
-settings (`fontSize` 14–28, `lineHeight` 1.2–2.2, `marginScale` 0.5–2,
-`font` serif/sans, `flow` scrolled/paginated, and Boolean `justify` and
-`keepAwake`). Optional `themeId` accepts `default`, `dracula`, `nord`,
-`tokyo-night`, `catppuccin-mocha`, or `gruvbox`. Settings may be omitted to use client defaults. Unknown preference
-fields are retained so newer clients can add settings without breaking older
-Workers. Accepted preference changes merge supplied fields into the current
-value, so an older client that changes typography without a `themeId` does not
-erase a theme selected by a newer client. Optional `highlightColor` is a
-lowercase colour key (`yellow`, `green`, …) up to 16 letters.
+`totalProgression`, `title`, `engine`, and object-valued `raw`.
+
+Reader settings (typography, theme, highlight colour and the rest) are
+per-device and never synced; the response has no `preferences` field. Older
+clients may still push `preferences` changes on the `_preferences` sentinel
+edition (sha256 of 64 zeros). Those are acknowledged in `acceptedChangeIds` so
+the client drops them, but their payload is ignored and nothing is stored.
 
 Highlights ride on the same request. A `highlight` change carries
 `{highlightId,locator,text,color,note?,createdAt,deleted}`: `highlightId` is the

@@ -11,14 +11,12 @@ const MAX_SESSION_MS = 7 * 24 * 60 * 60 * 1_000;
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 const BOOK_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const CLIENT_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
+// Reader settings are per-device and never synced. Older clients still push
+// them as `preferences` changes on this sentinel edition; the server
+// acknowledges and drops them so those clients do not retry forever.
 const PREFERENCES_BOOK_ID = "_preferences";
 const PREFERENCES_SHA = "0".repeat(64);
 const LOCATOR_KEYS = new Set(["href", "progression", "totalProgression", "title", "engine", "raw"]);
-const PREFERENCE_KEYS = new Set(["fontSize", "lineHeight", "font", "flow", "marginScale", "justify", "keepAwake", "themeId", "fontFamilyId", "highlightColor"]);
-const READER_THEME_IDS = new Set(["default", "dracula", "nord", "tokyo-night", "catppuccin-mocha", "gruvbox"]);
-// A slug rather than an enum: newer clients may add families, and every client
-// falls back to the legacy `font` class for ids it does not know.
-const FONT_FAMILY_ID = /^[a-z0-9][a-z0-9-]{0,63}$/;
 // Semantic colour keys (yellow, green, ...), resolved per theme by clients.
 // A slug so newer clients can add colours without a server release.
 const HIGHLIGHT_COLOR = /^[a-z]{1,16}$/;
@@ -27,8 +25,8 @@ const MAX_HIGHLIGHT_TEXT = 4_000;
 const MAX_HIGHLIGHT_NOTE = 4_000;
 const MAX_HIGHLIGHT_LOCATOR_BYTES = 16 * 1024;
 const MAX_HIGHLIGHTS_PAGE = 500;
-// Saved web articles share the change envelope with a sentinel edition, like
-// preferences; the article itself is named by `payload.articleId`.
+// Saved web articles share the change envelope with a sentinel edition; the
+// article itself is named by `payload.articleId`.
 export const ARTICLES_BOOK_ID = "_articles";
 const ARTICLES_SHA = "0".repeat(64);
 // Clients derive the id from the article's normalized URL: the first 128 bits
@@ -48,7 +46,7 @@ export const ARTICLE_SCHEMA = 1;
 export const articleBodyKey = (sha256: string): string => `articles/${sha256}`;
 const CHANGE_KINDS = ["progress", "session", "preferences", "library", "highlight", "article", "articleProgress"];
 
-type ChangeKind = "progress" | "session" | "preferences" | "library" | "highlight" | "article" | "articleProgress";
+type ChangeKind = "progress" | "session" | "library" | "highlight" | "article" | "articleProgress";
 
 interface SyncChange {
   id: string;
@@ -74,9 +72,10 @@ interface StateRow {
   session_updated_ms: number | null;
 }
 
-interface PreferenceRow {
-  value_json: string;
-  updated_at: string;
+/** A legacy `preferences` change: acknowledged, never stored. */
+interface IgnoredChange {
+  id: string;
+  kind: "preferences";
 }
 
 export interface SyncState {
@@ -92,7 +91,6 @@ export interface SyncState {
     lastOpenedAt: string | null;
     readingMilliseconds: number;
   }>;
-  preferences: { value: unknown; updatedAt: string } | null;
   acceptedChangeIds?: string[];
   // Present only when the request asked for it via `highlightsSince`, so
   // older clients see an unchanged response and cost no extra D1 reads.
@@ -223,25 +221,6 @@ function validLocator(value: Record<string, unknown>): boolean {
   return true;
 }
 
-function validPreferences(value: Record<string, unknown>): boolean {
-  // Fields are optional so older/newer clients can rely on their local defaults.
-  // Unknown fields are ignored by current clients and retained for forward compatibility.
-  if (value.fontSize !== undefined && !inRange(value.fontSize, 14, 28)) return false;
-  if (value.lineHeight !== undefined && !inRange(value.lineHeight, 1.2, 2.2)) return false;
-  if (value.marginScale !== undefined && !inRange(value.marginScale, 0.5, 2)) return false;
-  if (value.font !== undefined && value.font !== "serif" && value.font !== "sans") return false;
-  if (value.flow !== undefined && value.flow !== "scrolled" && value.flow !== "paginated") return false;
-  if (value.justify !== undefined && typeof value.justify !== "boolean") return false;
-  if (value.keepAwake !== undefined && typeof value.keepAwake !== "boolean") return false;
-  if (value.themeId !== undefined && (typeof value.themeId !== "string" || !READER_THEME_IDS.has(value.themeId))) return false;
-  if (value.fontFamilyId !== undefined && (typeof value.fontFamilyId !== "string" || !FONT_FAMILY_ID.test(value.fontFamilyId))) return false;
-  if (value.highlightColor !== undefined && (typeof value.highlightColor !== "string" || !HIGHLIGHT_COLOR.test(value.highlightColor))) return false;
-  for (const key of PREFERENCE_KEYS) {
-    if (key in value && value[key] === null) return false;
-  }
-  return true;
-}
-
 // Readium locators carry href plus free-form `locations` and `text` objects;
 // only the href is required, and the whole thing is size-bounded.
 function validHighlightLocator(value: unknown): value is Record<string, unknown> {
@@ -308,13 +287,19 @@ function validArticleProgressPayload(value: Record<string, unknown>): boolean {
   return typeof value.articleId === "string" && ARTICLE_ID.test(value.articleId) && validArticlePosition(value.position);
 }
 
-function parseChange(value: unknown, futureLimit: number): SyncChange {
+function parseChange(value: unknown, futureLimit: number): SyncChange | IgnoredChange {
   if (!isRecord(value)) throw invalidSync();
   const allowed = new Set(["id", "bookId", "sha256", "kind", "updatedAt", "payload"]);
   if (Object.keys(value).some((key) => !allowed.has(key))) throw invalidSync();
   if (!validClientId(value.id)) throw invalidSync("Change ID is invalid.");
   if (typeof value.kind !== "string" || !CHANGE_KINDS.includes(value.kind)) {
     throw invalidSync("Change kind is invalid.");
+  }
+  if (value.kind === "preferences") {
+    if (value.bookId !== PREFERENCES_BOOK_ID || value.sha256 !== PREFERENCES_SHA) {
+      throw invalidSync("Preferences must use the documented sentinel edition.");
+    }
+    return { id: value.id, kind: "preferences" };
   }
   const kind = value.kind as ChangeKind;
   const updatedAt = canonicalIsoDate(value.updatedAt, futureLimit);
@@ -323,16 +308,7 @@ function parseChange(value: unknown, futureLimit: number): SyncChange {
 
   let bookId: string;
   let sha256: string;
-  if (kind === "preferences") {
-    if (value.bookId !== PREFERENCES_BOOK_ID || value.sha256 !== PREFERENCES_SHA) {
-      throw invalidSync("Preferences must use the documented sentinel edition.");
-    }
-    if (Object.keys(value.payload).length !== 1 || !isRecord(value.payload.value) || !validPreferences(value.payload.value)) {
-      throw invalidSync("Preferences payload is invalid.");
-    }
-    bookId = PREFERENCES_BOOK_ID;
-    sha256 = PREFERENCES_SHA;
-  } else if (kind === "article" || kind === "articleProgress") {
+  if (kind === "article" || kind === "articleProgress") {
     if (value.bookId !== ARTICLES_BOOK_ID || value.sha256 !== ARTICLES_SHA) {
       throw invalidSync("Articles must use the documented sentinel edition.");
     }
@@ -430,17 +406,6 @@ function statementForChange(env: Env, deviceId: string, change: SyncChange): D1P
         change.updatedMs,
         change.payload.readingMilliseconds,
       );
-    case "preferences":
-      return env.DB.prepare(
-        `INSERT INTO sync_preferences (slot, change_id, updated_at, updated_ms, value_json)
-         VALUES ('default', ?, ?, ?, ?)
-         ON CONFLICT(slot) DO UPDATE SET
-           change_id = excluded.change_id, updated_at = excluded.updated_at,
-           updated_ms = excluded.updated_ms,
-           value_json = json_patch(sync_preferences.value_json, excluded.value_json)
-         WHERE excluded.updated_ms > sync_preferences.updated_ms
-            OR (excluded.updated_ms = sync_preferences.updated_ms AND excluded.change_id > sync_preferences.change_id)`,
-      ).bind(change.id, change.updatedAt, change.updatedMs, JSON.stringify(change.payload.value));
     case "highlight": {
       // Batched statements run sequentially in one transaction, so MAX(rev)+1
       // hands out a unique, increasing rev per accepted write. A rejected
@@ -610,18 +575,6 @@ export async function getSyncState(env: Env, acceptedChangeIds?: string[]): Prom
   if (rows.results.length > MAX_STATE_BOOKS) {
     throw new ApiError(409, "SYNC_STATE_TOO_LARGE", "Sync state exceeds the personal profile limit.");
   }
-  const preference = await env.DB.prepare(
-    "SELECT value_json, updated_at FROM sync_preferences WHERE slot = 'default'",
-  ).first<PreferenceRow>();
-  let parsedPreference: unknown | null = null;
-  if (preference !== null) {
-    try {
-      parsedPreference = JSON.parse(preference.value_json);
-      if (!isRecord(parsedPreference) || !validPreferences(parsedPreference)) throw new Error();
-    } catch {
-      throw new ApiError(500, "SYNC_STATE_INVALID", "Sync state is invalid.");
-    }
-  }
   const books = rows.results.map((row) => {
     let progress: unknown | null = null;
     if (row.progress_json !== null) {
@@ -653,7 +606,6 @@ export async function getSyncState(env: Env, acceptedChangeIds?: string[]): Prom
   const state: SyncState = {
     serverTime: new Date().toISOString(),
     books,
-    preferences: preference === null ? null : { value: parsedPreference, updatedAt: preference.updated_at },
   };
   if (acceptedChangeIds !== undefined) state.acceptedChangeIds = acceptedChangeIds;
   return state;
@@ -797,7 +749,8 @@ export async function pushSync(request: Request, env: Env): Promise<SyncState> {
   const articlesFrom = raw.articlesSince ?? 0;
   if (wantsArticles && (!Number.isSafeInteger(articlesFrom) || (articlesFrom as number) < 0)) throw invalidSync("articlesSince is invalid.");
   const futureLimit = Date.now() + MAX_FUTURE_SKEW_MS;
-  const changes = raw.changes.map((change) => parseChange(change, futureLimit));
+  const parsed = raw.changes.map((change) => parseChange(change, futureLimit));
+  const changes = parsed.filter((change): change is SyncChange => change.kind !== "preferences");
   if (changes.length > 0) {
     // Array.prototype.sort is stable, so other changes keep their order.
     const ordered = [...changes].sort((a, b) => articleOrder(a) - articleOrder(b));
@@ -805,7 +758,8 @@ export async function pushSync(request: Request, env: Env): Promise<SyncState> {
     // A tombstone is accepted when its change id now owns the row.
     await deleteUnreferencedBodies(env, changes.filter((change) => change.kind === "article" && change.payload.deleted === true));
   }
-  const state = await getSyncState(env, changes.map((change) => change.id));
+  // Ignored legacy changes are acknowledged too, so their senders drop them.
+  const state = await getSyncState(env, parsed.map((change) => change.id));
   if (wantsHighlights) state.highlights = await highlightsSince(env, since as number);
   if (wantsArticles) state.articles = await articlesSince(env, articlesFrom as number);
   return state;

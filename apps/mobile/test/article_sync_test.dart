@@ -116,7 +116,7 @@ class ArticleCloud {
           ..['rev'] = ++rev;
       }
     }
-    final response = <String, dynamic>{'serverTime': DateTime.now().toUtc().toIso8601String(), 'books': [], 'preferences': null};
+    final response = <String, dynamic>{'serverTime': DateTime.now().toUtc().toIso8601String(), 'books': []};
     if (input.containsKey('articlesSince')) {
       final since = (input['articlesSince'] as num?)?.toInt() ?? 0;
       final changed = rows.values.where((r) => (r['rev'] as int) > since).toList()

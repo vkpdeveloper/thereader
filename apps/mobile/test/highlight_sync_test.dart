@@ -83,7 +83,6 @@ class HighlightCloud {
     final body = <String, dynamic>{
       'serverTime': DateTime.now().toUtc().toIso8601String(),
       'books': [],
-      'preferences': null,
     };
     if (input.containsKey('highlightsSince')) {
       final since = (input['highlightsSince'] as num?)?.toInt() ?? 0;
