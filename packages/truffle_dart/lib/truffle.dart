@@ -1,5 +1,5 @@
 /// Article extraction for The Reader: HTML in, a structured, renderable
-/// article out. A line-for-line port of `packages/extract` (TypeScript), the
+/// article out. A line-for-line port of `packages/truffle` (TypeScript), the
 /// reference implementation: for the same page tree both produce the same
 /// JSON.
 library;

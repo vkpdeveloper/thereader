@@ -16,7 +16,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:html/parser.dart' as html_parser;
-import 'package:thereader_extract/thereader_extract.dart';
+import 'package:truffle/truffle.dart';
 
 void main(List<String> args) {
   if (args.length < 2) {

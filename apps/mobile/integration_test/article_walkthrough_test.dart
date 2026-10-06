@@ -33,7 +33,7 @@ import 'package:thereader/features/articles/article_screen.dart';
 import 'package:thereader/main.dart' as app;
 import 'package:thereader/reader/dart_engine/dart_reader_engine.dart';
 import 'package:thereader/reader/engine/reader_engine.dart';
-import 'package:thereader_extract/thereader_extract.dart';
+import 'package:truffle/truffle.dart';
 
 const urls = String.fromEnvironment('THEREADER_ARTICLE_URLS');
 const jsonDir = String.fromEnvironment('THEREADER_ARTICLE_JSON');

@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:thereader_extract/src/match.dart';
+import 'package:truffle/src/match.dart';
 
 /// [ClassPattern] reduces class/id regexes to literal-word search; it must
 /// agree with the `RegExp` on every subject.

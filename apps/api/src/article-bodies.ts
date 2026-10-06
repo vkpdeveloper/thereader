@@ -22,7 +22,7 @@ const JSON_TYPE = "application/json";
 const GZIP_TYPE = "application/gzip";
 
 // Both clients serialize `Article` compactly with `schema` as its first key
-// (packages/extract/src/extract.ts, packages/extract_dart/lib/src/model.dart).
+// (packages/truffle/src/extract.ts, packages/truffle_dart/lib/src/model.dart).
 const ARTICLE_HEAD = new TextEncoder().encode(`{"schema":${ARTICLE_SCHEMA},`);
 const CLOSING_BRACE = 0x7d;
 // How much of the document's start is kept to check its shape.

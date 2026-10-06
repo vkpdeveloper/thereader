@@ -1,5 +1,5 @@
 // Speed of the Dart port over the eval corpus (`test-corpus/parity/`, written
-// by `packages/extract/scripts/parity-dump.ts`), next to the TypeScript engine
+// by `packages/truffle/scripts/parity-dump.ts`), next to the TypeScript engine
 // on the same pages: Chromium (`test-corpus/eval-out/*/ours.json`, parse with
 // the native DOMParser, extract = fromDom + extractTree) and Bun (`tsMs` in the
 // parity manifest: extractTree alone on the jsdom tree).
@@ -13,7 +13,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:html/parser.dart' as html_parser;
-import 'package:thereader_extract/thereader_extract.dart';
+import 'package:truffle/truffle.dart';
 
 void main(List<String> args) {
   String? option(String name) {

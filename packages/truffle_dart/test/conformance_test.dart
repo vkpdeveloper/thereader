@@ -2,13 +2,13 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:test/test.dart';
-import 'package:thereader_extract/thereader_extract.dart';
+import 'package:truffle/truffle.dart';
 
-/// The shared conformance fixtures (`packages/extract/fixtures`): every page,
+/// The shared conformance fixtures (`packages/truffle/fixtures`): every page,
 /// parsed with package:html and extracted with its manifest URL, must produce
 /// the TypeScript reference's JSON, and serializing it as the reference does
 /// (`JSON.stringify(article, null, 2)`) must reproduce the file byte for byte.
-const _root = '../extract/fixtures/';
+const _root = '../truffle/fixtures/';
 
 void main() {
   final manifest = (jsonDecode(File('${_root}manifest.json').readAsStringSync()) as Map).cast<String, String>();

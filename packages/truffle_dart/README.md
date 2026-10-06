@@ -1,11 +1,11 @@
-# thereader_extract (Dart)
+# truffle (Dart)
 
 The article extraction engine the mobile app runs: HTML in, a structured `Article` out. It is a
-line-for-line port of the TypeScript engine in `packages/extract` (the reference, used by the
+line-for-line port of the TypeScript engine in `packages/truffle` (the reference, used by the
 web app), and produces the same JSON for the same page tree.
 
 ```dart
-import 'package:thereader_extract/thereader_extract.dart';
+import 'package:truffle/truffle.dart';
 
 final Article? article = extractArticle(html, Uri.parse(url)); // package:html parse + extraction
 final json = article?.toJson();                                // TypeScript key order
@@ -42,23 +42,23 @@ the pattern is checked as well.
 
 ## Tests: `dart test`
 
-- `conformance_test.dart`: the shared fixtures in `packages/extract/fixtures`. Each page is
+- `conformance_test.dart`: the shared fixtures in `packages/truffle/fixtures`. Each page is
   parsed with package:html and extracted with its manifest URL; the JSON must equal
   `expected/<name>.json`, and `JsonEncoder.withIndent('  ')` must reproduce the file byte for
   byte.
 - `parser_test.dart`: `fromDocument` against the tree jsdom gives the TypeScript engine for
   small pages (`test/fixtures/parser_cases.json`, regenerate with
-  `bun scripts/parser-cases.ts` in `packages/extract`). Cases marked `known` are the parser
+  `bun scripts/parser-cases.ts` in `packages/truffle`). Cases marked `known` are the parser
   differences below.
 - `match_test.dart`, `model_test.dart`: `ClassPattern` against `RegExp`; model round trips.
-- `tex_test.dart`: TeX split out of text, the same cases as `packages/extract/test/tex.test.ts`
+- `tex_test.dart`: TeX split out of text, the same cases as `packages/truffle/test/tex.test.ts`
   (input that once looped forever runs in an isolate killed on timeout).
 
 ## Parity with the TypeScript engine (eval corpus)
 
 ```sh
-cd packages/extract && bun scripts/parity-dump.ts      # writes test-corpus/parity/ (jsdom trees, TS outputs, HTML)
-cd ../extract_dart
+cd packages/truffle && bun scripts/parity-dump.ts      # writes test-corpus/parity/ (jsdom trees, TS outputs, HTML)
+cd ../truffle_dart
 dart run tool/parity.dart engine    # Dart extractTree on the jsdom VDocuments vs TS: parser excluded
 dart run tool/parity.dart pipeline  # Dart extractHtml on the raw HTML (package:html) vs TS on jsdom
 dart run tool/parity.dart tree      # the trees themselves: package:html + fromDocument vs jsdom + fromDom

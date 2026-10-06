@@ -1,6 +1,6 @@
 // Parity of the Dart port with the TypeScript reference over the eval corpus.
 //
-// Reads what `packages/extract/scripts/parity-dump.ts` wrote to
+// Reads what `packages/truffle/scripts/parity-dump.ts` wrote to
 // `test-corpus/parity/` and compares, page by page, with the TypeScript
 // `extractTree` output:
 //
@@ -17,7 +17,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:html/parser.dart' as html_parser;
-import 'package:thereader_extract/thereader_extract.dart';
+import 'package:truffle/truffle.dart';
 
 final _root = Directory.fromUri(Platform.script.resolve('../../../test-corpus/parity/')).path;
 

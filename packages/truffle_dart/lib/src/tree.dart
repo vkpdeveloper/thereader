@@ -138,7 +138,7 @@ class VDocument {
   /// `<base href>`, when the page declares one.
   final String? baseHref;
 
-  /// Reads the JSON form `packages/extract/scripts/parity-dump.ts` writes: a
+  /// Reads the JSON form `packages/truffle/scripts/parity-dump.ts` writes: a
   /// text node is a string, an element `{t, a?, c?}`; `head` and `body` are
   /// child-index paths from the root.
   factory VDocument.fromJson(Map<String, dynamic> json) {

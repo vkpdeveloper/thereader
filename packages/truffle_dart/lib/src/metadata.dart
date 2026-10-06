@@ -1,4 +1,4 @@
-/// Page metadata (port of `packages/extract/src/metadata.ts`).
+/// Page metadata (port of `packages/truffle/src/metadata.ts`).
 library;
 
 import 'dart:convert';

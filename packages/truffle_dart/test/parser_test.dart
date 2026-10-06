@@ -3,10 +3,10 @@ import 'dart:io';
 
 import 'package:html/parser.dart' as html_parser;
 import 'package:test/test.dart';
-import 'package:thereader_extract/thereader_extract.dart';
+import 'package:truffle/truffle.dart';
 
 /// `fromDocument` (package:html) against the tree jsdom gives the TypeScript
-/// engine for the same page (`packages/extract/scripts/parser-cases.ts`).
+/// engine for the same page (`packages/truffle/scripts/parser-cases.ts`).
 /// Cases marked `known` are package:html tree-construction gaps the port
 /// documents instead of reproducing.
 void main() {

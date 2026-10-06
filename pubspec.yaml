@@ -1,0 +1,9 @@
+name: thereader_workspace
+publish_to: 'none'
+
+environment:
+  sdk: ^3.11.4
+
+workspace:
+  - apps/mobile
+  - packages/truffle_dart

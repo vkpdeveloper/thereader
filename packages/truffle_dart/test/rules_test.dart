@@ -1,7 +1,7 @@
 import 'package:test/test.dart';
-import 'package:thereader_extract/thereader_extract.dart';
+import 'package:truffle/truffle.dart';
 
-// Single rules on small pages; the same cases as packages/extract/test/rules.test.ts.
+// Single rules on small pages; the same cases as packages/truffle/test/rules.test.ts.
 
 final _prose = 'Some long prose sentence here to pass thresholds. ' * 15;
 

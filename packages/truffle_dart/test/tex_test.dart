@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:isolate';
 
 import 'package:test/test.dart';
-import 'package:thereader_extract/thereader_extract.dart';
+import 'package:truffle/truffle.dart';
 
-// The same pages as packages/extract/test/tex.test.ts.
+// The same pages as packages/truffle/test/tex.test.ts.
 
 /// A page that uses TeX (`\(...\)`), with [paragraph] as its second block.
 Article? _page(String paragraph) {

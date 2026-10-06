@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:thereader_extract/thereader_extract.dart';
+import 'package:truffle/truffle.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/tokens.dart';

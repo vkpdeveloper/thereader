@@ -12,7 +12,7 @@ import 'package:thereader/app_scope.dart';
 import 'package:thereader/features/articles/article_blocks.dart';
 import 'package:thereader/features/articles/article_screen.dart';
 import 'package:thereader/features/articles/article_style.dart';
-import 'package:thereader_extract/thereader_extract.dart';
+import 'package:truffle/truffle.dart';
 
 const recordDir = String.fromEnvironment('THEREADER_RECORD_DIR');
 

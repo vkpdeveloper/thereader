@@ -1,5 +1,5 @@
 /// The article document model: the Dart mirror of
-/// `packages/extract/src/model.ts`. `toJson` writes the keys the TypeScript
+/// `packages/truffle/src/model.ts`. `toJson` writes the keys the TypeScript
 /// engine writes, in `model.ts` field order, and omits absent optionals, so stored
 /// documents round-trip between the two implementations. Optional lists stay
 /// null when absent so an explicit value is never confused with a missing one.

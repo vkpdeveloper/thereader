@@ -13,7 +13,7 @@ import 'package:thereader/core/theme/app_theme.dart';
 import 'package:thereader/data/models/settings.dart';
 import 'package:thereader/features/articles/article_blocks.dart';
 import 'package:thereader/features/articles/article_style.dart';
-import 'package:thereader_extract/thereader_extract.dart';
+import 'package:truffle/truffle.dart';
 
 PreparedSvg prepare(String source) => prepareSvg(source, ink: Palette.fg, paper: Palette.bg)!;
 

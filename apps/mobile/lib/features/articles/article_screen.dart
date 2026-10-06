@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:super_sliver_list/super_sliver_list.dart';
-import 'package:thereader_extract/thereader_extract.dart';
+import 'package:truffle/truffle.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../app_scope.dart';

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:test/test.dart';
-import 'package:thereader_extract/thereader_extract.dart';
+import 'package:truffle/truffle.dart';
 
 Json _fixture(String name) => jsonDecode(File('test/fixtures/$name').readAsStringSync()) as Json;
 
