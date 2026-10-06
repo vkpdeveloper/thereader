@@ -39,6 +39,8 @@ const CREDIT_CLASS = /(?:^|[\s_-])(?:credit|credits|copyright|attribution|photog
 const FIGURE_LIKE = /(?:^|[\s_-])(?:wp-caption|wp-block-image|image-block|figure|photo|media-image|article-image|inline-image|image-container|image-wrapper|img-wrapper|picture)(?:$|[\s_-])/;
 const CODE_TITLE = /(?:^|[\s_-])(?:code-?block-?title|code-?title|filename|file-name|codeblock-header|code-header|code-block-header|rehype-code-title|remark-code-title|highlight-title)(?:$|[\s_-])|codeblocktitle/;
 const GUTTER = /(?:^|[\s_-])(?:line-?numbers?(?:-rows)?|linenos?|lineno|linenodiv|gutter|ln-num|hljs-ln-n|hljs-ln-numbers|rouge-gutter|blob-num|lnt|code-line-number|react-syntax-highlighter-line-number|line-num|linenumber|line-number-cell)(?:$|[\s_-])/;
+/** Toolbars and labels that code highlighters put inside <pre> (language name, copy button). */
+const CODE_CHROME = /(?:^|[\s_-])(?:code-toolbar|toolbar|code-language|code-lang|lang-label|language-label|language-tag|copy-button|copy-code|clipboard)(?:$|[\s_-])/;
 const LINE_ELEMENT = /(?:^|[\s_-])(?:line|code-line|cm-line|ec-line|token-line|highlight-line|view-line|line-content)(?:$|[\s_-])/;
 const PULL_QUOTE = /(?:^|[\s_-])(?:pullquote|pull-quote|wp-block-pullquote|pull_quote|blockquote--pull)(?:$|[\s_-])/;
 /** Zero-width characters, and private-use code points (icon-font glyphs that show as boxes without their font). */
@@ -1578,7 +1580,7 @@ export function codeText(el: VElement): string {
         continue;
       }
       if (GUTTER.test(child.matchString) || child.attrs['data-line-number'] !== undefined && rawText(child).trim().length === 0) continue;
-      if (child.tag === 'button' || child.tag === 'svg' || child.tag === 'input') continue;
+      if (child.tag === 'button' || child.tag === 'svg' || child.tag === 'input' || CODE_CHROME.test(child.matchString)) continue;
       const line = child.tag === 'div' || child.tag === 'p' || child.tag === 'tr' || child.tag === 'li' || LINE_ELEMENT.test(child.matchString);
       visit(child);
       if (line && out.length > 0 && out.charCodeAt(out.length - 1) !== 10) {
