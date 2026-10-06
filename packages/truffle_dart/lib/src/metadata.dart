@@ -254,22 +254,26 @@ final _bylinePrefix = RegExp(
 final _httpUrl = RegExp(r'^https?:\/\/', caseSensitive: false);
 final _twoDigits = RegExp(r'\d{2,}');
 final _notAName = RegExp(r'affiliation|email|e-mail|profile|follow|subscribe|message', caseSensitive: false);
-final _trailingSep = RegExp(r'\s*[|·•,]\s*$');
+final _trailingSep = RegExp(r'[|·•,]$');
 
 String? _cleanAuthor(String value) {
   var s = collapse(value).replaceFirst(_bylinePrefix, '');
   if (_httpUrl.hasMatch(s) || s.contains('@') || _twoDigits.hasMatch(s) || _notAName.hasMatch(s)) return null;
   if (jsSplit(s, ' ').length > 8) return null;
-  s = jsTrim(s.replaceFirst(_trailingSep, ''));
+  // `.replace(/\s*[|·•,]\s*$/, '')`, without retrying `\s*` from every space of a long run.
+  final end = jsTrimEnd(s);
+  if (_trailingSep.hasMatch(end)) s = end.substring(0, end.length - 1);
+  s = jsTrim(s);
   if (s.length < 2 || s.length > 100) return null;
   return s;
 }
 
+/// Between names, split with [splitAtRuns].
 final _authorSplit = RegExp(r'\s*(?:,|;|\band\b|&|\bund\b|\bet\b|\by\b|،)\s*');
 
 void _addAuthors(List<String> raw, List<String> out) {
   for (final value in raw) {
-    for (final part in jsSplit(value, _authorSplit)) {
+    for (final part in splitAtRuns(value, _authorSplit)) {
       final name = _cleanAuthor(part);
       if (name != null && !out.any((n) => jsLower(n) == jsLower(name))) out.add(name);
     }
@@ -278,7 +282,12 @@ void _addAuthors(List<String> raw, List<String> out) {
 
 bool _isAbsoluteHttp(String? url) => url != null && _httpUrl.hasMatch(url);
 
-final _hostRe = RegExp(r'^https?:\/\/([^/:?#]+)', caseSensitive: false);
+final _userinfo = RegExp(r'^https?:\/\/[^/?#]*@', caseSensitive: false);
+
+/// Userinfo (`https://user:pass@host/`) can dress any host up as another.
+bool _hasUserinfo(String url) => _userinfo.hasMatch(url);
+
+final _hostRe = RegExp(r'^https?:\/\/(?:[^/?#]*@)?([^/:?#]+)', caseSensitive: false);
 
 bool _sameSite(String a, String b) {
   String host(String u) {
@@ -311,7 +320,8 @@ String _pathOf(String url) {
 
 final _canonicalRel = RegExp(r'(?:^|\s)canonical(?:\s|$)', caseSensitive: false);
 final _iconRel = RegExp(r'(?:^|\s)(?:icon|apple-touch-icon|apple-touch-icon-precomposed)(?:\s|$)');
-final _sizes = RegExp(r'(\d+)x\d+');
+// From the start of a number only: from every digit, a long one is rescanned to its end.
+final _sizes = RegExp(r'(?:^|\D)(\d+)x\d+');
 final _svgHref = RegExp(r'\.svg(?:$|\?)', caseSensitive: false);
 final _origin = RegExp(r'^(https?:\/\/[^/?#]+)', caseSensitive: false);
 
@@ -489,7 +499,10 @@ Metadata readMetadata(VDocument doc, String pageUrl) {
   for (final candidate in [canonicalLink?.attrs['href'], m('og:url')]) {
     if (candidate == null) continue;
     final abs = resolveUrl(candidate, pageUrl);
-    if (_isAbsoluteHttp(abs) && _sameSite(abs!, pageUrl) && !(_pathOf(abs) == '/' && _pathOf(pageUrl) != '/')) {
+    if (_isAbsoluteHttp(abs) &&
+        !_hasUserinfo(abs!) &&
+        _sameSite(abs, pageUrl) &&
+        !(_pathOf(abs) == '/' && _pathOf(pageUrl) != '/')) {
       url = _keepHttps(canonicalUrl(abs), pageUrl);
       break;
     }
@@ -577,7 +590,7 @@ final _nonAlnum = RegExp(r'[^a-z0-9]+');
 
 String? _titleSite(String? title, String pageUrl) {
   if (title == null) return null;
-  final parts = collapse(decodeEntities(title)).split(_titleSep);
+  final parts = splitAtRuns(collapse(decodeEntities(title)), _titleSep);
   if (parts.length < 2) return null;
   final last = parts[parts.length - 1];
   final key = lettersAndNumbers(jsLower(last)).join();

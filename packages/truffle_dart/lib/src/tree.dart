@@ -247,6 +247,26 @@ String textOf(VNode node) => collapse(rawText(node));
 /// `text.replace(/[\t\n\f\r ]+/g, ' ').trim()`.
 String collapse(String text) => jsTrim(collapseHtmlSpace(text));
 
+/// `text.split(separator)` for a group-free separator that opens with `\s*` or
+/// `\s+`: such a match never starts inside a run of whitespace, only where the
+/// run starts, so the separator is tried only there. Tried from every space of
+/// a long run (no-break spaces survive `collapse`), it would rescan the rest of
+/// the run each time.
+List<String> splitAtRuns(String text, RegExp separator) {
+  final parts = <String>[];
+  var start = 0;
+  for (var i = 0; i < text.length; i++) {
+    if (i != start && isJsSpace(text.codeUnitAt(i - 1))) continue;
+    final m = separator.matchAsPrefix(text, i);
+    if (m == null || m.end == i) continue;
+    parts.add(text.substring(start, i));
+    start = m.end;
+    i = start - 1;
+  }
+  parts.add(text.substring(start));
+  return parts;
+}
+
 /// Length of [text] as rendered: whitespace runs count as one character,
 /// edges trimmed.
 int visibleLength(String text) {

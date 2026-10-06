@@ -7,18 +7,24 @@ import 'dart:convert';
 import 'js.dart';
 
 final _strip = RegExp(r'[\t\n\r]');
-final _unsafeScheme = RegExp(r'^(?:javascript|vbscript|about|blob):', caseSensitive: false);
 final _dataScheme = RegExp(r'^data:', caseSensitive: false);
 final _httpScheme = RegExp(r'^https?:\/\/', caseSensitive: false);
 
-/// Resolves [href] against [base]. Returns null for empty, script and
-/// malformed values. Whitespace inside the value is percent-encoded first so
-/// both implementations agree on sloppy publisher markup.
+/// Schemes a resolved URL may carry; decided after parsing, which strips the
+/// control characters that hide a scheme.
+final _safeScheme = RegExp(r'^(?:https?|mailto|tel):', caseSensitive: false);
+
+/// Resolves [href] against [base]. Returns an http(s), `mailto:` or `tel:`
+/// URL, a `data:` value as written (callers keep only raster images), or null
+/// for empty, malformed and every other scheme. Whitespace inside the value is
+/// percent-encoded first so both implementations agree on sloppy publisher
+/// markup.
 String? resolveUrl(String href, String base) {
   final value = jsTrim(href).replaceAll(_strip, '').replaceAll(' ', '%20');
-  if (value.isEmpty || _unsafeScheme.hasMatch(value)) return null;
+  if (value.isEmpty) return null;
   if (_dataScheme.hasMatch(value)) return value;
-  return whatwgHref(value, base);
+  final url = whatwgHref(value, base);
+  return url != null && _safeScheme.hasMatch(url) ? url : null;
 }
 
 /// http(s) only.
@@ -27,10 +33,10 @@ String? resolveHttp(String href, String base) {
   return url != null && _httpScheme.hasMatch(url) ? url : null;
 }
 
-final _hostPattern = RegExp(r'^[a-z][a-z0-9+.-]*:\/\/([^/:?#]+)', caseSensitive: false);
+final _hostPattern = RegExp(r'^[a-z][a-z0-9+.-]*:\/\/(?:[^/?#]*@)?([^/:?#]+)', caseSensitive: false);
 final _www = RegExp(r'^www\.');
 
-/// Host without `www.`.
+/// Host without `www.`; userinfo (`https://user:pass@host/`) is not the host.
 String hostOf(String url) {
   final m = _hostPattern.firstMatch(url);
   return m == null ? '' : jsLower(m.group(1)!).replaceFirst(_www, '');
@@ -617,11 +623,21 @@ class _Url {
     return out.join('.');
   }
 
-  /// Punycode [encoded] decodes to a plausible non-ASCII label.
+  /// Punycode [encoded] decodes to a plausible non-ASCII label. Only which code points it holds
+  /// matters, not their order: the decoder counts them instead of inserting each into a list
+  /// (quadratic in a long label).
   static bool _validAce(String encoded) {
     const base = 36, tMin = 1, tMax = 26, skew = 38, damp = 700;
+    // UTS #46 allows only (lowercase) letters, marks and digits; an approximation of its tables.
+    bool allowed(int c) =>
+        (c >= 0x61 && c <= 0x7a) ||
+        (c >= 0x30 && c <= 0x39) ||
+        c == 0x2d ||
+        (c >= 0xa0 && _idnaLetter.hasMatch(String.fromCharCode(c)));
     final delimiter = encoded.lastIndexOf('-');
-    final output = <int>[...encoded.substring(0, delimiter < 0 ? 0 : delimiter).codeUnits];
+    final basic = encoded.substring(0, delimiter < 0 ? 0 : delimiter).codeUnits;
+    if (!basic.every(allowed)) return false;
+    var length = basic.length;
     var n = 128, i = 0, bias = 72;
     int digit(int c) => c >= 0x30 && c <= 0x39
         ? c - 22
@@ -644,42 +660,64 @@ class _Url {
         w *= base - t;
       }
       var delta = old == 0 ? (i - old) ~/ damp : (i - old) ~/ 2;
-      delta += delta ~/ (output.length + 1);
+      delta += delta ~/ (length + 1);
       var kk = 0;
       while (delta > ((base - tMin) * tMax) ~/ 2) {
         delta ~/= base - tMin;
         kk += base;
       }
       bias = kk + (base - tMin + 1) * delta ~/ (delta + skew);
-      n += i ~/ (output.length + 1);
-      if (n > 0x10ffff) return false;
-      i %= output.length + 1;
-      output.insert(i, n);
+      n += i ~/ (length + 1);
+      if (n > 0x10ffff || !allowed(n)) return false;
+      i %= length + 1;
+      length++;
       i++;
     }
-    // UTS #46 allows only (lowercase) letters, marks and digits; an approximation of its tables.
-    return output.any((c) => c >= 0x80) &&
-        output.every(
-          (c) =>
-              (c >= 0x61 && c <= 0x7a) ||
-              (c >= 0x30 && c <= 0x39) ||
-              c == 0x2d ||
-              (c >= 0xa0 && _idnaLetter.hasMatch(String.fromCharCode(c))),
-        );
+    // At least one code point decoded, each 0x80 or above: the label is non-ASCII.
+    return true;
   }
 
   static final _idnaLetter = RegExp(r'^[\p{Ll}\p{Lo}\p{Lm}\p{M}\p{Nd}]$', unicode: true);
 
+  /// Punycode (RFC 3492) for [label]. Each delta counts the code points below the one encoded that
+  /// come before it; a Fenwick tree over the positions counts them, where the RFC's loop over the
+  /// whole label for every distinct code point is quadratic in a long label.
   static String? _punycode(String label) {
     const base = 36, tMin = 1, tMax = 26, skew = 38, damp = 700;
     final input = label.runes.toList();
     final output = StringBuffer();
-    for (final c in input) {
-      if (c < 0x80) output.writeCharCode(c);
+    // Where each non-basic code point occurs, in order.
+    final positions = <int, List<int>>{};
+    for (var j = 0; j < input.length; j++) {
+      final c = input[j];
+      if (c < 0x80) {
+        output.writeCharCode(c);
+      } else {
+        (positions[c] ??= []).add(j);
+      }
     }
     final basic = output.length;
     var handled = basic;
     if (basic > 0) output.write('-');
+    // The positions of the code points handled so far: how many come before position `j`.
+    final tree = List.filled(input.length + 1, 0);
+    void mark(int j) {
+      for (var k = j + 1; k <= input.length; k += k & -k) {
+        tree[k]++;
+      }
+    }
+
+    int before(int j) {
+      var count = 0;
+      for (var k = j; k > 0; k -= k & -k) {
+        count += tree[k];
+      }
+      return count;
+    }
+
+    for (var j = 0; j < input.length; j++) {
+      if (input[j] < 0x80) mark(j);
+    }
     var n = 128, delta = 0, bias = 72;
     int adapt(int delta, int points, bool first) {
       delta = first ? delta ~/ damp : delta ~/ 2;
@@ -693,29 +731,30 @@ class _Url {
     }
 
     String digit(int d) => String.fromCharCode(d < 26 ? 0x61 + d : 0x16 + d);
-    while (handled < input.length) {
-      var m = 0x10ffff + 1;
-      for (final c in input) {
-        if (c >= n && c < m) m = c;
-      }
+    for (final m in positions.keys.toList()..sort()) {
       delta += (m - n) * (handled + 1);
       n = m;
-      for (final c in input) {
-        if (c < n) delta++;
-        if (c == n) {
-          var q = delta;
-          for (var k = base; ; k += base) {
-            final t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias);
-            if (q < t) break;
-            output.write(digit(t + (q - t) % (base - t)));
-            q = (q - t) ~/ (base - t);
-          }
-          output.write(digit(q));
-          bias = adapt(delta, handled + 1, handled == basic);
-          delta = 0;
-          handled++;
+      // The RFC's `delta++` for each smaller code point, counted between this one's occurrences.
+      final marked = handled;
+      var previous = 0;
+      for (final j in positions[m]!) {
+        final below = before(j);
+        delta += below - previous;
+        previous = below;
+        var q = delta;
+        for (var k = base; ; k += base) {
+          final t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias);
+          if (q < t) break;
+          output.write(digit(t + (q - t) % (base - t)));
+          q = (q - t) ~/ (base - t);
         }
+        output.write(digit(q));
+        bias = adapt(delta, handled + 1, handled == basic);
+        delta = 0;
+        handled++;
       }
+      delta += marked - previous;
+      positions[m]!.forEach(mark);
       delta++;
       n++;
     }
