@@ -12,7 +12,7 @@
   "modifiedAt": "2026-10-01T06:11:19Z",
   "language": "en",
   "dir": "ltr",
-  "excerpt": "In mathematics, Euler's identity (also known as Euler's equation) is the equality e^{i\\pi }+1=0 where",
+  "excerpt": "In mathematics, Euler's identity (also known as Euler's equation) is the equality",
   "leadImage": {
     "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/71/Euler%27s_formula.svg/1280px-Euler%27s_formula.svg.png?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=thumbnail",
     "alt": "",
@@ -81,20 +81,21 @@
           "type": "text",
           "text": "equality",
           "href": "https://en.wikipedia.org/wiki/Equality_(mathematics)"
-        },
+        }
+      ]
+    },
+    {
+      "type": "math",
+      "tex": "e^{i\\pi }+1=0",
+      "mathml": "<math display=\"block\" alttext=\"{\\displaystyle e^{i\\pi }+1=0}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n        <mo>+</mo>\n        <mn>1</mn>\n        <mo>=</mo>\n        <mn>0</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+      "text": "e^{i\\pi }+1=0"
+    },
+    {
+      "type": "paragraph",
+      "content": [
         {
           "type": "text",
-          "text": " "
-        },
-        {
-          "type": "math",
-          "tex": "e^{i\\pi }+1=0",
-          "mathml": "<math display=\"block\" alttext=\"{\\displaystyle e^{i\\pi }+1=0}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n        <mo>+</mo>\n        <mn>1</mn>\n        <mo>=</mo>\n        <mn>0</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
-          "text": "e^{i\\pi }+1=0"
-        },
-        {
-          "type": "text",
-          "text": " where"
+          "text": "where"
         }
       ]
     },
@@ -1839,15 +1840,15 @@
         },
         {
           "type": "text",
-          "text": "; then, "
-        },
-        {
-          "type": "math",
-          "tex": "e^{{\\frac {1}{\\sqrt {3}}}(i\\pm j\\pm k)\\pi }+1=0.",
-          "mathml": "<math display=\"block\" alttext=\"{\\displaystyle e^{{\\frac {1}{\\sqrt {3}}}(i\\pm j\\pm k)\\pi }+1=0.}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mrow>\n              <mfrac>\n                <mn>1</mn>\n                <msqrt>\n                  <mn>3</mn>\n                </msqrt>\n              </mfrac>\n            </mrow>\n            <mo stretchy=\"false\">(</mo>\n            <mi>i</mi>\n            <mo>±</mo>\n            <mi>j</mi>\n            <mo>±</mo>\n            <mi>k</mi>\n            <mo stretchy=\"false\">)</mo>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n        <mo>+</mo>\n        <mn>1</mn>\n        <mo>=</mo>\n        <mn>0.</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
-          "text": "e^{{\\frac {1}{\\sqrt {3}}}(i\\pm j\\pm k)\\pi }+1=0."
+          "text": "; then,"
         }
       ]
+    },
+    {
+      "type": "math",
+      "tex": "e^{{\\frac {1}{\\sqrt {3}}}(i\\pm j\\pm k)\\pi }+1=0.",
+      "mathml": "<math display=\"block\" alttext=\"{\\displaystyle e^{{\\frac {1}{\\sqrt {3}}}(i\\pm j\\pm k)\\pi }+1=0.}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mrow>\n              <mfrac>\n                <mn>1</mn>\n                <msqrt>\n                  <mn>3</mn>\n                </msqrt>\n              </mfrac>\n            </mrow>\n            <mo stretchy=\"false\">(</mo>\n            <mi>i</mi>\n            <mo>±</mo>\n            <mi>j</mi>\n            <mo>±</mo>\n            <mi>k</mi>\n            <mo stretchy=\"false\">)</mo>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n        <mo>+</mo>\n        <mn>1</mn>\n        <mo>=</mo>\n        <mn>0.</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+      "text": "e^{{\\frac {1}{\\sqrt {3}}}(i\\pm j\\pm k)\\pi }+1=0."
     },
     {
       "type": "paragraph",
@@ -1885,15 +1886,15 @@
         },
         {
           "type": "text",
-          "text": " Then one has "
-        },
-        {
-          "type": "math",
-          "tex": "e^{q\\pi }+1=0.",
-          "mathml": "<math display=\"block\" alttext=\"{\\displaystyle e^{q\\pi }+1=0.}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>q</mi>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n        <mo>+</mo>\n        <mn>1</mn>\n        <mo>=</mo>\n        <mn>0.</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
-          "text": "e^{q\\pi }+1=0."
+          "text": " Then one has"
         }
       ]
+    },
+    {
+      "type": "math",
+      "tex": "e^{q\\pi }+1=0.",
+      "mathml": "<math display=\"block\" alttext=\"{\\displaystyle e^{q\\pi }+1=0.}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>q</mi>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n        <mo>+</mo>\n        <mn>1</mn>\n        <mo>=</mo>\n        <mn>0.</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+      "text": "e^{q\\pi }+1=0."
     },
     {
       "type": "paragraph",

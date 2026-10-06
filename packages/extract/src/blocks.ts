@@ -89,7 +89,7 @@ class InlineBuilder {
       const tex = (m[1] ?? m[2] ?? m[3] ?? m[4] ?? '').trim();
       if (tex.length > 0) {
         const node: Inline = { type: 'math', tex, text: tex };
-        if (m[1] !== undefined || m[2] !== undefined) this.converter.lastDisplayMath = node;
+        if (m[1] !== undefined || m[2] !== undefined) this.converter.displayMath.add(node);
         this.push(node);
       }
       at = m.index + m[0].length;
@@ -111,6 +111,16 @@ class InlineBuilder {
 
   push(node: Inline): void {
     this.breaks = 0;
+    // Display math is a block of its own: the sentence around it continues in the next paragraph.
+    if (node.type === 'math' && this.out !== null && this.converter.displayMath.has(node)) {
+      this.flush();
+      const block = { type: 'math' } as Block & { type: 'math' };
+      if (node.tex !== undefined) block.tex = node.tex;
+      if (node.mathml !== undefined) block.mathml = node.mathml;
+      block.text = node.text;
+      this.out.push(block);
+      return;
+    }
     this.nodes.push(node);
   }
 
@@ -124,14 +134,6 @@ class InlineBuilder {
     this.anchor = null;
     if (content.length === 0) return;
     if (anchor !== null && this.converter.anchoredNote(anchor, content, this.out)) return;
-    if (content.length === 1 && content[0]!.type === 'math' && this.converter.lastDisplayMath === content[0]) {
-      const math = content[0];
-      const block: Block = { type: 'math', text: math.text };
-      if (math.tex !== undefined) block.tex = math.tex;
-      if (math.mathml !== undefined) block.mathml = math.mathml;
-      this.out.push(block);
-      return;
-    }
     this.out.push({ type: 'paragraph', content });
   }
 
@@ -225,6 +227,19 @@ function isInline(el: VElement): boolean {
   return el.tag.indexOf('-') > 0 && !hasBlock(el) && lazyVideo(el) === null;
 }
 
+const DISPLAY_WRAPPER = /(?:^|[\s_-])(?:katex-display|math-display|display-math|mathjax_display|mwe-math-element-block|math-block|equation)(?:$|[\s_-])/;
+
+/** A formula set on its own line: by its own attributes or its renderer's wrapper (KaTeX, MathJax, Wikipedia, Distill). */
+function isDisplayMath(el: VElement): boolean {
+  if (el.attrs['display'] === 'block' || el.attrs['mode'] === 'display') return true;
+  let p = el.parent;
+  for (let depth = 0; depth < 4 && p !== null; depth++, p = p.parent) {
+    if (DISPLAY_WRAPPER.test(p.matchString) || p.attrs['display'] === 'true' && p.tag === 'mjx-container') return true;
+    if (p.tag.endsWith('-math') && p.attrs['block'] !== undefined) return true;
+  }
+  return false;
+}
+
 function intAttr(el: VElement, name: string): number | undefined {
   const v = el.attrs[name];
   if (v === undefined) return undefined;
@@ -257,7 +272,8 @@ export class Converter {
   private readonly resolved = new Set<string>();
   /** Label of the first reference to each listed note. */
   private readonly refLabels = new Map<string, string>();
-  lastDisplayMath: Inline | null = null;
+  /** Math nodes typeset as display (block) formulas. */
+  readonly displayMath = new WeakSet<Inline>();
   /** The text holds TeX delimiters (`$$`, `\[`, `\(`), so it is parsed as math; `dollars` adds $…$ inline. */
   tex = false;
   dollars = false;
@@ -726,7 +742,7 @@ export class Converter {
       case 'math-tex': {
         const node = mathInline(el);
         if (node === null) return;
-        if (el.attrs['display'] === 'block' || el.attrs['mode'] === 'display') this.lastDisplayMath = node;
+        if (isDisplayMath(el)) this.displayMath.add(node);
         b.push(node);
         return;
       }
