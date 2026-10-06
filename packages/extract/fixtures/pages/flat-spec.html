@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<title>Tokenizer Notes</title>
+<body>
+<header id="head" class="head"><a href="/" class="logo"><img src="/logo.png" alt="Notes" width="80" height="80"></a><h1>Notes</h1><p>Working draft — Last Updated 3 March 2025</p></header>
+<nav><a href="part-1.html">← 1 Introduction</a> — <a href="./">Contents</a> — <a href="part-3.html">3 Tree building →</a></nav>
+<h2 id="tokenizer">2 The tokenizer</h2>
+<p>The tokenizer turns a stream of characters into tokens. It is a state machine: each state consumes one character and either emits a token, switches to another state, or both.</p>
+<p>Implementations must act as if they used the state machine described here, although they may use any algorithm that produces the same tokens, including ones that look ahead several characters at a time.</p>
+<div class="note"><p>Real tokenizers usually batch runs of plain text, because emitting one token per character is slow.</p></div>
+<h3 id="data-state">2.1 Data state</h3>
+<p>Consume the next input character. If it is a less-than sign, switch to the tag open state; if it is the end of the input, emit an end-of-file token; otherwise emit the character as a character token.</p>
+<pre><code class="language-js">for (const c of input) {
+  if (c === '&lt;') state = tagOpen;
+  else emit(c);
+}</code></pre>
+<h3 id="tag-open-state">2.2 Tag open state</h3>
+<p>Consume the next input character. An ASCII letter starts a new start tag token, a solidus switches to the end tag open state, and anything else is a parse error that emits the less-than sign as text.</p>
+<table>
+<thead><tr><th>Character</th><th>Action</th></tr></thead>
+<tbody><tr><td>ASCII letter</td><td>Create a start tag token</td></tr><tr><td>Solidus</td><td>Switch to end tag open</td></tr><tr><td>Anything else</td><td>Parse error</td></tr></tbody>
+</table>
+<p>The remaining states follow the same pattern and are described in the next part, together with the rules for character references and comments.</p>
+<nav><a href="part-1.html">← 1 Introduction</a> — <a href="./">Contents</a> — <a href="part-3.html">3 Tree building →</a></nav>
+<p class="links">Discussion on <a href="https://forum.example.com/t/1">the forum</a> and <a href="https://chat.example.com">chat</a></p>
+<center><p class="copy">Copyright © 2025 The Authors. All Rights Reserved.<br><a href="https://notes.example.org/">https://notes.example.org/</a></p></center>
+</body>
+</html>

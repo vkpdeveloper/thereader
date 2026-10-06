@@ -104,7 +104,7 @@ function imageUrl(value: Json | undefined): string | null {
   return null;
 }
 
-const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: '\u00a0', '#39': "'" };
+const ENTITIES = new Map<string, string>([['amp', '&'], ['lt', '<'], ['gt', '>'], ['quot', '"'], ['apos', "'"], ['nbsp', '\u00a0']]);
 
 /** Decodes the handful of entities publishers double-encode into metadata strings. */
 export function decodeEntities(value: string): string {
@@ -115,15 +115,15 @@ export function decodeEntities(value: string): string {
       const code = key.charCodeAt(1) === 120 ? parseInt(key.slice(2), 16) : parseInt(key.slice(1), 10);
       return code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : match;
     }
-    return ENTITIES[key] ?? match;
+    return ENTITIES.get(key) ?? match;
   });
 }
 
-const MONTHS: Record<string, number> = {
+const MONTHS: Record<string, number> = Object.assign(Object.create(null) as {}, {
   jan: 1, january: 1, feb: 2, february: 2, mar: 3, march: 3, apr: 4, april: 4, may: 5, jun: 6, june: 6,
   jul: 7, july: 7, aug: 8, august: 8, sep: 9, sept: 9, september: 9, oct: 10, october: 10, nov: 11, november: 11,
   dec: 12, december: 12,
-};
+});
 
 function pad(n: number): string {
   return n < 10 ? '0' + n : String(n);
@@ -360,7 +360,7 @@ export function readMetadata(doc: VDocument, pageUrl: string): Metadata {
     url,
     title: null,
     rawTitles,
-    subtitle: ldStr('alternativeHeadline'),
+    subtitle: ldStr('alternativeHeadline') ?? findDek(doc.body, description),
     authors,
     siteName: siteName === null ? null : decodeEntities(siteName),
     publishedAt: published,
@@ -422,6 +422,51 @@ function findByline(body: VElement): string | null {
     return found === null;
   });
   return found;
+}
+
+const DEK = /(?:^|[\s_-])(?:subtitle|sub-title|subhead|subheading|subheadline|dek|deck|standfirst|strapline|tagline|article-summary|post-subtitle|lede)(?:$|[\s_-])/;
+
+/**
+ * The standfirst under the headline: among the first elements after the h1, one
+ * marked as a subtitle/dek, or one whose text is the page description.
+ */
+function findDek(body: VElement, description: string | null): string | null {
+  const want = description !== null ? collapse(description).toLowerCase() : '';
+  let seenH1 = false;
+  let after = 0;
+  let found: string | null = null;
+  walk(body, (el) => {
+    if (found !== null || after > 40) return false;
+    if (el.tag === 'h1') {
+      if (seenH1) {
+        after = 41;
+        return false;
+      }
+      seenH1 = true;
+      return false;
+    }
+    if (!seenH1) return true;
+    after++;
+    const dek = DEK.test(el.matchString);
+    // A plain paragraph equal to the description is the article's own first paragraph, not a dek.
+    if ((el.tag === 'p' || el.tag === 'h2' || el.tag === 'div' || el.tag === 'span') && (dek || el.tag !== 'p' && want.length > 0 && isLeafText(el))) {
+      const text = collapse(textOf(el));
+      if (text.length >= 10 && text.length <= 300 && (dek || text.toLowerCase() === want)) {
+        found = text;
+        return false;
+      }
+    }
+    return true;
+  });
+  return found;
+}
+
+/** No block-level element inside (a dek is one run of text; wrappers of the whole article are skipped cheaply). */
+function isLeafText(el: VElement): boolean {
+  for (const child of el.children) {
+    if (child.kind === 1 && (child.tag === 'div' || child.tag === 'p' || child.tag === 'section' || child.tag === 'article' || child.tag === 'ul' || child.tag === 'ol' || child.tag === 'figure' || child.tag === 'table')) return false;
+  }
+  return true;
 }
 
 function findTime(body: VElement): string | null {

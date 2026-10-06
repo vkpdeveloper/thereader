@@ -51,6 +51,8 @@ export class VElement {
   blockState = -1;
   /** Cached: data table (-1 unknown, 0 layout, 1 data). */
   tableState = -1;
+  /** Cached: footnote list container (-1 unknown, 0 no, 1 yes). */
+  notesState = -1;
   /** Set by content normalization: has a block-level descendant. */
   containsBlock = false;
 
@@ -64,12 +66,13 @@ export class VElement {
   }
 
   attr(name: string): string | null {
+    if (!Object.prototype.hasOwnProperty.call(this.attrs, name)) return null;
     const value = this.attrs[name];
     return value === undefined ? null : value;
   }
 
   hasClass(name: string): boolean {
-    if (this.className.length === 0) return false;
+    if (this.className.length === 0 || this.className.indexOf(name) < 0) return false;
     return (' ' + this.className.replace(/\s+/g, ' ') + ' ').indexOf(' ' + name + ' ') >= 0;
   }
 
@@ -149,6 +152,15 @@ export function fromDom(doc: Document): VDocument {
       if (baseHref === null) baseHref = el.getAttribute('href');
       return null;
     }
+    // <object type="image/svg+xml" data="chart.svg"> is an image (LaTeXML figures, old sites).
+    if (tag === 'object' && !inHead && isImageObject(el)) {
+      const img = new VElement('img', Object.assign(Object.create(null) as Record<string, string>, { src: el.getAttribute('data')!, alt: el.getAttribute('title') ?? '' }));
+      const width = el.getAttribute('width');
+      const height = el.getAttribute('height');
+      if (width !== null) img.attrs['width'] = width;
+      if (height !== null) img.attrs['height'] = height;
+      return img;
+    }
     if (DROP.has(tag)) return null;
     if (inHead && tag !== 'title' && tag !== 'meta' && tag !== 'link' && tag !== 'noscript') return null;
     // Streaming renderers (React 19, Next.js) emit <title>, <meta> and <link> inside <body>; keep them for metadata.
@@ -162,7 +174,9 @@ export function fromDom(doc: Document): VDocument {
     const list = el.attributes;
     for (let i = 0; i < list.length; i++) {
       const a = list[i]!;
-      attrs[a.name] = a.value;
+      // An attribute named "__proto__" is an attribute, not the object's prototype.
+      if (a.name === '__proto__') Object.defineProperty(attrs, a.name, { value: a.value, enumerable: true, writable: true, configurable: true });
+      else attrs[a.name] = a.value;
     }
     const v = new VElement(tag, attrs);
 
@@ -198,6 +212,13 @@ export function fromDom(doc: Document): VDocument {
     root.append(body);
   }
   return { root, head, body, jsonLd, nextData, baseHref };
+}
+
+function isImageObject(el: Element): boolean {
+  const data = el.getAttribute('data');
+  if (data === null || data.length === 0) return false;
+  const type = (el.getAttribute('type') ?? '').toLowerCase();
+  return type.startsWith('image/') || type.length === 0 && /\.(?:svg|png|jpe?g|gif|webp|avif)(?:$|[?#])/i.test(data);
 }
 
 const XML_ESCAPE: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };

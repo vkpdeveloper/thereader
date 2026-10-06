@@ -15,7 +15,7 @@
   "excerpt": "Readers care about structure even when they never think about it. Lists, tables and notes carry meaning that a wall of text cannot, so an extractor has to keep them intact.",
   "leadImage": null,
   "favicon": "https://guide.example.net/favicon.ico",
-  "wordCount": 212,
+  "wordCount": 211,
   "readingMinutes": 1,
   "blocks": [
     {
@@ -45,6 +45,7 @@
     {
       "type": "list",
       "ordered": true,
+      "start": 3,
       "items": [
         {
           "blocks": [
@@ -104,8 +105,7 @@
             }
           ]
         }
-      ],
-      "start": 3
+      ]
     },
     {
       "type": "list",
@@ -153,6 +153,12 @@
     },
     {
       "type": "table",
+      "caption": [
+        {
+          "type": "text",
+          "text": "Median page weight by year"
+        }
+      ],
       "rows": [
         {
           "cells": [
@@ -261,12 +267,6 @@
           ]
         }
       ],
-      "caption": [
-        {
-          "type": "text",
-          "text": "Median page weight by year"
-        }
-      ],
       "headerRows": 1
     },
     {
@@ -355,12 +355,6 @@
             }
           ]
         }
-      ],
-      "title": [
-        {
-          "type": "text",
-          "text": "Warning"
-        }
       ]
     },
     {
@@ -419,9 +413,9 @@
         },
         {
           "type": "math",
-          "text": "e^{i\\pi}+1=0",
           "tex": "e^{i\\pi}+1=0",
-          "mathml": "<math alttext=\"e^{i\\pi}+1=0\"><mrow><msup><mi>e</mi><mrow><mi>i</mi><mi>π</mi></mrow></msup><mo>+</mo><mn>1</mn><mo>=</mo><mn>0</mn></mrow></math>"
+          "mathml": "<math alttext=\"e^{i\\pi}+1=0\"><mrow><msup><mi>e</mi><mrow><mi>i</mi><mi>π</mi></mrow></msup><mo>+</mo><mn>1</mn><mo>=</mo><mn>0</mn></mrow></math>",
+          "text": "e^{i\\pi}+1=0"
         },
         {
           "type": "text",
@@ -431,9 +425,9 @@
     },
     {
       "type": "math",
-      "text": "a^2+b^2=c^2",
       "tex": "a^2+b^2=c^2",
-      "mathml": "<math display=\"block\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow></semantics></math>"
+      "mathml": "<math display=\"block\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow></semantics></math>",
+      "text": "a^2+b^2=c^2"
     },
     {
       "type": "paragraph",

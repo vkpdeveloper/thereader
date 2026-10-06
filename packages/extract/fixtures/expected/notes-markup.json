@@ -1,0 +1,126 @@
+{
+  "schema": 1,
+  "url": "https://fieldnotes.example.com/2024/sliding-windows",
+  "title": "Sliding Windows in Practice",
+  "subtitle": null,
+  "byline": null,
+  "authors": [],
+  "siteName": "Field Notes",
+  "publishedAt": null,
+  "modifiedAt": null,
+  "language": "en",
+  "dir": "ltr",
+  "excerpt": "Sliding window attention limits each token to a fixed span of earlier tokens, which keeps memory flat as sequences grow. The idea is old, but it only became popular once long contexts did.",
+  "leadImage": null,
+  "favicon": "https://fieldnotes.example.com/favicon.ico",
+  "wordCount": 149,
+  "readingMinutes": 1,
+  "blocks": [
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Sliding window attention limits each token to a fixed span of earlier tokens, which keeps memory flat as sequences grow. The idea is old, but it only became popular once long contexts did."
+        },
+        {
+          "type": "ref",
+          "id": "fn:1",
+          "label": "1"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "A reference implementation is available"
+        },
+        {
+          "type": "ref",
+          "id": "footnote2",
+          "label": "2"
+        },
+        {
+          "type": "text",
+          "text": " and runs on a single graphics card, which makes it easy to try the technique on your own data."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Rolling buffers keep the cache at the window size, so a sequence ten times longer than the window costs no more memory than one that just fits. That property matters more than raw speed for most deployments."
+        },
+        {
+          "type": "ref",
+          "id": "footnote-buffers",
+          "label": "3"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Taken together, these choices make long inputs cheap without changing the model's quality on short ones, which is the trade most teams want when they first reach for a longer context."
+        }
+      ]
+    },
+    {
+      "type": "footnotes",
+      "items": [
+        {
+          "id": "fn:1",
+          "label": "1",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Early versions appeared in work on sparse transformers. "
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "footnote-buffers",
+          "label": "3",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "The buffer is indexed modulo the window size, so old entries are overwritten in place."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "footnote2",
+          "label": "2",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "https://code.example.org/window",
+                  "href": "https://code.example.org/window"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

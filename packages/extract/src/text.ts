@@ -24,7 +24,7 @@ export function inlineText(content: readonly Inline[]): string {
   return out;
 }
 
-function blockText(block: Block, out: string[]): void {
+function blockText(block: Block, out: string[], captions = false): void {
   switch (block.type) {
     case 'heading':
     case 'paragraph':
@@ -41,9 +41,12 @@ function blockText(block: Block, out: string[]): void {
       out.push(block.code);
       break;
     case 'figure':
+      // Captions belong to their media, not the running text (schema.org articleBody semantics),
+      // except in photo galleries, where they are the text.
+      if (captions && block.caption) out.push(inlineText(block.caption));
+      break;
     case 'video':
     case 'audio':
-      // Captions belong to their media, not the running text (schema.org articleBody semantics).
       break;
     case 'embed':
       for (const child of block.blocks ?? []) blockText(child, out);
@@ -80,8 +83,31 @@ function blockText(block: Block, out: string[]): void {
 /** Body text of an article (title excluded), one block per paragraph. */
 export function blocksText(blocks: readonly Block[]): string {
   const out: string[] = [];
-  for (const block of blocks) blockText(block, out);
+  const captions = isGallery(blocks);
+  for (const block of blocks) blockText(block, out, captions);
   return out.filter((part) => part.length > 0).join('\n\n');
+}
+
+/** Three or more captioned figures whose captions outweigh the rest of the text. */
+function isGallery(blocks: readonly Block[]): boolean {
+  let figures = 0;
+  let captionLength = 0;
+  for (const block of blocks) {
+    if (block.type === 'figure' && block.caption !== undefined) {
+      figures++;
+      captionLength += inlineText(block.caption).length;
+    }
+  }
+  if (figures < 3) return false;
+  let restLength = 0;
+  const rest: string[] = [];
+  for (const block of blocks) {
+    blockText(block, rest);
+    for (const part of rest) restLength += part.length;
+    if (restLength >= captionLength) return false;
+    rest.length = 0;
+  }
+  return true;
 }
 
 export function articleText(article: Article): string {

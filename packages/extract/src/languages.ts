@@ -5,7 +5,7 @@
  * renderers can pass them straight to their highlighter.
  */
 
-const ALIASES: Record<string, string> = {
+const ALIASES: Record<string, string> = Object.assign(Object.create(null) as {}, {
   js: 'javascript', javascript: 'javascript', jsx: 'javascript', mjs: 'javascript', cjs: 'javascript', node: 'javascript', nodejs: 'javascript', es6: 'javascript', ecmascript: 'javascript',
   ts: 'typescript', typescript: 'typescript', tsx: 'typescript', mts: 'typescript', cts: 'typescript',
   py: 'python', python: 'python', python3: 'python', py3: 'python', ipython: 'python', pycon: 'python', python2: 'python', gyp: 'python', sage: 'python', jupyter: 'python',
@@ -73,7 +73,7 @@ const ALIASES: Record<string, string> = {
   csv: 'plaintext', tsv: 'plaintext',
   text: 'plaintext', txt: 'plaintext', plain: 'plaintext', plaintext: 'plaintext', none: 'plaintext', nohighlight: 'plaintext', 'no-highlight': 'plaintext', output: 'plaintext', log: 'plaintext', raw: 'plaintext', ascii: 'plaintext', mermaid: 'plaintext',
   regex: 'plaintext', regexp: 'plaintext',
-};
+});
 
 /** Canonical id for a language name from markup, or null when unknown. */
 export function normalizeLanguage(name: string | null | undefined): string | null {

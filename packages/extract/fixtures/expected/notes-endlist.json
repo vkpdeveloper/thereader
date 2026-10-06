@@ -1,0 +1,108 @@
+{
+  "schema": 1,
+  "url": "https://forum.example.org/posts/abc123/knowing-when-we-are-wrong",
+  "title": "Knowing When We Are Wrong",
+  "subtitle": null,
+  "byline": null,
+  "authors": [],
+  "siteName": null,
+  "publishedAt": null,
+  "modifiedAt": null,
+  "language": "en",
+  "dir": "ltr",
+  "excerpt": "Most plans for safe systems rest on assumptions that nobody has tested, and the cost of being wrong grows with every system built on top of them. This piece lays out how we might find out sooner.",
+  "leadImage": null,
+  "favicon": "https://forum.example.org/favicon.ico",
+  "wordCount": 128,
+  "readingMinutes": 1,
+  "blocks": [
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Most plans for safe systems rest on assumptions that nobody has tested, and the cost of being wrong grows with every system built on top of them."
+        },
+        {
+          "type": "ref",
+          "id": "fn-1",
+          "label": "1"
+        },
+        {
+          "type": "text",
+          "text": " This piece lays out how we might find out sooner."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "The first step is to write the assumptions down in a form that evidence could contradict, which is harder than it sounds and rarely done in practice."
+        },
+        {
+          "type": "ref",
+          "id": "fn-2",
+          "label": "2"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "The second step is to decide in advance what result would change our minds, so that we cannot explain away whatever we find after the fact."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Thanks to the reviewers for comments on earlier drafts of this piece."
+        }
+      ]
+    },
+    {
+      "type": "rule"
+    },
+    {
+      "type": "footnotes",
+      "items": [
+        {
+          "id": "fn-1",
+          "label": "1",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "This started as a list of my own uncertainties and grew from there."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "fn-2",
+          "label": "2",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "See the section on evaluation design for examples of assumptions written this way."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
