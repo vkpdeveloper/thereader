@@ -6,9 +6,10 @@
  * - `html/<key>.html`: the decoded HTML (UTF-8), exactly what jsdom parsed;
  * - `vdoc/<key>.json`: the `VDocument` jsdom produced (`fromDom`), so the Dart
  *   `extractTree` runs on the very same tree and parser differences drop out;
- * - `ts/<key>.json`: the TypeScript `extractTree` output (`null` when no article);
+ * - `ts/<key>.json`: the TypeScript `extractTree` output with `markdown: true` (`null` when no
+ *   article), so the comparison covers `article.markdown` too;
  * - `manifest.json`: `{ key, dataset, id, url, bytes, tsMs }` per page, where
- *   `tsMs` is the median `extractTree` time under Bun (fresh tree per run).
+ *   `tsMs` is the median `extractTree` time under Bun (fresh tree per run, without Markdown).
  *
  * Pages are parsed with jsdom exactly as `test/conformance.test.ts` does.
  *
@@ -48,7 +49,7 @@ for (const doc of docs) {
   const vdoc = fromDom(dom);
   writeFileSync(resolve(OUT, 'html', key + '.html'), doc.html);
   writeFileSync(resolve(OUT, 'vdoc', key + '.json'), JSON.stringify(vdocJson(vdoc)));
-  const article = extractTree(vdoc, { url: doc.url });
+  const article = extractTree(vdoc, { url: doc.url, markdown: true });
   writeFileSync(resolve(OUT, 'ts', key + '.json'), JSON.stringify(article, null, 2) + '\n');
   const times: number[] = [];
   for (let r = 0; r < runs; r++) {

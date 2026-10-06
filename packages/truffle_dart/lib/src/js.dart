@@ -350,6 +350,50 @@ bool isLetterOrNumber(int cp) {
   return _letterOrNumberCache[cp] ??= _letterOrNumber.hasMatch(String.fromCharCode(cp));
 }
 
+final _punctuationOrSymbol = RegExp(r'^[\p{P}\p{S}]$', unicode: true);
+final _punctuationOrSymbolCache = <int, bool>{};
+
+/// `/[\p{P}\p{S}]/u` for one code point.
+bool isPunctuationOrSymbol(int cp) {
+  if (cp < 0x80) {
+    // ASCII punctuation and symbols: !"#$%&'()*+,-./ :;<=>?@ [\]^_` {|}~
+    return (cp >= 0x21 && cp <= 0x2f) ||
+        (cp >= 0x3a && cp <= 0x40) ||
+        (cp >= 0x5b && cp <= 0x60) ||
+        (cp >= 0x7b && cp <= 0x7e);
+  }
+  return _punctuationOrSymbolCache[cp] ??= _punctuationOrSymbol.hasMatch(String.fromCharCode(cp));
+}
+
+/// `s.replace(/\s+/g, ' ')`.
+String collapseJsSpace(String s) {
+  final n = s.length;
+  var i = 0;
+  // Fast path: nothing to replace.
+  for (; i < n; i++) {
+    final c = s.codeUnitAt(i);
+    if (isJsSpace(c) && (c != 32 || (i + 1 < n && isJsSpace(s.codeUnitAt(i + 1))))) break;
+  }
+  if (i == n) return s;
+  final out = StringBuffer(s.substring(0, i));
+  while (i < n) {
+    if (isJsSpace(s.codeUnitAt(i))) {
+      out.writeCharCode(32);
+      i++;
+      while (i < n && isJsSpace(s.codeUnitAt(i))) {
+        i++;
+      }
+    } else {
+      final start = i;
+      while (i < n && !isJsSpace(s.codeUnitAt(i))) {
+        i++;
+      }
+      out.write(s.substring(start, i));
+    }
+  }
+  return out.toString();
+}
+
 /// `s.split(/[^\p{L}\p{N}]+/u).filter((w) => w.length > 0)`.
 List<String> lettersAndNumbers(String s) {
   final out = <String>[];

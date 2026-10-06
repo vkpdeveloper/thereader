@@ -14,7 +14,13 @@ final json = article?.toJson();                                // TypeScript key
 Also exported: `extractHtml(html, url)` (URL string as given), `extractTree(VDocument, url)` and
 `fromDocument(Document)` (the two halves of the pipeline), `VDocument.fromJson`/`toJson`,
 `cleanTitle`, `canonicalUrl`, `detectLanguage`, `normalizeLanguage`, `languageFromClass`,
-`articleText`, `blocksText`, `inlineText`, `countWords`, and the model.
+`articleText`, `blocksText`, `inlineText`, `countWords`, `articleMarkdown`, `blocksMarkdown`, and
+the model.
+
+`markdown: true` (on `extractArticle`, `extractHtml` and `extractTree`) also writes the article
+as GitHub Flavored Markdown into `article.markdown`, the last key of its JSON, exactly as the
+TypeScript engine's `markdown` option does; without it the field is null and the JSON is unchanged.
+`articleMarkdown(article)` and `blocksMarkdown(blocks)` convert stored articles.
 
 ## Using it in this repo
 
@@ -33,13 +39,14 @@ into the root `pubspec.lock` and `.dart_tool/package_config.json`.
 ## Layout
 
 One file per TypeScript file in `lib/src/` (`tree`, `url`, `metadata`, `content`, `blocks`,
-`media`, `languages`, `extract`, `text`, `model`), plus:
+`media`, `languages`, `extract`, `text`, `markdown`, `model`), plus:
 
 - `dom.dart`: `fromDocument`, the package:html counterpart of `fromDom` (the only
   platform-specific stage).
 - `js.dart`: JavaScript semantics where Dart differs: `trim` and `\s` (U+0085 is not
   whitespace), `toLowerCase` special casing, `split('')`, `Number()`, `parseInt`, number
-  formatting, `decodeURIComponent`, object key order.
+  formatting, `decodeURIComponent`, object key order; and per-code-point `\p{L}\p{N}` and
+  `\p{P}\p{S}` lookups.
 - `match.dart`: `ClassPattern`. Class/id patterns that are alternations of literal words match
   by string search (the Dart VM interprets regular expressions in AOT builds, far slower than
   V8); the words are derived from the same pattern source, and with assertions enabled every
@@ -65,6 +72,10 @@ the pattern is checked as well.
   `bun scripts/parser-cases.ts` in `packages/truffle`). Cases marked `known` are the parser
   differences below.
 - `match_test.dart`, `model_test.dart`: `ClassPattern` against `RegExp`; model round trips.
+- `markdown_test.dart`: `article.markdown` for every conformance page must equal
+  `expected/<name>.md` byte for byte (and be absent without `markdown: true`), and
+  `blocksMarkdown` must reproduce every case in `fixtures/markdown/cases.json`; both are written by
+  `packages/truffle/test/markdown.test.ts`.
 - `tex_test.dart`: TeX split out of text, the same cases as `packages/truffle/test/tex.test.ts`
   (input that once looped forever runs in an isolate killed on timeout).
 
@@ -79,10 +90,12 @@ dart run tool/parity.dart tree      # the trees themselves: package:html + fromD
 dart --enable-asserts tool/parity.dart engine   # also checks every ClassPattern and URL fast path
 ```
 
-`--ids key,key` selects pages, `--out dir` writes the Dart outputs for diffing.
+`--ids key,key` selects pages, `--out dir` writes the Dart outputs for diffing. The TypeScript
+outputs are written with `markdown: true` and `engine`/`pipeline` extract with it, so the
+comparison covers `article.markdown` too.
 
 Results on the 326 corpus pages (145 curated, 181 Zyte): **engine 326/326 byte-identical,
-pipeline 326/326 byte-identical**.
+pipeline 326/326 byte-identical**, Markdown included.
 
 ### Parser differences (package:html vs parse5/jsdom)
 
@@ -141,6 +154,13 @@ p95); the gap in the total is package:html, a pure-Dart parser against Chromium'
 The rules added with the engine's quality pass (footnotes, TeX, frames, galleries, bios, calls to
 action) cost Dart `extractTree` 7-11% at the median and about 10% on the mean, measured against the
 previous port on the same pages and load; the TypeScript engine slowed by 9-16%.
+
+`articleMarkdown` (what `markdown: true` adds, timed on its own in the bench and not in the totals)
+costs 0.03 ms per page at the median, 0.19 at p90 and 0.36 at p95 in AOT (4.8 ms for the largest
+article, 630 KB of Markdown, against 60 ms of `extractTree`): 6% of `extractTree` at the median,
+12% at p90. Bun writes the same Markdown in 0.01 / 0.10 / 0.21 ms. Its scans are code-unit loops
+(one pass per text run finds both the syntax characters and any address), with no regular
+expression per character.
 
 The eval harness runs the AOT build as the `ours-dart` engine
 (`cd eval && bun run eval --engines ours,ours-dart`); see `eval/README.md`.

@@ -8,7 +8,8 @@
 //   dart compile exe tool/bench.dart -o /tmp/bench && /tmp/bench     (AOT)
 //
 // Per page: one warm-up run, then `--runs` timed runs; each phase is the
-// median of its runs. Summaries are over the per-page medians.
+// median of its runs. Summaries are over the per-page medians. `articleMarkdown`
+// (what `markdown: true` adds) is timed on its own and left out of the totals.
 import 'dart:convert';
 import 'dart:io';
 
@@ -38,18 +39,22 @@ void main(List<String> args) {
     final parse = <double>[];
     final convert = <double>[];
     final engine = <double>[];
+    final markdown = <double>[];
     for (var r = 0; r <= runs; r++) {
       final t0 = watch.elapsedMicroseconds;
       final doc = html_parser.parse(html);
       final t1 = watch.elapsedMicroseconds;
       final vdoc = fromDocument(doc);
       final t2 = watch.elapsedMicroseconds;
-      extractTree(vdoc, url);
+      final article = extractTree(vdoc, url);
       final t3 = watch.elapsedMicroseconds;
+      if (article != null) articleMarkdown(article);
+      final t4 = watch.elapsedMicroseconds;
       if (r == 0) continue;
       parse.add((t1 - t0) / 1000);
       convert.add((t2 - t1) / 1000);
       engine.add((t3 - t2) / 1000);
+      markdown.add((t4 - t3) / 1000);
     }
     rows.add(
       _Row(
@@ -58,6 +63,7 @@ void main(List<String> args) {
         parse: _median(parse),
         convert: _median(convert),
         engine: _median(engine),
+        markdown: _median(markdown),
         tsBun: (page['tsMs'] as num).toDouble(),
         chromium: chromium[key],
       ),
@@ -82,6 +88,7 @@ void main(List<String> args) {
   line('Dart extractTree', rows.map((r) => r.engine));
   line('Dart extract (fromDocument + extractTree)', rows.map((r) => r.convert + r.engine));
   line('Dart total', rows.map((r) => r.total));
+  line('Dart articleMarkdown (not in the totals)', rows.map((r) => r.markdown));
   final withChromium = rows.where((r) => r.chromium != null).toList();
   line('TS Chromium parse (DOMParser)', withChromium.map((r) => r.chromium!.parse));
   line('TS Chromium extract (fromDom + extractTree)', withChromium.map((r) => r.chromium!.extract));
@@ -97,6 +104,8 @@ void main(List<String> args) {
   ratio('extract vs Chromium extract', withChromium.map((r) => (r.convert + r.engine) / r.chromium!.extract));
   ratio('total vs Chromium total', withChromium.map((r) => r.total / (r.chromium!.parse + r.chromium!.extract)));
   ratio('extractTree vs Bun extractTree', rows.map((r) => r.engine / r.tsBun));
+  stdout.writeln('Markdown cost, per page (articleMarkdown / extractTree), median / p95:');
+  ratio('articleMarkdown vs extractTree', rows.where((r) => r.engine > 0).map((r) => r.markdown / r.engine));
   stdout.writeln();
   stdout.writeln(
     '| total ms by HTML size (median / p95) | ${_buckets.map((b) => '${b.$1} (${rows.where((r) => _bucket(r.bytes) == b.$1).length})').join(' | ')} |',
@@ -133,6 +142,7 @@ class _Row {
     required this.parse,
     required this.convert,
     required this.engine,
+    required this.markdown,
     required this.tsBun,
     required this.chromium,
   });
@@ -142,6 +152,7 @@ class _Row {
   final double parse;
   final double convert;
   final double engine;
+  final double markdown;
   final double tsBun;
   final ({double parse, double extract})? chromium;
 

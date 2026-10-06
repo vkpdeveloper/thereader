@@ -7,6 +7,7 @@ library;
 export 'src/dom.dart' show fromDocument;
 export 'src/extract.dart' show cleanTitle, extractArticle, extractHtml, extractTree;
 export 'src/languages.dart' show detectLanguage, languageFromClass, normalizeLanguage;
+export 'src/markdown.dart' show articleMarkdown, blocksMarkdown;
 export 'src/model.dart';
 export 'src/text.dart' show articleText, blocksText, countWords, inlineText;
 export 'src/tree.dart' show VDocument, VElement, VNode, VText;
