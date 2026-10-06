@@ -1,8 +1,9 @@
-import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from 'react';
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { useParams } from '@tanstack/react-router';
 import type { Article } from '@thereader/extract';
 import { SiteIcon } from '../components/ArticleRow';
 import { renderBlocks } from '../components/article/Blocks';
+import { FootnotePreview, footnotePeekHtml, type FootnotePeek } from '../components/article/FootnotePreview';
 import { Lightbox, type ZoomedImage } from '../components/article/Lightbox';
 import { safeHref } from '../components/article/media';
 import { IconButton, QuietButton } from '../components/buttons';
@@ -116,6 +117,8 @@ export function ArticleScreen() {
   const [loaded, setLoaded] = useState<Loaded>({ status: 'loading' });
   const [panel, setPanel] = useState<'typography' | 'fonts' | null>(null);
   const [zoom, setZoom] = useState<ZoomedImage | null>(null);
+  const [peek, setPeek] = useState<FootnotePeek | null>(null);
+  const peekTimer = useRef<number | undefined>(undefined);
   const [bar, setBar] = useState({ hidden: false, titled: false });
   const titleRef = useRef<HTMLHeadingElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -258,7 +261,8 @@ export function ArticleScreen() {
     if (hasOpenOverlay() || isTypingTarget(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.key === 'Escape') {
       e.preventDefault();
-      if (panel) setPanel(null);
+      if (peek) setPeek(null);
+      else if (panel) setPanel(null);
       else close();
     } else if (e.key === '+' || e.key === '=') {
       e.preventDefault();
@@ -276,6 +280,34 @@ export function ArticleScreen() {
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, []);
+
+  // ------------------------------------------------------------ footnote previews
+
+  // A mouse resting on a reference shows its note; leaving (with a grace period to reach the preview), scrolling or a click hides it.
+  const showPeek = (e: ReactPointerEvent) => {
+    if (e.pointerType !== 'mouse' || !ready) return;
+    const ref = (e.target as Element).closest<HTMLElement>('[data-fn]');
+    if (!ref?.dataset.fn) return;
+    window.clearTimeout(peekTimer.current);
+    const id = ref.dataset.fn;
+    if (peek?.id === id) return;
+    peekTimer.current = window.setTimeout(() => {
+      const html = footnotePeekHtml(id);
+      if (html && ref.isConnected) setPeek({ id, html, anchor: ref.getBoundingClientRect(), dir: ready.article.dir, lang: ready.article.language ?? undefined });
+    }, peek ? 0 : 280);
+  };
+  const hidePeek = (delay = 160) => {
+    window.clearTimeout(peekTimer.current);
+    peekTimer.current = window.setTimeout(() => setPeek(null), delay);
+  };
+  const keepPeek = () => window.clearTimeout(peekTimer.current);
+  useEffect(() => {
+    if (!peek) return;
+    const hide = () => setPeek(null);
+    window.addEventListener('scroll', hide, { passive: true, once: true });
+    return () => window.removeEventListener('scroll', hide);
+  }, [peek]);
+  useEffect(() => () => window.clearTimeout(peekTimer.current), []);
 
   // ------------------------------------------------------------ in-article clicks
 
@@ -297,6 +329,10 @@ export function ArticleScreen() {
 
   const onArticleClick = (e: ReactMouseEvent) => {
     const target = e.target as Element;
+    if (peek) {
+      window.clearTimeout(peekTimer.current);
+      setPeek(null);
+    }
     const zoomed = target.closest<HTMLElement>('[data-zoom]');
     if (zoomed?.dataset.zoom) {
       e.preventDefault();
@@ -397,6 +433,10 @@ export function ArticleScreen() {
         dir={article.dir}
         lang={article.language ?? undefined}
         onClick={onArticleClick}
+        onPointerOver={showPeek}
+        onPointerOut={(e) => {
+          if ((e.target as Element).closest('[data-fn]')) hidePeek();
+        }}
       >
         <header className="article-header">
           {original ? (
@@ -454,6 +494,7 @@ export function ArticleScreen() {
         </div>
       </Sheet>
       <Lightbox image={zoom} onClose={() => setZoom(null)} />
+      {peek && <FootnotePreview key={peek.id} peek={peek} onEnter={keepPeek} onLeave={() => hidePeek()} />}
     </div>
   );
 }
