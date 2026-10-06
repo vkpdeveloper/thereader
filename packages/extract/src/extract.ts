@@ -312,6 +312,17 @@ function tidy(input: Block[], title: string, meta: Metadata): Block[] {
     while (j < blocks.length && isLegendLabel(blocks[j]!)) j++;
     if (j - i - 1 >= 3) blocks.splice(i + 1, j - i - 1);
   }
+  // A formula alone in its paragraph is set on its own line.
+  blocks = blocks.map((b) => {
+    if (b.type !== 'paragraph' || b.content.length !== 1 || b.content[0]!.type !== 'math') return b;
+    const m = b.content[0]!;
+    const block = { type: 'math' } as Block & { type: 'math' };
+    if (m.tex !== undefined) block.tex = m.tex;
+    if (m.mathml !== undefined) block.mathml = m.mathml;
+    block.text = m.text;
+    return block;
+  });
+
   // Author bios ("Jane Doe is a reporter covering...") describe the writer, not the story.
   blocks = dropBios(blocks, authors);
 
