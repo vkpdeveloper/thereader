@@ -314,7 +314,9 @@ export interface ArticlesSnapshot {
 /**
  * Web articles saved by link. The page is fetched through the API's byte
  * relay, extracted on this device and stored once; opening an article reads
- * IndexedDB only. Errors are `ApiError`s with a message for people.
+ * IndexedDB only. Saved articles sync between devices without being fetched
+ * or extracted again (see `SyncStore`). Errors are `ApiError`s with a message
+ * for people.
  */
 export interface ArticleStore extends Observable<ArticlesSnapshot> {
   summary(id: string): ArticleSummary | undefined;
@@ -323,7 +325,11 @@ export interface ArticleStore extends Observable<ArticlesSnapshot> {
    * saved (typed, redirected or canonical form) returns the existing entry.
    */
   add(url: string, options?: { signal?: AbortSignal }): Promise<ArticleSummary>;
-  /** The stored document, or null when it is gone. Never touches the network. */
+  /**
+   * The stored document, or null when it is gone. An article synced from
+   * another device (`stored: false`) downloads its document once here, and
+   * rejects with a message for people while that is not possible yet.
+   */
   get(id: string): Promise<Article | null>;
   remove(id: string): Promise<void>;
   /** Reading position 0..1 (see `ArticleSummary.progress`); burst-safe (writes coalesce). */

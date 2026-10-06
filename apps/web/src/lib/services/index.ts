@@ -53,7 +53,7 @@ function build(): AppServices {
   const catalog = new CatalogStoreImpl(currentOrigin, clientFor, kv);
   const covers = new CoverStoreImpl(coverKv, (origin, path) => clientFor(origin).resolve(path));
   const highlights = new HighlightStoreImpl(kv, bus);
-  const articles = new ArticleStoreImpl({ kv, currentOrigin, bus });
+  const articles = new ArticleStoreImpl({ kv, currentOrigin, bus, bodies: clientFor });
   // The import pipeline (zip parsing, MOBI conversion) loads on first use.
   const imports = new ImportStoreImpl({
     kv,
@@ -71,6 +71,7 @@ function build(): AppServices {
     library,
     settings,
     highlights,
+    articles,
     clientFor,
     isUploadPending: (id) => imports.isPending(id),
     retryUploads: () => void imports.retryPending(),

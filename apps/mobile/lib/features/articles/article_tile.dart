@@ -24,7 +24,10 @@ class ArticleTile extends StatelessWidget {
     final colors = context.colors;
     final progress = summary.progress;
     final Widget status;
-    if (progress == null || summary.lastOpenedAt == null) {
+    if (!summary.stored && progress == null) {
+      // Saved on another device; the text downloads when it opens.
+      status = Text('Not downloaded', style: text.labelSmall?.copyWith(letterSpacing: 0));
+    } else if (progress == null || summary.lastOpenedAt == null) {
       status = Text('New', style: text.labelSmall?.copyWith(letterSpacing: 0, color: colors.blue));
     } else if (progress.finished) {
       status = Text('Finished', style: text.labelSmall?.copyWith(letterSpacing: 0, color: colors.green));

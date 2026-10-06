@@ -15,18 +15,29 @@ export interface SyncResponse {
   books: unknown[];
   preferences: unknown;
   highlights?: unknown;
+  articles?: unknown;
   [key: string]: unknown;
 }
 
-export interface HttpApiClient extends ApiClient {
+/** Saved-article documents, content-addressed by the SHA-256 of their JSON. */
+export interface ArticleBodyApi {
+  /** Uploads the exact JSON bytes (gzip-compressed when the browser can). Idempotent. */
+  putArticleBody(sha256: string, json: Uint8Array): Promise<void>;
+  /** The JSON bytes, decompressed. Not verified: callers check the hash. */
+  getArticleBody(sha256: string, signal?: AbortSignal): Promise<Uint8Array>;
+}
+
+export interface HttpApiClient extends ApiClient, ArticleBodyApi {
   /**
-   * One pull+push. With `highlightsSince` the response also carries highlight
-   * rows changed since then; without it the body is what older servers accept.
+   * One pull+push. With `highlightsSince` (or `articlesSince`) the response
+   * also carries highlight (article) rows changed since then; without them
+   * the body is what older servers accept.
    */
   syncState(options: {
     deviceId: string;
     changes: Record<string, unknown>[];
     highlightsSince?: number;
+    articlesSince?: number;
     keepalive?: boolean;
   }): Promise<SyncResponse>;
   /** Streams an EPUB. The caller reads `response.body`. */
@@ -129,12 +140,13 @@ export function createApiClient(
       const json = await getJson(resolve(`/v1/books/${encodeURIComponent(id)}`));
       return bookFrom(json.book);
     },
-    async syncState({ deviceId, changes, highlightsSince, keepalive }) {
+    async syncState({ deviceId, changes, highlightsSince, articlesSince, keepalive }) {
       const url = resolve('/v1/sync');
       const body = JSON.stringify({
         deviceId,
         changes,
         ...(highlightsSince === undefined ? {} : { highlightsSince }),
+        ...(articlesSince === undefined ? {} : { articlesSince }),
       });
       const response = await send(
         url,
@@ -154,6 +166,38 @@ export function createApiClient(
         return json as SyncResponse;
       } catch {
         throw new ApiError('The server returned an invalid sync response.', 'BAD_RESPONSE');
+      }
+    },
+    async putArticleBody(sha256, json) {
+      const gzipped = await gzip(json);
+      const response = await send(
+        resolve(`/v1/article-bodies/${sha256}`),
+        {
+          method: 'PUT',
+          headers: { 'content-type': gzipped ? 'application/gzip' : 'application/json', accept: 'application/json' },
+          body: (gzipped ?? json) as BodyInit,
+        },
+        `Timed out uploading to ${host}.`,
+      );
+      const text = await readText(response, host);
+      if (response.status !== 200 && response.status !== 201) throw errorFrom(response.status, text);
+    },
+    async getArticleBody(sha256, signal) {
+      const url = resolve(`/v1/article-bodies/${sha256}`);
+      const response = await send(url, { headers: { accept: 'application/gzip, application/json' } }, `Timed out connecting to ${host}.`, signal);
+      if (response.status !== 200) throw errorFrom(response.status, await readText(response, host));
+      let bytes: Uint8Array;
+      try {
+        bytes = new Uint8Array(await response.arrayBuffer());
+      } catch {
+        throw new ApiError(`The download from ${host} was interrupted.`, 'NETWORK', null, true);
+      }
+      const type = response.headers.get('content-type')?.split(';', 1)[0]?.trim().toLowerCase();
+      if (type !== 'application/gzip') return bytes;
+      try {
+        return await gunzip(bytes);
+      } catch {
+        throw new ApiError('The server returned a damaged article.', 'BAD_RESPONSE', response.status);
       }
     },
     async openDownload(book, signal) {
@@ -265,6 +309,23 @@ function friendlyNetwork(error: unknown, url: string): string {
   if (lower.includes('name not resolved') || lower.includes('host lookup')) return `Could not find ${new URL(url).hostname}.`;
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return `You are offline. Could not reach ${host}.`;
   return `Could not reach ${host}.`;
+}
+
+/** Gzip through the browser's native stream; null where it has none (sent as plain JSON). */
+async function gzip(bytes: Uint8Array): Promise<Uint8Array | null> {
+  if (typeof CompressionStream === 'undefined') return null;
+  try {
+    const stream = new Blob([bytes as BlobPart]).stream().pipeThrough(new CompressionStream('gzip'));
+    return new Uint8Array(await new Response(stream).arrayBuffer());
+  } catch {
+    return null;
+  }
+}
+
+async function gunzip(bytes: Uint8Array): Promise<Uint8Array> {
+  if (typeof DecompressionStream === 'undefined') return (await import('fflate')).gunzipSync(bytes);
+  const stream = new Blob([bytes as BlobPart]).stream().pipeThrough(new DecompressionStream('gzip'));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
 export function errorFrom(status: number, body: string): ApiError {

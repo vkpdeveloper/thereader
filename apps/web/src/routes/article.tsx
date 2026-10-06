@@ -2,8 +2,9 @@ import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, use
 import { useParams } from '@tanstack/react-router';
 import type { Article } from '@thereader/extract';
 import { SiteIcon } from '../components/ArticleRow';
-import { renderBlocks } from '../components/article/Blocks';
+import { renderArticleBlocks } from '../components/article/Blocks';
 import { FootnotePreview, footnotePeekHtml, type FootnotePeek } from '../components/article/FootnotePreview';
+import { blockElements, readPosition, scrollToPosition } from '../components/article/position';
 import { Lightbox, type ZoomedImage } from '../components/article/Lightbox';
 import { safeHref } from '../components/article/media';
 import { IconButton, QuietButton } from '../components/buttons';
@@ -30,43 +31,6 @@ function formatPublished(iso: string | null): string | null {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return null;
   return new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'long', day: 'numeric' }).format(date);
-}
-
-/** The reading line, just under the top bar. */
-const readingLine = 64;
-
-/**
- * Reading position as a fraction of the article's top-level blocks: the block
- * crossing the reading line plus how far into it the line is (1 at the end).
- * Unlike a pixel fraction it survives font, margin and window changes, and
- * blocks whose rendering is skipped (content-visibility) only need their
- * estimated boxes.
- */
-function readPosition(body: HTMLElement): number {
-  const blocks = body.children;
-  const count = blocks.length;
-  if (count === 0 || window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 2) return 1;
-  if (blocks[0].getBoundingClientRect().top >= readingLine) return 0;
-  let lo = 0;
-  let hi = count - 1;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (blocks[mid].getBoundingClientRect().bottom <= readingLine) lo = mid + 1;
-    else hi = mid;
-  }
-  const rect = blocks[lo].getBoundingClientRect();
-  const within = rect.height > 0 ? Math.min(1, Math.max(0, (readingLine - rect.top) / rect.height)) : 0;
-  return (lo + within) / count;
-}
-
-function scrollToPosition(body: HTMLElement, position: number): void {
-  const blocks = body.children;
-  if (position <= 0 || blocks.length === 0) return window.scrollTo(0, 0);
-  if (position >= 1) return window.scrollTo(0, document.documentElement.scrollHeight);
-  const at = position * blocks.length;
-  const index = Math.min(blocks.length - 1, Math.floor(at));
-  const rect = blocks[index].getBoundingClientRect();
-  window.scrollTo(0, Math.round(window.scrollY + rect.top + (at - index) * rect.height - readingLine));
 }
 
 /**
@@ -126,6 +90,7 @@ export function ArticleScreen() {
   const fraction = useRef<number | null>(null);
   const saveTimer = useRef<number | undefined>(undefined);
   const lastRef = useRef<HTMLElement | null>(null);
+  const blocksRef = useRef<HTMLElement[]>([]);
 
   const ready = loaded.status === 'ready' ? loaded : null;
   useDocumentTitle(ready?.article.title ?? 'Article');
@@ -190,7 +155,7 @@ export function ArticleScreen() {
       if (!titleRef.current?.isConnected || !body) return;
       const y = window.scrollY;
       const max = document.documentElement.scrollHeight - window.innerHeight;
-      fraction.current = readPosition(body);
+      fraction.current = readPosition(blockElements(body, blocksRef), ready.article.blocks.length);
       if (progressFill.current) progressFill.current.style.transform = `scaleX(${max <= 0 ? 1 : Math.min(1, Math.max(0, y / max))})`;
       const nextHidden = y <= barHideOffset ? false : y > lastY + 4 ? true : y < lastY - 4 ? false : hidden;
       const nextTitled = titleRef.current.getBoundingClientRect().bottom < 56;
@@ -221,7 +186,8 @@ export function ArticleScreen() {
     const body = bodyRef.current;
     if (!ready || !body) return;
     const target = ready.summary.progress ?? 0;
-    const apply = () => scrollToPosition(body, target);
+    const count = ready.article.blocks.length;
+    const apply = () => scrollToPosition(blockElements(body, blocksRef), count, target);
     apply();
     if (target <= 0) return;
     let moved = false;
@@ -381,7 +347,7 @@ export function ArticleScreen() {
     '--article-pad': `${pad}px`,
   } as CSSProperties;
 
-  const body = useMemo(() => (ready ? renderBlocks(ready.article.blocks, { sizes, seenRefs: new Set() }) : null), [ready, sizes]);
+  const body = useMemo(() => (ready ? renderArticleBlocks(ready.article.blocks, { sizes, seenRefs: new Set() }) : null), [ready, sizes]);
 
   if (!ready) {
     return (

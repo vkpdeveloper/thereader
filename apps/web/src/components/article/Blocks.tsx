@@ -1,4 +1,4 @@
-import { Fragment, useState, type ReactNode } from 'react';
+import { Fragment, cloneElement, isValidElement, useState, type ReactElement, type ReactNode } from 'react';
 import { inlineText, type Block, type Figure, type Image, type Inline, type InlineImage, type Mark, type Table, type TextRun } from '@thereader/extract';
 import { CodeBlock } from './CodeBlock';
 import { MathView } from './math';
@@ -356,4 +356,25 @@ function renderBlock(block: Block, ctx: RenderContext): ReactNode {
 
 export function renderBlocks(blocks: readonly Block[], ctx: RenderContext): ReactNode[] {
   return blocks.map((block, i) => <Fragment key={i}>{renderBlock(block, ctx)}</Fragment>);
+}
+
+/**
+ * The article's top-level blocks, each marked with its index in `blocks`
+ * (`data-block-index`): reading positions sync between devices as block
+ * indexes, so they must not depend on how many elements a block renders. An
+ * element carries the marker itself; a component gets a box-less wrapper.
+ */
+export function renderArticleBlocks(blocks: readonly Block[], ctx: RenderContext): ReactNode[] {
+  return blocks.map((block, i) => {
+    const node = renderBlock(block, ctx);
+    if (node == null) return null;
+    if (isValidElement(node) && typeof node.type === 'string') {
+      return cloneElement(node as ReactElement<{ 'data-block-index'?: number }>, { key: i, 'data-block-index': i });
+    }
+    return (
+      <div key={i} className="article-block-contents" data-block-index={i}>
+        {node}
+      </div>
+    );
+  });
 }

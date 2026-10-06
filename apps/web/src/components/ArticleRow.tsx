@@ -44,9 +44,9 @@ export function ArticleThumb({ article, shape = 'wide' }: { article: ArticleSumm
   );
 }
 
-/** Progress for a saved article: nothing before the first read, a line while reading, then Finished. */
+/** Progress for a saved article: nothing before the first read (Not downloaded when synced from another device), a line while reading, then Finished. */
 function articleStatus(article: ArticleSummary) {
-  if (article.progress == null) return null;
+  if (article.progress == null) return article.stored === false ? <span className="grid-status">Not downloaded</span> : null;
   if (article.progress >= 0.995) return <span className="grid-status is-finished">Finished</span>;
   return (
     <span className="article-row-progress">

@@ -30,6 +30,8 @@ Paths are versioned beneath `/v1`.
   ETag, Content-Disposition. Support HEAD and valid single byte ranges if feasible.
 - `GET /v1/books/:id/cover` -> optional cover image; 404 if none.
 - `GET /v1/article-source?url=...` -> the raw HTML of a public article page (see below).
+- `PUT /v1/article-bodies/:sha256`, `GET`/`HEAD /v1/article-bodies/:sha256` -> a saved
+  article's extracted document, uploaded once by the device that saved it (see below).
 
 Book fields (all present unless explicitly nullable):
 
@@ -82,6 +84,29 @@ parses the page; clients decode, extract and store the article themselves.
   `Content-Security-Policy: default-src 'none'; sandbox`, so opening the relay
   URL in a tab never runs the page's scripts on this origin.
 
+### Saved-article sync
+
+Saved articles sync without the server ever fetching or extracting a page.
+The saving device extracts the article and uploads its `Article` JSON
+(schema 1) to `PUT /v1/article-bodies/<sha256>` as `application/gzip` (or
+`application/json`); the Worker checks the uncompressed size (4 MB, counted
+while inflating), the SHA-256 of the uncompressed bytes and, without parsing,
+that the document starts with `{"schema":1,` and ends with `}` (clients must
+serialize `schema` as the first key, without whitespace), then stores the
+bytes as sent. Deleting an article removes its document once no live article
+references it; clients upload a document only after its save is accepted.
+Other devices `GET` the same path (immutable caching, ETag) and verify the
+hash.
+Metadata (`url`, `title`, `siteName`, `byline`, `excerpt`, `leadImage`,
+`favicon`, `language`, `dir`, `wordCount`, `readingMinutes`, `blockCount`,
+`publishedAt`, `savedAt`, `bodySha256`, `bodySize`, `schema`), reading
+positions and deletions ride `POST /v1/sync` as `article` and
+`articleProgress` changes, pulled with `articlesSince`; `bodySize` above
+4 MB is `400 INVALID_SYNC`. An article whose document exceeds 4 MB stays on
+the device that saved it: clients send no save or position for it. Ids, ordering and
+limits: [cloud sync](cloud-sync.md#saved-articles) and the
+[API README](../apps/api/README.md).
+
 ## Personal use: no authentication
 
 The user explicitly requires no login or authentication flow. All reader endpoints
@@ -129,7 +154,7 @@ The live protocol, validation limits and response examples are documented in
 - `PUT /v1/uploads/:sha/parts/:number`: resumable 8 MiB parts for larger EPUBs.
 - `POST /v1/uploads/:sha/complete`: whole-object SHA and EPUB validation.
 - `GET /v1/sync` and `POST /v1/sync`: library membership, locators, cumulative
-  reading sessions and typography preferences.
+  reading sessions, typography preferences, highlights and saved articles.
 
 Maximum EPUB size is 512 MiB. The mobile app first saves and verifies an imported
 file locally; it never downloads that same imported file to make it readable.

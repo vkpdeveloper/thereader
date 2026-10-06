@@ -168,9 +168,16 @@ a.article-site:hover {
 }
 
 /* Long articles lay out only the blocks near the viewport. */
-.article-body.is-long > * {
+.article-body.is-long > *,
+.article-body.is-long > .article-block-contents > * {
   content-visibility: auto;
   contain-intrinsic-size: auto 10em;
+}
+
+/* A top-level block drawn by a component: it carries the block's index for
+   reading positions (renderArticleBlocks) and has no box of its own. */
+.article-block-contents {
+  display: contents;
 }
 
 .article-body p {
