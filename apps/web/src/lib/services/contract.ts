@@ -1,6 +1,7 @@
 import type { Article } from 'truffle';
 import type { AppSettings, ArticleSummary, Book, Highlight, LibraryEntry, ReaderPreferences, ReadingLocator } from '../types';
 import type { InkStroke } from './ink';
+import type { Category, CategoryColor, CategoryItemRef } from '../categories';
 
 /**
  * Contract between the data layer (`lib/services/*`, owned by one agent) and
@@ -356,6 +357,33 @@ export interface ArticleStore extends Observable<ArticlesSnapshot> {
   markOpened(id: string): Promise<void>;
 }
 
+// ---------------------------------------------------------------- categories
+
+export interface CategoriesSnapshot {
+  loaded: boolean;
+  /** Live categories, oldest first. */
+  categories: Category[];
+  /**
+   * Effective assignments keyed by `categoryItemKey(item)`. Items whose
+   * category is deleted or unknown are absent (they are uncategorized).
+   */
+  assignments: Record<string, { categoryId: string; assignedAt: string }>;
+}
+
+/** Categories of books and articles (docs/categories.md). Synced. */
+export interface CategoryStore extends Observable<CategoriesSnapshot> {
+  create(name: string, color: CategoryColor): Promise<Category>;
+  update(id: string, change: { name?: string; color?: CategoryColor }): Promise<void>;
+  /** Deletes the category; its items return to the Library home. */
+  remove(id: string): Promise<void>;
+  /** Moves `item` into `categoryId`, or out of any category with null. */
+  assign(item: CategoryItemRef, categoryId: string | null): Promise<void>;
+  /** The item's live category, or null when uncategorized. */
+  categoryOf(item: CategoryItemRef): Category | null;
+  /** Items in the category, newest assignment first. */
+  itemsIn(categoryId: string): CategoryItemRef[];
+}
+
 // ---------------------------------------------------------------- root
 
 export interface AppServices {
@@ -368,6 +396,7 @@ export interface AppServices {
   covers: CoverStore;
   storage: StorageStore;
   articles: ArticleStore;
+  categories: CategoryStore;
   ink: InkStore;
   /** Resolves once every store has loaded from IndexedDB. */
   ready: Promise<void>;
