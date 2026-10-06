@@ -124,3 +124,12 @@ test('a video file and its still image are one video carrying the figure caption
   const other = article(`<figure>${video('poster="/media/clip.png"')}<img src="/media/chart.png" alt="Chart" width="1320" height="900">${caption}</figure>`).blocks;
   expect(other.slice(1, -1).map((b) => b.type)).toEqual(['figure', 'video']);
 });
+
+test('a marker typed into a list item that repeats the list marker goes', () => {
+  const texts = (body: string) =>
+    article(body).blocks.slice(1, -1).flatMap((b) => (b.type === 'list' ? b.items.map((i) => i.blocks.map((x) => (x.type === 'paragraph' ? inlineText(x.content) : x.type))) : []));
+  expect(texts('<ul><li>• One</li><li><span class="dot">•</span>Two</li><li>- Three</li><li>•<div><p>Four</p></div></li></ul>')).toEqual([['One'], ['Two'], ['Three'], ['Four']]);
+  expect(texts('<ol start="4"><li>4. Four</li><li>5) Five</li><li value="9">(9) Nine</li></ol>')).toEqual([['Four'], ['Five'], ['Nine']]);
+  // Numbers that are not the item's own, numbers in a bulleted list and words that start with a dash stay.
+  expect(texts('<ol><li>2024. A year</li><li>7. Seven</li></ol><ul><li>1. First</li><li>-1 degrees</li></ul>')).toEqual([['2024. A year'], ['7. Seven'], ['1. First'], ['-1 degrees']]);
+});
