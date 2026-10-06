@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from 'react';
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from 'react';
 import { useParams } from '@tanstack/react-router';
 import type { Article } from '@thereader/extract';
 import { SiteIcon } from '../components/ArticleRow';
@@ -66,6 +66,36 @@ function scrollToPosition(body: HTMLElement, position: number): void {
   const index = Math.min(blocks.length - 1, Math.floor(at));
   const rect = blocks[index].getBoundingClientRect();
   window.scrollTo(0, Math.round(window.scrollY + rect.top + (at - index) * rect.height - readingLine));
+}
+
+/**
+ * Jumps to a far element in a long article. Blocks skipped by
+ * content-visibility only have estimated heights, so a smooth scroll aims at
+ * a moving target; instead jump at once, then keep the element centred while
+ * the blocks around it render, until it holds still or the reader scrolls.
+ */
+function revealFar(el: HTMLElement): void {
+  el.scrollIntoView({ block: 'center' });
+  let frames = 0;
+  let still = 0;
+  let last = el.getBoundingClientRect().top;
+  let cancelled = false;
+  const cancel = () => {
+    cancelled = true;
+  };
+  const events = ['wheel', 'touchstart', 'keydown', 'pointerdown'] as const;
+  for (const type of events) window.addEventListener(type, cancel, { passive: true, once: true });
+  const settle = () => {
+    const top = el.getBoundingClientRect().top;
+    if (Math.abs(top - last) > 1) {
+      el.scrollIntoView({ block: 'center' });
+      still = 0;
+    } else still++;
+    last = el.getBoundingClientRect().top;
+    if (!cancelled && still < 6 && ++frames < 90) requestAnimationFrame(settle);
+    else for (const type of events) window.removeEventListener(type, cancel);
+  };
+  requestAnimationFrame(settle);
 }
 
 /**
@@ -252,7 +282,11 @@ export function ArticleScreen() {
   const flash = useCallback(
     (el: HTMLElement | null, focus: HTMLElement | null) => {
       if (!el) return;
-      el.scrollIntoView({ block: 'center', behavior: reducedMotion ? 'auto' : 'smooth' });
+      if (Math.abs(el.getBoundingClientRect().top) > window.innerHeight * 2 && bodyRef.current?.classList.contains('is-long')) {
+        revealFar(el);
+      } else {
+        el.scrollIntoView({ block: 'center', behavior: reducedMotion ? 'auto' : 'smooth' });
+      }
       el.classList.remove('is-flash');
       void el.offsetWidth;
       el.classList.add('is-flash');
@@ -329,7 +363,8 @@ export function ArticleScreen() {
 
   const { article } = ready;
   const original = safeHref(article.url);
-  const meta = [article.byline, formatPublished(article.publishedAt), `${article.readingMinutes} min read`].filter(Boolean).join(' · ');
+  // Byline in the article's language, date and length in the reader's: each part isolated so mixed scripts keep their order.
+  const meta = [article.byline, formatPublished(article.publishedAt), `${article.readingMinutes} min read`].filter((part): part is string => !!part);
 
   return (
     <div className="article-page" style={style}>
@@ -380,7 +415,14 @@ export function ArticleScreen() {
           </h1>
           {article.subtitle && <p className="article-subtitle">{article.subtitle}</p>}
           <div className="article-meta">
-            <span>{meta}</span>
+            <span>
+              {meta.map((part, i) => (
+                <Fragment key={i}>
+                  {i > 0 && ' · '}
+                  <bdi>{part}</bdi>
+                </Fragment>
+              ))}
+            </span>
             {original && (
               <a className="article-original" href={original} target="_blank" rel="noopener noreferrer">
                 Open original
