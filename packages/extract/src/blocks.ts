@@ -12,10 +12,10 @@ const TEX_ANY = /\$\$([^$]+?)\$\$|\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)|\$([^\s$
 
 const MARK_ORDER: Mark[] = ['bold', 'italic', 'underline', 'strike', 'code', 'sub', 'sup', 'highlight', 'small', 'kbd'];
 
-const TAG_MARK: Record<string, Mark> = {
+const TAG_MARK: Record<string, Mark> = Object.assign(Object.create(null) as Record<string, Mark>, {
   b: 'bold', strong: 'bold', i: 'italic', em: 'italic', cite: 'italic', dfn: 'italic', var: 'italic', u: 'underline', ins: 'underline',
   s: 'strike', del: 'strike', strike: 'strike', code: 'code', tt: 'code', samp: 'code', kbd: 'kbd', sub: 'sub', sup: 'sup', mark: 'highlight', small: 'small',
-};
+} satisfies Record<string, Mark>);
 
 const INLINE_TAGS = new Set([
   'a', 'abbr', 'acronym', 'b', 'bdi', 'bdo', 'big', 'br', 'cite', 'code', 'data', 'del', 'dfn', 'em', 'font', 'i', 'img', 'ins', 'kbd', 'label',
