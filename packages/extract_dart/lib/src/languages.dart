@@ -349,6 +349,14 @@ final _spaceSplit = RegExp(r'\s+');
 /// Language named by a class attribute (`language-js`, `brush: py`, ...).
 String? languageFromClass(String className) {
   if (className.isEmpty) return null;
+  if (_fromClass.containsKey(className)) return _fromClass[className];
+  if (_fromClass.length >= 4096) _fromClass.clear();
+  return _fromClass[className] = _languageFromClass(className);
+}
+
+final _fromClass = <String, String?>{};
+
+String? _languageFromClass(String className) {
   for (final pattern in _classPatterns) {
     final m = pattern.firstMatch(className);
     if (m != null) {

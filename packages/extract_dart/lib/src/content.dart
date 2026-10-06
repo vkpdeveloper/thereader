@@ -10,25 +10,26 @@ library;
 import 'dart:math' as math;
 
 import 'js.dart';
+import 'match.dart';
 import 'tree.dart';
 
-final _unlikely = RegExp(
+final _unlikely = ClassPattern(
   r'-ad-|ai2html|banner|breadcrumbs|combx|comment|community|cover-wrap|disqus|extra|footer|gdpr|header|legends|menu|related|remark|replies|rss|shoutbox|sidebar|skyscraper|social|sponsor|supplemental|ad-break|agegate|pagination|pager|popup|yom-remote|newsletter|subscribe|cookie|consent|signup|outbrain|taboola|recirc|trending|most-popular|mostpopular|promo',
 );
 
 /// Unlikely-candidate words that prose never overrides.
-final _unlikelyHard = RegExp(
+final _unlikelyHard = ClassPattern(
   r'-ad-|ai2html|breadcrumbs|combx|comment|community|disqus|footer|gdpr|menu|related|replies|rss|shoutbox|sidebar|skyscraper|social|sponsor|ad-break|pagination|pager|popup|yom-remote|newsletter|subscribe|cookie|consent|signup|outbrain|taboola|recirc|trending|most-popular|mostpopular|promo',
 );
-final _maybe = RegExp(r'and|article|body|column|content|main|mathjax|shadow|story|post-text|entry');
-final _positive = RegExp(
+final _maybe = ClassPattern(r'and|article|body|column|content|main|mathjax|shadow|story|post-text|entry');
+final _positive = ClassPattern(
   r'article|body|content|entry|hentry|h-entry|main|page|pagination|post|text|blog|story|prose|markdown|rich-text|richtext',
 );
-final _negative = RegExp(
+final _negative = ClassPattern(
   r'-ad-|hidden|^hid$| hid$| hid |^hid |banner|combx|comment|com-|contact|footer|gdpr|masthead|media|meta|outbrain|promo|related|scroll|share|shoutbox|sidebar|skyscraper|sponsor|shopping|tags|widget|newsletter|subscribe|taboola|recirc|byline|author-bio|toolbar|breadcrumb|disclaimer|caption-credit',
 );
-final _byline = RegExp(r'byline|author|dateline|writtenby|p-author');
-final _share = RegExp(r'(?:\b|_)(?:share|sharedaddy|social|sharing)(?:\b|_)');
+final _byline = ClassPattern(r'byline|author|dateline|writtenby|p-author');
+final _share = ClassPattern(r'(?:\b|_)(?:share|sharedaddy|social|sharing)(?:\b|_)');
 const _unlikelyRoles = {
   'menu', 'menubar', 'complementary', 'navigation', 'alert', 'alertdialog', 'dialog', 'banner', 'contentinfo', //
   'search', 'tooltip',
@@ -45,7 +46,7 @@ final _loadingWords = RegExp(r'^(?:(?:loading|正在加载|Загрузка|char
 
 /// Strong signals that an element is the article body (publisher templates,
 /// CMSs, doc generators and schema.org). A boost, never a blind choice.
-final _contentHint = RegExp(
+final _contentHint = ClassPattern(
   r'(?:^|\s)(?:entry-content|post-content|article-content|article-body|articlebody|article__body|article__content|article-text|articletext|story-body|storybody|story-content|story__body|post-body|postbody|post__content|post-entry|blog-post-content|blog-content|entry-body|content-body|body-text|bodytext|markdown-body|gh-content|available-content|mw-parser-output|ltx_page_content|theme-doc-markdown|md-content__inner|vp-doc|rich-text|richtext|c-entry-content|td-post-content|single-post-content|article-body-text|news-content|news-body|text-content|main-content-body|post-article|articlecontent|field-name-body|field--name-body|single-content|paywall-content|caas-body|wysiwyg|prose)(?:\s|$)',
 );
 
@@ -356,7 +357,7 @@ bool _isByline(VElement el, String match) {
 }
 
 /// Footnote and endnote lists (Pandoc, Sphinx, Hugo, GitHub, Wikipedia, Substack).
-final footnoteContainer = RegExp(
+final footnoteContainer = ClassPattern(
   r'(?:^|[\s_-])(?:footnotes|footnote-list|footnotes-list|endnotes|references|reflist|refs|footnote-definitions|notes-list|fn-list)(?:$|[\s_-])',
 );
 
@@ -365,7 +366,7 @@ bool isFootnotes(VElement el) =>
     el.attrs['role'] == 'doc-endnotes' ||
     el.attrs['data-footnotes'] != null;
 
-final _footnoteClass = RegExp(r'(?:^|\s)footnote(?:\s|$)');
+final _footnoteClass = ClassPattern(r'(?:^|\s)footnote(?:\s|$)');
 
 /// A footnote list or one of its notes: kept even when marked up as <aside>.
 bool _isNoteMarkup(VElement el) =>
@@ -374,7 +375,7 @@ bool _isNoteMarkup(VElement el) =>
     el.attrs['role'] == 'doc-endnote' ||
     _footnoteClass.hasMatch(el.className);
 
-final _callout = RegExp(
+final _callout = ClassPattern(
   r'(?:^|[\s_-])(?:note|tip|warning|caution|important|admonition|callout|alert|info|danger|notice|hint|notecard)(?:$|[\s_-])',
 );
 
@@ -585,8 +586,6 @@ const _structure = {
   'dl', 'ul', 'ol',
 };
 
-final _headingTag = RegExp(r'^h[1-6]$');
-
 /// Joined siblings imply the parent is the article: headings, figures, code and
 /// prose between them (and a heading right before the first) belong to it too.
 void _fillBetween(VElement parent, List<VElement> roots) {
@@ -601,7 +600,7 @@ void _fillBetween(VElement parent, List<VElement> roots) {
       continue;
     }
     final el = prev as VElement;
-    if (!el.skip && _headingTag.hasMatch(el.tag)) first = k;
+    if (!el.skip && _headings.contains(el.tag)) first = k;
     break;
   }
   final out = <VElement>[];
@@ -698,9 +697,8 @@ void _resetMarks(VElement el) {
 
 // ------------------------------------------------------------- structured body
 
-final _nonWord = RegExp(r'[^\p{L}\p{N}]+', unicode: true);
-
-List<String> _words(String text) => jsSplit(jsLower(text), _nonWord).where((w) => w.isNotEmpty).toList();
+/// `text.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((w) => w.length > 0)`.
+List<String> _words(String text) => lettersAndNumbers(jsLower(text));
 
 /// When the page publishes its text as schema.org `articleBody`, the element
 /// whose text best matches it (high recall, then the smallest such element) is
@@ -795,7 +793,7 @@ bool isDataTableCached(VElement table) {
 }
 
 /// Boilerplate inside an article: removed regardless of score when small relative to the article.
-final _boilerplate = RegExp(
+final _boilerplate = ClassPattern(
   r'(?:^|[\s_-])(?:mw-editsection|editsection|edit-section|mw-jump-link|catlinks|printfooter|navbox|vertical-navbox|ambox|hatnote|noprint|share|sharing|social|social-links|sharedaddy|share-buttons|newsletter|subscribe|subscription|signup|sign-up|optin|opt-in|related|related-posts|related-articles|recommended|recommendations|more-stories|read-more|readmore|read-next|also-read|further-reading-promo|promo|promoted|sponsored|advert|advertisement|ad-container|ad-slot|ad-unit|ad-wrapper|adsbygoogle|dfp|gpt-ad|comments|comment-list|commentlist|disqus|breadcrumb|breadcrumbs|pagination|post-tags|entry-tags|tag-list|tags-list|article-tags|toc|table-of-contents|tableofcontents|cookie|consent|gdpr|regwall|inline-cta|cta|author-bio|about-author|author-box|authorbox|post-author-bio|byline|dateline|print|skip-link|toolbar|sticky|floating|modal|popup|overlay|outbrain|taboola|jp-relatedposts|wp-block-buttons|follow-us|listen|audio-player|article-audio|podcast-player|rating|reactions|clap|kudos)(?:$|[\s_-])',
 );
 
@@ -883,7 +881,7 @@ bool _hasLinkedHeading(VElement el) {
   return found;
 }
 
-final _maybeContent = RegExp(
+final _maybeContent = ClassPattern(
   r'(?:^|[\s_-])(?:article-body|articlebody|entry-content|post-content|story-body|main-content|article-content|post-body)(?:$|[\s_-])',
 );
 

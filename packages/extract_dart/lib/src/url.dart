@@ -64,15 +64,24 @@ String canonicalUrl(String url) {
 /// percent-encoding, IPv4 hosts, default ports and IDNA labels.
 String? whatwgHref(String input, [String? base]) {
   _Url? parsedBase;
+  _Base? fast;
   if (base != null) {
     if (base == _lastBase) {
       parsedBase = _lastParsed;
+      fast = _lastFast;
     } else {
       parsedBase = _Url.parse(base, null);
+      fast = parsedBase == null ? null : _Base.of(parsedBase);
       _lastBase = base;
       _lastParsed = parsedBase;
+      _lastFast = fast;
     }
     if (parsedBase == null) return null;
+  }
+  final quick = fast?.resolve(input);
+  if (quick != null) {
+    assert(quick == _Url.parse(input, parsedBase)?.href, 'fast URL path disagrees on $input against $base');
+    return quick;
   }
   return _Url.parse(input, parsedBase)?.href;
 }
@@ -80,6 +89,117 @@ String? whatwgHref(String input, [String? base]) {
 // Pages resolve every URL against the same base: parse it once.
 String? _lastBase;
 _Url? _lastParsed;
+_Base? _lastFast;
+
+/// The common relative and absolute http(s) references that need no
+/// normalization (no dot segments, nothing to percent-encode, a plain
+/// lowercase host), resolved by concatenation. Everything else goes through
+/// the full parser.
+class _Base {
+  _Base(this.origin, this.directory, this.withoutFragment);
+
+  /// `https://host[:port]`.
+  final String origin;
+
+  /// The base path up to its last `/`.
+  final String directory;
+
+  /// The base href without its fragment.
+  final String withoutFragment;
+
+  static _Base? of(_Url base) {
+    if ((base.scheme != 'http' && base.scheme != 'https') || base.host == null || base.opaquePath != null) return null;
+    if (base.username.isNotEmpty || base.password.isNotEmpty) return null;
+    final origin = '${base.scheme}://${base.host}${base.port != null ? ':${base.port}' : ''}';
+    final dir = StringBuffer(origin);
+    for (var i = 0; i < base.path.length - 1; i++) {
+      dir.write('/${base.path[i]}');
+    }
+    dir.write('/');
+    final href = base.href;
+    final hash = href.indexOf('#');
+    return _Base(origin, dir.toString(), hash >= 0 ? href.substring(0, hash) : href);
+  }
+
+  String? resolve(String input) {
+    final n = input.length;
+    if (n == 0) return null;
+    // Only printable ASCII that no percent-encode set touches.
+    for (var i = 0; i < n; i++) {
+      final c = input.codeUnitAt(i);
+      if (c <= 0x20 ||
+          c >= 0x7f ||
+          c == 0x22 ||
+          c == 0x27 ||
+          c == 0x3c ||
+          c == 0x3e ||
+          c == 0x5c ||
+          c == 0x5e ||
+          c == 0x60 ||
+          c == 0x7b ||
+          c == 0x7d ||
+          c == 0x7c) {
+        return null;
+      }
+    }
+    final first = input.codeUnitAt(0);
+    if (first == 0x23) return '$withoutFragment$input';
+    if (first == 0x2f) {
+      if (n > 1 && input.codeUnitAt(1) == 0x2f) return null;
+      return _plainPath(input, 0) ? '$origin$input' : null;
+    }
+    if (first == 0x3f) return null;
+    if (input.startsWith('https://') || input.startsWith('http://')) {
+      final hostStart = input.indexOf('//') + 2;
+      var i = hostStart;
+      var lastDot = hostStart - 1;
+      while (i < n) {
+        final c = input.codeUnitAt(i);
+        if (c == 0x2f || c == 0x3f || c == 0x23) break;
+        // Lowercase letters, digits, '-' and '.' only: no port, userinfo or IP-ish host.
+        if (!((c >= 0x61 && c <= 0x7a) || (c >= 0x30 && c <= 0x39) || c == 0x2d || c == 0x2e)) return null;
+        if (c == 0x2e) lastDot = i;
+        i++;
+      }
+      if (i == hostStart || lastDot == i - 1 || input.substring(hostStart, i).contains('xn--')) return null;
+      // A host ending in a number is an IPv4 address.
+      final last = input.codeUnitAt(lastDot + 1);
+      if (last >= 0x30 && last <= 0x39) return null;
+      if (i == n) return '$input/';
+      if (input.codeUnitAt(i) != 0x2f) return null;
+      return _plainPath(input, i) ? input : null;
+    }
+    // A path relative to the base directory; anything with a colon may be a scheme.
+    for (var i = 0; i < n; i++) {
+      final c = input.codeUnitAt(i);
+      if (c == 0x3a) return null;
+      if (c == 0x3f || c == 0x23) break;
+    }
+    return _plainPath('/$input', 0) ? '$directory$input' : null;
+  }
+
+  /// The path part of [s] from [start] has no dot segments.
+  static bool _plainPath(String s, int start) {
+    final n = s.length;
+    var segmentStart = start;
+    for (var i = start; i <= n; i++) {
+      final c = i < n ? s.codeUnitAt(i) : -1;
+      if (c == 0x25 && i + 2 < n && s.codeUnitAt(i + 1) == 0x32 && (s.codeUnitAt(i + 2) | 0x20) == 0x65) return false;
+      if (c == -1 || c == 0x2f || c == 0x3f || c == 0x23) {
+        final length = i - segmentStart - 1;
+        if (i > segmentStart && s.codeUnitAt(segmentStart) == 0x2f) {
+          if (length == 1 && s.codeUnitAt(segmentStart + 1) == 0x2e) return false;
+          if (length == 2 && s.codeUnitAt(segmentStart + 1) == 0x2e && s.codeUnitAt(segmentStart + 2) == 0x2e) {
+            return false;
+          }
+        }
+        if (c != 0x2f) return true;
+        segmentStart = i;
+      }
+    }
+    return true;
+  }
+}
 
 const _defaultPorts = {'http': 80, 'https': 443, 'ws': 80, 'wss': 443, 'ftp': 21};
 
@@ -485,6 +605,8 @@ class _Url {
     final out = <String>[];
     for (final label in labels) {
       if (label.codeUnits.every((c) => c < 0x80)) {
+        // An ACE label must hold valid Punycode for a non-ASCII name.
+        if (label.startsWith('xn--') && !_validAce(label.substring(4))) return null;
         out.add(label);
       } else {
         final encoded = _punycode(label);
@@ -494,6 +616,59 @@ class _Url {
     }
     return out.join('.');
   }
+
+  /// Punycode [encoded] decodes to a plausible non-ASCII label.
+  static bool _validAce(String encoded) {
+    const base = 36, tMin = 1, tMax = 26, skew = 38, damp = 700;
+    final delimiter = encoded.lastIndexOf('-');
+    final output = <int>[...encoded.substring(0, delimiter < 0 ? 0 : delimiter).codeUnits];
+    var n = 128, i = 0, bias = 72;
+    int digit(int c) => c >= 0x30 && c <= 0x39
+        ? c - 22
+        : c >= 0x61 && c <= 0x7a
+        ? c - 0x61
+        : -1;
+    var k = delimiter < 0 ? 0 : delimiter + 1;
+    if (k >= encoded.length) return false;
+    while (k < encoded.length) {
+      final old = i;
+      var w = 1;
+      for (var t0 = base; ; t0 += base) {
+        if (k >= encoded.length) return false;
+        final d = digit(encoded.codeUnitAt(k++));
+        if (d < 0) return false;
+        i += d * w;
+        if (i > 0x7fffffff) return false;
+        final t = t0 <= bias ? tMin : (t0 >= bias + tMax ? tMax : t0 - bias);
+        if (d < t) break;
+        w *= base - t;
+      }
+      var delta = old == 0 ? (i - old) ~/ damp : (i - old) ~/ 2;
+      delta += delta ~/ (output.length + 1);
+      var kk = 0;
+      while (delta > ((base - tMin) * tMax) ~/ 2) {
+        delta ~/= base - tMin;
+        kk += base;
+      }
+      bias = kk + (base - tMin + 1) * delta ~/ (delta + skew);
+      n += i ~/ (output.length + 1);
+      if (n > 0x10ffff) return false;
+      i %= output.length + 1;
+      output.insert(i, n);
+      i++;
+    }
+    // UTS #46 allows only (lowercase) letters, marks and digits; an approximation of its tables.
+    return output.any((c) => c >= 0x80) &&
+        output.every(
+          (c) =>
+              (c >= 0x61 && c <= 0x7a) ||
+              (c >= 0x30 && c <= 0x39) ||
+              c == 0x2d ||
+              (c >= 0xa0 && _idnaLetter.hasMatch(String.fromCharCode(c))),
+        );
+  }
+
+  static final _idnaLetter = RegExp(r'^[\p{Ll}\p{Lo}\p{Lm}\p{M}\p{Nd}]$', unicode: true);
 
   static String? _punycode(String label) {
     const base = 36, tMin = 1, tMax = 26, skew = 38, damp = 700;

@@ -258,3 +258,93 @@ bool _isArrayIndex(String key) {
   if (key.length > 1 && key.codeUnitAt(0) == 0x30) return false;
   return int.parse(key) < 4294967295;
 }
+
+bool _isHtmlSpace(int c) => c == 32 || c == 10 || c == 9 || c == 13 || c == 12;
+
+/// `s.replace(/[\t\n\f\r ]+/g, ' ')`.
+String collapseHtmlSpace(String s) {
+  final n = s.length;
+  var i = 0;
+  // Fast path: nothing to replace.
+  for (; i < n; i++) {
+    final c = s.codeUnitAt(i);
+    if (c == 32) {
+      if (i + 1 < n && _isHtmlSpace(s.codeUnitAt(i + 1))) break;
+    } else if (c == 10 || c == 9 || c == 13 || c == 12) {
+      break;
+    }
+  }
+  if (i == n) return s;
+  final out = StringBuffer(s.substring(0, i));
+  while (i < n) {
+    final c = s.codeUnitAt(i);
+    if (_isHtmlSpace(c)) {
+      out.writeCharCode(32);
+      i++;
+      while (i < n && _isHtmlSpace(s.codeUnitAt(i))) {
+        i++;
+      }
+    } else {
+      final start = i;
+      while (i < n && !_isHtmlSpace(s.codeUnitAt(i))) {
+        i++;
+      }
+      out.write(s.substring(start, i));
+    }
+  }
+  return out.toString();
+}
+
+/// Whitespace-separated (`\s+`) tokens of [s] include [token].
+bool hasToken(String s, String token) {
+  final n = s.length;
+  var i = 0;
+  while (i < n) {
+    while (i < n && isJsSpace(s.codeUnitAt(i))) {
+      i++;
+    }
+    final start = i;
+    while (i < n && !isJsSpace(s.codeUnitAt(i))) {
+      i++;
+    }
+    if (i - start == token.length && s.startsWith(token, start)) return true;
+  }
+  return false;
+}
+
+final _letterOrNumber = RegExp(r'^[\p{L}\p{N}]$', unicode: true);
+final _letterOrNumberCache = <int, bool>{};
+
+/// `/[\p{L}\p{N}]/u` for one code point.
+bool isLetterOrNumber(int cp) {
+  if (cp < 0x80) return (cp >= 0x61 && cp <= 0x7a) || (cp >= 0x41 && cp <= 0x5a) || (cp >= 0x30 && cp <= 0x39);
+  return _letterOrNumberCache[cp] ??= _letterOrNumber.hasMatch(String.fromCharCode(cp));
+}
+
+/// `s.split(/[^\p{L}\p{N}]+/u).filter((w) => w.length > 0)`.
+List<String> lettersAndNumbers(String s) {
+  final out = <String>[];
+  final n = s.length;
+  var start = -1;
+  var i = 0;
+  while (i < n) {
+    var cp = s.codeUnitAt(i);
+    var width = 1;
+    if (cp >= 0xd800 && cp <= 0xdbff && i + 1 < n) {
+      final low = s.codeUnitAt(i + 1);
+      if (low >= 0xdc00 && low <= 0xdfff) {
+        cp = 0x10000 + ((cp - 0xd800) << 10) + (low - 0xdc00);
+        width = 2;
+      }
+    }
+    if (isLetterOrNumber(cp)) {
+      if (start < 0) start = i;
+    } else if (start >= 0) {
+      out.add(s.substring(start, i));
+      start = -1;
+    }
+    i += width;
+  }
+  if (start >= 0) out.add(s.substring(start));
+  return out;
+}

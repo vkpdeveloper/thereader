@@ -1,3 +1,4 @@
+import 'js.dart';
 import 'model.dart';
 
 /// Plain text of inline content. Breaks become newlines.
@@ -94,16 +95,31 @@ String blocksText(List<Block> blocks) {
 
 String articleText(Article article) => blocksText(article.blocks);
 
-final _cjk = RegExp('[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uac00-\ud7af]');
-final _edgeSpace = RegExp(r'^\s+|\s+$');
-final _space = RegExp(r'\s+');
+bool _isCjk(int c) =>
+    (c >= 0x3040 && c <= 0x30ff) ||
+    (c >= 0x3400 && c <= 0x4dbf) ||
+    (c >= 0x4e00 && c <= 0x9fff) ||
+    (c >= 0xf900 && c <= 0xfaff) ||
+    (c >= 0xac00 && c <= 0xd7af);
 
 /// Words for reading time: whitespace-separated tokens, CJK characters
 /// counted at two per word. Whitespace follows JavaScript's `\s`, as in the
-/// TypeScript engine.
+/// TypeScript engine (`text.replace(cjk, ' ').trim().split(/\s+/)`).
 int countWords(String text) {
-  final cjkChars = _cjk.allMatches(text).length;
-  final rest = text.replaceAll(_cjk, ' ').replaceAll(_edgeSpace, '');
-  final words = rest.isEmpty ? 0 : rest.split(_space).length;
+  var cjkChars = 0;
+  var words = 0;
+  var inWord = false;
+  for (var i = 0; i < text.length; i++) {
+    final c = text.codeUnitAt(i);
+    if (_isCjk(c)) {
+      cjkChars++;
+      inWord = false;
+    } else if (isJsSpace(c)) {
+      inWord = false;
+    } else if (!inWord) {
+      words++;
+      inWord = true;
+    }
+  }
   return words + (cjkChars + 1) ~/ 2;
 }

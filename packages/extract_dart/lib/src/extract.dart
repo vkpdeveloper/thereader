@@ -74,10 +74,10 @@ Article? extractTree(VDocument doc, String url) {
 // ------------------------------------------------------------------ title
 
 final _separators = RegExp(r'\s+[|\-–—·•»:]{1,2}\s+|\s+\/\s+|\s+::\s+');
-final _nonWord = RegExp(r'[^\p{L}\p{N}]+', unicode: true);
 final _tld = RegExp(r'\.[a-z]+$');
 
-String _comparable(String value) => jsTrim(jsLower(value).replaceAll(_nonWord, ' '));
+/// `value.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim()`.
+String _comparable(String value) => lettersAndNumbers(jsLower(value)).join(' ');
 
 /// Removes the site name a <title> carries at either end ("Story | Site", "Site - Story").
 String cleanTitle(String raw, String? siteName, String host) {

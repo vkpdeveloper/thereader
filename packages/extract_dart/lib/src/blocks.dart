@@ -7,6 +7,7 @@ import 'dart:math' as math;
 import 'content.dart';
 import 'js.dart';
 import 'languages.dart';
+import 'match.dart';
 import 'media.dart';
 import 'model.dart';
 import 'tree.dart';
@@ -33,44 +34,43 @@ const _blockTags = {
   'tbody', 'thead', 'tfoot', 'tr', 'td', 'th', 'caption', 'xmp', 'listing', 'plaintext',
 };
 
-final _backlink = RegExp(
+final _backlink = ClassPattern(
   r'(?:^|[\s_-])(?:footnote-backref|reversefootnote|footnote-back|footnote-return|mw-cite-backlink|backlink|fn-back|footnote-backlink|data-footnote-backref)(?:$|[\s_-])',
 );
-final _permalink = RegExp(
+final _permalink = ClassPattern(
   r'(?:^|[\s_-])(?:anchor|headerlink|hash-link|permalink|heading-link|anchorjs-link|header-anchor|heading-anchor|anchor-link|deep-link|direct-link|autolink|section-link|copy-link)(?:$|[\s_-])',
 );
-final _captionClass = RegExp(
+final _captionClass = ClassPattern(
   r'(?:^|[\s_-])(?:caption|wp-caption-text|figcaption|image-caption|photo-caption|img-caption|media-caption|caption-text|imagecaption|figure-caption|credit|image-credit|photo-credit)(?:$|[\s_-])',
 );
 
 /// Any element whose class names it a caption or credit (`InlineImage-imageEmbedCaption`, `newsCaption`, `photo-credit`).
-final _captionLike = RegExp(r'caption|credit', caseSensitive: false);
-final _credit = RegExp(r'credit', caseSensitive: false);
+final _captionLike = ClassPattern(r'caption|credit', caseSensitive: false);
+final _credit = ClassPattern(r'credit', caseSensitive: false);
 
-final _creditClass = RegExp(
+final _creditClass = ClassPattern(
   r'(?:^|[\s_-])(?:credit|credits|copyright|attribution|photographer|image-credit|photo-credit|source|byline)(?:$|[\s_-])',
 );
-final _figureLike = RegExp(
+final _figureLike = ClassPattern(
   r'(?:^|[\s_-])(?:wp-caption|wp-block-image|image-block|figure|photo|media-image|article-image|inline-image|image-container|image-wrapper|img-wrapper|picture)(?:$|[\s_-])',
 );
-final _codeTitle = RegExp(
+final _codeTitle = ClassPattern(
   r'(?:^|[\s_-])(?:code-?block-?title|code-?title|filename|file-name|codeblock-header|code-header|code-block-header|rehype-code-title|remark-code-title|highlight-title)(?:$|[\s_-])|codeBlockTitle',
 );
-final _gutter = RegExp(
+final _gutter = ClassPattern(
   r'(?:^|[\s_-])(?:line-?numbers?(?:-rows)?|linenos?|lineno|linenodiv|gutter|ln-num|hljs-ln-n|hljs-ln-numbers|rouge-gutter|blob-num|lnt|code-line-number|react-syntax-highlighter-line-number|line-num|linenumber|line-number-cell)(?:$|[\s_-])',
 );
-final _lineElement = RegExp(
+final _lineElement = ClassPattern(
   r'(?:^|[\s_-])(?:line|code-line|cm-line|ec-line|token-line|highlight-line|view-line|line-content)(?:$|[\s_-])',
 );
-final _pullQuote = RegExp(
+final _pullQuote = ClassPattern(
   r'(?:^|[\s_-])(?:pullquote|pull-quote|wp-block-pullquote|pull_quote|blockquote--pull)(?:$|[\s_-])',
 );
 final _zeroWidth = RegExp('[​﻿⁠]');
-final _spaces = RegExp(r'[\t\n\f\r ]+');
-final _footnoteClass = RegExp(r'(?:^|\s)footnote(?:\s|$)');
-final _footnoteNumber = RegExp(r'footnote-number');
-final _footnoteContent = RegExp(r'footnote-content');
-final _mathFallback = RegExp(r'mwe-math-fallback-image');
+final _footnoteClass = ClassPattern(r'(?:^|\s)footnote(?:\s|$)');
+final _footnoteNumber = ClassPattern(r'footnote-number');
+final _footnoteContent = ClassPattern(r'footnote-content');
+final _mathFallback = ClassPattern(r'mwe-math-fallback-image');
 final _imageLink = RegExp(r'\.(?:jpe?g|png|webp|gif|avif)(?:$|[?#])', caseSensitive: false);
 final _labelBrackets = RegExp(r'^\[|\]$');
 final _backArrow = RegExp(r'^[↩↑^]');
@@ -79,6 +79,14 @@ final _linkScheme = RegExp(r'^(?:https?|mailto|tel):', caseSensitive: false);
 final _bold = RegExp(r'font-weight\s*:\s*(?:bold|[6-9]00)', caseSensitive: false);
 final _italic = RegExp(r'font-style\s*:\s*italic', caseSensitive: false);
 final _texWrapper = RegExp(r'^\{\\(?:displaystyle|textstyle|scriptstyle)\s*([\s\S]*)\}$');
+
+bool _hasZeroWidth(String s) {
+  for (var i = 0; i < s.length; i++) {
+    final c = s.codeUnitAt(i);
+    if (c == 0x200b || c == 0xfeff || c == 0x2060) return true;
+  }
+  return false;
+}
 
 /// True when [s] has only `[\t\n\f\r ]` characters.
 bool _onlyHtmlSpace(String s) {
@@ -122,7 +130,7 @@ class _InlineBuilder {
 
   void text(String value, _Ctx ctx) {
     if (value.isEmpty) return;
-    final text = value.replaceAll(_zeroWidth, '');
+    final text = _hasZeroWidth(value) ? value.replaceAll(_zeroWidth, '') : value;
     if (text.isEmpty) return;
     if (breaks > 0 && _onlyHtmlSpace(text)) return;
     breaks = 0;
@@ -202,7 +210,7 @@ List<Inline> normalizeInlines(List<Inline> nodes) {
   var spaceBefore = true;
   for (final node in nodes) {
     if (node is TextRun) {
-      var text = node.text.replaceAll(_spaces, ' ');
+      var text = collapseHtmlSpace(node.text);
       if (spaceBefore && charCodeAt(text, 0) == 32) text = text.substring(1);
       if (text.isEmpty) continue;
       spaceBefore = text.codeUnitAt(text.length - 1) == 32;
@@ -971,7 +979,7 @@ class Converter {
   static final _tip = RegExp(r'tip|hint|success');
   static final _info = RegExp(r'info|notice');
   static final _note = RegExp(r'note|admonition|callout|notecard');
-  static final _calloutTitle = RegExp(
+  static final _calloutTitle = ClassPattern(
     r'(?:^|[\s_-])(?:admonition-title|callout-title|alert-title|markdown-alert-title|admonitionHeading|notecard-title|title|heading)(?:$|[\s_-])|admonitionHeading',
   );
 
@@ -1055,7 +1063,7 @@ class Converter {
     return block;
   }
 
-  static final _codeCell = RegExp(r'(?:^|[\s_-])(?:code|blob-code|hljs-ln-code|lntd|line-content)(?:$|[\s_-])');
+  static final _codeCell = ClassPattern(r'(?:^|[\s_-])(?:code|blob-code|hljs-ln-code|lntd|line-content)(?:$|[\s_-])');
   static final _edgeNewlines = RegExp(r'^\n+');
   static final _finalNewline = RegExp(r'\n$');
 
@@ -1412,11 +1420,11 @@ List<_RowInfo> _tableRows(VElement table) {
   return rows;
 }
 
-final _codeTableClass = RegExp(
+final _codeTableClass = ClassPattern(
   r'(?:^|[\s_-])(?:highlight|hljs-ln|rouge-table|code-table|lntable|codehilitetable|highlighttable|js-file-line-container|blob-code-table|chroma)(?:$|[\s_-])',
 );
-final _codeLineCell = RegExp(r'(?:^|[\s_-])(?:blob-code|hljs-ln-code|code-line|line-content)(?:$|[\s_-])');
-final _codeClass = RegExp(r'(?:^|\s)code(?:\s|$)');
+final _codeLineCell = ClassPattern(r'(?:^|[\s_-])(?:blob-code|hljs-ln-code|code-line|line-content)(?:$|[\s_-])');
+final _codeClass = ClassPattern(r'(?:^|\s)code(?:\s|$)');
 
 bool _isCodeTable(VElement el) {
   if (el.tag != 'table' && el.tag != 'div') return false;

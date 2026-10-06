@@ -3,6 +3,7 @@
 library;
 
 import 'js.dart';
+import 'match.dart';
 import 'model.dart';
 import 'tree.dart';
 import 'url.dart';
@@ -240,7 +241,9 @@ ArticleImage? imageFrom(VElement img, String base) {
   return image;
 }
 
-final _smallClass = RegExp(r'(?:^|[\s_-])(?:emoji|wp-smiley|icon|smiley|emoticon|inline-icon|twemoji)(?:$|[\s_-])');
+final _smallClass = ClassPattern(
+  r'(?:^|[\s_-])(?:emoji|wp-smiley|icon|smiley|emoticon|inline-icon|twemoji)(?:$|[\s_-])',
+);
 
 /// Icons, emoji and avatars are small: kept inline, never as figures.
 bool isSmallImage(VElement img, ArticleImage image) {
@@ -251,7 +254,7 @@ bool isSmallImage(VElement img, ArticleImage image) {
 }
 
 final _homeLink = RegExp(r'^https?:\/\/[^/]+\/?(?:index\.html?)?(?:[?#].*)?$', caseSensitive: false);
-final _decorativeClass = RegExp(
+final _decorativeClass = ClassPattern(
   r'(?:^|[\s_-])(?:avatar|gravatar|author-(?:photo|image|avatar|img)|logo|site-logo|badge|profile-(?:pic|photo|image)|headshot|byline-image|sponsor-logo|social-icon)(?:$|[\s_-])',
 );
 final _avatarSrc = RegExp(r'gravatar\.com\/avatar|\/avatars?\/', caseSensitive: false);
@@ -387,7 +390,7 @@ Block? mediaFromElement(VElement el, String base) {
 }
 
 final _youtubeId = RegExp(r'^[\w-]{11}$');
-final _videoClass = RegExp(r'youtube|yt-|video');
+final _videoClass = ClassPattern(r'youtube|yt-|video');
 final _videoIdJson = RegExp(r'"videoId"\s*:\s*"([\w-]{11})"');
 
 /// Video placeholders that only become players with JavaScript.
@@ -413,8 +416,8 @@ VideoBlock? lazyVideo(VElement el) {
   return null;
 }
 
-final _twitterClass = RegExp(r'twitter-tweet|twitter-video');
-final _fbClass = RegExp(r'fb-xfbml|fb-post');
+final _twitterClass = ClassPattern(r'twitter-tweet|twitter-video');
+final _fbClass = ClassPattern(r'fb-xfbml|fb-post');
 
 /// Social posts that publishers embed as blockquotes.
 String? socialProvider(VElement el) {

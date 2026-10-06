@@ -4,6 +4,7 @@ library;
 import 'dart:convert';
 
 import 'js.dart';
+import 'match.dart';
 import 'model.dart';
 import 'tree.dart';
 import 'url.dart';
@@ -561,7 +562,6 @@ Metadata readMetadata(VDocument doc, String pageUrl) {
 }
 
 final _titleSep = RegExp(r'\s+[|\-–—·•»]\s+');
-final _nonWord = RegExp(r'[^\p{L}\p{N}]+', unicode: true);
 final _nonAlnum = RegExp(r'[^a-z0-9]+');
 
 String? _titleSite(String? title, String pageUrl) {
@@ -569,18 +569,18 @@ String? _titleSite(String? title, String pageUrl) {
   final parts = collapse(decodeEntities(title)).split(_titleSep);
   if (parts.length < 2) return null;
   final last = parts[parts.length - 1];
-  final key = jsLower(last).replaceAll(_nonWord, '');
+  final key = lettersAndNumbers(jsLower(last)).join();
   if (key.length < 3 || last.length > 40) return null;
   final m = _hostRe.firstMatch(pageUrl);
   final host = m == null ? '' : jsLower(m[1]!).replaceAll(_nonAlnum, '');
   return host.contains(key) ? last : null;
 }
 
-final _bylineClass = RegExp(
+final _bylineClass = ClassPattern(
   r'(?:^|[\s_-])(?:byline|by-line|author|authors|author-name|authorname|writer|contributor|byline__name|post-author|entry-author|article-author|meta-author|c-byline)(?:$|[\s_-])',
 );
-final _authorToken = RegExp(r'(?:^|\s)author(?:\s|$)');
-final _nameClass = RegExp(
+final _authorToken = ClassPattern(r'(?:^|\s)author(?:\s|$)');
+final _nameClass = ClassPattern(
   r'(?:^|[\s_-])(?:name|username|user-name|author-name|authorname|fn|byline__name|ltx_personname|nickname)(?:$|[\s_-])',
 );
 final _year = RegExp(r'\d{4}');

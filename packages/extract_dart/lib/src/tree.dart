@@ -77,7 +77,8 @@ final class VElement extends VNode {
 
   bool hasClass(String name) {
     if (className.isEmpty) return false;
-    return ' ${className.replaceAll(_spaceRun, ' ')} '.contains(' $name ');
+    // `(' ' + className.replace(/\s+/g, ' ') + ' ').indexOf(' ' + name + ' ') >= 0`
+    return hasToken(className, name);
   }
 
   void append(VNode node) {
@@ -85,8 +86,6 @@ final class VElement extends VNode {
     children.add(node);
   }
 }
-
-final _spaceRun = RegExp(r'\s+');
 
 class VDocument {
   VDocument({
@@ -217,9 +216,8 @@ void _rawText(VElement el, StringBuffer out) {
 /// Text of a subtree with whitespace collapsed and trimmed.
 String textOf(VNode node) => collapse(rawText(node));
 
-final _htmlSpaces = RegExp(r'[\t\n\f\r ]+');
-
-String collapse(String text) => jsTrim(text.replaceAll(_htmlSpaces, ' '));
+/// `text.replace(/[\t\n\f\r ]+/g, ' ').trim()`.
+String collapse(String text) => jsTrim(collapseHtmlSpace(text));
 
 /// Length of [text] as rendered: whitespace runs count as one character,
 /// edges trimmed.
