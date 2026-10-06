@@ -275,7 +275,7 @@ function tidy(input: Block[], title: string, meta: Metadata): Block[] {
   // Title set as an image (old sites): a lone inline image whose alt text is the title.
   for (let i = 0; i < Math.min(blocks.length, 3); i++) {
     const b = blocks[i]!;
-    if (b.type === 'paragraph' && b.content.length === 1 && b.content[0]!.type === 'image' && comparable(b.content[0]!.alt) === t && t.length > 0) {
+    if (t.length > 0 && (b.type === 'paragraph' && b.content.length === 1 && b.content[0]!.type === 'image' && comparable(b.content[0]!.alt) === t || b.type === 'figure' && b.images.length === 1 && b.caption === undefined && comparable(b.images[0]!.alt) === t)) {
       blocks.splice(i, 1);
       break;
     }
