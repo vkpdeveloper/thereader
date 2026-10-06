@@ -44,6 +44,8 @@ const MAX_ARTICLES_PAGE = 200;
 /** Uncompressed article document cap, shared with the body endpoint. */
 export const MAX_ARTICLE_BODY_BYTES = 8 * 1024 * 1024;
 export const ARTICLE_SCHEMA = 1;
+/** Where an article document lives in R2: content-addressed and immutable. */
+export const articleBodyKey = (sha256: string): string => `articles/${sha256}`;
 const CHANGE_KINDS = ["progress", "session", "preferences", "library", "highlight", "article", "articleProgress"];
 
 type ChangeKind = "progress" | "session" | "preferences" | "library" | "highlight" | "article" | "articleProgress";
@@ -755,6 +757,29 @@ function articleOrder(change: SyncChange): number {
   return change.kind === "articleProgress" ? 1 : 0;
 }
 
+// Deletes the documents of articles this request deleted, unless a live
+// article still references them: one indexed read and one R2 call. Saving the
+// article again uploads the document again (clients upload after their save
+// is accepted, so a save never points at a document deleted here). A failure
+// only leaves an orphaned object behind; the sync itself has already landed.
+async function deleteUnreferencedBodies(env: Env, tombstones: SyncChange[]): Promise<void> {
+  if (tombstones.length === 0) return;
+  try {
+    const rows = await env.DB.prepare(
+      `SELECT DISTINCT a.body_sha256 AS sha256
+         FROM json_each(?) t
+         JOIN sync_articles a ON a.id = json_extract(t.value, '$[0]') AND a.change_id = json_extract(t.value, '$[1]')
+        WHERE a.deleted_at IS NOT NULL AND a.body_sha256 IS NOT NULL
+          AND NOT EXISTS (SELECT 1 FROM sync_articles b WHERE b.body_sha256 = a.body_sha256 AND b.deleted_at IS NULL)`,
+    )
+      .bind(JSON.stringify(tombstones.map((change) => [change.payload.articleId, change.id])))
+      .all<{ sha256: string }>();
+    if (rows.results.length > 0) await env.BOOKS.delete(rows.results.map((row) => articleBodyKey(row.sha256)));
+  } catch (error) {
+    console.error("Article document cleanup failed", error instanceof Error ? error.message : "Unknown error");
+  }
+}
+
 export async function pushSync(request: Request, env: Env): Promise<SyncState> {
   const raw = await readBoundedJson(request, MAX_SYNC_BYTES);
   if (!isRecord(raw) || !validClientId(raw.deviceId) || !Array.isArray(raw.changes) || raw.changes.length > MAX_CHANGES) {
@@ -777,6 +802,8 @@ export async function pushSync(request: Request, env: Env): Promise<SyncState> {
     // Array.prototype.sort is stable, so other changes keep their order.
     const ordered = [...changes].sort((a, b) => articleOrder(a) - articleOrder(b));
     await env.DB.batch(ordered.map((change) => statementForChange(env, raw.deviceId as string, change)));
+    // A tombstone is accepted when its change id now owns the row.
+    await deleteUnreferencedBodies(env, changes.filter((change) => change.kind === "article" && change.payload.deleted === true));
   }
   const state = await getSyncState(env, changes.map((change) => change.id));
   if (wantsHighlights) state.highlights = await highlightsSince(env, since as number);

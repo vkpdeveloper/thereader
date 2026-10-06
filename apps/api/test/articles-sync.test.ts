@@ -94,6 +94,7 @@ describe("article sync", () => {
     ]));
     const indexes = await env.DB.prepare("PRAGMA index_list(sync_articles)").all<{ name: string; unique: number }>();
     expect(indexes.results).toContainEqual(expect.objectContaining({ name: "sync_articles_rev", unique: 1 }));
+    expect(indexes.results).toContainEqual(expect.objectContaining({ name: "sync_articles_live_body", partial: 1 }));
   });
 
   it("leaves the response unchanged for clients that never ask for articles", async () => {
@@ -195,6 +196,52 @@ describe("article sync", () => {
     const rest = await syncJson({ deviceId, articlesSince: 200, changes: [] });
     expect(rest.articles).toMatchObject({ cursor: 201, more: false });
     expect(rest.articles.items).toHaveLength(1);
+  });
+
+  it("deletes a deleted article's document once no live article references it", async () => {
+    const X = "1".repeat(64);
+    const Y = "2".repeat(64);
+    const ID_C = "c".repeat(32);
+    for (const sha of [X, Y]) await env.BOOKS.put(`articles/${sha}`, "{}");
+    const exists = async (sha: string) => (await env.BOOKS.head(`articles/${sha}`)) !== null;
+
+    // Two stories whose documents happen to be identical share one object.
+    await syncJson({
+      deviceId,
+      changes: [
+        articleChange("a-1", ID_A, t0, { bodySha256: X }),
+        articleChange("b-1", ID_B, t0, { bodySha256: X, url: "https://example.org/b" }),
+        articleChange("c-1", ID_C, t1, { bodySha256: Y, url: "https://example.org/c" }),
+      ],
+    });
+    await syncJson({ deviceId, changes: [tombstone("d-a", ID_A, t1)] });
+    expect(await exists(X)).toBe(true);
+    // A tombstone older than the save is not accepted and deletes nothing.
+    await syncJson({ deviceId, changes: [tombstone("d-c0", ID_C, t0)] });
+    expect(await exists(Y)).toBe(true);
+    // A tombstone for an id the server never saw has no document.
+    await syncJson({ deviceId, changes: [tombstone("d-x", "f".repeat(32), t1)] });
+
+    await syncJson({ deviceId, changes: [tombstone("d-b", ID_B, t2), tombstone("d-c", ID_C, t2)] });
+    expect(await exists(X)).toBe(false);
+    expect(await exists(Y)).toBe(false);
+
+    // Saving again re-uploads the document.
+    const article = encoder.encode(JSON.stringify({ schema: 1, url: "https://example.com/story", title: "A story", blocks: [] }));
+    const sha = await sha256(article);
+    await syncJson({ deviceId, changes: [articleChange("a-2", ID_A, t3, { bodySha256: sha })] });
+    const upload = await request(`/v1/article-bodies/${sha}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: article });
+    expect(upload.status).toBe(201);
+    // Resending an accepted tombstone is harmless: the live save keeps it.
+    await syncJson({ deviceId, changes: [tombstone("d-a", ID_A, t1)] });
+    expect(await exists(sha)).toBe(true);
+  });
+
+  it("finds live references through the partial index", async () => {
+    const plan = await env.DB.prepare(
+      "EXPLAIN QUERY PLAN SELECT 1 FROM sync_articles b WHERE b.body_sha256 = ? AND b.deleted_at IS NULL",
+    ).bind("1".repeat(64)).all<{ detail: string }>();
+    expect(plan.results.map((row) => row.detail).join("\n")).toContain("sync_articles_live_body");
   });
 
   it("rejects malformed article changes and cursors", async () => {

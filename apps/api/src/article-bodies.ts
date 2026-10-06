@@ -1,5 +1,5 @@
 import { ApiError } from "./errors";
-import { ARTICLE_SCHEMA, MAX_ARTICLE_BODY_BYTES } from "./sync";
+import { ARTICLE_SCHEMA, MAX_ARTICLE_BODY_BYTES, articleBodyKey } from "./sync";
 import type { Env } from "./types";
 
 /**
@@ -31,8 +31,6 @@ const HEAD_BYTES = 256;
 // yield chunks of a few KB, and for a multi-MB document the per-chunk overhead
 // costs more CPU than inflating and hashing it.
 const READ_CHUNK_BYTES = 256 * 1024;
-
-export const articleBodyKey = (sha256: string): string => `articles/${sha256}`;
 
 function tooLarge(): ApiError {
   return new ApiError(413, "TOO_LARGE", "Article documents are limited to 8 MB.");

@@ -37,3 +37,7 @@ CREATE TABLE sync_articles (
 );
 
 CREATE UNIQUE INDEX sync_articles_rev ON sync_articles (rev);
+
+-- Live articles by document, so accepting a deletion can tell in one indexed
+-- read whether any live article still needs the R2 object.
+CREATE INDEX sync_articles_live_body ON sync_articles (body_sha256) WHERE deleted_at IS NULL;

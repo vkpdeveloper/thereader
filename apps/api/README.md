@@ -166,6 +166,10 @@ repeats `200` without writing. `GET`/`HEAD` serve the stored bytes with their
 type, `ETag` and immutable caching. Errors: `413 TOO_LARGE`,
 `415 UNSUPPORTED_MEDIA_TYPE`, `422 CHECKSUM_MISMATCH`, `422 INVALID_ARTICLE`,
 `404 NOT_FOUND`. The Worker never fetches or extracts article pages for sync.
+When `/v1/sync` accepts an article deletion and no live article references its
+document any more, the same request deletes `articles/<sha256>` (one indexed
+D1 read, one R2 delete); clients upload a document only after its save is
+accepted, so saving again simply uploads it again.
 
 Sync changes are keyed by the supplied `(bookId,sha256)` and do not require the
 edition to be present in the catalog. This keeps a cancelled or still-pending
