@@ -243,7 +243,7 @@ function markUnlikely(body: VElement, flags: Flags, state: { bylineRemoved: bool
       return false;
     }
     if (flags.stripUnlikely) {
-      if (UNLIKELY.test(match) && !MAYBE.test(match) && el.tag !== 'a' && el.tag !== 'body' && el.tag !== 'article' && el.tag !== 'main' && !hasAncestor(el, TABLE_OR_CODE)) {
+      if (UNLIKELY.test(match) && !MAYBE.test(match) && el.tag !== 'a' && el.tag !== 'body' && el.tag !== 'article' && el.tag !== 'main' && !hasAncestor(el, TABLE_OR_CODE) && !(el.tag === 'table' && isDataTableCached(el))) {
         // "header", "banner", "extra": weak signals that real prose overrides (MDN puts intros in a header).
         // A layout wrapper holding most of the page's prose ("with-sidebar") is never unlikely.
         const prose = proseLength(el);
