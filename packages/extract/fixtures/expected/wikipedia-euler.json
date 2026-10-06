@@ -2189,7 +2189,7 @@
       "items": [
         {
           "id": "cite_note-3",
-          "label": "1",
+          "label": "note 1",
           "blocks": [
             {
               "type": "paragraph",
@@ -2308,7 +2308,7 @@
       "items": [
         {
           "id": "cite_note-1",
-          "label": "2",
+          "label": "1",
           "blocks": [
             {
               "type": "paragraph",
@@ -2332,7 +2332,7 @@
         },
         {
           "id": "cite_note-EOM-2",
-          "label": "3",
+          "label": "2",
           "blocks": [
             {
               "type": "paragraph",
@@ -2380,7 +2380,7 @@
         },
         {
           "id": "cite_note-Gallagher2014-4",
-          "label": "4",
+          "label": "3",
           "blocks": [
             {
               "type": "paragraph",
@@ -2428,7 +2428,7 @@
         },
         {
           "id": "cite_note-5",
-          "label": "5",
+          "label": "4",
           "blocks": [
             {
               "type": "paragraph",
@@ -2443,7 +2443,7 @@
         },
         {
           "id": "cite_note-6",
-          "label": "6",
+          "label": "5",
           "blocks": [
             {
               "type": "paragraph",
@@ -2467,7 +2467,7 @@
         },
         {
           "id": "cite_note-7",
-          "label": "7",
+          "label": "6",
           "blocks": [
             {
               "type": "paragraph",
@@ -2482,7 +2482,7 @@
         },
         {
           "id": "cite_note-8",
-          "label": "8",
+          "label": "7",
           "blocks": [
             {
               "type": "paragraph",
@@ -2508,7 +2508,7 @@
         },
         {
           "id": "cite_note-9",
-          "label": "9",
+          "label": "8",
           "blocks": [
             {
               "type": "paragraph",
@@ -2541,7 +2541,7 @@
         },
         {
           "id": "cite_note-10",
-          "label": "10",
+          "label": "9",
           "blocks": [
             {
               "type": "paragraph",
@@ -2556,7 +2556,7 @@
         },
         {
           "id": "cite_note-11",
-          "label": "11",
+          "label": "10",
           "blocks": [
             {
               "type": "paragraph",
@@ -2571,7 +2571,7 @@
         },
         {
           "id": "cite_note-12",
-          "label": "12",
+          "label": "11",
           "blocks": [
             {
               "type": "paragraph",
@@ -2619,7 +2619,7 @@
         },
         {
           "id": "cite_note-13",
-          "label": "13",
+          "label": "12",
           "blocks": [
             {
               "type": "paragraph",
@@ -2667,7 +2667,7 @@
         },
         {
           "id": "cite_note-14",
-          "label": "14",
+          "label": "13",
           "blocks": [
             {
               "type": "paragraph",
@@ -2715,7 +2715,7 @@
         },
         {
           "id": "cite_note-15",
-          "label": "15",
+          "label": "14",
           "blocks": [
             {
               "type": "paragraph",
@@ -2739,7 +2739,7 @@
         },
         {
           "id": "cite_note-Sandifer2007-16",
-          "label": "16",
+          "label": "15",
           "blocks": [
             {
               "type": "paragraph",
@@ -2754,7 +2754,7 @@
         },
         {
           "id": "cite_note-17",
-          "label": "17",
+          "label": "16",
           "blocks": [
             {
               "type": "paragraph",

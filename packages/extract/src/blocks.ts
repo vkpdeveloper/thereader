@@ -223,6 +223,8 @@ export class Converter {
   /** Provisional refs with the link text they replace if no note turns up. */
   private readonly provisional = new Map<Inline, string>();
   private readonly resolved = new Set<string>();
+  /** Label of the first reference to each listed note. */
+  private readonly refLabels = new Map<string, string>();
   lastDisplayMath: Inline | null = null;
 
   constructor(private readonly base: string) {}
@@ -366,8 +368,10 @@ export class Converter {
         if (label !== null) label.skip = true;
         const blocks: Block[] = [];
         this.children(item, blocks);
-        stripNoteLabel(blocks, this.notes.get(item.id)!);
-        if (blocks.length > 0) items.push({ id: item.id, label: this.notes.get(item.id)!, blocks });
+        // The number the text shows for this note, else its position.
+        const shown = this.refLabels.get(item.id) ?? this.notes.get(item.id)!;
+        stripNoteLabel(blocks, shown);
+        if (blocks.length > 0) items.push({ id: item.id, label: shown, blocks });
         return false;
       }
       return true;
@@ -610,6 +614,7 @@ export class Converter {
       const target = el.attrs['data-footnote'] ?? el.attrs['data-footnote-id'] ?? el.attrs['data-fn'] ?? el.attrs['data-note'];
       if (target !== undefined && this.notes.has(target)) {
         const label = collapse(rawText(el)).replace(/^\[|\]$/g, '').trim() || this.notes.get(target)!;
+        if (!this.refLabels.has(target)) this.refLabels.set(target, label);
         b.push({ type: 'ref', id: target, label });
         return;
       }
@@ -661,6 +666,7 @@ export class Converter {
           const id = decodeFragment(href.slice(1));
           if (this.notes.has(id)) {
             const label = collapse(rawText(el)).replace(/^\[|\]$/g, '').trim() || this.notes.get(id)!;
+            if (!this.refLabels.has(id)) this.refLabels.set(id, label);
             b.push({ type: 'ref', id, label });
             return;
           }
