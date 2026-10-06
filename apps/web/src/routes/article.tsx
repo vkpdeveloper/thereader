@@ -7,6 +7,7 @@ import { FootnotePreview, footnotePeekHtml, type FootnotePeek } from '../compone
 import { blockElements, readPosition, scrollToPosition } from '../components/article/position';
 import { Lightbox, type ZoomedImage } from '../components/article/Lightbox';
 import { safeHref } from '../components/article/media';
+import { useArticleLinkPreview } from '../components/article/useArticleLinkPreview';
 import { IconButton, QuietButton } from '../components/buttons';
 import { ArrowBackIcon, OpenInNewIcon, TextFieldsIcon } from '../components/icons';
 import { hasOpenOverlay, Sheet } from '../components/overlay';
@@ -274,6 +275,7 @@ export function ArticleScreen() {
     return () => window.removeEventListener('scroll', hide);
   }, [peek]);
   useEffect(() => () => window.clearTimeout(peekTimer.current), []);
+  const linkPreview = useArticleLinkPreview(bodyRef, ready?.article.url ?? null, () => setPeek(null));
 
   // ------------------------------------------------------------ in-article clicks
 
@@ -461,6 +463,7 @@ export function ArticleScreen() {
       </Sheet>
       <Lightbox image={zoom} onClose={() => setZoom(null)} />
       {peek && <FootnotePreview key={peek.id} peek={peek} onEnter={keepPeek} onLeave={() => hidePeek()} />}
+      {linkPreview}
     </div>
   );
 }
