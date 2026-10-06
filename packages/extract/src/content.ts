@@ -657,7 +657,8 @@ function isAdjacentProse(sibling: VElement, top: VElement): boolean {
   const step = i < j ? 1 : -1;
   for (let k = i + step; k !== j; k += step) {
     const between = kids[k]!;
-    if (between.kind === 1 && !between.skip) return false;
+    // Only chrome may sit between them (a contents box between the preamble and the text).
+    if (between.kind === 1 && !between.skip && !(BOILERPLATE.test(between.matchString) || linkDensity(between) > 0.5)) return false;
   }
   const prose = proseLength(sibling);
   return prose >= sibling.textLen * 0.5 && prose >= min;
