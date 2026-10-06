@@ -1363,8 +1363,10 @@ class Converter {
     out.add(block);
   }
 
-  static final _authorWithDate = RegExp(r'^[—–-]\s*(.+?)(?:\s*\((@\w+)\))?\s+[A-Z][a-z]+ \d{1,2}, \d{4}$');
-  static final _authorLine = RegExp(r'^[—–-]\s*(.+)$');
+  // The name starts and ends on a non-space: a long run of spaces is not retried at every split between dash,
+  // name, handle and date.
+  static final _authorWithDate = RegExp(r'^[—–-]\s*(\S(?:.*?\S)?)(?:\s*\((@\w+)\))?\s+[A-Z][a-z]+ \d{1,2}, \d{4}$');
+  static final _authorLine = RegExp(r'^[—–-]\s*(?!\s)(.+)$');
 
   void _embed(VElement el, String provider, List<Block> out) {
     String? url;

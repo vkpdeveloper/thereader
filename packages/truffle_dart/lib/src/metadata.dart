@@ -254,22 +254,26 @@ final _bylinePrefix = RegExp(
 final _httpUrl = RegExp(r'^https?:\/\/', caseSensitive: false);
 final _twoDigits = RegExp(r'\d{2,}');
 final _notAName = RegExp(r'affiliation|email|e-mail|profile|follow|subscribe|message', caseSensitive: false);
-final _trailingSep = RegExp(r'\s*[|·•,]\s*$');
+final _trailingSep = RegExp(r'[|·•,]$');
 
 String? _cleanAuthor(String value) {
   var s = collapse(value).replaceFirst(_bylinePrefix, '');
   if (_httpUrl.hasMatch(s) || s.contains('@') || _twoDigits.hasMatch(s) || _notAName.hasMatch(s)) return null;
   if (jsSplit(s, ' ').length > 8) return null;
-  s = jsTrim(s.replaceFirst(_trailingSep, ''));
+  // `.replace(/\s*[|·•,]\s*$/, '')`, without retrying `\s*` from every space of a long run.
+  final end = jsTrimEnd(s);
+  if (_trailingSep.hasMatch(end)) s = end.substring(0, end.length - 1);
+  s = jsTrim(s);
   if (s.length < 2 || s.length > 100) return null;
   return s;
 }
 
+/// Between names, split with [splitAtRuns].
 final _authorSplit = RegExp(r'\s*(?:,|;|\band\b|&|\bund\b|\bet\b|\by\b|،)\s*');
 
 void _addAuthors(List<String> raw, List<String> out) {
   for (final value in raw) {
-    for (final part in jsSplit(value, _authorSplit)) {
+    for (final part in splitAtRuns(value, _authorSplit)) {
       final name = _cleanAuthor(part);
       if (name != null && !out.any((n) => jsLower(n) == jsLower(name))) out.add(name);
     }
@@ -586,7 +590,7 @@ final _nonAlnum = RegExp(r'[^a-z0-9]+');
 
 String? _titleSite(String? title, String pageUrl) {
   if (title == null) return null;
-  final parts = collapse(decodeEntities(title)).split(_titleSep);
+  final parts = splitAtRuns(collapse(decodeEntities(title)), _titleSep);
   if (parts.length < 2) return null;
   final last = parts[parts.length - 1];
   final key = lettersAndNumbers(jsLower(last)).join();

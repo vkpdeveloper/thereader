@@ -78,6 +78,7 @@ Article? extractTree(VDocument doc, String url) {
 
 // ------------------------------------------------------------------ title
 
+/// Title separators, split with [splitAtRuns].
 final _separators = RegExp(r'\s+[|\-–—·•»:]{1,2}\s+|\s+\/\s+|\s+::\s+');
 final _tld = RegExp(r'\.[a-z]+$');
 
@@ -87,7 +88,7 @@ String _comparable(String value) => lettersAndNumbers(jsLower(value)).join(' ');
 /// Removes the site name a <title> carries at either end ("Story | Site", "Site - Story").
 String cleanTitle(String raw, String? siteName, String host) {
   final title = collapse(raw);
-  final parts = jsSplit(title, _separators);
+  final parts = splitAtRuns(title, _separators);
   if (parts.length < 2) return title;
   final site = siteName == null ? '' : _comparable(siteName);
   final hostWords = _comparable(host.replaceFirst(_tld, ''));
@@ -116,7 +117,7 @@ String cleanTitle(String raw, String? siteName, String host) {
 }
 
 final _permalinkText = RegExp(r'^[#¶§🔗]$', unicode: true);
-final _trailingPermalink = RegExp(r'\s*[#¶§]$');
+final _permalinkEnd = RegExp(r'[#¶§]$');
 
 /// Heading text without permalink anchors (`¶`, `#`).
 String _headingText(VElement el) {
@@ -132,7 +133,9 @@ String _headingText(VElement el) {
   }
 
   visit(el);
-  return collapse(out.toString()).replaceFirst(_trailingPermalink, '');
+  // `.replace(/\s*[#¶§]$/, '')`, without retrying `\s*` from every space of a long run.
+  final text = collapse(out.toString());
+  return _permalinkEnd.hasMatch(text) ? jsTrimEnd(text.substring(0, text.length - 1)) : text;
 }
 
 int _countH1(VElement body) {
@@ -203,7 +206,7 @@ String _chooseTitle(Metadata meta, VElement body, String pageUrl) {
   // Headings that are the site part of "Story - Site" (a docs menu-bar h1) never stand for the story.
   final siteParts = <String>{};
   for (final raw in meta.rawTitles) {
-    final segments = jsSplit(collapse(raw), _separators).map(_comparable).toList();
+    final segments = splitAtRuns(collapse(raw), _separators).map(_comparable).toList();
     if (segments.length < 2) continue;
     siteParts.add(segments[segments.length - 1]);
     siteParts.add(segments[0]);
@@ -222,7 +225,7 @@ String _chooseTitle(Metadata meta, VElement body, String pageUrl) {
   }
   // A heading equal to one segment of "Story - Section - Site".
   for (final raw in meta.rawTitles) {
-    final segments = jsSplit(collapse(raw), _separators).map(_comparable).toList();
+    final segments = splitAtRuns(collapse(raw), _separators).map(_comparable).toList();
     if (segments.length < 2) continue;
     // The last segment is the site in "Story - Site" titles; never match it.
     for (var i = 0; i < segments.length - 1; i++) {
@@ -293,8 +296,10 @@ bool _isDateLine(String lower) {
 }
 
 /// "By Jane Doe", "By JANE DOE and Li Wei | Reuters": names after "By", not a sentence ("By seven the light had gone.").
+/// A capitalised name runs to the end of its letters (`(?!\p{L})`): were "JANE" free to split into "J", "AN", "E", a
+/// run of names that fails to match ("By AAAAA,AAAAA,...1") would be retried in exponentially many splits.
 final _bylineLine = RegExp(
-  r"^(?:[Bb]y|BY)\s+(?:(?:\p{Lu}[\p{L}'’.-]*|de|da|van|von|der|le|la|bin|al)\s*){1,5}(?:(?:,|and|&)\s*(?:(?:\p{Lu}[\p{L}'’.-]*|de|da|van|von|der|le|la|bin|al)\s*){1,5})*(?:[|·•—–-].*)?$",
+  r"^(?:[Bb]y|BY)\s+(?:(?:\p{Lu}[\p{L}'’.-]*(?!\p{L})|de|da|van|von|der|le|la|bin|al)\s*){1,5}(?:(?:,|and|&)\s*(?:(?:\p{Lu}[\p{L}'’.-]*(?!\p{L})|de|da|van|von|der|le|la|bin|al)\s*){1,5})*(?:[|·•—–-].*)?$",
   unicode: true,
 );
 
@@ -779,8 +784,10 @@ String _keyOf(String src) {
   return jsLower(m == null ? src : m[1]!);
 }
 
+/// A file named for a placeholder ("site-logo.png"). Each word's scan for the extension stops where the next word starts
+/// (that one takes over): a name made of thousands of them would otherwise be rescanned from each.
 final _placeholderImage = RegExp(
-  r'(?:logo|default|placeholder|share|social|og-image|opengraph|fallback|favicon|icon|avatar|banner-default)[\w.-]*\.(?:jpe?g|png|webp|gif|svg)',
+  r'(?:logo|default|placeholder|share|social|og-image|opengraph|fallback|favicon|icon|avatar|banner-default)(?:(?!logo|default|placeholder|share|social|og-image|opengraph|fallback|favicon|icon|avatar|banner-default)[\w.-])*\.(?:jpe?g|png|webp|gif|svg)',
   caseSensitive: false,
 );
 final _svg = RegExp(r'\.svg(?:$|\?)', caseSensitive: false);

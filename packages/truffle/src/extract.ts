@@ -3,7 +3,7 @@ import { findContent } from './content';
 import { normalizeDate, readMetadata, type Metadata } from './metadata';
 import { ARTICLE_SCHEMA, type Article, type Block, type ExtractOptions, type Image, type Inline } from './model';
 import { blocksText, countWords, inlineText } from './text';
-import { collapse, fromDom, textOf, walk, type VDocument, type VElement } from './tree';
+import { collapse, fromDom, splitAtRuns, textOf, walk, type VDocument, type VElement } from './tree';
 import { hostOf, resolveHttp } from './url';
 
 /**
@@ -68,7 +68,8 @@ export function extractTree(doc: VDocument, options: ExtractOptions): Article | 
 
 // ------------------------------------------------------------------ title
 
-const SEPARATORS = /\s+[|\-–—·•»:]{1,2}\s+|\s+\/\s+|\s+::\s+/;
+/** Title separators, split with `splitAtRuns` (sticky). */
+const SEPARATORS = /\s+[|\-–—·•»:]{1,2}\s+|\s+\/\s+|\s+::\s+/y;
 
 function comparable(value: string): string {
   return value.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
@@ -77,7 +78,7 @@ function comparable(value: string): string {
 /** Removes the site name a <title> carries at either end ("Story | Site", "Site - Story"). */
 export function cleanTitle(raw: string, siteName: string | null, host: string): string {
   const title = collapse(raw);
-  const parts = title.split(SEPARATORS);
+  const parts = splitAtRuns(title, SEPARATORS);
   if (parts.length < 2) return title;
   const site = siteName === null ? '' : comparable(siteName);
   const hostWords = comparable(host.replace(/\.[a-z]+$/, ''));
@@ -111,7 +112,9 @@ function headingText(el: VElement): string {
     }
   };
   visit(el);
-  return collapse(out).replace(/\s*[#¶§]$/, '');
+  // `.replace(/\s*[#¶§]$/, '')`, without retrying `\s*` from every space of a long run.
+  const text = collapse(out);
+  return /[#¶§]$/.test(text) ? text.slice(0, -1).trimEnd() : text;
 }
 
 function countH1(body: VElement): number {
@@ -181,7 +184,7 @@ function chooseTitle(meta: Metadata, body: VElement, pageUrl: string): string {
   // Headings that are the site part of "Story - Site" (a docs menu-bar h1) never stand for the story.
   const siteParts = new Set<string>();
   for (const raw of meta.rawTitles) {
-    const segments = collapse(raw).split(SEPARATORS).map(comparable);
+    const segments = splitAtRuns(collapse(raw), SEPARATORS).map(comparable);
     if (segments.length < 2) continue;
     siteParts.add(segments[segments.length - 1]!);
     siteParts.add(segments[0]!);
@@ -197,7 +200,7 @@ function chooseTitle(meta: Metadata, body: VElement, pageUrl: string): string {
   }
   // A heading equal to one segment of "Story - Section - Site".
   for (const raw of meta.rawTitles) {
-    const segments = collapse(raw).split(SEPARATORS).map(comparable);
+    const segments = splitAtRuns(collapse(raw), SEPARATORS).map(comparable);
     if (segments.length < 2) continue;
     // The last segment is the site in "Story - Site" titles; never match it.
     for (let i = 0; i < segments.length - 1; i++) {
@@ -247,8 +250,12 @@ const DATE_LINE = /^(?:(?:published|updated|posted|last updated|modified)\s*:?\s
 
 const DATE_WORDS = /\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?|mon(?:day)?|tue(?:s(?:day)?)?|wed(?:nesday)?|thu(?:rs(?:day)?)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?|updated|published|posted|last|modified|on|at|am|pm|a\.m|p\.m|[a-z]?[ecmp][sd]t|gmt|utc|bst|cet|cest|ist|aest|jst|hours?|minutes?|days?|ago|original|of)\b/g;
 
-/** "By Jane Doe", "By JANE DOE and Li Wei | Reuters": names after "By", not a sentence ("By seven the light had gone."). */
-const BYLINE_LINE = /^(?:[Bb]y|BY)\s+(?:(?:\p{Lu}[\p{L}'’.-]*|de|da|van|von|der|le|la|bin|al)\s*){1,5}(?:(?:,|and|&)\s*(?:(?:\p{Lu}[\p{L}'’.-]*|de|da|van|von|der|le|la|bin|al)\s*){1,5})*(?:[|·•—–-].*)?$/u;
+/**
+ * "By Jane Doe", "By JANE DOE and Li Wei | Reuters": names after "By", not a sentence ("By seven the light had gone.").
+ * A capitalised name runs to the end of its letters (`(?!\p{L})`): were "JANE" free to split into "J", "AN", "E", a
+ * run of names that fails to match ("By AAAAA,AAAAA,...1") would be retried in exponentially many splits.
+ */
+const BYLINE_LINE = /^(?:[Bb]y|BY)\s+(?:(?:\p{Lu}[\p{L}'’.-]*(?!\p{L})|de|da|van|von|der|le|la|bin|al)\s*){1,5}(?:(?:,|and|&)\s*(?:(?:\p{Lu}[\p{L}'’.-]*(?!\p{L})|de|da|van|von|der|le|la|bin|al)\s*){1,5})*(?:[|·•—–-].*)?$/u;
 
 /** A line made only of dates, times and words like "Updated". */
 function isDateLine(lower: string): boolean {
@@ -586,10 +593,16 @@ function imageKey(src: string): string {
   return (m === null ? src : m[1]!).toLowerCase();
 }
 
+/**
+ * A file named for a placeholder ("site-logo.png"). Each word's scan for the extension stops where the next word starts
+ * (that one takes over): a name made of thousands of them would otherwise be rescanned from each.
+ */
+const PLACEHOLDER_IMAGE = /(?:logo|default|placeholder|share|social|og-image|opengraph|fallback|favicon|icon|avatar|banner-default)(?:(?!logo|default|placeholder|share|social|og-image|opengraph|fallback|favicon|icon|avatar|banner-default)[\w.-])*\.(?:jpe?g|png|webp|gif|svg)/i;
+
 /** Shows the page's lead image above the text when the body itself opens without one. */
 function addLeadImage(blocks: Block[], lead: Image | null): void {
   if (lead === null) return;
-  if (/(?:logo|default|placeholder|share|social|og-image|opengraph|fallback|favicon|icon|avatar|banner-default)[\w.-]*\.(?:jpe?g|png|webp|gif|svg)/i.test(lead.src) || /\.svg(?:$|\?)/i.test(lead.src)) return;
+  if (PLACEHOLDER_IMAGE.test(lead.src) || /\.svg(?:$|\?)/i.test(lead.src)) return;
   if (lead.width !== undefined && lead.width < 400) return;
   const key = imageKey(lead.src);
   for (const b of blocks) {

@@ -291,6 +291,27 @@ export function collapse(text: string): string {
   return text.replace(/[\t\n\f\r ]+/g, ' ').trim();
 }
 
+/**
+ * `text.split(separator)` for a sticky (`y`), group-free separator that opens with `\s*` or `\s+`: such a match
+ * never starts inside a run of whitespace, only where the run starts, so the separator is tried only there. Tried
+ * from every space of a long run (no-break spaces survive `collapse`), it would rescan the rest of the run each time.
+ */
+export function splitAtRuns(text: string, separator: RegExp): string[] {
+  const parts: string[] = [];
+  let start = 0;
+  for (let i = 0; i < text.length; i++) {
+    if (i !== start && /\s/.test(text[i - 1]!)) continue;
+    separator.lastIndex = i;
+    const m = separator.exec(text);
+    if (m === null || m[0].length === 0) continue;
+    parts.push(text.slice(start, i));
+    start = i + m[0].length;
+    i = start - 1;
+  }
+  parts.push(text.slice(start));
+  return parts;
+}
+
 /** Length of `text` as rendered: whitespace runs count as one character, edges trimmed. */
 export function visibleLength(text: string): number {
   let n = 0;

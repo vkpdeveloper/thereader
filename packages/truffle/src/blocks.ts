@@ -1159,7 +1159,9 @@ export class Converter {
     const last = blocks[blocks.length - 1];
     if (last !== undefined && last.type === 'paragraph') {
       const text = last.content.map((n) => (n.type === 'text' ? n.text : '')).join('');
-      const m = /^[—–-]\s*(.+?)(?:\s*\((@\w+)\))?\s+[A-Z][a-z]+ \d{1,2}, \d{4}$/.exec(text) ?? /^[—–-]\s*(.+)$/.exec(text);
+      // The name starts and ends on a non-space: a long run of spaces is not retried at every split between dash,
+      // name, handle and date.
+      const m = /^[—–-]\s*(\S(?:.*?\S)?)(?:\s*\((@\w+)\))?\s+[A-Z][a-z]+ \d{1,2}, \d{4}$/.exec(text) ?? /^[—–-]\s*(?!\s)(.+)$/.exec(text);
       if (m !== null) {
         author = m[2] !== undefined ? m[1] + ' (' + m[2] + ')' : m[1]!;
         blocks.pop();
