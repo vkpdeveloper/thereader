@@ -360,7 +360,7 @@ export function readMetadata(doc: VDocument, pageUrl: string): Metadata {
     url,
     title: null,
     rawTitles,
-    subtitle: ldStr('alternativeHeadline'),
+    subtitle: ldStr('alternativeHeadline') ?? findDek(doc.body, description),
     authors,
     siteName: siteName === null ? null : decodeEntities(siteName),
     publishedAt: published,
@@ -420,6 +420,42 @@ function findByline(body: VElement): string | null {
     text = collapse(text);
     if (text.length > 1 && text.length < 100 && !/\d{4}/.test(text) && cleanAuthor(text) !== null) found = text;
     return found === null;
+  });
+  return found;
+}
+
+const DEK = /(?:^|[\s_-])(?:subtitle|sub-title|subhead|subheading|subheadline|dek|deck|standfirst|strapline|tagline|article-summary|post-subtitle|lede)(?:$|[\s_-])/;
+
+/**
+ * The standfirst under the headline: among the first elements after the h1, one
+ * marked as a subtitle/dek, or one whose text is the page description.
+ */
+function findDek(body: VElement, description: string | null): string | null {
+  const want = description !== null ? collapse(description).toLowerCase() : '';
+  let seenH1 = false;
+  let after = 0;
+  let found: string | null = null;
+  walk(body, (el) => {
+    if (found !== null || after > 40) return false;
+    if (el.tag === 'h1') {
+      if (seenH1) {
+        after = 41;
+        return false;
+      }
+      seenH1 = true;
+      return false;
+    }
+    if (!seenH1) return true;
+    after++;
+    if (el.tag === 'p' || el.tag === 'h2' || el.tag === 'div' || el.tag === 'span') {
+      const text = collapse(textOf(el));
+      // A plain paragraph equal to the description is the article's own first paragraph, not a dek.
+      if (text.length >= 10 && text.length <= 300 && (DEK.test(el.matchString) || el.tag !== 'p' && want.length > 0 && text.toLowerCase() === want)) {
+        found = text;
+        return false;
+      }
+    }
+    return true;
   });
   return found;
 }

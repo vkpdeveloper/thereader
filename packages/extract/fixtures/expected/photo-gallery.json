@@ -2,7 +2,7 @@
   "schema": 1,
   "url": "https://harbourdaily.example.com/coast/gallery/2025/jan/12/old-lighthouses-north-coast-in-pictures",
   "title": "Old lighthouses of the north coast – in pictures",
-  "subtitle": null,
+  "subtitle": "Photographer Ines Marlow spent two winters on the north coast documenting the last lighthouses still kept by hand, from granite towers to wooden beacons.",
   "byline": null,
   "authors": [],
   "siteName": "Harbour Daily",
@@ -10,21 +10,12 @@
   "modifiedAt": null,
   "language": "en",
   "dir": "ltr",
-  "excerpt": "Photographer Ines Marlow spent two winters on the north coast documenting the last lighthouses still kept by hand, from granite towers to wooden beacons.",
+  "excerpt": null,
   "leadImage": null,
   "favicon": "https://harbourdaily.example.com/favicon.ico",
-  "wordCount": 78,
+  "wordCount": 54,
   "readingMinutes": 1,
   "blocks": [
-    {
-      "type": "paragraph",
-      "content": [
-        {
-          "type": "text",
-          "text": "Photographer Ines Marlow spent two winters on the north coast documenting the last lighthouses still kept by hand, from granite towers to wooden beacons."
-        }
-      ]
-    },
     {
       "type": "figure",
       "images": [
