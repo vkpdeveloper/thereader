@@ -156,12 +156,12 @@ URLs 2,048 (`http`, `https` or `data:image/`), language 35, `publishedAt` 64.
 exact JSON bytes whose SHA-256 the client recorded, as `application/json` or
 `application/gzip` (gzip-compressed JSON). To stay within the free plan's CPU
 budget the Worker never parses the document: it streams the uncompressed bytes
-through the 8 MB cap (counted while inflating, so gzip bombs stop early) and a
+through the 4 MB cap (counted while inflating, so gzip bombs stop early) and a
 native SHA-256, checks that they start with `{"schema":1,` (both apps serialize
 `schema` first, compactly) in valid UTF-8 and end with `}`, then stores the
 bytes as sent under `articles/<sha256>` in R2. Clients verify the hash and
 parse the document fully before using it. `bunx vitest run -c
-vitest.bench.config.ts` times validation for 200 KB, 2 MB and 8 MB documents. The first upload answers `201`,
+vitest.bench.config.ts` times validation for 200 KB, 2 MB and 4 MB documents. The first upload answers `201`,
 repeats `200` without writing. `GET`/`HEAD` serve the stored bytes with their
 type, `ETag` and immutable caching. Errors: `413 TOO_LARGE`,
 `415 UNSUPPORTED_MEDIA_TYPE`, `422 CHECKSUM_MISMATCH`, `422 INVALID_ARTICLE`,

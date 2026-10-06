@@ -89,7 +89,7 @@ parses the page; clients decode, extract and store the article themselves.
 Saved articles sync without the server ever fetching or extracting a page.
 The saving device extracts the article and uploads its `Article` JSON
 (schema 1) to `PUT /v1/article-bodies/<sha256>` as `application/gzip` (or
-`application/json`); the Worker checks the uncompressed size (8 MB, counted
+`application/json`); the Worker checks the uncompressed size (4 MB, counted
 while inflating), the SHA-256 of the uncompressed bytes and, without parsing,
 that the document starts with `{"schema":1,` and ends with `}` (clients must
 serialize `schema` as the first key, without whitespace), then stores the
@@ -101,7 +101,9 @@ Metadata (`url`, `title`, `siteName`, `byline`, `excerpt`, `leadImage`,
 `favicon`, `language`, `dir`, `wordCount`, `readingMinutes`, `blockCount`,
 `publishedAt`, `savedAt`, `bodySha256`, `bodySize`, `schema`), reading
 positions and deletions ride `POST /v1/sync` as `article` and
-`articleProgress` changes, pulled with `articlesSince`. Ids, ordering and
+`articleProgress` changes, pulled with `articlesSince`; `bodySize` above
+4 MB is `400 INVALID_SYNC`. An article whose document exceeds 4 MB stays on
+the device that saved it: clients send no save or position for it. Ids, ordering and
 limits: [cloud sync](cloud-sync.md#saved-articles) and the
 [API README](../apps/api/README.md).
 

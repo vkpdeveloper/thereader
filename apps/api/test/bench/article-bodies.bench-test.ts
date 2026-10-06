@@ -5,7 +5,7 @@ import { checkArticleBody } from "../../src/article-bodies";
 import worker from "../../src/index";
 
 // Wall time of article body validation for documents of ~200 KB, ~2 MB and
-// ~8 MB, the current check against the first version (full gunzip into memory,
+// ~4 MB (the cap), the current check against the first version (full gunzip into memory,
 // SHA-256, UTF-8 decode and JSON.parse), interleaved so machine load hits both
 // alike. Then the whole PUT: a first upload validates and writes to R2; a
 // repeat validates and finds the object.
@@ -91,7 +91,7 @@ const ROUNDS = 15;
 
 it("times article body validation and uploads", async () => {
   const rows: string[] = [];
-  for (const [label, target, seed] of [["200 KB", 200_000, 1], ["2 MB", 2_000_000, 2], ["8 MB", 7_400_000, 3]] as const) {
+  for (const [label, target, seed] of [["200 KB", 200_000, 1], ["2 MB", 2_000_000, 2], ["4 MB", 3_700_000, 3]] as const) {
     const plain = articleOfSize(target, seed);
     const compressed = await gzip(plain);
     const sha = hex(await crypto.subtle.digest("SHA-256", plain));

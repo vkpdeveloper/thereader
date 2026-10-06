@@ -91,7 +91,7 @@ opened, verified against its SHA-256, and keep it for offline reading.
   response.
 - **Documents** are content-addressed R2 objects, `articles/<sha256>`, stored
   as the exact bytes the saving device hashed (gzip-compressed by both apps).
-  `PUT /v1/article-bodies/<sha256>` is idempotent and checks size (8 MB
+  `PUT /v1/article-bodies/<sha256>` is idempotent and checks size (4 MB
   uncompressed), hash and the document's leading `{"schema":1,` without
   parsing it; `GET` serves them with immutable caching. When a deletion is
   accepted and no live article still references the document, the Worker
@@ -101,7 +101,11 @@ opened, verified against its SHA-256, and keep it for offline reading.
   concurrent deletion cannot remove a document a newer save still points at),
   at most five per cycle, and survive restart. A network or server failure
   retries next cycle; a document the server refuses stays local only. A
-  document over 8 MB keeps the whole article on its device.
+  document over 4 MB (real articles measure up to about 1.2 MB) keeps the
+  whole article on its device: it is saved and readable there, but no save
+  or position is ever queued for it (nor a deletion, unless an earlier save
+  of the same URL reached the server), so it cannot fail a batch or pause
+  article sync.
 - **Receiving.** A pulled article appears in the Library as "Not downloaded".
   After each successful cycle, up to five documents of at most 1 MB download
   so recent articles open offline; larger ones download when opened. An
