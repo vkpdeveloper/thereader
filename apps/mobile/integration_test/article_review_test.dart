@@ -36,7 +36,7 @@ import 'package:thereader/features/articles/article_media.dart';
 import 'package:thereader/features/articles/article_screen.dart';
 import 'package:thereader/reader/dart_engine/dart_reader_engine.dart';
 import 'package:thereader/reader/engine/reader_engine.dart';
-import 'package:thereader_extract/thereader_extract.dart';
+import 'package:truffle/truffle.dart';
 
 const jsonDir = String.fromEnvironment('THEREADER_ARTICLE_JSON');
 const shotsDir = String.fromEnvironment('THEREADER_SHOTS_DIR');

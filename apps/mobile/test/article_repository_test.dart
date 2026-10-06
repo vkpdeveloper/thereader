@@ -8,7 +8,7 @@ import 'package:thereader/data/articles/page_fetcher.dart';
 import 'package:thereader/data/models/article_summary.dart';
 import 'package:thereader/data/repositories/article_repository.dart';
 import 'package:thereader/data/storage/key_value_store.dart';
-import 'package:thereader_extract/thereader_extract.dart';
+import 'package:truffle/truffle.dart';
 
 const _page = '''<!doctype html><html lang="en"><head><meta charset="windows-1252"><title>A Quiet Morning</title></head>
 <body><nav><p>Home</p></nav><article>

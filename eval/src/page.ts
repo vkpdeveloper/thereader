@@ -1,7 +1,7 @@
 import { Readability } from '@mozilla/readability';
 import Defuddle from 'defuddle';
-import { articleText, extract } from '../../packages/extract/src/index.ts';
-import type { Article, Block, Inline } from '../../packages/extract/src/model.ts';
+import { articleText, extract } from 'truffle';
+import type { Article, Block, Inline } from 'truffle';
 import { canonicalLanguage, normalizeText } from './text';
 
 /**

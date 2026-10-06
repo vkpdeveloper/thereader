@@ -7,7 +7,7 @@ import 'package:thereader/core/theme/app_theme.dart';
 import 'package:thereader/data/models/settings.dart';
 import 'package:thereader/features/articles/article_blocks.dart';
 import 'package:thereader/features/articles/article_style.dart';
-import 'package:thereader_extract/thereader_extract.dart';
+import 'package:truffle/truffle.dart';
 
 /// [blocks] drawn as the article screen draws them, at a phone's width.
 Widget blocksAt(double width, List<Block> blocks) {

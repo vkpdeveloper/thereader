@@ -26,7 +26,7 @@ import 'package:thereader/reader/dart_engine/dart_reader_engine.dart';
 import 'package:thereader/reader/engine/reader_engine.dart';
 
 /// The shared every-block fixture of the Dart article model.
-final String fixture = File('../../packages/extract_dart/test/fixtures/every_block.json').readAsStringSync();
+final String fixture = File('../../packages/truffle_dart/test/fixtures/every_block.json').readAsStringSync();
 
 final summary = ArticleSummary(
   id: 'f1x7ure',

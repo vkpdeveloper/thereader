@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import type { Block } from '@thereader/extract';
+import type { Block } from 'truffle';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { renderArticleBlocks } from '../Blocks';
 import { everyBlock } from './fixture';

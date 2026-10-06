@@ -135,9 +135,9 @@ if (external.length) {
   if (external.includes('ours-dart')) {
     // The Dart port, AOT-compiled, in one process (no workers): parse and extract timed inside Dart.
     const t = performance.now();
-    const dartDir = resolve(ROOT, 'packages/extract_dart');
+    const dartDir = resolve(ROOT, 'packages/truffle_dart');
     const exe = resolve(work, 'ours-dart');
-    if (!(await Bun.file(resolve(dartDir, '.dart_tool/package_config.json')).exists())) await spawn(['dart', 'pub', 'get'], dartDir);
+    if (!(await Bun.file(resolve(ROOT, '.dart_tool/package_config.json')).exists())) await spawn(['dart', 'pub', 'get'], dartDir);
     await spawn(['dart', 'compile', 'exe', 'tool/eval_cli.dart', '-o', exe], dartDir);
     const out = resolve(work, 'ours-dart.json');
     await spawn([exe, manifestPath, out, '--runs', String(runs)], dartDir);
@@ -169,15 +169,15 @@ if (external.length) {
 await pool.close();
 environment['load avg at end'] = loadavg().map((l) => l.toFixed(1)).join(' ');
 
-async function oursVersion(path = 'packages/extract'): Promise<string> {
+async function oursVersion(path = 'packages/truffle'): Promise<string> {
   const git = (...args: string[]) => Bun.spawnSync(['git', ...args], { cwd: ROOT }).stdout.toString().trim();
   const dirty = git('status', '--porcelain', '--', path).length > 0;
   return `${git('rev-parse', '--short', 'HEAD')}${dirty ? '+dirty' : ''}`;
 }
 
-/** Resolved version of a Dart dependency of `packages/extract_dart`. */
+/** Resolved version of a Dart dependency of `packages/truffle_dart` (one package config for the whole pub workspace). */
 async function dartPackageVersion(name: string): Promise<string> {
-  const config = resolve(ROOT, 'packages/extract_dart/.dart_tool/package_config.json');
+  const config = resolve(ROOT, '.dart_tool/package_config.json');
   const packages: { name: string; rootUri: string }[] = (await Bun.file(config).json()).packages;
   return packages.find((p) => p.name === name)?.rootUri.match(/-(\d[\w.+-]*)\/?$/)?.[1] ?? '?';
 }
@@ -189,7 +189,7 @@ async function packageVersion(name: string): Promise<string> {
 const info: Record<EngineName, () => Promise<EngineInfo>> = {
   ours: async () => ({ version: await oursVersion(), runtime: 'Chromium DOMParser', settings: 'extract(doc, { url }); text = articleText(article)' }),
   'ours-dart': async () => ({
-    version: await oursVersion('packages/extract_dart'),
+    version: await oursVersion('packages/truffle_dart'),
     runtime: dartRuntime,
     settings: 'package:html parse, then extractTree(fromDocument(doc), url) (base href added as for Chromium); text = articleText(article)',
   }),

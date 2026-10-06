@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { InlineMath, MathBlock } from '@thereader/extract';
+import type { InlineMath, MathBlock } from 'truffle';
 
 const MATHML_NS = 'http://www.w3.org/1998/Math/MathML';
 

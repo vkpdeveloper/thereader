@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import type { Audio, Video } from '@thereader/extract';
+import type { Audio, Video } from 'truffle';
 import { OpenInNewIcon, PlayArrowIcon } from '../icons';
 
 const providerNames: Record<string, string> = {

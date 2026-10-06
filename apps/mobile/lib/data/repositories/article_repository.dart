@@ -4,7 +4,7 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
-import 'package:thereader_extract/thereader_extract.dart';
+import 'package:truffle/truffle.dart';
 
 import '../api/api_client.dart';
 import '../articles/article_store.dart';

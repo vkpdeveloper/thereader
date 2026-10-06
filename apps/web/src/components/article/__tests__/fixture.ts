@@ -1,4 +1,4 @@
-import type { Article } from '@thereader/extract';
+import type { Article } from 'truffle';
 
 const img = (id: number, w: number, h: number) => ({
   src: `https://picsum.photos/id/${id}/${w}/${h}`,

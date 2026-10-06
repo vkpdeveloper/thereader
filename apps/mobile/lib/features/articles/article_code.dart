@@ -84,7 +84,7 @@ import 'package:re_highlight/languages/x86asm.dart';
 import 'package:re_highlight/languages/xml.dart';
 import 'package:re_highlight/languages/yaml.dart';
 import 'package:re_highlight/re_highlight.dart';
-import 'package:thereader_extract/thereader_extract.dart';
+import 'package:truffle/truffle.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/tokens.dart';
