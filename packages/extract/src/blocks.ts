@@ -803,6 +803,7 @@ export class Converter {
       }
       case 'span':
       case 'font': {
+        if (tag === 'span' && isAlternative(el)) return;
         const style = el.attrs['style'];
         if (style !== undefined) {
           const marks = ctx.marks.slice();
@@ -1475,6 +1476,29 @@ function isWidget(el: VElement): boolean {
   if (el.tag === 'label' || el.tag === 'button' || el.tag === 'select' || el.tag === 'input' || el.attrs['aria-haspopup'] !== undefined) return true;
   const role = el.attrs['role'];
   return role !== undefined && role !== 'none' && role !== 'presentation' && role !== 'heading';
+}
+
+/**
+ * The second of two glued spans whose classes differ in one word ("imperial_word" /
+ * "metric_word") and that state the same number: unit alternatives a script or
+ * stylesheet switches between ("60 mph" | "60 km/h").
+ */
+function isAlternative(el: VElement): boolean {
+  const parent = el.parent;
+  if (parent === null || el.className.length === 0 || el.textLen === 0 || el.textLen > 40) return false;
+  const i = parent.children.indexOf(el);
+  const prev = i > 0 ? parent.children[i - 1]! : null;
+  if (prev === null || prev.kind !== 1 || prev.tag !== 'span' || prev.skip || prev.textLen === 0 || prev.textLen > 40) return false;
+  const a = prev.className.toLowerCase().split(/[\s_-]+/);
+  const b = el.className.toLowerCase().split(/[\s_-]+/);
+  if (a.length !== b.length || a.length < 2) return false;
+  let differ = 0;
+  for (let k = 0; k < a.length; k++) if (a[k] !== b[k]) differ++;
+  if (differ !== 1) return false;
+  // The same quantity in another unit: both open with the same number.
+  const x = /^\s*([\d.,]+)/.exec(rawText(prev));
+  const y = /^\s*([\d.,]+)/.exec(rawText(el));
+  return x !== null && y !== null && x[1] === y[1];
 }
 
 function loneCode(el: VElement): VElement | null {
