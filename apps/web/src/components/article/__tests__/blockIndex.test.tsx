@@ -28,3 +28,20 @@ test('components get a box-less wrapper; elements carry the marker themselves', 
   expect(html).toContain('<h2 class="article-heading" data-block-index="3">');
   expect(indexes(html)).toEqual([0, 1, 3]);
 });
+
+test("a video's still saved as a figure before it draws nothing; the video takes its caption", () => {
+  const still = 'https://example.org/media/clip.png';
+  const blocks: Block[] = [
+    { type: 'paragraph', content: [{ type: 'text', text: 'One' }] },
+    { type: 'figure', images: [{ src: still, alt: 'The sidebar loading', width: 1320, height: 900 }], caption: [{ type: 'text', text: 'FIG A', marks: ['bold'] }] },
+    { type: 'video', provider: 'file', url: 'https://example.org/media/clip.mp4', poster: still },
+    { type: 'figure', images: [{ src: 'https://example.org/media/chart.png', alt: 'Chart' }], caption: [{ type: 'text', text: 'FIG B' }] },
+  ];
+  const html = render(blocks);
+  // The block count is unchanged: the still keeps index 1 but has no element, as an empty paragraph.
+  expect(indexes(html)).toEqual([0, 2, 3]);
+  expect(html).toContain('<div class="article-block-contents" data-block-index="2"><figure class="article-media">');
+  expect(html).toContain('<figcaption><strong>FIG A</strong></figcaption>');
+  expect(html.split(still).length - 1).toBe(1); // the facade's poster only
+  expect(html).toContain('<figure class="article-figure" data-block-index="3">');
+});

@@ -3,7 +3,9 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { grammarFor, languageLabel } from '../../../lib/codeLanguages';
 import { highlightCode } from '../../../lib/highlight';
 import { texToMathml } from '../../../lib/tex';
+import type { Video } from 'truffle';
 import { renderBlocks } from '../Blocks';
+import { MediaRelayOrigin, VideoBlock, mediaRelayUrl } from '../media';
 import { everyBlock, rtlArticle } from './fixture';
 
 const render = (blocks: typeof everyBlock.blocks) =>
@@ -91,6 +93,34 @@ describe('article renderer', () => {
     const rtl = render(rtlArticle.blocks);
     expect(rtl).toContain('عنوان');
     expect(rtl).toContain('class="article-code"');
+  });
+});
+
+describe('article media', () => {
+  const video: Video = { type: 'video', provider: 'file', url: 'https://example.org/media/clip.mp4', poster: 'https://example.org/media/clip.png' };
+
+  test('a video file is a facade until played: its poster and a play button, no player or video request', () => {
+    const html = renderToStaticMarkup(<VideoBlock video={video} caption="FIG A" />);
+    expect(html).toContain('class="article-video-facade" aria-label="Play example.org video"');
+    expect(html).toContain('<img src="https://example.org/media/clip.png" alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer"/>');
+    expect(html).not.toContain('<video');
+    expect(html).not.toContain('clip.mp4');
+    expect(html).toContain('<figcaption>FIG A</figcaption>');
+  });
+
+  test('the relay is never the first choice', () => {
+    const html = renderToStaticMarkup(
+      <MediaRelayOrigin.Provider value="https://reader.test">
+        <VideoBlock video={video} caption={null} />
+        {render(everyBlock.blocks)}
+      </MediaRelayOrigin.Provider>,
+    );
+    expect(html).not.toContain('/v1/media');
+  });
+
+  test('relay URLs carry the encoded absolute file URL; other sources have none', () => {
+    expect(mediaRelayUrl('https://reader.test', 'https://example.org/a b.png?x=1&y=2')).toBe('https://reader.test/v1/media?url=https%3A%2F%2Fexample.org%2Fa%20b.png%3Fx%3D1%26y%3D2');
+    expect(mediaRelayUrl('https://reader.test', 'data:image/png;base64,AAAA')).toBeUndefined();
   });
 });
 

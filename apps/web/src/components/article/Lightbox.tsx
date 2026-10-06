@@ -4,10 +4,18 @@ import { useFocusTrap, usePresence } from '../../lib/hooks';
 import { IconButton } from '../buttons';
 import { CloseIcon } from '../icons';
 import { useOverlayLayer } from '../overlay';
+import { useRelayedSrc } from './media';
 
 export interface ZoomedImage {
   src: string;
   alt: string;
+}
+
+/** The full-size file; one its host refuses to show here is retried through the relay. */
+function ZoomedImg({ image }: { image: ZoomedImage }) {
+  const media = useRelayedSrc(image.src);
+  if (media.failed) return null;
+  return <img className="lightbox-image" src={media.src} alt={image.alt} referrerPolicy="no-referrer" decoding="async" onError={media.onError} />;
 }
 
 /** A tapped article image at full size over a dark scrim; a click anywhere or Escape closes it. */
@@ -31,7 +39,7 @@ export function Lightbox({ image, onClose }: { image: ZoomedImage | null; onClos
       onClick={onClose}
     >
       <div className="overlay-scrim" />
-      <img className="lightbox-image" src={current.src} alt={current.alt} referrerPolicy="no-referrer" decoding="async" />
+      <ZoomedImg key={current.src} image={current} />
       {current.alt && <p className="lightbox-caption">{current.alt}</p>}
       <IconButton className="lightbox-close" icon={CloseIcon} label="Close image" tooltipSide="left" data-autofocus onClick={onClose} />
     </div>,

@@ -6,7 +6,7 @@ import { renderArticleBlocks } from '../components/article/Blocks';
 import { FootnotePreview, footnotePeekHtml, type FootnotePeek } from '../components/article/FootnotePreview';
 import { blockElements, readPosition, scrollToPosition } from '../components/article/position';
 import { Lightbox, type ZoomedImage } from '../components/article/Lightbox';
-import { safeHref } from '../components/article/media';
+import { MediaRelayOrigin, safeHref } from '../components/article/media';
 import { IconButton, QuietButton } from '../components/buttons';
 import { ArrowBackIcon, OpenInNewIcon, TextFieldsIcon } from '../components/icons';
 import { hasOpenOverlay, Sheet } from '../components/overlay';
@@ -368,99 +368,102 @@ export function ArticleScreen() {
   // Byline in the article's language, date and length in the reader's: each part isolated so mixed scripts keep their order.
   const meta = [article.byline, formatPublished(article.publishedAt), `${article.readingMinutes} min read`].filter((part): part is string => !!part);
 
+  // Article media whose host refuses to show it here retries through this API's relay.
   return (
-    <div className="article-page" style={style}>
-      <div className="article-progress" aria-hidden="true">
-        <div ref={progressFill} className="article-progress-fill" />
-      </div>
-      <div className={['article-bar', bar.hidden && !panel && 'is-hidden', bar.titled && 'is-titled'].filter(Boolean).join(' ')}>
-        <IconButton icon={ArrowBackIcon} label="Back to Library" shortcut="Esc" onClick={close} />
-        <div className={bar.titled ? 'article-bar-title is-shown' : 'article-bar-title'} aria-hidden={!bar.titled}>
-          <SiteIcon src={article.favicon} size={14} />
-          <span className="t-title-sm clamp-1">{article.title}</span>
+    <MediaRelayOrigin.Provider value={services.settings.currentOrigin()}>
+      <div className="article-page" style={style}>
+        <div className="article-progress" aria-hidden="true">
+          <div ref={progressFill} className="article-progress-fill" />
         </div>
-        {original && (
-          <a className="icon-button" href={original} target="_blank" rel="noopener noreferrer" aria-label="Open original" data-tooltip="Open original">
-            <OpenInNewIcon size={20} />
-          </a>
-        )}
-        <IconButton
-          icon={TextFieldsIcon}
-          label="Typography"
-          shortcut="A"
-          tooltipSide="left"
-          aria-pressed={panel != null}
-          onClick={() => setPanel((p) => (p ? null : 'typography'))}
-        />
-      </div>
-
-      <article
-        className={prefs.justify ? 'article is-justified' : 'article'}
-        dir={article.dir}
-        lang={article.language ?? undefined}
-        onClick={onArticleClick}
-        onPointerOver={showPeek}
-        onPointerOut={(e) => {
-          if ((e.target as Element).closest('[data-fn]')) hidePeek();
-        }}
-      >
-        <header className="article-header">
-          {original ? (
-            <a className="article-site" href={original} target="_blank" rel="noopener noreferrer">
-              <SiteIcon src={article.favicon} size={16} />
-              <span>{ready.summary.siteName}</span>
+        <div className={['article-bar', bar.hidden && !panel && 'is-hidden', bar.titled && 'is-titled'].filter(Boolean).join(' ')}>
+          <IconButton icon={ArrowBackIcon} label="Back to Library" shortcut="Esc" onClick={close} />
+          <div className={bar.titled ? 'article-bar-title is-shown' : 'article-bar-title'} aria-hidden={!bar.titled}>
+            <SiteIcon src={article.favicon} size={14} />
+            <span className="t-title-sm clamp-1">{article.title}</span>
+          </div>
+          {original && (
+            <a className="icon-button" href={original} target="_blank" rel="noopener noreferrer" aria-label="Open original" data-tooltip="Open original">
+              <OpenInNewIcon size={20} />
             </a>
-          ) : (
-            <div className="article-site">
-              <SiteIcon src={article.favicon} size={16} />
-              <span>{ready.summary.siteName}</span>
-            </div>
           )}
-          <h1 ref={titleRef} className="article-title">
-            {article.title}
-          </h1>
-          {article.subtitle && <p className="article-subtitle">{article.subtitle}</p>}
-          <div className="article-meta">
-            <span>
-              {meta.map((part, i) => (
-                <Fragment key={i}>
-                  {i > 0 && ' · '}
-                  <bdi>{part}</bdi>
-                </Fragment>
-              ))}
-            </span>
-            {original && (
-              <a className="article-original" href={original} target="_blank" rel="noopener noreferrer">
-                Open original
-                <OpenInNewIcon size={13} />
-              </a>
-            )}
-          </div>
-        </header>
-        <div ref={bodyRef} className={article.blocks.length > 120 || article.wordCount > 5000 ? 'article-body is-long' : 'article-body'}>
-          {body}
+          <IconButton
+            icon={TextFieldsIcon}
+            label="Typography"
+            shortcut="A"
+            tooltipSide="left"
+            aria-pressed={panel != null}
+            onClick={() => setPanel((p) => (p ? null : 'typography'))}
+          />
         </div>
-        <footer className="article-end">
-          <hr className="article-rule" />
-          <div className="article-end-actions">
-            {original && (
-              <a className="quiet-button" href={original} target="_blank" rel="noopener noreferrer">
-                <OpenInNewIcon size={16} />
-                <span>Open original</span>
-              </a>
-            )}
-            <QuietButton label="Back to Library" onClick={close} />
-          </div>
-        </footer>
-      </article>
 
-      <Sheet open={panel != null} onClose={() => setPanel(null)} title="Typography">
-        <div className="reader-panel-body">
-          {panel === 'fonts' ? <FontPicker onBack={() => setPanel('typography')} /> : <TypographyPanel article onFonts={() => setPanel('fonts')} />}
-        </div>
-      </Sheet>
-      <Lightbox image={zoom} onClose={() => setZoom(null)} />
-      {peek && <FootnotePreview key={peek.id} peek={peek} onEnter={keepPeek} onLeave={() => hidePeek()} />}
-    </div>
+        <article
+          className={prefs.justify ? 'article is-justified' : 'article'}
+          dir={article.dir}
+          lang={article.language ?? undefined}
+          onClick={onArticleClick}
+          onPointerOver={showPeek}
+          onPointerOut={(e) => {
+            if ((e.target as Element).closest('[data-fn]')) hidePeek();
+          }}
+        >
+          <header className="article-header">
+            {original ? (
+              <a className="article-site" href={original} target="_blank" rel="noopener noreferrer">
+                <SiteIcon src={article.favicon} size={16} />
+                <span>{ready.summary.siteName}</span>
+              </a>
+            ) : (
+              <div className="article-site">
+                <SiteIcon src={article.favicon} size={16} />
+                <span>{ready.summary.siteName}</span>
+              </div>
+            )}
+            <h1 ref={titleRef} className="article-title">
+              {article.title}
+            </h1>
+            {article.subtitle && <p className="article-subtitle">{article.subtitle}</p>}
+            <div className="article-meta">
+              <span>
+                {meta.map((part, i) => (
+                  <Fragment key={i}>
+                    {i > 0 && ' · '}
+                    <bdi>{part}</bdi>
+                  </Fragment>
+                ))}
+              </span>
+              {original && (
+                <a className="article-original" href={original} target="_blank" rel="noopener noreferrer">
+                  Open original
+                  <OpenInNewIcon size={13} />
+                </a>
+              )}
+            </div>
+          </header>
+          <div ref={bodyRef} className={article.blocks.length > 120 || article.wordCount > 5000 ? 'article-body is-long' : 'article-body'}>
+            {body}
+          </div>
+          <footer className="article-end">
+            <hr className="article-rule" />
+            <div className="article-end-actions">
+              {original && (
+                <a className="quiet-button" href={original} target="_blank" rel="noopener noreferrer">
+                  <OpenInNewIcon size={16} />
+                  <span>Open original</span>
+                </a>
+              )}
+              <QuietButton label="Back to Library" onClick={close} />
+            </div>
+          </footer>
+        </article>
+
+        <Sheet open={panel != null} onClose={() => setPanel(null)} title="Typography">
+          <div className="reader-panel-body">
+            {panel === 'fonts' ? <FontPicker onBack={() => setPanel('typography')} /> : <TypographyPanel article onFonts={() => setPanel('fonts')} />}
+          </div>
+        </Sheet>
+        <Lightbox image={zoom} onClose={() => setZoom(null)} />
+        {peek && <FootnotePreview key={peek.id} peek={peek} onEnter={keepPeek} onLeave={() => hidePeek()} />}
+      </div>
+    </MediaRelayOrigin.Provider>
   );
 }
