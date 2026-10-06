@@ -826,6 +826,8 @@ function prepare(root: VElement, flags: Flags): void {
       el.skip = true;
       return false;
     }
+    // A heading stays or goes whole: its links ("toc-backref", permalinks) are its words.
+    if (HEADINGS.has(tag)) return false;
     if (el.textLen < 40 && el.textLen > 0 && (tag === 'p' || tag === 'div' || tag === 'span' || tag === 'a' || tag === 'li') && UI_TEXT.test(textOf(el))) {
       el.skip = true;
       return false;
