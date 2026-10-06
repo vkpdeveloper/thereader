@@ -21,7 +21,7 @@ String inlineText(List<Inline> content) {
   return out.toString();
 }
 
-void _blockText(Block block, List<String> out) {
+void _blockText(Block block, List<String> out, [bool captions = false]) {
   switch (block) {
     case HeadingBlock(:final content):
     case ParagraphBlock(:final content):
@@ -39,7 +39,10 @@ void _blockText(Block block, List<String> out) {
       if (cite != null) out.add(inlineText(cite));
     case CodeBlock(:final code):
       out.add(code);
-    case FigureBlock():
+    case FigureBlock(:final caption):
+      // Captions belong to their media, not the running text (schema.org articleBody semantics),
+      // except in photo galleries, where they are the text.
+      if (captions && caption != null) out.add(inlineText(caption));
     case VideoBlock():
     case AudioBlock():
       break;
@@ -84,13 +87,38 @@ void _blockText(Block block, List<String> out) {
 
 /// Body text of an article (title excluded), one block per paragraph. Media
 /// captions belong to their media, not the running text (schema.org
-/// `articleBody` semantics).
+/// `articleBody` semantics), except in photo galleries.
 String blocksText(List<Block> blocks) {
   final out = <String>[];
+  final captions = _isGallery(blocks);
   for (final block in blocks) {
-    _blockText(block, out);
+    _blockText(block, out, captions);
   }
   return out.where((part) => part.isNotEmpty).join('\n\n');
+}
+
+/// Three or more captioned figures whose captions outweigh the rest of the text.
+bool _isGallery(List<Block> blocks) {
+  var figures = 0;
+  var captionLength = 0;
+  for (final block in blocks) {
+    if (block is FigureBlock && block.caption != null) {
+      figures++;
+      captionLength += inlineText(block.caption!).length;
+    }
+  }
+  if (figures < 3) return false;
+  var restLength = 0;
+  final rest = <String>[];
+  for (final block in blocks) {
+    _blockText(block, rest);
+    for (final part in rest) {
+      restLength += part.length;
+    }
+    if (restLength >= captionLength) return false;
+    rest.clear();
+  }
+  return true;
 }
 
 String articleText(Article article) => blocksText(article.blocks);

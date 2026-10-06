@@ -2,6 +2,8 @@
 /// social posts.
 library;
 
+import 'dart:convert';
+
 import 'js.dart';
 import 'match.dart';
 import 'model.dart';
@@ -226,10 +228,20 @@ ArticleImage? imageFrom(VElement img, String base) {
   if ((width != null && width <= 2) || (height != null && height <= 2)) return null;
   if (_tracker.hasMatch(src)) return null;
 
-  final image = ArticleImage(src: src, alt: collapse(a['alt'] ?? a['title'] ?? ''));
+  var alt = collapse(a['alt'] ?? a['title'] ?? '');
+  // Generator placeholders ("[Uncaptioned image]", "Refer to caption") and file names describe nothing.
+  if (_placeholderAlt.hasMatch(alt)) alt = '';
+  final image = ArticleImage(src: src, alt: alt);
   if (width != null && height != null) {
     image.width = width;
     image.height = height;
+  }
+  // A density srcset ("a@2x.png 2x") leaves the 1x image in src.
+  if (candidates.isNotEmpty &&
+      candidates.every((c) => c.width == 0) &&
+      !candidates.any((c) => c.density == 1) &&
+      candidates.every((c) => c.url != src)) {
+    candidates = [_Candidate(src, 0, 1), ...candidates];
   }
   final srcset = _normalizeSrcset(candidates);
   if (srcset != null) image.srcset = srcset;
@@ -240,6 +252,11 @@ ArticleImage? imageFrom(VElement img, String base) {
   }
   return image;
 }
+
+final _placeholderAlt = RegExp(
+  r'^\[?(?:uncaptioned image|refer to caption|image|img|photo|picture|untitled|placeholder|alt text|null|undefined)\]?$|^[\w%~+-]+\.(?:jpe?g|png|gif|webp|svg|avif)$',
+  caseSensitive: false,
+);
 
 final _smallClass = ClassPattern(
   r'(?:^|[\s_-])(?:emoji|wp-smiley|icon|smiley|emoticon|inline-icon|twemoji)(?:$|[\s_-])',
@@ -258,9 +275,15 @@ final _decorativeClass = ClassPattern(
   r'(?:^|[\s_-])(?:avatar|gravatar|author-(?:photo|image|avatar|img)|logo|site-logo|badge|profile-(?:pic|photo|image)|headshot|byline-image|sponsor-logo|social-icon)(?:$|[\s_-])',
 );
 final _avatarSrc = RegExp(r'gravatar\.com\/avatar|\/avatars?\/', caseSensitive: false);
+final _portraitAlt = RegExp(
+  r'^(?:photo|picture|portrait|headshot|avatar|profile (?:photo|picture)) of\s',
+  caseSensitive: false,
+);
 
 /// Avatars, logos and badges are chrome, not article images.
 bool isDecorativeImage(VElement img, ArticleImage image, String base) {
+  // An image map is a navigation bar drawn as a picture.
+  if (img.attrs['usemap'] != null || img.attrs['ismap'] != null) return true;
   // An image linking to the site's home page is its logo.
   final link = _linkOf(img);
   if (link != null) {
@@ -268,6 +291,11 @@ bool isDecorativeImage(VElement img, ArticleImage image, String base) {
     if (href != null && _homeLink.hasMatch(href)) return true;
   }
   if (_decorativeClass.hasMatch(img.matchString)) return true;
+  // Small portraits next to author names ("Photo of Jane Doe").
+  final width = _dimension(img.attrs['width']);
+  if (image.width != null && image.width! <= 160 || width != null && width <= 160) {
+    if (_portraitAlt.hasMatch(image.alt)) return true;
+  }
   return _avatarSrc.hasMatch(image.src);
 }
 
@@ -364,8 +392,137 @@ Block? mediaFromFrame(String src, String? title) {
   m = tweet.firstMatch(src);
   if (m != null) return EmbedBlock(provider: 'twitter', url: 'https://twitter.com/${m[1]}/status/${m[2]}');
   if (_bandcamp.hasMatch(src)) return audio('bandcamp', src, src);
+  m = _streamable.firstMatch(src);
+  if (m != null) return video('streamable', 'https://streamable.com/${m[1]}', 'https://streamable.com/e/${m[1]}');
+  m = _bilibili.firstMatch(src);
+  if (m != null) return video('bilibili', 'https://www.bilibili.com/video/${m[1]}', src);
+  m = _niconico.firstMatch(src);
+  if (m != null) return video('niconico', 'https://www.nicovideo.jp/watch/${m[1]}', src);
+  m = _tweetFrame.firstMatch(src);
+  if (m != null) return EmbedBlock(provider: 'twitter', url: 'https://twitter.com/i/status/${m[1]}');
+  m = _instagram.firstMatch(src);
+  if (m != null) return EmbedBlock(provider: 'instagram', url: 'https://www.instagram.com/${m[1]}/${m[2]}/');
+  m = _tiktok.firstMatch(src);
+  if (m != null) return EmbedBlock(provider: 'tiktok', url: 'https://www.tiktok.com/embed/v2/${m[1]}');
   return null;
 }
+
+final _streamable = RegExp(r'streamable\.com\/(?:e|o|s)\/(\w+)', caseSensitive: false);
+final _bilibili = RegExp(r'player\.bilibili\.com\/player\.html\?(?:.*&)?bvid=(BV\w+)', caseSensitive: false);
+final _niconico = RegExp(r'embed\.nicovideo\.jp\/watch\/((?:sm|nm|so)?\d+)', caseSensitive: false);
+final _tweetFrame = RegExp(r'platform\.twitter\.com\/embed\/Tweet\.html\?(?:.*&)?id=(\d+)', caseSensitive: false);
+final _instagram = RegExp(r'instagram\.com\/(p|reel|tv)\/([\w-]+)\/embed', caseSensitive: false);
+final _tiktok = RegExp(r'tiktok\.com\/embed(?:\/v2)?\/(\d+)', caseSensitive: false);
+
+/// Hosts of interactive content (charts, maps, sandboxes, slides, documents) that publishers embed.
+final _embedHosts = <(RegExp, String)>[
+  (RegExp(r'(?:^|\.)(?:datawrapper\.dwcdn\.net|datawrapper\.de)$'), 'datawrapper'),
+  (RegExp(r'(?:^|\.)(?:flourish\.studio|flo\.uri\.sh)$'), 'flourish'),
+  (RegExp(r'(?:^|\.)infogram\.com$'), 'infogram'),
+  (RegExp(r'(?:^|\.)observablehq\.com$'), 'observable'),
+  (RegExp(r'(?:^|\.)public\.tableau\.com$'), 'tableau'),
+  (RegExp(r'(?:^|\.)(?:plotly\.com|plot\.ly)$'), 'plotly'),
+  (RegExp(r'(?:^|\.)arcgis\.com$'), 'arcgis'),
+  (RegExp(r'(?:^|\.)openstreetmap\.org$'), 'openstreetmap'),
+  (RegExp(r'(?:^|\.)codesandbox\.io$'), 'codesandbox'),
+  (RegExp(r'(?:^|\.)stackblitz\.com$'), 'stackblitz'),
+  (RegExp(r'(?:^|\.)jsfiddle\.net$'), 'jsfiddle'),
+  (RegExp(r'(?:^|\.)replit\.com$'), 'replit'),
+  (RegExp(r'(?:^|\.)glitch\.(?:com|me)$'), 'glitch'),
+  (RegExp(r'(?:^|\.)(?:play\.rust-lang\.org|go\.dev|play\.golang\.org)$'), 'playground'),
+  (RegExp(r'(?:^|\.)airtable\.com$'), 'airtable'),
+  (RegExp(r'(?:^|\.)figma\.com$'), 'figma'),
+  (RegExp(r'(?:^|\.)slideshare\.net$'), 'slideshare'),
+  (RegExp(r'(?:^|\.)speakerdeck\.com$'), 'speakerdeck'),
+  (RegExp(r'(?:^|\.)scribd\.com$'), 'scribd'),
+  (RegExp(r'(?:^|\.)docs\.google\.com$'), 'google-docs'),
+];
+
+/// Frames that are never content: ads, analytics, comment and chat widgets, forms.
+final _widgetFrame = RegExp(
+  r'doubleclick|googlesyndication|googletagmanager|google-analytics|adservice|adsystem|adnxs|criteo|taboola|outbrain|disqus|facebook\.com\/plugins\/(?:like|share|page|follow|comments)|sharethis|addthis|recaptcha|newsletter|subscribe|signup|sign-up|login|consent|cookie|intercom|zendesk|livechat|hotjar|survey|typeform|\/ads?\/',
+  caseSensitive: false,
+);
+
+const _frameSrc = ['data-src', 'data-lazy-src', 'data-cmp-src', 'data-original', 'data-url'];
+final _blankScheme = RegExp(r'^(?:about|javascript|data):', caseSensitive: false);
+final _httpOrRelative = RegExp(r'^(?:https?:)?\/\/', caseSensitive: false);
+
+/// The URL a frame loads, including lazy and consent-gated copies (`data-src`, `data-cmp-src`).
+String frameSource(VElement el) {
+  final src = jsTrim(el.attrs['src'] ?? '');
+  if (src.isNotEmpty && !_blankScheme.hasMatch(src)) return src;
+  for (final key in _frameSrc) {
+    final value = jsTrim(el.attrs[key] ?? '');
+    if (_httpOrRelative.hasMatch(value)) return value;
+  }
+  for (final key in jsKeys(el.attrs)) {
+    final value = jsTrim(el.attrs[key]!);
+    if (key.startsWith('data-') && key.endsWith('src') && _httpOrRelative.hasMatch(value)) return value;
+  }
+  return '';
+}
+
+final _mermaid = RegExp(
+  r'^\s*(?:graph|flowchart|sequenceDiagram|classDiagram|stateDiagram(?:-v2)?|erDiagram|gantt|pie|journey|gitGraph|mindmap|timeline|quadrantChart|xychart-beta|sankey-beta|C4Context)\b',
+);
+final _percentEscape = RegExp(r'%[0-9a-f]{2}', caseSensitive: false);
+
+/// What a frame's `data-content` carries: a link-card target URL, or diagram source.
+String? _frameContent(VElement el) {
+  var value = el.attrs['data-content'];
+  if (value == null || value.isEmpty) return null;
+  if (_percentEscape.hasMatch(value)) value = jsDecodeUriComponent(value) ?? value;
+  value = jsTrim(value);
+  if (charCodeAt(value, 0) == 123) {
+    try {
+      final json = jsonDecode(value);
+      if (json is! Map) return null;
+      final inner = json['data'] ?? json['content'] ?? json['source'] ?? json['url'];
+      return inner is String ? jsTrim(inner) : null;
+    } on FormatException {
+      return null;
+    }
+  }
+  return value;
+}
+
+final _newlines = RegExp(r'\r\n?');
+final _embedSubdomain = RegExp(r'^(?:embed|embeds|player)\.');
+final _embedPath = RegExp(r'\/embed(?:ded)?(?:-[a-z]+)?\/[^?#]', caseSensitive: false);
+
+/// Any frame in the article: players and social posts, interactive content on
+/// known hosts, link cards and other `/embed` endpoints, diagrams shipped as
+/// source. Null for ads, widgets, forms and blank frames.
+Block? frameBlock(VElement el, String base) {
+  final raw = frameSource(el);
+  final src = raw.isNotEmpty ? resolveHttp(raw, base) : null;
+  if (src == null) return null;
+  final media = mediaFromFrame(src, el.attrs['title']);
+  if (media != null) return media;
+  if (_widgetFrame.hasMatch(src)) return null;
+  final width = el.attrs['width'];
+  final height = el.attrs['height'];
+  if (width == '0' || width == '1' || height == '0' || height == '1') return null;
+  final content = _frameContent(el);
+  if (content != null && _mermaid.hasMatch(content)) {
+    return CodeBlock(code: content.replaceAll(_newlines, '\n'), language: null);
+  }
+  final host = hostOf(src);
+  for (final (pattern, provider) in _embedHosts) {
+    if (pattern.hasMatch(host)) return EmbedBlock(provider: provider, url: src);
+  }
+  if (_embedSubdomain.hasMatch(host) || _embedPath.hasMatch(src)) {
+    final target = content != null ? resolveHttp(content, base) : null;
+    return EmbedBlock(provider: 'other', url: target ?? src);
+  }
+  return null;
+}
+
+const _noBase = 'https://invalid.invalid/';
+
+/// A frame the converter will keep (see [frameBlock]); usable before the page base is known.
+bool isContentFrame(VElement el) => frameBlock(el, _noBase) != null;
 
 /// `<video>`/`<audio>` elements with their own files.
 Block? mediaFromElement(VElement el, String base) {

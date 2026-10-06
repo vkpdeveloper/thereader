@@ -30,10 +30,12 @@ Article? extractTree(VDocument doc, String url) {
   final pageUrl = url;
   final base = doc.baseHref != null ? resolveUrl(doc.baseHref!, pageUrl) ?? pageUrl : pageUrl;
   final meta = readMetadata(doc, pageUrl);
-  final title = _chooseTitle(meta, doc.body, pageUrl);
+  var title = _chooseTitle(meta, doc.body, pageUrl);
+  final titleMatched = title != _titleFallback(meta, pageUrl);
   final roots = findContent(doc.body, meta.articleBody);
 
   var blocks = Converter(base).convert(roots);
+  if (!titleMatched) title = _sectionTitle(blocks, title);
   blocks = _tidy(blocks, title, meta);
 
   final bodyText = blocksText(blocks);
@@ -48,6 +50,8 @@ Article? extractTree(VDocument doc, String url) {
   }
 
   _addLeadImage(blocks, meta.leadImage);
+  // The TypeScript engine reorders block keys to model.ts field order here
+  // (`canonical`); the Dart model always writes them in that order.
 
   final text = blocksText(blocks);
   final wordCount = countWords(text);
@@ -110,7 +114,7 @@ String cleanTitle(String raw, String? siteName, String host) {
   return cleaned.length >= 3 ? cleaned : title;
 }
 
-final _permalinkText = RegExp(r'^[#¶§🔗]$');
+final _permalinkText = RegExp(r'^[#¶§🔗]$', unicode: true);
 final _trailingPermalink = RegExp(r'\s*[#¶§]$');
 
 /// Heading text without permalink anchors (`¶`, `#`).
@@ -128,6 +132,45 @@ String _headingText(VElement el) {
 
   visit(el);
   return collapse(out.toString()).replaceFirst(_trailingPermalink, '');
+}
+
+int _countH1(VElement body) {
+  var n = 0;
+  walk(body, (el) {
+    if (el.tag == 'h1') {
+      n++;
+      return false;
+    }
+    return true;
+  });
+  return n;
+}
+
+/// What [_chooseTitle] falls back to when no heading on the page matches the declared title.
+String _titleFallback(Metadata meta, String pageUrl) {
+  final host = hostOf(pageUrl);
+  for (final t in meta.rawTitles) {
+    final cleaned = cleanTitle(t, meta.siteName, host);
+    if (cleaned.isNotEmpty) return cleaned;
+  }
+  return '';
+}
+
+/// A <title> that only names the site or document ("HTML Standard") over a
+/// page that opens with its own top-level heading sharing a word with it
+/// ("13.2 Parsing HTML documents"): that heading is this page's title.
+String _sectionTitle(List<Block> blocks, String title) {
+  if (blocks.isEmpty) return title;
+  final first = blocks[0];
+  if (first is! HeadingBlock) return title;
+  for (final b in blocks) {
+    if (b is HeadingBlock && b.level < first.level) return title;
+  }
+  final words = jsSplit(_comparable(title), ' ');
+  if (words.length > 3) return title;
+  final heading = collapse(inlineText(first.content));
+  final hw = jsSplit(_comparable(heading), ' ');
+  return words.any((w) => w.length > 2 && hw.contains(w)) ? heading : title;
 }
 
 String _chooseTitle(Metadata meta, VElement body, String pageUrl) {
@@ -156,11 +199,20 @@ String _chooseTitle(Metadata meta, VElement body, String pageUrl) {
       if (hc == c) return h;
     }
   }
+  // Headings that are the site part of "Story - Site" (a docs menu-bar h1) never stand for the story.
+  final siteParts = <String>{};
+  for (final raw in meta.rawTitles) {
+    final segments = jsSplit(collapse(raw), _separators).map(_comparable).toList();
+    if (segments.length < 2) continue;
+    siteParts.add(segments[segments.length - 1]);
+    siteParts.add(segments[0]);
+  }
   for (final candidate in cleaned) {
     final c = _comparable(candidate);
     if (c.length < 10) continue;
     for (final h in headings) {
       final hc = _comparable(h);
+      if (siteParts.contains(hc) && hc != c) continue;
       if (hc.length >= 10 &&
           (c.contains(hc) && hc.length > c.length * 0.6 || hc.contains(c) && c.length > hc.length * 0.6)) {
         return h;
@@ -202,6 +254,14 @@ String _chooseTitle(Metadata meta, VElement body, String pageUrl) {
     }
   }
   if (best != null) return best;
+  // An SEO <title> that shares nothing with the page: its one h1 is the headline as published.
+  if (h1s.length == 1 && cleaned.isNotEmpty) {
+    final hc = _comparable(h1s[0]);
+    final site = meta.siteName != null ? _comparable(meta.siteName!) : '';
+    if (!siteParts.contains(hc) && hc != site && (hc.indexOf(' ') > 0 || hc.length >= 8) && _countH1(body) == 1) {
+      return h1s[0];
+    }
+  }
   if (cleaned.isNotEmpty) return cleaned[0];
   if (headings.isNotEmpty) return headings[0];
   return host;
@@ -231,14 +291,29 @@ bool _isDateLine(String lower) {
   return lower.replaceAll(_dateWords, '').replaceAll(_dateFiller, '').length < 3;
 }
 
+/// "By Jane Doe", "By JANE DOE and Li Wei | Reuters": names after "By", not a sentence ("By seven the light had gone.").
+final _bylineLine = RegExp(
+  r"^(?:[Bb]y|BY)\s+(?:(?:\p{Lu}[\p{L}'’.-]*|de|da|van|von|der|le|la|bin|al)\s*){1,5}(?:(?:,|and|&)\s*(?:(?:\p{Lu}[\p{L}'’.-]*|de|da|van|von|der|le|la|bin|al)\s*){1,5})*(?:[|·•—–-].*)?$",
+  unicode: true,
+);
+
 final _numberish = RegExp(r'^[\d\s.,/#|·•]{1,6}$');
-final _byPrefix = RegExp(r'^by\s+\S', caseSensitive: false);
+final _ruleLine = RegExp(r'^[\s_*~=\-–—•·]{3,}$');
+final _sentenceOpen = RegExp(r'''[.!?:;。！？"'”’)\]]\s*$''');
+final _sentenceClosed = RegExp(r'''[.!?:;。！？"'”’)\]]$''');
+final _lowercaseStart = RegExp(r'^\s*\p{Ll}', unicode: true);
+final _closingLinkLine = RegExp(r'''[.!?]["'”’)]?$''');
 final _updatedLabel = RegExp(r'^(?:last updated|updated|published|posted)(?: on)?:?$', caseSensitive: false);
 
 List<Block> _tidy(List<Block> input, String title, Metadata meta) {
   var blocks = input
       .where((b) => !(b is ParagraphBlock && (b.content.isEmpty || _numberish.hasMatch(inlineText(b.content)))))
       .toList();
+  // A line of underscores, dashes or asterisks is a section break.
+  blocks = [
+    for (final b in blocks)
+      if (b is ParagraphBlock && b.content.length == 1 && _isRuleText(b.content[0])) const RuleBlock() else b,
+  ];
 
   // The title (and a repeated subtitle) are drawn by the renderer, not the body.
   final t = _comparable(title);
@@ -256,20 +331,27 @@ List<Block> _tidy(List<Block> input, String title, Metadata meta) {
   // Title set as an image (old sites): a lone inline image whose alt text is the title.
   for (var i = 0; i < math.min(blocks.length, 3); i++) {
     final b = blocks[i];
-    if (b is ParagraphBlock && b.content.length == 1) {
-      final only = b.content[0];
-      if (only is InlineImage && _comparable(only.alt) == t && t.isNotEmpty) {
-        blocks.removeAt(i);
-        break;
-      }
+    if (t.isNotEmpty &&
+        (b is ParagraphBlock &&
+                b.content.length == 1 &&
+                b.content[0] is InlineImage &&
+                _comparable((b.content[0] as InlineImage).alt) == t ||
+            b is FigureBlock && b.images.length == 1 && b.caption == null && _comparable(b.images[0].alt) == t)) {
+      blocks.removeAt(i);
+      break;
     }
   }
-  final subtitle = meta.subtitle;
-  if (subtitle != null &&
-      blocks.isNotEmpty &&
-      blocks[0] is ParagraphBlock &&
-      _comparable(_blockPlain(blocks[0])) == _comparable(subtitle)) {
-    blocks.removeAt(0);
+  // The subtitle, or a heading that repeats the page description (a dek set as <h2>), is header too.
+  final sub = meta.subtitle != null ? _comparable(meta.subtitle!) : '';
+  final description = meta.excerpt != null ? _comparable(meta.excerpt!) : '';
+  for (var i = 0; i < math.min(blocks.length, 3); i++) {
+    final b = blocks[i];
+    if (b is! ParagraphBlock && b is! HeadingBlock) continue;
+    final c = _comparable(_blockPlain(b));
+    if (c.isNotEmpty && (c == sub || b is HeadingBlock && c == description)) {
+      blocks.removeAt(i);
+      break;
+    }
   }
 
   // Bylines and bare dates at the top repeat the header.
@@ -281,22 +363,96 @@ List<Block> _tidy(List<Block> input, String title, Metadata meta) {
     if (text.isEmpty || text.length > 120) continue;
     final lower = jsLower(text);
     final isByline =
-        _byPrefix.hasMatch(text) && text.length < 100 ||
+        _bylineLine.hasMatch(text) && text.length < 100 ||
         authors.isNotEmpty && authors.any((a) => lower == a || lower == 'by $a');
     if (isByline || _dateLine.hasMatch(text) || _isDateLine(lower)) {
+      // The header's date line is the publication date when the page declares none.
+      if (!isByline && meta.publishedAt == null) meta.publishedAt = normalizeDate(text);
       blocks.removeAt(i);
       i--;
     }
   }
 
+  // A sentence split by a block the parser pulled out of it (a link's hover card: "started [card] in Figma four
+  // years ago"): the card goes, the sentence is joined again.
+  for (var i = 0; i + 2 < blocks.length; i++) {
+    final first = blocks[i];
+    if (first is! ParagraphBlock) continue;
+    // Cheap first: only the paragraph's last run decides whether the sentence is unfinished.
+    final tail = first.content.isEmpty ? null : first.content.last;
+    if (tail is! TextRun || _sentenceOpen.hasMatch(tail.text)) continue;
+    final head = jsTrimEnd(inlineText(first.content));
+    if (head.isEmpty || _sentenceClosed.hasMatch(head)) continue;
+    var j = i + 1;
+    while (j < blocks.length && j - i <= 3) {
+      final next = blocks[j];
+      if (!(next is HeadingBlock || next is ParagraphBlock && inlineText(next.content).length < 200)) break;
+      if (next is ParagraphBlock && _lowercaseStart.hasMatch(inlineText(next.content)) && j > i + 1) break;
+      j++;
+    }
+    final last = j < blocks.length ? blocks[j] : null;
+    if (j == i + 1 || j - i > 3 || last is! ParagraphBlock || !_lowercaseStart.hasMatch(inlineText(last.content))) {
+      continue;
+    }
+    if (!blocks.sublist(i + 1, j).any((b) => b is HeadingBlock)) continue;
+    first.content = normalizeInlines([...first.content, const TextRun(' '), ...last.content]);
+    blocks.removeRange(i + 1, j + 1);
+  }
+
+  // Labels drawn over a diagram (f(t), ω, "Fig. a") come out as a run of tiny paragraphs after it.
+  for (var i = 0; i < blocks.length; i++) {
+    if (blocks[i] is! FigureBlock) continue;
+    var j = i + 1;
+    while (j < blocks.length && _isLegendLabel(blocks[j])) {
+      j++;
+    }
+    if (j - i - 1 >= 3) blocks.removeRange(i + 1, j);
+  }
+  // A formula alone in its paragraph is set on its own line.
+  blocks = [
+    for (final b in blocks)
+      if (b is ParagraphBlock && b.content.length == 1 && b.content[0] is InlineMath)
+        _mathBlockOf(b.content[0] as InlineMath)
+      else
+        b,
+  ];
+
+  // Author bios ("Jane Doe is a reporter covering...") describe the writer, not the story.
+  blocks = _dropBios(blocks, authors);
+
   // "Read more:" promos and link-only lines are navigation, not text.
   blocks = blocks.where((b) => !(b is ParagraphBlock && _isPromo(b.content))).toList();
-  // Contact lines, link lists and promo headings trailing the story.
+  // Calls to action opening the story (a "buy the PDF" box).
+  for (var i = 0; i < math.min(blocks.length, 3); i++) {
+    if (_isCallToAction(blocks[i])) {
+      blocks.removeAt(i);
+      i--;
+    }
+  }
+  // Contact lines, calls to action, link lists and promo headings trailing the story (before its notes).
+  final notes = <Block>[];
+  while (blocks.length > 1 && blocks.last is FootnotesBlock) {
+    notes.insert(0, blocks.removeLast());
+  }
   while (blocks.length > 1) {
     final last = blocks[blocks.length - 1];
+    final prev = blocks[blocks.length - 2];
     final lastText = last is ParagraphBlock ? collapse(inlineText(last.content)) : '';
     if (last is ParagraphBlock &&
         (_isContactLine(lastText) || _isDateLine(jsLower(lastText)) || _updatedLabel.hasMatch(lastText))) {
+      blocks.removeLast();
+    } else if (last is ParagraphBlock &&
+        lastText.length < 100 &&
+        _linkShare(last.content) >= 0.5 &&
+        !_closingLinkLine.hasMatch(lastText)) {
+      blocks.removeLast();
+    } else if (_isCallToAction(last)) {
+      blocks.removeLast();
+    } else if (last is ListBlock &&
+        last.items.length <= 6 &&
+        _isCallToAction(prev) &&
+        blocksText([for (final item in last.items) ...item.blocks]).length < 400) {
+      // The short benefits list under a sign-up pitch ("You get articles that match your needs").
       blocks.removeLast();
     } else if (last is ListBlock &&
         last.items.every((item) {
@@ -311,6 +467,7 @@ List<Block> _tidy(List<Block> input, String title, Metadata meta) {
       break;
     }
   }
+  blocks.addAll(notes);
 
   // Heading levels start at 2 under the title, keeping their relative depth.
   var min = 7;
@@ -338,12 +495,101 @@ List<Block> _tidy(List<Block> input, String title, Metadata meta) {
         inlineText(prev.content) == inlineText(b.content)) {
       continue;
     }
+    // The same paragraph or picture twice in a row is a rendering artifact (responsive copies, dek repeated).
+    if (b is ParagraphBlock &&
+        prev is ParagraphBlock &&
+        prev.content.length == b.content.length &&
+        _sameFirstText(prev.content, b.content) &&
+        inlineText(b.content).length > 20 &&
+        inlineText(prev.content) == inlineText(b.content)) {
+      continue;
+    }
+    if (b is FigureBlock && prev is FigureBlock && prev.images.length == b.images.length) {
+      var same = true;
+      for (var k = 0; k < b.images.length; k++) {
+        if (prev.images[k].src != b.images[k].src) same = false;
+      }
+      if (same) continue;
+    }
     out.add(b);
   }
   while (out.isNotEmpty && (out.last is RuleBlock || out.last is HeadingBlock)) {
     out.removeLast();
   }
   return out;
+}
+
+bool _isRuleText(Inline only) => only is TextRun && only.text.length < 100 && _ruleLine.hasMatch(only.text);
+
+MathBlock _mathBlockOf(InlineMath m) => MathBlock(tex: m.tex, mathml: m.mathml, text: m.text);
+
+final _bioRole = RegExp(
+  r'\b(?:reporter|writer|editor|journalist|correspondent|columnist|contributor|author|producer|critic|fellow|researcher|consultant|engineer|developer|designer|professor|director|founder|photographer|analyst|scientist|lecturer|host|freelancer?|economist|historian|novelist|blogger|speaker|principal)\b',
+  caseSensitive: false,
+);
+final _bioName = RegExp(
+  r"^(\p{Lu}[\p{L}'’.-]*(?:\s+\p{Lu}[\p{L}'’.-]*){0,3})\s+(?:is|was|has been)\s+(?:a|an|the)\s",
+  unicode: true,
+);
+final _bioOrphan = RegExp(r'^(?:is|was)\s+(?:a|an|the)\s');
+
+/// Bios: a short paragraph naming one of the authors (or orphaned from its
+/// name, "is a senior reporter...") with a job title, plus bios right next to one.
+List<Block> _dropBios(List<Block> blocks, List<String> authors) {
+  final bio = [
+    for (final b in blocks)
+      if (b is! ParagraphBlock) 0 else _bioKind(b, authors),
+  ];
+  if (!bio.contains(2)) return blocks;
+  // Unnamed bios count only next to a certain one (co-author boxes), across name lines and photos.
+  bool near(int i, int step) {
+    for (var j = i + step; j >= 0 && j < blocks.length; j += step) {
+      if (bio[j] == 2) return true;
+      final b = blocks[j];
+      if (!(b is FigureBlock || b is ParagraphBlock && inlineText(b.content).length < 60)) return false;
+    }
+    return false;
+  }
+
+  for (var pass = 0; pass < 2; pass++) {
+    for (var i = 0; i < bio.length; i++) {
+      if (bio[i] == 1 && (near(i, -1) || near(i, 1))) bio[i] = 2;
+    }
+  }
+  return [
+    for (var i = 0; i < blocks.length; i++)
+      if (bio[i] != 2) blocks[i],
+  ];
+}
+
+/// 0: not a bio, 1: a bio of someone, 2: a bio of an author (or orphaned from its name).
+int _bioKind(ParagraphBlock b, List<String> authors) {
+  final raw = inlineText(b.content);
+  if (raw.length > 900) return 0;
+  // The anchored shape tests are cheap and fail fast on ordinary paragraphs; the job title is checked last.
+  final head = collapse(raw.length > 200 ? raw.substring(0, 200) : raw);
+  final orphan = _bioOrphan.hasMatch(head);
+  // Every named bio has "is", "was" or "has been" in it.
+  final m = orphan || !head.contains('is') && !head.contains('was') && !head.contains('has been')
+      ? null
+      : _bioName.firstMatch(head);
+  if (!orphan && m == null || !_bioRole.hasMatch(jsSlice(head, 0, 160))) return 0;
+  if (orphan) return 2;
+  return authors.contains(jsLower(m![1]!)) ? 2 : 1;
+}
+
+bool _sameFirstText(List<Inline> a, List<Inline> b) {
+  if (a.isEmpty || b.isEmpty) return false;
+  final x = a[0];
+  final y = b[0];
+  return x.type == y.type && (x is! TextRun || x.text == (y as TextRun).text);
+}
+
+bool _isLegendLabel(Block b) {
+  if (b is! ParagraphBlock) return false;
+  final only = b.content.length == 1 ? b.content[0] : null;
+  if (only is InlineMath) return only.text.length < 40;
+  return jsTrim(inlineText(b.content)).length <= 12;
 }
 
 double _linkShare(List<Inline> content) {
@@ -376,6 +622,28 @@ bool _isPromo(List<Inline> content) {
   // A short line that is entirely a link to another page, or a stack of them.
   if (share >= 0.9 && (text.length < 160 || content.any((n) => n is LineBreak))) return true;
   return false;
+}
+
+/// Sign-up, subscribe, app, membership and affiliate pitches, in the languages publishers use most.
+final _callToAction = RegExp(
+  r"\b(?:sign(?:ing)? up (?:for|to|here|now|today)|subscribe (?:to|for|now|here|today)|our (?:free |daily |weekly )?newsletter|email list|mailing list|register (?:as|for|now|today)|create (?:a |an )?(?:free )?account|download (?:the|our)|get (?:the|our) (?:\w+ )?app|follow (?:us|topics|authors|the authors)|support (?:us|our)|patreon page|on patreon|donate (?:to|now|today|here)|become a (?:member|patron|subscriber|supporter)|buy it here|we may earn (?:a )?(?:small )?commission|affiliate (?:links?|commission)|purchase through links)\b|suscr[ií]b(?:e|ete|irte)|descarga la|boletín|abonnez-vous|inscrivez-vous|téléchargez|abonnieren sie|jetzt herunterladen|assine|inscreva-se",
+  caseSensitive: false,
+);
+final _quoted = RegExp(r'''^["“„«'‘]''');
+
+/// A short pitch to sign up, subscribe, download, follow or support (a paragraph, a list of them, or a box).
+bool _isCallToAction(Block b) {
+  String text;
+  if (b is ParagraphBlock) {
+    text = inlineText(b.content);
+  } else if (b is CalloutBlock || b is ListBlock) {
+    text = blocksText([b]);
+  } else {
+    return false;
+  }
+  text = collapse(text);
+  // Quoted speech that mentions subscriptions is reporting, not a pitch.
+  return text.isNotEmpty && text.length < 300 && !_quoted.hasMatch(text) && _callToAction.hasMatch(text);
 }
 
 final _email = RegExp(r'^[\w.+-]+@[\w-]+\.[\w.-]+$');

@@ -13,6 +13,42 @@ import 'model.dart';
 import 'tree.dart';
 import 'url.dart';
 
+/// TeX left for MathJax/KaTeX: $$…$$ and \[…\] display, \(…\) inline.
+final _texDelimited = _GlobalRegExp(RegExp(r'\$\$([^$]+?)\$\$|\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)'));
+
+/// The same plus $…$ inline, for pages that show they use TeX (never "$5 and $10").
+final _texAny = _GlobalRegExp(
+  RegExp(r'\$\$([^$]+?)\$\$|\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)|\$([^\s$\d](?:[^$\n]{0,300}?[^\s$\\])?)\$(?![\d\w])'),
+);
+
+/// A JavaScript regular expression with the `g` flag: `exec` resumes at
+/// [lastIndex] and resets it to 0 when nothing matches. The TypeScript engine
+/// shares one such object between nested calls, so its state is part of the
+/// behaviour (see [_InlineBuilder._texRuns]).
+class _GlobalRegExp {
+  _GlobalRegExp(this.regex);
+
+  final RegExp regex;
+  int lastIndex = 0;
+
+  RegExpMatch? exec(String s) {
+    if (lastIndex > s.length) {
+      lastIndex = 0;
+      return null;
+    }
+    final it = regex.allMatches(s, lastIndex).iterator;
+    if (!it.moveNext()) {
+      lastIndex = 0;
+      return null;
+    }
+    final m = it.current;
+    lastIndex = m.end;
+    return m;
+  }
+
+  bool test(String s) => exec(s) != null;
+}
+
 const _tagMark = {
   'b': Mark.bold, 'strong': Mark.bold, 'i': Mark.italic, 'em': Mark.italic, 'cite': Mark.italic, 'dfn': Mark.italic, //
   'var': Mark.italic, 'u': Mark.underline, 'ins': Mark.underline, 's': Mark.strike, 'del': Mark.strike,
@@ -22,9 +58,24 @@ const _tagMark = {
 
 const _inlineTags = {
   'a', 'abbr', 'acronym', 'b', 'bdi', 'bdo', 'big', 'br', 'cite', 'code', 'data', 'del', 'dfn', 'em', 'font', 'i', //
-  'img', 'ins', 'kbd', 'label', 'mark', 'math', 'math-tex', 'nobr', 'noscript', 'picture', 'q', 'rp', 'rt', 'ruby', 's',
-  'samp', 'small', 'span', 'strike', 'strong', 'sub', 'sup', 'svg', 'time', 'tt', 'u', 'var', 'wbr', 'input', 'meta',
-  'link', 'source', 'track',
+  'img', 'ins', 'kbd', 'label', 'mark', 'math', 'math-tex', 'nobr', 'noscript', 'picture', 'q', 'rb', 'rp', 'rt', 'rtc',
+  'ruby',
+  's',
+  'samp',
+  'small',
+  'span',
+  'strike',
+  'strong',
+  'sub',
+  'sup',
+  'svg',
+  'time',
+  'tt',
+  'u',
+  'var',
+  'wbr',
+  'input',
+  'meta', 'link', 'source', 'track',
 };
 
 const _blockTags = {
@@ -55,10 +106,15 @@ final _figureLike = ClassPattern(
   r'(?:^|[\s_-])(?:wp-caption|wp-block-image|image-block|figure|photo|media-image|article-image|inline-image|image-container|image-wrapper|img-wrapper|picture)(?:$|[\s_-])',
 );
 final _codeTitle = ClassPattern(
-  r'(?:^|[\s_-])(?:code-?block-?title|code-?title|filename|file-name|codeblock-header|code-header|code-block-header|rehype-code-title|remark-code-title|highlight-title)(?:$|[\s_-])|codeBlockTitle',
+  r'(?:^|[\s_-])(?:code-?block-?title|code-?title|filename|file-name|codeblock-header|code-header|code-block-header|rehype-code-title|remark-code-title|highlight-title)(?:$|[\s_-])|codeblocktitle',
 );
 final _gutter = ClassPattern(
   r'(?:^|[\s_-])(?:line-?numbers?(?:-rows)?|linenos?|lineno|linenodiv|gutter|ln-num|hljs-ln-n|hljs-ln-numbers|rouge-gutter|blob-num|lnt|code-line-number|react-syntax-highlighter-line-number|line-num|linenumber|line-number-cell)(?:$|[\s_-])',
+);
+
+/// Toolbars and labels that code highlighters put inside <pre> (language name, copy button).
+final _codeChrome = ClassPattern(
+  r'(?:^|[\s_-])(?:code-toolbar|toolbar|code-language|code-lang|lang-label|language-label|language-tag|copy-button|copy-code|clipboard)(?:$|[\s_-])',
 );
 final _lineElement = ClassPattern(
   r'(?:^|[\s_-])(?:line|code-line|cm-line|ec-line|token-line|highlight-line|view-line|line-content)(?:$|[\s_-])',
@@ -66,7 +122,9 @@ final _lineElement = ClassPattern(
 final _pullQuote = ClassPattern(
   r'(?:^|[\s_-])(?:pullquote|pull-quote|wp-block-pullquote|pull_quote|blockquote--pull)(?:$|[\s_-])',
 );
-final _zeroWidth = RegExp('[​﻿⁠]');
+
+/// Zero-width characters, and private-use code points (icon-font glyphs that show as boxes without their font).
+final _zeroWidth = RegExp('[\u200b\ufeff\u2060\ue000-\uf8ff]');
 final _footnoteClass = ClassPattern(r'(?:^|\s)footnote(?:\s|$)');
 final _footnoteNumber = ClassPattern(r'footnote-number');
 final _footnoteContent = ClassPattern(r'footnote-content');
@@ -74,7 +132,7 @@ final _mathFallback = ClassPattern(r'mwe-math-fallback-image');
 final _imageLink = RegExp(r'\.(?:jpe?g|png|webp|gif|avif)(?:$|[?#])', caseSensitive: false);
 final _labelBrackets = RegExp(r'^\[|\]$');
 final _backArrow = RegExp(r'^[↩↑^]');
-final _permalinkText = RegExp(r'^[#¶§🔗]?$');
+final _permalinkText = RegExp(r'^[#¶§🔗]?$', unicode: true);
 final _linkScheme = RegExp(r'^(?:https?|mailto|tel):', caseSensitive: false);
 final _bold = RegExp(r'font-weight\s*:\s*(?:bold|[6-9]00)', caseSensitive: false);
 final _italic = RegExp(r'font-style\s*:\s*italic', caseSensitive: false);
@@ -83,7 +141,7 @@ final _texWrapper = RegExp(r'^\{\\(?:displaystyle|textstyle|scriptstyle)\s*([\s\
 bool _hasZeroWidth(String s) {
   for (var i = 0; i < s.length; i++) {
     final c = s.codeUnitAt(i);
-    if (c == 0x200b || c == 0xfeff || c == 0x2060) return true;
+    if (c == 0x200b || c == 0xfeff || c == 0x2060 || (c >= 0xe000 && c <= 0xf8ff)) return true;
   }
   return false;
 }
@@ -128,13 +186,54 @@ class _InlineBuilder {
   /// Consecutive line breaks with nothing visible between them.
   int breaks = 0;
 
+  /// Id of an anchor that opens the current paragraph ("[<a name="f1n">1</a>] ...").
+  String? anchor;
+
   void text(String value, _Ctx ctx) {
     if (value.isEmpty) return;
     final text = _hasZeroWidth(value) ? value.replaceAll(_zeroWidth, '') : value;
     if (text.isEmpty) return;
+    if (converter.tex &&
+        (text.contains(r'$') || text.contains(r'\')) &&
+        !ctx.marks.contains(Mark.code) &&
+        _texRuns(text, ctx)) {
+      return;
+    }
     if (breaks > 0 && _onlyHtmlSpace(text)) return;
     breaks = 0;
     nodes.add(TextRun(text, marks: ctx.marks.isNotEmpty ? _sortMarks(ctx.marks) : null, href: ctx.href));
+  }
+
+  /// Splits TeX written for a client-side renderer out of [text] as math; false when there is none.
+  ///
+  /// The pattern is shared, as in the TypeScript engine, with the calls this
+  /// one makes for the text around a formula: when that text holds a `$` or
+  /// `\`, the inner search ends by resetting `lastIndex`, and the outer one
+  /// starts over (a formula after such text comes out twice). Where that loops
+  /// forever in TypeScript (`\(a\) $ \(b\)` on a TeX page), the repeated state
+  /// ends the loop here.
+  bool _texRuns(String text, _Ctx ctx) {
+    final re = converter.dollars ? _texAny : _texDelimited;
+    re.lastIndex = 0;
+    var m = re.exec(text);
+    if (m == null) return false;
+    var at = 0;
+    Set<String>? seen;
+    while (m != null) {
+      if (m.start > at) this.text(text.substring(at, m.start), ctx);
+      final tex = jsTrim(m[1] ?? m[2] ?? m[3] ?? m[4] ?? '');
+      if (tex.isNotEmpty) {
+        final node = InlineMath(tex: tex, text: tex);
+        if (m[1] != null || m[2] != null) converter.displayMath.add(node);
+        push(node);
+      }
+      at = m.end;
+      m = re.exec(text);
+      // Only a match behind `at` can start a cycle; the same match with the same `at` again is one.
+      if (m != null && m.start < at && !(seen ??= {}).add('${m.start} ${m.end} $at')) break;
+    }
+    if (at < text.length) this.text(text.substring(at), ctx);
+    return true;
   }
 
   void lineBreak() {
@@ -149,25 +248,27 @@ class _InlineBuilder {
 
   void push(Inline node) {
     breaks = 0;
+    // Display math is a block of its own: the sentence around it continues in the next paragraph.
+    final out = this.out;
+    if (node is InlineMath && out != null && converter.displayMath.contains(node)) {
+      flush();
+      out.add(MathBlock(tex: node.tex, mathml: node.mathml, text: node.text));
+      return;
+    }
     nodes.add(node);
   }
 
-  /// Paragraph mode: emits the collected paragraph (or a display formula) and starts a new one.
+  /// Paragraph mode: emits the collected paragraph (or an anchored note) and starts a new one.
   void flush() {
     final out = this.out;
     if (out == null) return;
     final content = normalizeInlines(nodes);
+    final anchor = this.anchor;
     nodes = [];
     breaks = 0;
+    this.anchor = null;
     if (content.isEmpty) return;
-    final first = content[0];
-    if (content.length == 1 && first is InlineMath && identical(converter.lastDisplayMath, first)) {
-      final block = MathBlock(text: first.text);
-      if (first.tex != null) block.tex = first.tex;
-      if (first.mathml != null) block.mathml = first.mathml;
-      out.add(block);
-      return;
-    }
+    if (anchor != null && converter.anchoredNote(anchor, content, out)) return;
     out.add(ParagraphBlock(content));
   }
 
@@ -282,7 +383,28 @@ bool _hasBlock(VElement el) {
   return found;
 }
 
-bool _isInline(VElement el) => _inlineTags.contains(el.tag) && !_hasBlock(el);
+bool _isInline(VElement el) {
+  if (_inlineTags.contains(el.tag)) return !_hasBlock(el);
+  // Custom elements holding only phrasing (<dt-math>, <d-cite>) sit inside the sentence; video placeholders do not.
+  return el.tag.indexOf('-') > 0 && !_hasBlock(el) && lazyVideo(el) == null;
+}
+
+final _displayWrapper = ClassPattern(
+  r'(?:^|[\s_-])(?:katex-display|math-display|display-math|mathjax_display|mwe-math-element-block|math-block|equation)(?:$|[\s_-])',
+);
+
+/// A formula set on its own line: by its own attributes or its renderer's wrapper (KaTeX, MathJax, Wikipedia, Distill).
+bool _isDisplayMath(VElement el) {
+  if (el.attrs['display'] == 'block' || el.attrs['mode'] == 'display') return true;
+  var p = el.parent;
+  for (var depth = 0; depth < 4 && p != null; depth++, p = p.parent) {
+    if (_displayWrapper.hasMatch(p.matchString) || p.attrs['display'] == 'true' && p.tag == 'mjx-container') {
+      return true;
+    }
+    if (p.tag.endsWith('-math') && p.attrs['block'] != null) return true;
+  }
+  return false;
+}
 
 int? _intAttr(VElement el, String name) {
   final v = el.attrs[name];
@@ -313,12 +435,39 @@ class Converter {
 
   /// Footnote item ids found in the article, with their labels.
   final Map<String, String> _notes = {};
+
+  /// Footnote items, and (built on first use) their text with the label stripped, to recognise inline copies.
+  final List<VElement> _noteItems = [];
+  Set<String>? _noteTexts;
   String? _pendingCodeTitle;
-  Inline? lastDisplayMath;
+
+  /// Notes written inline at their reference (LaTeXML, sidenotes), listed after the text.
+  final List<Footnote> _inlineNotes = [];
+  bool _inNote = false;
+
+  /// In-page "[n]" links not yet matched to a note: target id -> label.
+  final Map<String, String> _pendingRefs = {};
+
+  /// Provisional refs with the link text they replace if no note turns up.
+  final Map<Inline, String> _provisional = Map.identity();
+  final Set<String> _resolved = {};
+
+  /// Label of the first reference to each listed note.
+  final Map<String, String> _refLabels = {};
+
+  /// Math nodes typeset as display (block) formulas.
+  final Set<Inline> displayMath = Set.identity();
+
+  /// The text holds TeX delimiters (`$$`, `\[`, `\(`), so it is parsed as math; [dollars] adds $…$ inline.
+  bool tex = false;
+  bool dollars = false;
 
   List<Block> convert(List<VElement> roots) {
     for (final root in roots) {
       _scanFootnotes(root);
+    }
+    for (final root in roots) {
+      _scanTex(root);
     }
     final out = <Block>[];
     for (final root in roots) {
@@ -329,7 +478,121 @@ class Converter {
         block(root, out);
       }
     }
+    if (_inlineNotes.isNotEmpty) out.add(FootnotesBlock(_inlineNotes));
+    if (_provisional.isNotEmpty) _resolveRefs(out);
     return out;
+  }
+
+  bool _isNoteCopy(VElement el) {
+    final texts = _noteTexts ??= {for (final item in _noteItems) _noteKey(rawText(item))};
+    return texts.contains(_noteKey(rawText(el)));
+  }
+
+  /// A paragraph opened by the anchor a "[n]" link points at is that note (Paul Graham style "Notes").
+  bool anchoredNote(String id, List<Inline> content, List<Block>? out) {
+    final label = _pendingRefs[id];
+    if (out == null || label == null || _resolved.contains(id)) return false;
+    final blocks = <Block>[ParagraphBlock(content)];
+    _stripNoteLabel(blocks, label);
+    if (blocks.isEmpty) return false;
+    _resolved.add(id);
+    final note = Footnote(id: id, label: label, blocks: blocks);
+    final last = out.isEmpty ? null : out.last;
+    if (last is FootnotesBlock) {
+      last.items.add(note);
+    } else {
+      out.add(FootnotesBlock([note]));
+    }
+    return true;
+  }
+
+  /// Settles provisional refs: an id-less ordered list closing the article with
+  /// one item per unresolved label 1..n is their notes; any ref still without a
+  /// note reverts to its link text.
+  void _resolveRefs(List<Block> out) {
+    final open = <String>[];
+    _pendingRefs.forEach((id, label) {
+      if (!_resolved.contains(id) && !open.contains(label)) open.add(label);
+    });
+    final tail = math.max(0, out.length - 3);
+    for (var i = out.length - 1; i >= tail && open.isNotEmpty; i--) {
+      final list = out[i];
+      if (list is! ListBlock || !list.ordered || (list.start ?? 1) != 1 || list.items.length != open.length) continue;
+      if (!open.every((label) => jsNumber(label) >= 1 && jsNumber(label) <= open.length)) break;
+      final items = <Footnote>[];
+      _pendingRefs.forEach((id, label) {
+        if (_resolved.contains(id)) return;
+        _resolved.add(id);
+        items.add(Footnote(id: id, label: label, blocks: list.items[jsNumber(label).toInt() - 1].blocks));
+      });
+      out[i] = FootnotesBlock(items);
+      break;
+    }
+    // Paragraphs between two runs of anchored notes continue the note before them.
+    for (var i = 0; i < out.length; i++) {
+      final notes = out[i];
+      if (notes is! FootnotesBlock) continue;
+      var j = i + 1;
+      while (j < out.length && j - i <= 4 && out[j] is ParagraphBlock) {
+        j++;
+      }
+      final next = j < out.length ? out[j] : null;
+      if (j == i + 1 || next is! FootnotesBlock) continue;
+      notes.items.last.blocks.addAll(out.sublist(i + 1, j));
+      notes.items.addAll(next.items);
+      out.removeRange(i + 1, j + 1);
+      i--;
+    }
+    _eachInlines(out, (content) {
+      var changed = false;
+      for (var k = 0; k < content.length; k++) {
+        final node = content[k];
+        if (node is! FootnoteRef) continue;
+        final text = _provisional[node];
+        if (text != null && !_resolved.contains(node.id)) {
+          content[k] = TextRun(text);
+          changed = true;
+          continue;
+        }
+        // "[" ref "]": the brackets are the reference's own decoration.
+        final prev = k > 0 ? content[k - 1] : null;
+        final next = k + 1 < content.length ? content[k + 1] : null;
+        if (prev is TextRun && next is TextRun && prev.text.endsWith('[') && next.text.startsWith(']')) {
+          content[k - 1] = TextRun(prev.text.substring(0, prev.text.length - 1), marks: prev.marks, href: prev.href);
+          content[k + 1] = TextRun(next.text.substring(1), marks: next.marks, href: next.href);
+          changed = true;
+        }
+      }
+      if (!changed) return;
+      final normalized = normalizeInlines(content);
+      content
+        ..clear()
+        ..addAll(normalized);
+    });
+  }
+
+  // ---------------------------------------------------------------- TeX
+
+  /// Display delimiters ($$, \[) or \( anywhere in the prose mean the page renders TeX client-side.
+  void _scanTex(VElement root) {
+    void visit(VElement el) {
+      if (tex || el.skip || el.tag == 'pre' || el.tag == 'code' || el.tag == 'math' || el.tag == 'math-tex') return;
+      for (final child in el.children) {
+        if (child is VElement) {
+          visit(child);
+        } else {
+          final text = (child as VText).text;
+          if (text.contains(r'$$') || text.contains(r'\(') || text.contains(r'\[')) {
+            if (_texDelimited.test(text)) tex = true;
+            _texDelimited.lastIndex = 0;
+          }
+        }
+        if (tex) return;
+      }
+    }
+
+    visit(root);
+    dollars = tex;
   }
 
   // ---------------------------------------------------------------- footnotes
@@ -345,6 +608,7 @@ class Converter {
           if (!identical(item, el) && _isNoteItem(item)) {
             counter++;
             _notes[item.id] = '$counter';
+            _noteItems.add(item);
             return false;
           }
           return true;
@@ -385,7 +649,10 @@ class Converter {
         if (label != null) label.skip = true;
         final blocks = <Block>[];
         children(item, blocks);
-        if (blocks.isNotEmpty) items.add(Footnote(id: item.id, label: _notes[item.id]!, blocks: blocks));
+        // The number the text shows for this note, else its position.
+        final shown = _refLabels[item.id] ?? _notes[item.id]!;
+        _stripNoteLabel(blocks, shown);
+        if (blocks.isNotEmpty) items.add(Footnote(id: item.id, label: shown, blocks: blocks));
         return false;
       }
       return true;
@@ -421,6 +688,11 @@ class Converter {
 
   /// Converts a container's children: phrasing runs become paragraphs, blocks convert in place.
   void children(VElement el, List<Block> out) {
+    final lone = _loneCode(el);
+    if (lone != null) {
+      _code(lone, out);
+      return;
+    }
     final inline = _InlineBuilder(this, out);
     const ctx = _emptyCtx;
     final kids = el.children;
@@ -545,8 +817,8 @@ class Converter {
         _standaloneImage(el, out);
         return;
       case 'iframe':
-        final block = mediaFromFrame(el.attrs['src'] ?? el.attrs['data-src'] ?? '', el.attrs['title']);
-        if (block != null) out.add(block);
+        final block = frameBlock(el, base);
+        if (block != null) out.add(block is CodeBlock ? _codeBlock(block.code, 'plaintext') : block);
         return;
       case 'video':
       case 'audio':
@@ -591,7 +863,7 @@ class Converter {
 
   void _container(VElement el, List<Block> out) {
     if (_codeTitle.hasMatch(el.matchString) && el.textLen < 120 && !_hasDescendant(el, 'pre')) {
-      final title = textOf(el);
+      final title = _plainLabel(el);
       if (title.isNotEmpty && title.length < 120) _pendingCodeTitle = title;
       return;
     }
@@ -600,6 +872,10 @@ class Converter {
       return;
     }
     if (_substackFootnote(el, out)) return;
+    // Margin or hover copies of notes that the footnote list also has.
+    if (_noteItems.isNotEmpty && _noteCopyClass.hasMatch(el.matchString) && el.textLen < 3000 && _isNoteCopy(el)) {
+      return;
+    }
     final video = lazyVideo(el);
     if (video != null) {
       out.add(video);
@@ -634,6 +910,25 @@ class Converter {
     if (el.skip) return;
     if (_caption(el, out, b)) return;
     final tag = el.tag;
+    if (tag != 'a' &&
+        !_inNote &&
+        el.matchString.contains('note') &&
+        _inlineNoteClass.hasMatch(el.matchString) &&
+        _inlineNote(el, b)) {
+      return;
+    }
+    if (_notes.isNotEmpty && tag != 'a') {
+      // Script-driven references: <span class="foot-ref" data-footnote="footnote-esb">5</span>.
+      final target =
+          el.attrs['data-footnote'] ?? el.attrs['data-footnote-id'] ?? el.attrs['data-fn'] ?? el.attrs['data-note'];
+      if (target != null && _notes.containsKey(target)) {
+        final text = jsTrim(collapse(rawText(el)).replaceAll(_labelBrackets, ''));
+        final label = text.isNotEmpty ? text : _notes[target]!;
+        _refLabels.putIfAbsent(target, () => label);
+        b.push(FootnoteRef(id: target, label: label));
+        return;
+      }
+    }
     switch (tag) {
       case 'br':
         b.lineBreak();
@@ -666,7 +961,7 @@ class Converter {
       case 'math-tex':
         final node = _mathInline(el);
         if (node == null) return;
-        if (el.attrs['display'] == 'block' || el.attrs['mode'] == 'display') lastDisplayMath = node;
+        if (_isDisplayMath(el)) displayMath.add(node);
         b.push(node);
         return;
       case 'noscript':
@@ -676,17 +971,41 @@ class Converter {
         if (href != null && charCodeAt(href, 0) == 35) {
           final id = _decodeFragment(href.substring(1));
           if (_notes.containsKey(id)) {
-            final label = jsTrim(collapse(rawText(el)).replaceAll(_labelBrackets, ''));
-            b.push(FootnoteRef(id: id, label: label.isNotEmpty ? label : _notes[id]!));
+            final text = jsTrim(collapse(rawText(el)).replaceAll(_labelBrackets, ''));
+            final label = text.isNotEmpty ? text : _notes[id]!;
+            _refLabels.putIfAbsent(id, () => label);
+            b.push(FootnoteRef(id: id, label: label));
             return;
           }
           final linkText = collapse(rawText(el));
           if (_backlink.hasMatch(el.matchString) || _backArrow.hasMatch(linkText)) return;
           // Permalink glyphs go; a permalink wrapping the heading's own words keeps them.
           if (_permalinkText.hasMatch(linkText)) return;
+          // "[1]" pointing at a plain anchor: a note reference until proven otherwise (see `_resolveRefs`).
+          final number = _bracketNumber.firstMatch(linkText);
+          if (number != null && id.isNotEmpty && !_inNote) {
+            final ref = FootnoteRef(id: id, label: number[1]!);
+            _provisional[ref] = linkText;
+            _pendingRefs.putIfAbsent(id, () => number[1]!);
+            b.push(ref);
+            return;
+          }
           // Other in-page links read as plain text.
           _inlineChildren(el, b, ctx, out);
           return;
+        }
+        // <a id="introduction">Introduction</a> outside a heading: a section anchor whose label is shown only to screen readers or the TOC.
+        if (href == null &&
+            el.id.isNotEmpty &&
+            _slug(collapse(rawText(el))) == jsLower(el.id) &&
+            _closestHeading(el) == null) {
+          return;
+        }
+        if (href == null &&
+            b.nodes.length <= 1 &&
+            jsTrim(_inlineTextOf(b.nodes)).replaceFirst(_openBracket, '').isEmpty) {
+          final anchor = el.attrs['name'] ?? el.id;
+          if (anchor.isNotEmpty && _pendingRefs.containsKey(anchor)) b.anchor = anchor;
         }
         if (_permalink.hasMatch(el.matchString) && _permalinkText.hasMatch(collapse(rawText(el)))) return;
         final resolved = href == null ? null : resolveUrl(href, base);
@@ -711,6 +1030,7 @@ class Converter {
         }
       case 'span':
       case 'font':
+        if (tag == 'span' && _isAlternative(el)) return;
         final style = el.attrs['style'];
         if (style != null) {
           final marks = List.of(ctx.marks);
@@ -728,6 +1048,34 @@ class Converter {
       return;
     }
     _inlineChildren(el, b, ctx, out);
+  }
+
+  /// A note written where it is referenced: <span class="ltx_note ltx_role_footnote"><sup>1</sup>
+  /// <span class="ltx_note_content">...</span></span>. Becomes a ref, and the note goes to the end.
+  bool _inlineNote(VElement el, _InlineBuilder b) {
+    final text = collapse(rawText(el));
+    final mark = firstElement(el, (e) => e.tag == 'sup' || _noteMarkClass.hasMatch(e.matchString));
+    final label = mark != null ? collapse(rawText(mark)).replaceAll(_labelBrackets, '') : '';
+    // A bare marker ("1", "[2]") is a reference, not a note.
+    if (text.length <= label.length + 3 || label.length > 4) return false;
+    final content = firstElement(el, (e) => _noteContentClass.hasMatch(e.matchString)) ?? el;
+    if (mark != null && !_isAncestorOf(mark, content)) mark.skip = true;
+    final blocks = <Block>[];
+    _inNote = true;
+    final inline = inlineOnly(content);
+    _inNote = false;
+    if (mark != null) mark.skip = false;
+    if (inline.isEmpty) return false;
+    blocks.add(ParagraphBlock(inline));
+    final n = _inlineNotes.length + 1;
+    final noteLabel = label.isNotEmpty ? label : '$n';
+    _stripNoteLabel(blocks, noteLabel);
+    if (blocks.isEmpty) return false;
+    var id = el.id.isNotEmpty ? el.id : 'note-$n';
+    if (_notes.containsKey(id)) id = 'inline-$id';
+    _inlineNotes.add(Footnote(id: id, label: noteLabel, blocks: blocks));
+    b.push(FootnoteRef(id: id, label: noteLabel));
+    return true;
   }
 
   void _inlineChildren(VElement el, _InlineBuilder b, _Ctx ctx, List<Block> out) {
@@ -802,7 +1150,20 @@ class Converter {
   // ---------------------------------------------------------------- headings, lists, quotes
 
   void _heading(VElement el, List<Block> out) {
+    // Wordless links to a fragment (the heading's permalink icon) are not part of the heading.
+    final icons = <VElement>[];
+    walk(el, (e) {
+      if (e.tag == 'a' && !e.skip && (e.attrs['href'] ?? '').contains('#') && _isWordless(rawText(e))) {
+        icons.add(e);
+        e.skip = true;
+        return false;
+      }
+      return true;
+    });
     final content = inlineOnly(el);
+    for (final icon in icons) {
+      icon.skip = false;
+    }
     if (content.isEmpty) return;
     final level = el.tag.codeUnitAt(1) - 0x30;
     final block = HeadingBlock(level: level, content: content);
@@ -980,8 +1341,9 @@ class Converter {
   static final _info = RegExp(r'info|notice');
   static final _note = RegExp(r'note|admonition|callout|notecard');
   static final _calloutTitle = ClassPattern(
-    r'(?:^|[\s_-])(?:admonition-title|callout-title|alert-title|markdown-alert-title|admonitionHeading|notecard-title|title|heading)(?:$|[\s_-])|admonitionHeading',
+    r'(?:^|[\s_-])(?:admonition-title|callout-title|alert-title|markdown-alert-title|admonitionheading|notecard-title|title|heading)(?:$|[\s_-])|admonitionheading',
   );
+  static final _subheading = RegExp(r'^h[2-6]$');
 
   void _callout(VElement el, List<Block> out) {
     final m = el.matchString;
@@ -1005,6 +1367,17 @@ class Converter {
       }
       return e.tag == 'div' || e.tag == 'p';
     });
+    // A short heading opening the box ("Note") is its title.
+    if (titleEl == null) {
+      for (final child in el.children) {
+        if (child is VText ? !isBlank(child.text) : (child as VElement).skip) {
+          if (child is VText) break;
+          continue;
+        }
+        if (child is VElement && _subheading.hasMatch(child.tag) && child.textLen < 60) titleEl = child;
+        break;
+      }
+    }
     final title = titleEl == null ? null : inlineOnly(titleEl!);
     titleEl?.skip = true;
     final blocks = <Block>[];
@@ -1015,7 +1388,12 @@ class Converter {
       return;
     }
     final block = CalloutBlock(variant: variant, blocks: blocks);
-    if (title != null && title.isNotEmpty) block.title = title;
+    // A title that only names the variant ("note", "Warning") repeats what the renderer already shows.
+    if (title != null &&
+        title.isNotEmpty &&
+        !(variant != null && jsLower(jsTrim(_inlineTextOf(title))) == variant.name)) {
+      block.title = title;
+    }
     out.add(block);
   }
 
@@ -1027,7 +1405,8 @@ class Converter {
     final summary = summaryEl != null ? inlineOnly(summaryEl) : <Inline>[];
     final blocks = <Block>[];
     children(el, blocks);
-    if (blocks.isEmpty && summary.isEmpty) return;
+    // A disclosure whose body was all chrome (badges, widgets) is chrome too.
+    if (blocks.isEmpty) return;
     out.add(DetailsBlock(summary: summary, blocks: blocks));
   }
 
@@ -1037,6 +1416,18 @@ class Converter {
     // Some sites wrap prose in <pre>; a pre full of block markup is not code.
     if (_hasDescendant(el, 'p') && _hasDescendant(el, 'p', 1) && !_hasDescendant(el, 'code')) {
       children(el, out);
+      return;
+    }
+    // One listing in several flavours (<code class="language-mjs"> and <code class="language-cjs">): one block each.
+    final flavours = <VElement>[];
+    for (final child in el.children) {
+      if (child is VElement && !child.skip && child.tag == 'code') flavours.add(child);
+    }
+    if (flavours.length > 1) {
+      for (final flavour in flavours) {
+        final text = codeText(flavour);
+        if (!isBlank(text)) out.add(_codeBlock(text, codeLanguage(flavour)));
+      }
       return;
     }
     final code = codeText(el);
@@ -1182,8 +1573,8 @@ class Converter {
         case 'noscript':
           return false;
         case 'iframe':
-          final block = mediaFromFrame(e.attrs['src'] ?? e.attrs['data-src'] ?? '', e.attrs['title']);
-          if (block != null) media.add(block);
+          final block = frameBlock(e, base);
+          if (block != null) media.add(block is CodeBlock ? _codeBlock(block.code, 'plaintext') : block);
           return false;
         case 'video':
         case 'audio':
@@ -1352,12 +1743,216 @@ class Converter {
   }
 }
 
+/// Calls [visit] with every inline array in [blocks], nested blocks included.
+void _eachInlines(List<Block> blocks, void Function(List<Inline> content) visit) {
+  for (final b in blocks) {
+    switch (b) {
+      case ParagraphBlock(:final content):
+      case HeadingBlock(:final content):
+        visit(content);
+      case ListBlock(:final items):
+        for (final item in items) {
+          _eachInlines(item.blocks, visit);
+        }
+      case QuoteBlock(:final blocks, :final cite):
+        _eachInlines(blocks, visit);
+        if (cite != null) visit(cite);
+      case CalloutBlock(:final blocks, :final title):
+        _eachInlines(blocks, visit);
+        if (title != null) visit(title);
+      case DetailsBlock(:final summary, :final blocks):
+        visit(summary);
+        _eachInlines(blocks, visit);
+      case DefinitionListBlock(:final items):
+        for (final item in items) {
+          visit(item.term);
+          _eachInlines(item.details, visit);
+        }
+      case TableBlock(:final rows, :final caption):
+        for (final row in rows) {
+          for (final cell in row.cells) {
+            visit(cell.content);
+          }
+        }
+        if (caption != null) visit(caption);
+      case FigureBlock(:final caption, :final credit):
+        if (caption != null) visit(caption);
+        if (credit != null) visit(credit);
+      case FootnotesBlock(:final items):
+        for (final item in items) {
+          _eachInlines(item.blocks, visit);
+        }
+      case EmbedBlock(:final blocks):
+        if (blocks != null) _eachInlines(blocks, visit);
+      default:
+        break;
+    }
+  }
+}
+
+final _inlineNoteClass = ClassPattern(r'(?:^|[\s_-])(?:footnote|sidenote|marginnote|ltx_note)(?:$|[\s_-])');
+final _noteCopyClass = ClassPattern(r'footnote|sidenote|marginnote');
+final _noteMarkClass = ClassPattern(r'(?:^|[\s_-])(?:note-?mark|sidenote-number|footnote-number)(?:$|[\s_-])');
+final _noteContentClass = ClassPattern(
+  r'(?:^|[\s_-])(?:note-?content|note-?text|note-?body|footnote-?content|sidenote-?content)(?:$|[\s_-])',
+);
+final _bracketNumber = RegExp(r'^\[?(\d{1,3})\]?$');
+final _openBracket = RegExp(r'^[[(]$');
+
+bool _isAncestorOf(VElement ancestor, VElement node) {
+  for (var p = node.parent; p != null; p = p.parent) {
+    if (identical(p, ancestor)) return true;
+  }
+  return false;
+}
+
+final _noteItemClass = ClassPattern(r'(?:^|[\s_-])(?:footnote|endnote)(?:$|[\s_-])');
+
+/// `text.replace(ZERO_WIDTH, '').trim().length === 0`.
+bool _isWordless(String text) => isBlank(_hasZeroWidth(text) ? text.replaceAll(_zeroWidth, '') : text);
+
+/// Text of a label without the widgets inside it (a language picker's label, options and "No results").
+String _plainLabel(VElement el) {
+  final out = StringBuffer();
+  void visit(VElement node) {
+    for (final child in node.children) {
+      if (child is VText) {
+        out.write(child.text);
+      } else if (!(child as VElement).skip && !_isWidget(child)) {
+        visit(child);
+      }
+    }
+  }
+
+  visit(el);
+  return collapse(out.toString());
+}
+
+bool _isWidget(VElement el) {
+  if (el.tag == 'label' ||
+      el.tag == 'button' ||
+      el.tag == 'select' ||
+      el.tag == 'input' ||
+      el.attrs['aria-haspopup'] != null) {
+    return true;
+  }
+  final role = el.attrs['role'];
+  return role != null && role != 'none' && role != 'presentation' && role != 'heading';
+}
+
+final _classWords = RegExp(r'[\s_-]+');
+final _leadingNumber = RegExp(r'^\s*([\d.,]+)');
+
+/// The second of two glued spans whose classes differ in one word ("imperial_word" /
+/// "metric_word") and that state the same number: unit alternatives a script or
+/// stylesheet switches between ("60 mph" | "60 km/h").
+bool _isAlternative(VElement el) {
+  final parent = el.parent;
+  if (parent == null || el.className.isEmpty || el.textLen == 0 || el.textLen > 40) return false;
+  final i = parent.children.indexOf(el);
+  final prev = i > 0 ? parent.children[i - 1] : null;
+  if (prev is! VElement || prev.tag != 'span' || prev.skip || prev.textLen == 0 || prev.textLen > 40) return false;
+  final a = jsSplit(jsLower(prev.className), _classWords);
+  final b = jsSplit(jsLower(el.className), _classWords);
+  if (a.length != b.length || a.length < 2) return false;
+  var differ = 0;
+  for (var k = 0; k < a.length; k++) {
+    if (a[k] != b[k]) differ++;
+  }
+  if (differ != 1) return false;
+  // The same quantity in another unit: both open with the same number.
+  final x = _leadingNumber.firstMatch(rawText(prev));
+  final y = _leadingNumber.firstMatch(rawText(el));
+  return x != null && y != null && x[1] == y[1];
+}
+
+/// `text.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '')`.
+String _slug(String text) => lettersAndNumbers(jsLower(text)).join('-');
+
+final _headingTag = RegExp(r'^h[1-6]$');
+
+VElement? _closestHeading(VElement el) {
+  for (var p = el.parent; p != null; p = p.parent) {
+    if (_headingTag.hasMatch(p.tag)) return p;
+  }
+  return null;
+}
+
+/// A multi-line <code> that is all its container holds is a listing even
+/// without <pre> (`figure.code-block > code`, styled with white-space: pre).
+VElement? _loneCode(VElement el) {
+  var any = false;
+  for (final child in el.children) {
+    if (child is VElement && child.tag == 'code') {
+      any = true;
+      break;
+    }
+  }
+  if (!any) return null;
+  VElement? code;
+  for (final child in el.children) {
+    if (child is VText) {
+      if (!isBlank(child.text)) return null;
+      continue;
+    }
+    final e = child as VElement;
+    if (e.skip) continue;
+    if (code != null || e.tag != 'code') {
+      // Empty decorations (a language tag, a copy button) do not count.
+      if (e.tag != 'img' && e.textLen < 20 && _isWordless(rawText(e)) && !_hasDescendant(e, 'img')) continue;
+      return null;
+    }
+    code = e;
+  }
+  if (code == null) return null;
+  final text = jsTrim(rawText(code));
+  // One line is a listing too when the wrapper says so (a figure, a language, a code-block class).
+  return text.indexOf('\n') > 0 ||
+          el.tag == 'figure' ||
+          el.attrs['data-lang'] != null ||
+          _codeWrapper.hasMatch(el.matchString)
+      ? code
+      : null;
+}
+
+final _codeWrapper = ClassPattern(
+  r'(?:^|[\s_-])(?:code-?block|highlight|codehilite|sourcecode|code-snippet)(?:$|[\s_-])',
+);
+
 bool _isNoteItem(VElement el) {
   if (el.id.isEmpty) return false;
   return el.tag == 'li' ||
       el.attrs['role'] == 'doc-footnote' ||
       el.attrs['role'] == 'doc-endnote' ||
-      (el.tag != 'a' && (el.hasClass('footnote') || el.hasClass('footnote-item')));
+      (el.tag != 'a' && _noteItemClass.hasMatch(jsLower(el.className)));
+}
+
+final _noteKeyLabel = RegExp(r'^\[?\d{1,3}\]?[:.)]?\s*');
+
+/// Note text compared across copies: whitespace collapsed, a leading "5:" / "[5]" label dropped.
+String _noteKey(String text) => collapse(text).replaceFirst(_noteKeyLabel, '');
+
+final _noteLabelPrefix = RegExp(r'^\s*\[?(\d{1,3})\]?[:.)]?(?:\s+|$)');
+
+/// A note that repeats its own number ("5: We can't resist...", "<sup>1</sup> 1 https://...") loses it; the label is drawn.
+void _stripNoteLabel(List<Block> blocks, String label) {
+  if (blocks.isEmpty) return;
+  final first = blocks[0];
+  if (first is! ParagraphBlock) return;
+  final content = first.content;
+  while (content.isNotEmpty) {
+    final run = content[0];
+    if (run is! TextRun) break;
+    final m = _noteLabelPrefix.firstMatch(run.text);
+    if (m == null || m[1] != label) break;
+    final rest = run.text.substring(m.end);
+    if (rest.isNotEmpty) {
+      content[0] = TextRun(rest, marks: run.marks, href: run.href);
+      break;
+    }
+    content.removeAt(0);
+  }
+  if (content.isEmpty) blocks.removeAt(0);
 }
 
 String _inlineTextOf(List<Inline> content) {
@@ -1470,7 +2065,7 @@ String codeText(VElement el) {
         continue;
       }
       if (_gutter.hasMatch(e.matchString) || e.attrs['data-line-number'] != null && isBlank(rawText(e))) continue;
-      if (e.tag == 'button' || e.tag == 'svg' || e.tag == 'input') continue;
+      if (e.tag == 'button' || e.tag == 'svg' || e.tag == 'input' || _codeChrome.hasMatch(e.matchString)) continue;
       final line =
           e.tag == 'div' || e.tag == 'p' || e.tag == 'tr' || e.tag == 'li' || _lineElement.hasMatch(e.matchString);
       visit(e);
@@ -1529,10 +2124,7 @@ InlineMath? _mathInline(VElement el) {
   }
   final tex = _texFrom(el.attrs['data-tex'] ?? el.attrs['alttext']);
   final mathml = el.attrs['data-xml'];
-  final text = collapse(rawText(el));
-  final node = InlineMath(text: tex ?? text);
-  if (tex != null) node.tex = tex;
-  if (mathml != null && mathml.isNotEmpty) node.mathml = mathml;
-  if (node.text.isEmpty && node.mathml == null) return null;
-  return node;
+  final text = tex ?? collapse(rawText(el));
+  if (text.isEmpty && (mathml == null || mathml.isEmpty)) return null;
+  return InlineMath(tex: tex, mathml: mathml != null && mathml.isNotEmpty ? mathml : null, text: text);
 }

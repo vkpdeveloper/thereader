@@ -1,6 +1,6 @@
 /// The article document model: the Dart mirror of
 /// `packages/extract/src/model.ts`. `toJson` writes the keys the TypeScript
-/// engine writes, in the same order, and omits absent optionals, so stored
+/// engine writes, in `model.ts` field order, and omits absent optionals, so stored
 /// documents round-trip between the two implementations. Optional lists stay
 /// null when absent so an explicit value is never confused with a missing one.
 ///
@@ -130,13 +130,8 @@ final class InlineMath extends Inline {
   factory InlineMath.fromJson(Json json) =>
       InlineMath(tex: json['tex'] as String?, mathml: json['mathml'] as String?, text: json['text'] as String);
 
-  /// Keys in the order the TypeScript engine writes them: TeX-only math
-  /// (`<script type="math/tex">`) is built as `{type, tex, text}`, MathML as
-  /// `{type, text, tex?, mathml}`.
   @override
-  Json toJson() => mathml == null
-      ? {'type': type, if (tex != null) 'tex': tex, 'text': text}
-      : {'type': type, 'text': text, if (tex != null) 'tex': tex, 'mathml': mathml};
+  Json toJson() => {'type': type, if (tex != null) 'tex': tex, if (mathml != null) 'mathml': mathml, 'text': text};
 }
 
 /// A footnote reference; [id] matches a [Footnote].
@@ -291,8 +286,8 @@ final class ListBlock extends Block {
   Json toJson() => {
     'type': type,
     'ordered': ordered,
-    'items': [for (final i in items) i.toJson()],
     if (start != null) 'start': start,
+    'items': [for (final i in items) i.toJson()],
   };
 }
 
@@ -548,8 +543,8 @@ final class TableBlock extends Block {
   @override
   Json toJson() => {
     'type': type,
-    'rows': [for (final r in rows) r.toJson()],
     if (caption != null) 'caption': _inlinesJson(caption!),
+    'rows': [for (final r in rows) r.toJson()],
     if (headerRows != null) 'headerRows': headerRows,
   };
 }
@@ -578,7 +573,7 @@ final class MathBlock extends Block {
       MathBlock(tex: json['tex'] as String?, mathml: json['mathml'] as String?, text: json['text'] as String);
 
   @override
-  Json toJson() => {'type': type, 'text': text, if (tex != null) 'tex': tex, if (mathml != null) 'mathml': mathml};
+  Json toJson() => {'type': type, if (tex != null) 'tex': tex, if (mathml != null) 'mathml': mathml, 'text': text};
 }
 
 class Definition {
@@ -647,8 +642,8 @@ final class CalloutBlock extends Block {
   Json toJson() => {
     'type': type,
     'variant': variant?.name,
-    'blocks': _blocksJson(blocks),
     if (title != null) 'title': _inlinesJson(title!),
+    'blocks': _blocksJson(blocks),
   };
 }
 

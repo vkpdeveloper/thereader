@@ -31,7 +31,7 @@ class Metadata {
   final String? subtitle;
   final List<String> authors;
   final String? siteName;
-  final String? publishedAt;
+  String? publishedAt;
   final String? modifiedAt;
   final String? language;
   final ArticleDirection? dir;
@@ -157,7 +157,7 @@ String? _imageUrl(Object? value) {
   return null;
 }
 
-const _entities = {'amp': '&', 'lt': '<', 'gt': '>', 'quot': '"', 'apos': "'", 'nbsp': '\u00a0', '#39': "'"};
+const _entities = {'amp': '&', 'lt': '<', 'gt': '>', 'quot': '"', 'apos': "'", 'nbsp': '\u00a0'};
 final _entity = RegExp(r'&(#x[0-9a-f]+|#[0-9]+|[a-z]+);', caseSensitive: false);
 
 /// Decodes the handful of entities publishers double-encode into metadata strings.
@@ -547,7 +547,7 @@ Metadata readMetadata(VDocument doc, String pageUrl) {
   return Metadata(
     url: url,
     rawTitles: rawTitles,
-    subtitle: ldStr('alternativeHeadline'),
+    subtitle: ldStr('alternativeHeadline') ?? _findDek(doc.body, description),
     authors: authors,
     siteName: siteName == null ? null : decodeEntities(siteName),
     publishedAt: published,
@@ -617,6 +617,62 @@ String? _findByline(VElement body) {
     return found == null;
   });
   return found;
+}
+
+final _dek = ClassPattern(
+  r'(?:^|[\s_-])(?:subtitle|sub-title|subhead|subheading|subheadline|dek|deck|standfirst|strapline|tagline|article-summary|post-subtitle|lede)(?:$|[\s_-])',
+);
+
+/// The standfirst under the headline: among the first elements after the h1, one
+/// marked as a subtitle/dek, or one whose text is the page description.
+String? _findDek(VElement body, String? description) {
+  final want = description != null ? jsLower(collapse(description)) : '';
+  var seenH1 = false;
+  var after = 0;
+  String? found;
+  walk(body, (el) {
+    if (found != null || after > 40) return false;
+    if (el.tag == 'h1') {
+      if (seenH1) {
+        after = 41;
+        return false;
+      }
+      seenH1 = true;
+      return false;
+    }
+    if (!seenH1) return true;
+    after++;
+    final dek = _dek.hasMatch(el.matchString);
+    // A plain paragraph equal to the description is the article's own first paragraph, not a dek.
+    if ((el.tag == 'p' || el.tag == 'h2' || el.tag == 'div' || el.tag == 'span') &&
+        (dek || el.tag != 'p' && want.isNotEmpty && _isLeafText(el))) {
+      final text = collapse(textOf(el));
+      if (text.length >= 10 && text.length <= 300 && (dek || jsLower(text) == want)) {
+        found = text;
+        return false;
+      }
+    }
+    return true;
+  });
+  return found;
+}
+
+/// No block-level element inside (a dek is one run of text; wrappers of the whole article are skipped cheaply).
+bool _isLeafText(VElement el) {
+  for (final child in el.children) {
+    if (child is VElement &&
+        (child.tag == 'div' ||
+            child.tag == 'p' ||
+            child.tag == 'section' ||
+            child.tag == 'article' ||
+            child.tag == 'ul' ||
+            child.tag == 'ol' ||
+            child.tag == 'figure' ||
+            child.tag == 'table')) {
+      return false;
+    }
+  }
+  return true;
 }
 
 String? _findTime(VElement body) {

@@ -11,6 +11,7 @@ import 'dart:math' as math;
 
 import 'js.dart';
 import 'match.dart';
+import 'media.dart' show isContentFrame;
 import 'tree.dart';
 
 final _unlikely = ClassPattern(
@@ -34,10 +35,6 @@ const _unlikelyRoles = {
   'menu', 'menubar', 'complementary', 'navigation', 'alert', 'alertdialog', 'dialog', 'banner', 'contentinfo', //
   'search', 'tooltip',
 };
-final _videoHosts = RegExp(
-  r'\/\/(?:www\.)?(?:(?:dailymotion|youtube|youtube-nocookie|player\.vimeo|v\.qq|loom|fast\.wistia|embed\.ted)\.com|(?:archive|upload\.wikimedia)\.org|player\.twitch\.tv|(?:open\.)?spotify\.com|w\.soundcloud\.com|youtu\.be|codepen\.io|bandcamp\.com)',
-  caseSensitive: false,
-);
 final _adWords = RegExp(
   r'^(?:ad(?:vertising|vertisement)?|pub(?:licité)?|werb(?:ung)?|广告|Реклама|Anuncio)$',
   caseSensitive: false,
@@ -53,8 +50,8 @@ final _contentHint = ClassPattern(
 const _phrasing = {
   'abbr', 'audio', 'b', 'bdo', 'bdi', 'br', 'button', 'canvas', 'cite', 'code', 'data', 'datalist', 'dfn', 'em', //
   'embed', 'i', 'img', 'input', 'kbd', 'label', 'mark', 'math', 'math-tex', 'meter', 'noscript', 'object', 'output',
-  'progress', 'q', 'ruby', 'rt', 'rp', 'samp', 'select', 'small', 'span', 'strong', 'sub', 'sup', 'textarea', 'time',
-  'var', 'wbr', 'u', 's', 'strike', 'tt', 'font', 'big', 'svg', 'picture', 'nobr', 'acronym',
+  'progress', 'q', 'ruby', 'rb', 'rt', 'rtc', 'rp', 'samp', 'select', 'small', 'span', 'strong', 'sub', 'sup',
+  'textarea', 'time', 'var', 'wbr', 'u', 's', 'strike', 'tt', 'font', 'big', 'svg', 'picture', 'nobr', 'acronym',
 };
 
 /// Elements that make a container "not a paragraph".
@@ -80,7 +77,9 @@ bool isPhrasing(VNode node) {
   if (node is VText) return true;
   final el = node as VElement;
   if (_phrasing.contains(el.tag)) return true;
-  if (el.tag == 'a' || el.tag == 'del' || el.tag == 'ins') return el.children.every(isPhrasing);
+  if (el.tag == 'a' || el.tag == 'del' || el.tag == 'ins' || el.tag.indexOf('-') > 0) {
+    return el.children.every(isPhrasing);
+  }
   return false;
 }
 
@@ -112,12 +111,17 @@ void measure(VElement el) {
   el.textLen = text;
   el.commas = commas;
   if (isLink) {
-    final href = el.attrs['href'] ?? '';
     // In-page links (footnotes, anchors) weigh less than links away.
-    el.linkLen = href.length > 1 && href.codeUnitAt(0) == 35 ? text * 0.3 : text.toDouble();
+    el.linkLen = _isInPageLink(el) ? text * 0.3 : text.toDouble();
   } else {
     el.linkLen = link;
   }
+}
+
+/// A link to a fragment of this page (footnotes, anchors). A bare "#" is a script button, not a place.
+bool _isInPageLink(VElement a) {
+  final href = a.attrs['href'] ?? '';
+  return href.length > 1 && href.codeUnitAt(0) == 35;
 }
 
 double _linkDensity(VElement el) => el.textLen == 0 ? 0 : math.min(1, el.linkLen / el.textLen);
@@ -272,7 +276,8 @@ void _markUnlikely(VElement body, Flags flags, _MarkState state) {
   final totalProse = _proseLength(body);
   walk(body, (el) {
     if (identical(el, body)) return true;
-    final match = el.matchString;
+    // A heading's id is a slug of its own words ("highlighting-with-comments"): judge headings by class.
+    final match = _headings.contains(el.tag) ? jsLower(el.className) : el.matchString;
     if (el.attrs['aria-modal'] == 'true' && el.attrs['role'] == 'dialog') {
       el.skip = true;
       return false;
@@ -289,11 +294,18 @@ void _markUnlikely(VElement body, Flags flags, _MarkState state) {
           el.tag != 'body' &&
           el.tag != 'article' &&
           el.tag != 'main' &&
-          !_hasAncestor(el, _tableOrCode)) {
+          !_hasAncestor(el, _tableOrCode) &&
+          !(el.tag == 'table' && isDataTableCached(el))) {
         // "header", "banner", "extra": weak signals that real prose overrides (MDN puts intros in a header).
         // A layout wrapper holding most of the page's prose ("with-sidebar") is never unlikely.
         final prose = _proseLength(el);
-        if ((_unlikelyHard.hasMatch(match) || prose < 400) && prose <= totalProse * 0.5) {
+        // Headings carry no prose of their own; only the hard words drop them ("header-anchor" is not chrome).
+        // A header holding the page's h1 and real prose is the article's own header (title, standfirst, intro).
+        if ((_unlikelyHard.hasMatch(match) ||
+                prose < 400 &&
+                    !_headings.contains(el.tag) &&
+                    !(prose >= 100 && _linkDensity(el) < 0.3 && _hasH1(el))) &&
+            prose <= totalProse * 0.5) {
           el.skip = true;
           return false;
         }
@@ -324,6 +336,16 @@ void _markUnlikely(VElement body, Flags flags, _MarkState state) {
   });
 }
 
+bool _hasH1(VElement el) {
+  var found = false;
+  walk(el, (e) {
+    if (found) return false;
+    if (e.tag == 'h1') found = true;
+    return !found;
+  });
+  return found;
+}
+
 const _article = {'article'};
 const _quoteOrFigure = {'blockquote', 'figure'};
 
@@ -339,6 +361,7 @@ int _countNestedArticles(VElement parent) {
 double _proseLength(VElement el) {
   var n = 0.0;
   walk(el, (e) {
+    if (e.skip) return false;
     if (e.tag == 'p') {
       n += e.textLen - e.linkLen;
       return false;
@@ -361,10 +384,24 @@ final footnoteContainer = ClassPattern(
   r'(?:^|[\s_-])(?:footnotes|footnote-list|footnotes-list|endnotes|references|reflist|refs|footnote-definitions|notes-list|fn-list)(?:$|[\s_-])',
 );
 
-bool isFootnotes(VElement el) =>
-    footnoteContainer.hasMatch(el.matchString) ||
-    el.attrs['role'] == 'doc-endnotes' ||
-    el.attrs['data-footnotes'] != null;
+bool isFootnotes(VElement el) {
+  if (el.notesState < 0) el.notesState = _isFootnoteList(el) ? 1 : 0;
+  return el.notesState == 1;
+}
+
+bool _isFootnoteList(VElement el) {
+  if (el.attrs['role'] == 'doc-endnotes' || el.attrs['data-footnotes'] != null) return true;
+  // Every container word has "note", "ref" or "fn" in it: skip the pattern for everything else.
+  final m = el.matchString;
+  if (!m.contains('note') && !m.contains('ref') && !m.contains('fn')) return false;
+  if (footnoteContainer.hasMatch(m)) return true;
+  // Python-Markdown: <div class="footnote"><hr><ol><li id="fn:1">.
+  if (!el.hasClass('footnote')) return false;
+  for (final child in el.children) {
+    if (child is VElement && child.tag == 'ol') return true;
+  }
+  return false;
+}
 
 final _footnoteClass = ClassPattern(r'(?:^|\s)footnote(?:\s|$)');
 
@@ -379,7 +416,14 @@ final _callout = ClassPattern(
   r'(?:^|[\s_-])(?:note|tip|warning|caution|important|admonition|callout|alert|info|danger|notice|hint|notecard)(?:$|[\s_-])',
 );
 
-bool isCallout(VElement el) => _callout.hasMatch(el.matchString);
+/// The second alternative of the TypeScript pattern,
+/// `(?:^|[\s_-])(?:callout|admonition)(?:wrapper|box|container|block)(?:$|[\s_-])`, grouped so it
+/// reduces to literal words.
+final _calloutWrapper = ClassPattern(
+  r'(?:^|[\s_-])(?:(?:callout|admonition)(?:wrapper|box|container|block))(?:$|[\s_-])',
+);
+
+bool isCallout(VElement el) => _callout.hasMatch(el.matchString) || _calloutWrapper.hasMatch(el.matchString);
 
 List<VElement> _ancestors(VElement el, int max) {
   final out = <VElement>[];
@@ -428,11 +472,8 @@ _Attempt _grab(VElement body, Flags flags, String? articleBody) {
 
   final top = <VElement>[];
   for (final c in candidates) {
-    if (c.tag == 'body' || c.tag == 'html') {
-      c.score *= 1 - _linkDensity(c);
-      continue;
-    }
     c.score *= 1 - _linkDensity(c);
+    if (c.tag == 'body' || c.tag == 'html') continue;
     var i = 0;
     while (i < top.length && top[i].score >= c.score) {
       i++;
@@ -444,10 +485,22 @@ _Attempt _grab(VElement body, Flags flags, String? articleBody) {
   }
 
   var topCandidate = top.isEmpty ? null : top[0];
+  // Flat pages (specs, old sites) keep their paragraphs directly in <body>: it wins outright.
+  if (body.scored && body.score >= 2 * (topCandidate?.score ?? 0)) topCandidate = body;
   if (articleBody != null) topCandidate = _alignWithStructuredBody(body, topCandidate, articleBody);
 
-  if (topCandidate == null || topCandidate.tag == 'body') {
+  if (topCandidate == null) {
     measure(body);
+    return _Attempt([body], body.textLen);
+  }
+  if (topCandidate.tag == 'body') {
+    // The page header of a flat page is chrome.
+    for (final child in body.children) {
+      if (child is VElement && child.tag == 'header') child.skip = true;
+    }
+    _trimTrailingChrome(body);
+    _prepare(body, flags);
+    if (!flags.cleanConditionally) measure(body);
     return _Attempt([body], body.textLen);
   }
 
@@ -491,6 +544,9 @@ _Attempt _grab(VElement body, Flags flags, String? articleBody) {
     topCandidate = p;
   }
   if (!topCandidate!.scored) _initialize(topCandidate, flags);
+
+  topCandidate = _galleryContainer(topCandidate);
+  if (!topCandidate.scored) _initialize(topCandidate, flags);
 
   // Join siblings that look like more of the same.
   final roots = <VElement>[];
@@ -540,6 +596,54 @@ _Attempt _grab(VElement body, Flags flags, String? articleBody) {
 }
 
 final _sentenceEnd = RegExp(r'\.( |$)');
+
+/// A flat page ends with its own chrome (copyright, discussion links) right in
+/// `<body>`: trailing wrappers that are not article structure, and short link lines.
+void _trimTrailingChrome(VElement body) {
+  final kids = body.children;
+  for (var k = kids.length - 1; k >= 0; k--) {
+    final child = kids[k];
+    if (child is! VElement || child.skip || child.tag == 'br' || child.tag == 'hr') continue;
+    if (!_structure.contains(child.tag) && child.textLen < 500 && !_hasMedia(child)) {
+      child.skip = true;
+      continue;
+    }
+    // At most one link line ("Discussion on ...") right before the chrome.
+    if (child.tag == 'p' && child.textLen < 100 && _linkDensity(child) > 0.3) child.skip = true;
+    return;
+  }
+}
+
+/// Photo galleries: the text is a short standfirst plus the photo captions. A
+/// short body next to three or more captioned figures widens to the container
+/// they share, when the captions are most of that container's text.
+VElement _galleryContainer(VElement top) {
+  if (top.textLen >= 1000) return top;
+  var p = top.parent;
+  for (var level = 0; level < 3 && p != null && p.tag != 'body'; level++, p = p.parent) {
+    var figures = 0;
+    var captions = 0.0;
+    walk(p, (e) {
+      if (e.skip) return false;
+      if (e.tag != 'figure') return true;
+      final caption = _firstChild(e, 'figcaption');
+      if (caption != null && caption.textLen > 0 && _hasMedia(e)) {
+        figures++;
+        captions += caption.textLen - caption.linkLen;
+      }
+      return false;
+    });
+    if (figures >= 3 && top.textLen + captions >= (p.textLen - p.linkLen) * 0.6) return p;
+  }
+  return top;
+}
+
+VElement? _firstChild(VElement el, String tag) {
+  for (final child in el.children) {
+    if (child is VElement && !child.skip && child.tag == tag) return child;
+  }
+  return null;
+}
 
 bool _isInside(VElement node, VElement ancestor) {
   for (var p = node.parent; p != null; p = p.parent) {
@@ -659,7 +763,9 @@ bool _isLeadMedia(VElement sibling, VElement top) {
 
 /// A container of plain paragraphs right next to the body (an intro split from it).
 bool _isAdjacentProse(VElement sibling, VElement top) {
-  if (sibling.textLen < 200 ||
+  // The article's own header (with the h1) needs only a standfirst's worth of prose.
+  final min = sibling.textLen >= 100 && _hasH1(sibling) ? 100 : 200;
+  if (sibling.textLen < min ||
       _linkDensity(sibling) > 0.25 ||
       _negative.hasMatch(sibling.matchString) ||
       _boilerplate.hasMatch(sibling.matchString)) {
@@ -673,9 +779,15 @@ bool _isAdjacentProse(VElement sibling, VElement top) {
   final step = i < j ? 1 : -1;
   for (var k = i + step; k != j; k += step) {
     final between = kids[k];
-    if (between is VElement && !between.skip) return false;
+    // Only chrome may sit between them (a contents box between the preamble and the text).
+    if (between is VElement &&
+        !between.skip &&
+        !(_boilerplate.hasMatch(between.matchString) || _linkDensity(between) > 0.5)) {
+      return false;
+    }
   }
-  return _proseLength(sibling) >= sibling.textLen * 0.5 && _proseLength(sibling) >= 200;
+  final prose = _proseLength(sibling);
+  return prose >= sibling.textLen * 0.5 && prose >= min;
 }
 
 int _liveChildren(VElement el) {
@@ -794,7 +906,7 @@ bool isDataTableCached(VElement table) {
 
 /// Boilerplate inside an article: removed regardless of score when small relative to the article.
 final _boilerplate = ClassPattern(
-  r'(?:^|[\s_-])(?:mw-editsection|editsection|edit-section|mw-jump-link|catlinks|printfooter|navbox|vertical-navbox|ambox|hatnote|noprint|share|sharing|social|social-links|sharedaddy|share-buttons|newsletter|subscribe|subscription|signup|sign-up|optin|opt-in|related|related-posts|related-articles|recommended|recommendations|more-stories|read-more|readmore|read-next|also-read|further-reading-promo|promo|promoted|sponsored|advert|advertisement|ad-container|ad-slot|ad-unit|ad-wrapper|adsbygoogle|dfp|gpt-ad|comments|comment-list|commentlist|disqus|breadcrumb|breadcrumbs|pagination|post-tags|entry-tags|tag-list|tags-list|article-tags|toc|table-of-contents|tableofcontents|cookie|consent|gdpr|regwall|inline-cta|cta|author-bio|about-author|author-box|authorbox|post-author-bio|byline|dateline|print|skip-link|toolbar|sticky|floating|modal|popup|overlay|outbrain|taboola|jp-relatedposts|wp-block-buttons|follow-us|listen|audio-player|article-audio|podcast-player|rating|reactions|clap|kudos)(?:$|[\s_-])',
+  r'(?:^|[\s_-])(?:mw-editsection|editsection|edit-section|mw-jump-link|catlinks|printfooter|navbox|vertical-navbox|ambox|hatnote|noprint|share|sharing|social|social-links|sharedaddy|share-buttons|newsletter|subscribe|subscription|signup|sign-up|optin|opt-in|related|related-posts|related-articles|recommended|recommendations|more-stories|read-more|readmore|read-next|also-read|further-reading-promo|promo|promoted|sponsored|advert|advertisement|ad-container|ad-slot|ad-unit|ad-wrapper|adsbygoogle|dfp|gpt-ad|comments|comment-list|commentlist|disqus|breadcrumb|breadcrumbs|pagination|post-tags|entry-tags|tag-list|tags-list|article-tags|toc|table-of-contents|tableofcontents|cookie|consent|gdpr|regwall|inline-cta|cta|author-bio|about-author|author-box|authorbox|post-author-bio|byline|dateline|print|skip-link|toolbar|nav|navigation|navbar|sticky|floating|modal|popup|overlay|outbrain|taboola|jp-relatedposts|wp-block-buttons|follow-us|listen|audio-player|article-audio|podcast-player|rating|reactions|clap|kudos)(?:$|[\s_-])',
 );
 
 /// Short stand-alone text that is UI, not prose.
@@ -828,11 +940,12 @@ void _prepare(VElement root, Flags flags) {
       el.skip = true;
       return false;
     }
-    if (tag == 'iframe' && !_videoHosts.hasMatch(el.attrs['src'] ?? el.attrs['data-src'] ?? '')) {
+    if (tag == 'iframe' && !isContentFrame(el)) {
       el.skip = true;
       return false;
     }
-    final match = el.matchString;
+    // A heading's id is a slug of its own words ("nav_relaxing-in-...") and says nothing about it.
+    final match = _headings.contains(tag) ? jsLower(el.className) : el.matchString;
     if (match.length > 1 && el.textLen < math.max(500, rootLen * 0.3)) {
       if (_share.hasMatch(match) && el.textLen < 500 ||
           _boilerplate.hasMatch(match) && !_maybeContent.hasMatch(match)) {
@@ -844,10 +957,21 @@ void _prepare(VElement root, Flags flags) {
       el.skip = true;
       return false;
     }
-    if ((tag == 'h1' || tag == 'h2') && _classWeight(el, flags) < 0) {
+    if ((tag == 'ul' || tag == 'ol') && _isTableOfContents(el)) {
+      el.skip = true;
+      final heading = _previousElement(el);
+      if (heading != null && _headings.contains(heading.tag) && heading.textLen < 40) heading.skip = true;
+      return false;
+    }
+    // Negative words in a heading's class drop it, unless it anchors a section (an id that is not negative itself).
+    if ((tag == 'h1' || tag == 'h2') &&
+        _classWeight(el, flags) < 0 &&
+        (el.id.isEmpty || _negative.hasMatch(jsLower(el.id)))) {
       el.skip = true;
       return false;
     }
+    // A heading stays or goes whole: its links ("toc-backref", permalinks) are its words.
+    if (_headings.contains(tag)) return false;
     if (el.textLen < 40 &&
         el.textLen > 0 &&
         (tag == 'p' || tag == 'div' || tag == 'span' || tag == 'a' || tag == 'li') &&
@@ -861,6 +985,34 @@ void _prepare(VElement root, Flags flags) {
   if (flags.cleanConditionally) {
     _cleanConditionally(root, flags);
   }
+}
+
+/// A list of three or more items that is almost all links to sections of this page.
+bool _isTableOfContents(VElement list) {
+  if (list.textLen == 0 || list.linkLen < list.textLen * 0.2) return false;
+  var items = 0;
+  var inPage = 0;
+  walk(list, (e) {
+    if (e.skip) return false;
+    if (e.tag == 'li') items++;
+    if (e.tag == 'a' && charCodeAt(e.attrs['href'] ?? '', 0) == 35) {
+      inPage += e.textLen;
+      return false;
+    }
+    return true;
+  });
+  return items >= 3 && inPage >= list.textLen * 0.8;
+}
+
+VElement? _previousElement(VElement el) {
+  final parent = el.parent;
+  if (parent == null) return null;
+  for (var i = parent.children.indexOf(el) - 1; i >= 0; i--) {
+    final prev = parent.children[i];
+    if (prev is VElement) return prev.skip ? null : prev;
+    if (!isBlank((prev as VText).text)) return null;
+  }
+  return null;
 }
 
 /// Teaser cards: a nested article whose heading links elsewhere.
@@ -903,12 +1055,17 @@ class _Counts {
   int li = 0;
   int input = 0;
 
-  /// pre, math or a data table: content that is never cleaned away.
+  /// pre, math, a data table or a player: content that is never cleaned away.
   int protected = 0;
   int embeds = 0;
   int headingText = 0;
   int listText = 0;
   int textishText = 0;
+
+  /// Figures holding an image, and the text and link text inside them (captions, credits).
+  int figures = 0;
+  int figureText = 0;
+  double figureLink = 0;
 }
 
 void _cleanConditionally(VElement root, Flags flags) {
@@ -916,7 +1073,9 @@ void _cleanConditionally(VElement root, Flags flags) {
     final c = _Counts();
     final tag = el.tag;
     final isDataTable = tag == 'table' && isDataTableCached(el);
-    final protectedHere = inProtected || _codeLike.contains(tag) || isDataTable;
+    // Footnote lists are link-heavy by nature; they are never clutter.
+    final notes = isFootnotes(el);
+    final protectedHere = inProtected || _codeLike.contains(tag) || isDataTable || notes;
     for (final child in el.children) {
       if (child is VText) {
         c.text += child.length;
@@ -929,7 +1088,7 @@ void _cleanConditionally(VElement root, Flags flags) {
       if (e.skip) continue;
       final ct = e.tag;
       c.text += k.text;
-      c.link += ct == 'a' ? (charCodeAt(e.attrs['href'] ?? '', 0) == 35 ? k.text * 0.3 : k.text.toDouble()) : k.link;
+      c.link += ct == 'a' ? (_isInPageLink(e) ? k.text * 0.3 : k.text.toDouble()) : k.link;
       c.commas += k.commas;
       c.p += k.p + (ct == 'p' ? 1 : 0);
       c.img += k.img + (ct == 'img' ? 1 : 0);
@@ -937,16 +1096,33 @@ void _cleanConditionally(VElement root, Flags flags) {
       c.input += k.input + (ct == 'input' && jsLower(e.attrs['type'] ?? '') != 'checkbox' ? 1 : 0);
       c.protected +=
           k.protected +
-          (ct == 'pre' || ct == 'math' || ct == 'math-tex' || ct == 'table' && isDataTableCached(e) ? 1 : 0);
-      c.embeds += k.embeds + (_embeds.contains(ct) && !_videoHosts.hasMatch(e.attrs['src'] ?? '') ? 1 : 0);
+          (ct == 'pre' ||
+                  ct == 'math' ||
+                  ct == 'math-tex' ||
+                  ct == 'table' && isDataTableCached(e) ||
+                  ct == 'video' ||
+                  ct == 'audio' ||
+                  ct == 'iframe' && isContentFrame(e)
+              ? 1
+              : 0);
+      c.embeds += k.embeds + (_embeds.contains(ct) && !(ct == 'iframe' && isContentFrame(e)) ? 1 : 0);
       c.headingText += _headings.contains(ct) ? k.text : k.headingText;
       c.listText += _lists.contains(ct) ? k.text : k.listText;
       c.textishText += _textish.contains(ct) ? k.text : k.textishText;
+      if (ct == 'figure' && k.img > 0) {
+        c.figures++;
+        c.figureText += k.text;
+        c.figureLink += k.link;
+      } else {
+        c.figures += k.figures;
+        c.figureText += k.figureText;
+        c.figureLink += k.figureLink;
+      }
     }
     el.textLen = c.text;
     el.linkLen = c.link;
     el.commas = c.commas;
-    if (!identical(el, root) && _conditional.contains(tag) && !inProtected && _shouldRemove(el, c, flags)) {
+    if (!identical(el, root) && _conditional.contains(tag) && !inProtected && !notes && _shouldRemove(el, c, flags)) {
       el.skip = true;
     }
     return c;
@@ -959,12 +1135,25 @@ bool _shouldRemove(VElement el, _Counts c, Flags flags) {
   final tag = el.tag;
   if (tag == 'table' && isDataTableCached(el)) return false;
   if (c.protected > 0) return false;
+  // A wrapper around captioned figures (credit links and all) is media, not clutter.
+  if (c.figures > 0 && c.text - c.figureText < 25 && c.figureLink <= c.figureText * 0.5 && c.input == 0) return false;
 
   var isList = tag == 'ul' || tag == 'ol';
   if (!isList && c.text > 0) isList = c.listText / c.text > 0.9;
 
   final weight = _classWeight(el, flags);
   if (weight < 0) return true;
+  // An author's note box (admonition, callout) with prose in it stays, however many links it cites.
+  if (c.p > 0 && el.matchString.length > 1 && c.link <= c.text * 0.6 && c.input == 0 && isCallout(el)) return false;
+  // A boxed "Recommended stories" / "Read more": a heading over a list of links elsewhere, and nothing else.
+  if (tag != 'ul' &&
+      tag != 'ol' &&
+      c.headingText > 0 &&
+      c.li >= 2 &&
+      c.text - c.listText <= c.headingText + 30 &&
+      c.link >= (c.text - c.headingText) * 0.7) {
+    return true;
+  }
   if (c.commas >= 10) return false;
   // Heading wrappers (`div.mw-heading` with an edit link) are structure, not clutter.
   if (c.headingText > 0 && c.text - c.link <= c.headingText * 1.2) return false;
@@ -990,8 +1179,28 @@ bool _shouldRemove(VElement el, _Counts c, Flags flags) {
   if (!isList && !inFigure && headingDensity < 0.9 && contentLength < 25 && (img == 0 || img > 2) && density > 0) {
     remove = true;
   }
-  if (!isList && weight < 25 && density > 0.2) remove = true;
+  // Link-rich sections (encyclopedias, docs): a heading over whole sentences tolerates more links.
+  if (!isList &&
+      weight < 25 &&
+      density > 0.2 &&
+      !(density <= 0.3 &&
+          c.p > 0 &&
+          c.headingText > 0 &&
+          c.text - c.headingText >= 150 &&
+          _sentences(textOf(el)) >= 2)) {
+    remove = true;
+  }
   if (weight >= 25 && density > 0.5) remove = true;
+  // A list of short link-only items outside the prose ("Recent posts", archives, tag clouds) is navigation.
+  if (isList &&
+      tag != 'ul' &&
+      tag != 'ol' &&
+      c.li >= 3 &&
+      density > 0.6 &&
+      contentLength / c.li < 120 &&
+      headingDensity < 0.5) {
+    remove = true;
+  }
   if ((c.embeds == 1 && contentLength < 75) || c.embeds > 1) remove = true;
   if (img == 0 && textDensity == 0 && contentLength == 0) remove = true;
 
@@ -1006,6 +1215,11 @@ bool _shouldRemove(VElement el, _Counts c, Flags flags) {
 }
 
 const _figure = {'figure'};
+
+final _sentenceEnds = RegExp(r'''[.!?。！？](?:["'”’)\]]|\[\d+\])*(?:\s|$)''');
+
+/// Sentence ends (any script) in [text].
+int _sentences(String text) => _sentenceEnds.allMatches(text).length;
 
 const _flagSets = [
   Flags(stripUnlikely: true, weightClasses: true, cleanConditionally: true),

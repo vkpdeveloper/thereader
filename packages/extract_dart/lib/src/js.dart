@@ -33,6 +33,15 @@ String jsTrim(String s) {
   return start == 0 && end == s.length ? s : s.substring(start, end);
 }
 
+/// `String.prototype.trimEnd`.
+String jsTrimEnd(String s) {
+  var end = s.length;
+  while (end > 0 && isJsSpace(s.codeUnitAt(end - 1))) {
+    end--;
+  }
+  return end == s.length ? s : s.substring(0, end);
+}
+
 /// True when `s.trim()` is empty.
 bool isBlank(String s) {
   for (var i = 0; i < s.length; i++) {

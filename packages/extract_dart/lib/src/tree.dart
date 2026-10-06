@@ -70,13 +70,16 @@ final class VElement extends VNode {
   /// Cached: data table (-1 unknown, 0 layout, 1 data).
   int tableState = -1;
 
+  /// Cached: footnote list container (-1 unknown, 0 no, 1 yes).
+  int notesState = -1;
+
   /// Set by content normalization: has a block-level descendant.
   bool containsBlock = false;
 
   String? attr(String name) => attrs[name];
 
   bool hasClass(String name) {
-    if (className.isEmpty) return false;
+    if (className.isEmpty || !className.contains(name)) return false;
     // `(' ' + className.replace(/\s+/g, ' ') + ' ').indexOf(' ' + name + ' ') >= 0`
     return hasToken(className, name);
   }

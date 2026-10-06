@@ -239,6 +239,15 @@ VDocument fromDocument(dom.Document doc) {
       baseHref ??= _attr(el, 'href');
       return null;
     }
+    // <object type="image/svg+xml" data="chart.svg"> is an image (LaTeXML figures, old sites).
+    if (tag == 'object' && !inHead && _isImageObject(el)) {
+      final img = VElement('img', {'src': _attr(el, 'data')!, 'alt': _attr(el, 'title') ?? ''});
+      final width = _attr(el, 'width');
+      final height = _attr(el, 'height');
+      if (width != null) img.attrs['width'] = width;
+      if (height != null) img.attrs['height'] = height;
+      return img;
+    }
     if (_drop.contains(tag)) return null;
     if (inHead && tag != 'title' && tag != 'meta' && tag != 'link' && tag != 'noscript') return null;
     // Streaming renderers (React 19, Next.js) emit <title>, <meta> and <link> inside <body>; keep them for metadata.
@@ -288,6 +297,15 @@ VDocument fromDocument(dom.Document doc) {
     root.append(body!);
   }
   return VDocument(root: root, head: head, body: body!, jsonLd: jsonLd, nextData: nextData, baseHref: baseHref);
+}
+
+final _imageFile = RegExp(r'\.(?:svg|png|jpe?g|gif|webp|avif)(?:$|[?#])', caseSensitive: false);
+
+bool _isImageObject(dom.Element el) {
+  final data = _attr(el, 'data');
+  if (data == null || data.isEmpty) return false;
+  final type = jsLower(_attr(el, 'type') ?? '');
+  return type.startsWith('image/') || type.isEmpty && _imageFile.hasMatch(data);
 }
 
 /// `querySelector('annotation[encoding="application/x-tex"]')`.
