@@ -44,9 +44,24 @@ export const MAX_ARTICLE_BODY_BYTES = 4 * 1024 * 1024;
 export const ARTICLE_SCHEMA = 1;
 /** Where an article document lives in R2: content-addressed and immutable. */
 export const articleBodyKey = (sha256: string): string => `articles/${sha256}`;
-const CHANGE_KINDS = ["progress", "session", "preferences", "library", "highlight", "article", "articleProgress"];
+// Categories and their memberships share another sentinel edition; see
+// docs/categories.md.
+const CATEGORIES_BOOK_ID = "_categories";
+const CATEGORIES_SHA = "0".repeat(64);
+const CATEGORY_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+// A semantic key; the server does not check it against the twelve clients
+// know, so newer builds can add colours.
+const CATEGORY_COLOR = /^[a-z]{1,20}$/;
+const CATEGORY_KEYS = new Set(["categoryId", "name", "color", "createdAt", "deleted"]);
+const CATEGORY_ITEM_KEYS = new Set(["itemType", "itemId", "categoryId"]);
+const MAX_CATEGORY_NAME = 60;
+const MAX_CATEGORIES_PAGE = 500;
+const CHANGE_KINDS = [
+  "progress", "session", "preferences", "library", "highlight", "article", "articleProgress", "category", "categoryItem",
+];
 
-type ChangeKind = "progress" | "session" | "library" | "highlight" | "article" | "articleProgress";
+type ChangeKind =
+  | "progress" | "session" | "library" | "highlight" | "article" | "articleProgress" | "category" | "categoryItem";
 
 interface SyncChange {
   id: string;
@@ -105,6 +120,46 @@ export interface SyncState {
     cursor: number;
     more: boolean;
   };
+  // Present only when the request asked for it via `categoriesSince`. Both
+  // lists share one rev sequence and one cursor.
+  categories?: {
+    items: SyncCategory[];
+    assignments: SyncCategoryItem[];
+    cursor: number;
+    more: boolean;
+  };
+}
+
+export interface SyncCategory {
+  id: string;
+  name: string;
+  color: string;
+  createdAt: string;
+  updatedAt: string;
+  deleted: boolean;
+  rev: number;
+}
+
+export interface SyncCategoryItem {
+  itemType: "book" | "article";
+  itemId: string;
+  categoryId: string | null;
+  updatedAt: string;
+  rev: number;
+}
+
+// One row of the merged category/assignment pull; `kind` says which table.
+interface CategoryPullRow {
+  kind: "category" | "item";
+  id: string;
+  name: string | null;
+  color: string | null;
+  created_at: string | null;
+  item_type: string | null;
+  category_id: string | null;
+  updated_at: string;
+  deleted_at: string | null;
+  rev: number;
 }
 
 export interface ArticlePosition {
@@ -287,6 +342,38 @@ function validArticleProgressPayload(value: Record<string, unknown>): boolean {
   return typeof value.articleId === "string" && ARTICLE_ID.test(value.articleId) && validArticlePosition(value.position);
 }
 
+// Names are stored trimmed: 1–60 UTF-16 code units (as clients count them),
+// no control characters.
+function validCategoryName(value: unknown): boolean {
+  if (typeof value !== "string") return false;
+  const name = value.trim();
+  return name.length >= 1 && name.length <= MAX_CATEGORY_NAME && !/\p{Cc}/u.test(name);
+}
+
+// A category, or a tombstone (`{categoryId, deleted: true}`).
+function validCategoryPayload(value: Record<string, unknown>, futureLimit: number): boolean {
+  if (Object.keys(value).some((key) => !CATEGORY_KEYS.has(key))) return false;
+  if (typeof value.categoryId !== "string" || !CATEGORY_ID.test(value.categoryId)) return false;
+  if (typeof value.deleted !== "boolean") return false;
+  if (value.deleted) return Object.keys(value).length === 2;
+  if (!validCategoryName(value.name)) return false;
+  if (typeof value.color !== "string" || !CATEGORY_COLOR.test(value.color)) return false;
+  return canonicalIsoDate(value.createdAt, futureLimit) !== null;
+}
+
+// Puts a book (by its id) or an article (by its 32-hex id) in a category, or
+// takes it out with `categoryId: null`.
+function validCategoryItemPayload(value: Record<string, unknown>): boolean {
+  if (Object.keys(value).length !== CATEGORY_ITEM_KEYS.size || Object.keys(value).some((key) => !CATEGORY_ITEM_KEYS.has(key))) {
+    return false;
+  }
+  if (value.categoryId !== null && (typeof value.categoryId !== "string" || !CATEGORY_ID.test(value.categoryId))) return false;
+  if (typeof value.itemId !== "string") return false;
+  if (value.itemType === "book") return value.itemId.length <= 128 && BOOK_ID_PATTERN.test(value.itemId);
+  if (value.itemType === "article") return ARTICLE_ID.test(value.itemId);
+  return false;
+}
+
 function parseChange(value: unknown, futureLimit: number): SyncChange | IgnoredChange {
   if (!isRecord(value)) throw invalidSync();
   const allowed = new Set(["id", "bookId", "sha256", "kind", "updatedAt", "payload"]);
@@ -318,6 +405,16 @@ function parseChange(value: unknown, futureLimit: number): SyncChange | IgnoredC
     if (!valid) throw invalidSync("Article payload is invalid.");
     bookId = ARTICLES_BOOK_ID;
     sha256 = ARTICLES_SHA;
+  } else if (kind === "category" || kind === "categoryItem") {
+    if (value.bookId !== CATEGORIES_BOOK_ID || value.sha256 !== CATEGORIES_SHA) {
+      throw invalidSync("Categories must use the documented sentinel edition.");
+    }
+    const valid = kind === "category"
+      ? validCategoryPayload(value.payload, futureLimit)
+      : validCategoryItemPayload(value.payload);
+    if (!valid) throw invalidSync("Category payload is invalid.");
+    bookId = CATEGORIES_BOOK_ID;
+    sha256 = CATEGORIES_SHA;
   } else {
     if (typeof value.bookId !== "string" || value.bookId.length > 128 || !BOOK_ID_PATTERN.test(value.bookId)) {
       throw invalidSync("bookId is invalid.");
@@ -357,6 +454,11 @@ function parseChange(value: unknown, futureLimit: number): SyncChange | IgnoredC
     payload: value.payload,
   };
 }
+
+// Categories and assignments share one rev sequence (see migration 0007): the
+// next rev follows the larger maximum of the two tables, one index seek each.
+const NEXT_CATEGORY_REV = `(SELECT COALESCE(MAX(rev), 0) + 1 FROM (
+  SELECT MAX(rev) AS rev FROM sync_categories UNION ALL SELECT MAX(rev) FROM sync_category_items))`;
 
 function statementForChange(env: Env, deviceId: string, change: SyncChange): D1PreparedStatement {
   switch (change.kind) {
@@ -529,6 +631,56 @@ function statementForChange(env: Env, deviceId: string, change: SyncChange): D1P
         change.updatedMs,
         change.id,
       );
+    }
+    case "category": {
+      const payload = change.payload;
+      if (payload.deleted) {
+        // A tombstone wins over any live row, whatever its clock, and is
+        // final: so devices converge on "deleted" in whichever order their
+        // writes arrive. Resending one changes nothing. A tombstone for an id
+        // this server never saw is stored with empty metadata.
+        return env.DB.prepare(
+          `INSERT INTO sync_categories (id, name, color, created_at, updated_at, updated_ms, deleted_at, change_id, rev)
+           VALUES (?, '', '', ?, ?, ?, ?, ?, ${NEXT_CATEGORY_REV})
+           ON CONFLICT(id) DO UPDATE SET
+             updated_at = excluded.updated_at, updated_ms = excluded.updated_ms,
+             deleted_at = excluded.deleted_at, change_id = excluded.change_id, rev = excluded.rev
+           WHERE sync_categories.deleted_at IS NULL`,
+        ).bind(payload.categoryId, change.updatedAt, change.updatedAt, change.updatedMs, change.updatedAt, change.id);
+      }
+      // Renames and recolours are last-write-wins and never touch a tombstone.
+      return env.DB.prepare(
+        `INSERT INTO sync_categories (id, name, color, created_at, updated_at, updated_ms, deleted_at, change_id, rev)
+         VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ${NEXT_CATEGORY_REV})
+         ON CONFLICT(id) DO UPDATE SET
+           name = excluded.name, color = excluded.color,
+           updated_at = excluded.updated_at, updated_ms = excluded.updated_ms,
+           change_id = excluded.change_id, rev = excluded.rev
+         WHERE sync_categories.deleted_at IS NULL
+           AND (excluded.updated_ms > sync_categories.updated_ms
+             OR (excluded.updated_ms = sync_categories.updated_ms AND excluded.change_id > sync_categories.change_id))`,
+      ).bind(
+        payload.categoryId,
+        (payload.name as string).trim(),
+        payload.color,
+        payload.createdAt,
+        change.updatedAt,
+        change.updatedMs,
+        change.id,
+      );
+    }
+    case "categoryItem": {
+      const payload = change.payload;
+      return env.DB.prepare(
+        `INSERT INTO sync_category_items (item_type, item_id, category_id, updated_at, updated_ms, change_id, rev)
+         VALUES (?, ?, ?, ?, ?, ?, ${NEXT_CATEGORY_REV})
+         ON CONFLICT(item_type, item_id) DO UPDATE SET
+           category_id = excluded.category_id,
+           updated_at = excluded.updated_at, updated_ms = excluded.updated_ms,
+           change_id = excluded.change_id, rev = excluded.rev
+         WHERE excluded.updated_ms > sync_category_items.updated_ms
+            OR (excluded.updated_ms = sync_category_items.updated_ms AND excluded.change_id > sync_category_items.change_id)`,
+      ).bind(payload.itemType, payload.itemId, payload.categoryId, change.updatedAt, change.updatedMs, change.id);
     }
   }
 }
@@ -703,6 +855,47 @@ async function articlesSince(env: Env, since: number): Promise<NonNullable<SyncS
   return { items, cursor: page.length === 0 ? since : page[page.length - 1]!.rev, more };
 }
 
+// Pulls category and assignment rows written after `since` (a server rev),
+// tombstones included, merged in rev order: at most 500 rows in total. Each
+// table is read through its rev index and capped before merging, so a pull
+// reads at most twice the page.
+async function categoriesSince(env: Env, since: number): Promise<NonNullable<SyncState["categories"]>> {
+  const rows = await env.DB.prepare(
+    `SELECT * FROM (
+       SELECT 'category' AS kind, id, name, color, created_at, NULL AS item_type, NULL AS category_id,
+              updated_at, deleted_at, rev
+         FROM sync_categories WHERE rev > ?1 ORDER BY rev LIMIT ?2)
+     UNION ALL
+     SELECT * FROM (
+       SELECT 'item' AS kind, item_id, NULL, NULL, NULL, item_type, category_id, updated_at, NULL, rev
+         FROM sync_category_items WHERE rev > ?1 ORDER BY rev LIMIT ?2)
+     ORDER BY rev LIMIT ?2`,
+  )
+    .bind(since, MAX_CATEGORIES_PAGE + 1)
+    .all<CategoryPullRow>();
+  const more = rows.results.length > MAX_CATEGORIES_PAGE;
+  const page = more ? rows.results.slice(0, MAX_CATEGORIES_PAGE) : rows.results;
+  const items: SyncCategory[] = [];
+  const assignments: SyncCategoryItem[] = [];
+  for (const row of page) {
+    if (row.kind === "category") {
+      items.push({
+        id: row.id,
+        name: row.name ?? "",
+        color: row.color ?? "",
+        createdAt: row.created_at ?? row.updated_at,
+        updatedAt: row.updated_at,
+        deleted: row.deleted_at !== null,
+        rev: row.rev,
+      });
+    } else {
+      if (row.item_type !== "book" && row.item_type !== "article") throw invalidState();
+      assignments.push({ itemType: row.item_type, itemId: row.id, categoryId: row.category_id, updatedAt: row.updated_at, rev: row.rev });
+    }
+  }
+  return { items, assignments, cursor: page.length === 0 ? since : page[page.length - 1]!.rev, more };
+}
+
 // Within one atomic batch, article saves run before positions so a position
 // queued right after its save lands on the row the save creates.
 function articleOrder(change: SyncChange): number {
@@ -737,7 +930,7 @@ export async function pushSync(request: Request, env: Env): Promise<SyncState> {
   if (!isRecord(raw) || !validClientId(raw.deviceId) || !Array.isArray(raw.changes) || raw.changes.length > MAX_CHANGES) {
     throw invalidSync();
   }
-  const allowed = new Set(["deviceId", "changes", "highlightsSince", "articlesSince"]);
+  const allowed = new Set(["deviceId", "changes", "highlightsSince", "articlesSince", "categoriesSince"]);
   if (Object.keys(raw).some((key) => !allowed.has(key))) throw invalidSync();
   // Optional: absent means an older client that knows nothing of highlights;
   // null means "send the full set"; a number is the last rev the client saw.
@@ -748,6 +941,12 @@ export async function pushSync(request: Request, env: Env): Promise<SyncState> {
   const wantsArticles = "articlesSince" in raw;
   const articlesFrom = raw.articlesSince ?? 0;
   if (wantsArticles && (!Number.isSafeInteger(articlesFrom) || (articlesFrom as number) < 0)) throw invalidSync("articlesSince is invalid.");
+  // And for categories, whose one cursor covers categories and assignments.
+  const wantsCategories = "categoriesSince" in raw;
+  const categoriesFrom = raw.categoriesSince ?? 0;
+  if (wantsCategories && (!Number.isSafeInteger(categoriesFrom) || (categoriesFrom as number) < 0)) {
+    throw invalidSync("categoriesSince is invalid.");
+  }
   const futureLimit = Date.now() + MAX_FUTURE_SKEW_MS;
   const parsed = raw.changes.map((change) => parseChange(change, futureLimit));
   const changes = parsed.filter((change): change is SyncChange => change.kind !== "preferences");
@@ -762,5 +961,6 @@ export async function pushSync(request: Request, env: Env): Promise<SyncState> {
   const state = await getSyncState(env, parsed.map((change) => change.id));
   if (wantsHighlights) state.highlights = await highlightsSince(env, since as number);
   if (wantsArticles) state.articles = await articlesSince(env, articlesFrom as number);
+  if (wantsCategories) state.categories = await categoriesSince(env, categoriesFrom as number);
   return state;
 }
