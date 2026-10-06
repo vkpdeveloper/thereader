@@ -4,5 +4,6 @@
  * the same importers warm the chunks ahead of navigation.
  */
 export const loadReader = () => import('./reader');
+export const loadArticle = () => import('./article');
 export const loadBook = () => import('./book');
 export const loadSettings = () => import('./settings');

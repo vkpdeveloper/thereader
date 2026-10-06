@@ -1,0 +1,194 @@
+{
+  "schema": 1,
+  "url": "https://dev.example.com/posts/parsing-json",
+  "title": "Parsing JSON in Rust, Go and Python",
+  "subtitle": null,
+  "byline": "Grace Hopper, Linus Torvalds",
+  "authors": [
+    "Grace Hopper",
+    "Linus Torvalds"
+  ],
+  "siteName": "Dev Notes",
+  "publishedAt": "2024-11-02",
+  "modifiedAt": null,
+  "language": "en",
+  "dir": "ltr",
+  "excerpt": "Every language has a favourite way to turn bytes into structured data. Here is the same small task, decoding a user record, written three ways, with the trade-offs each one makes explicit.",
+  "leadImage": null,
+  "favicon": "https://dev.example.com/favicon.ico",
+  "wordCount": 248,
+  "readingMinutes": 2,
+  "blocks": [
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Every language has a favourite way to turn bytes into structured data. Here is the same small task, decoding a user record, written three ways, with the trade-offs each one makes explicit."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Rust"
+        }
+      ],
+      "anchor": "rust"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Serde derives the decoder at compile time, so mistakes in field names are compile errors rather than runtime surprises."
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "code": "use serde::Deserialize;\n\n#[derive(Deserialize, Debug)]\nstruct User {\n    name: String,\n    age: u32,\n}\n\nfn main() {\n    let user: User = serde_json::from_str(r#\"{\"name\":\"Ann\",\"age\":41}\"#).unwrap();\n    println!(\"{:?}\", user);\n}",
+      "language": "rust",
+      "languageSource": "markup"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Go"
+        }
+      ],
+      "anchor": "go"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Go uses struct tags and reflection. It is less strict than Serde, but the standard library is all you need and it compiles in a second."
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "code": "package main\n\nimport (\n\t\"encoding/json\"\n\t\"fmt\"\n)\n\ntype User struct {\n\tName string `json:\"name\"`\n\tAge  int    `json:\"age\"`\n}\n\nfunc main() {\n\tvar u User\n\tif err := json.Unmarshal([]byte(`{\"name\":\"Ann\",\"age\":41}`), &u); err != nil {\n\t\tpanic(err)\n\t}\n\tfmt.Println(u.Name)\n}",
+      "language": "go",
+      "languageSource": "markup"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Python"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Python needs no declarations at all; the price is that nothing checks the shape until you touch it, which is why dataclasses and pydantic exist."
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "code": "import json\nfrom dataclasses import dataclass\n\ndata = json.loads('{\"name\": \"Ann\", \"age\": 41}')\nprint(data[\"name\"])",
+      "language": "python",
+      "languageSource": "detected"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Unlabelled snippets are detected from their content. This one has no class at all:"
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "code": "def greet(name: str) -> str:\n    return f\"Hello, {name}!\"\n\nif __name__ == \"__main__\":\n    print(greet(\"world\"))",
+      "language": "python",
+      "languageSource": "detected"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "And a shell session with a prompt, plus a GitHub-style line table:"
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "code": "$ cargo add serde --features derive\n$ cargo run",
+      "language": "shell",
+      "languageSource": "detected"
+    },
+    {
+      "type": "code",
+      "code": "const user = JSON.parse(text);\nconsole.log(user.name);",
+      "language": "javascript",
+      "languageSource": "detected"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Inline code like "
+        },
+        {
+          "type": "text",
+          "text": "json.loads",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " and keys like "
+        },
+        {
+          "type": "text",
+          "text": "Ctrl",
+          "marks": [
+            "kbd"
+          ]
+        },
+        {
+          "type": "text",
+          "text": "+"
+        },
+        {
+          "type": "text",
+          "text": "C",
+          "marks": [
+            "kbd"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " stay inline."
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "code": "[package]\nname = \"demo\"\nversion = \"0.1.0\"",
+      "language": "toml",
+      "languageSource": "markup",
+      "title": "config.toml"
+    }
+  ]
+}

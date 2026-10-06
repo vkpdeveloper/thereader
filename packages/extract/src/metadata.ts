@@ -1,5 +1,5 @@
 import type { Image } from './model';
-import { resolveUrl } from './url';
+import { canonicalUrl, resolveUrl } from './url';
 import { collapse, textOf, walk, type VDocument, type VElement } from './tree';
 
 export interface Metadata {
@@ -166,11 +166,12 @@ function normalizeLanguage(value: string | null): string | null {
   return tag;
 }
 
-const BYLINE_PREFIX = /^(?:by|written by|posted by|von|par|por|di|door|av|af|przez|автор|от)\s*[:\-]?\s+/i;
+const BYLINE_PREFIX = /^(?:by|written by|posted by|words by|author|authors|von|par|por|di|door|av|af|przez|автор|от|作者|著者|筆者|文|撰文|글|المؤلف|بقلم|מאת)(?:\s*[:：\-]\s*|\s+)/i;
 
 function cleanAuthor(value: string): string | null {
   let s = collapse(value).replace(BYLINE_PREFIX, '');
-  if (/^https?:\/\//i.test(s) || s.indexOf('@') > 0 && s.indexOf(' ') < 0) return null;
+  if (/^https?:\/\//i.test(s) || s.indexOf('@') >= 0 || /\d{2,}/.test(s) || /affiliation|email|e-mail|profile|follow|subscribe|message/i.test(s)) return null;
+  if (s.split(' ').length > 8) return null;
   s = s.replace(/\s*[|·•,]\s*$/, '').trim();
   if (s.length < 2 || s.length > 100) return null;
   return s;
@@ -300,13 +301,13 @@ export function readMetadata(doc: VDocument, pageUrl: string): Metadata {
   const dir = dirAttr === 'rtl' ? 'rtl' : dirAttr === 'ltr' ? 'ltr' : null;
 
   // Canonical URL.
-  let url = pageUrl;
+  let url = canonicalUrl(pageUrl);
   const canonicalLink = links.find((l) => /(?:^|\s)canonical(?:\s|$)/i.test(l.attrs['rel'] ?? '') && l.attrs['href']);
   for (const candidate of [canonicalLink?.attrs['href'] ?? null, m('og:url')]) {
     if (candidate === null) continue;
     const abs = resolveUrl(candidate, pageUrl);
     if (isAbsoluteHttp(abs) && sameSite(abs, pageUrl) && !(pathOf(abs) === '/' && pathOf(pageUrl) !== '/')) {
-      url = abs;
+      url = canonicalUrl(abs);
       break;
     }
   }
@@ -386,18 +387,25 @@ function findByline(body: VElement): string | null {
       (itemprop !== undefined && /(?:^|\s)author(?:\s|$)/.test(itemprop)) ||
       BYLINE_CLASS.test(el.matchString);
     if (!isAuthor) return true;
+    // Prefer the name inside a byline widget (avatar, karma and buttons are not the name).
     let target = el;
-    if (itemprop !== undefined) {
-      walk(el, (child) => {
-        if (child !== el && child.attrs['itemprop'] === 'name') {
-          target = child;
-          return false;
-        }
-        return true;
-      });
+    walk(el, (child) => {
+      if (child !== el && (child.attrs['itemprop'] === 'name' || /(?:^|[\s_-])(?:name|username|user-name|author-name|authorname|fn|byline__name|ltx_personname|nickname)(?:$|[\s_-])/.test(child.matchString))) {
+        target = child;
+        return false;
+      }
+      return true;
+    });
+    let text = '';
+    for (const child of target.children) {
+      if (child.kind === 1 && (child.tag === 'br' || child.tag === 'div' || child.tag === 'p')) {
+        if (text.trim().length > 0) break;
+        continue;
+      }
+      text += child.kind === 0 ? child.text : textOf(child) + ' ';
     }
-    const text = textOf(target);
-    if (text.length > 1 && text.length < 100 && !/\d{4}/.test(text)) found = text;
+    text = collapse(text);
+    if (text.length > 1 && text.length < 100 && !/\d{4}/.test(text) && cleanAuthor(text) !== null) found = text;
     return found === null;
   });
   return found;

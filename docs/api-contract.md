@@ -29,6 +29,7 @@ Paths are versioned beneath `/v1`.
 - `GET /v1/books/:id/download` -> streamed `application/epub+zip` bytes, Content-Length,
   ETag, Content-Disposition. Support HEAD and valid single byte ranges if feasible.
 - `GET /v1/books/:id/cover` -> optional cover image; 404 if none.
+- `GET /v1/article-source?url=...` -> the raw HTML of a public article page (see below).
 
 Book fields (all present unless explicitly nullable):
 
@@ -54,6 +55,32 @@ Book version + checksum identify a file edition. `fileSize` must describe real b
 
 Errors: `{ "error": { "code": "NOT_FOUND", "message": "Book not found." } }`.
 Use meaningful HTTP statuses and validate query values and path identifiers.
+
+### Article source relay
+
+`GET /v1/article-source?url=<encoded absolute URL>` lets a browser read an
+article page it cannot fetch cross-origin. It is a byte relay: the Worker never
+parses the page; clients decode, extract and store the article themselves.
+
+- Only public `http:`/`https:` URLs on default ports: no credentials, IP
+  literals, single-label hosts or reserved suffixes (`localhost`, `local`,
+  `internal`, `test`, `invalid`, `onion`, `arpa`, `home`, `lan`); at most 2048
+  characters. Otherwise `400 INVALID_URL`.
+- Up to 5 redirects are followed manually and every hop is re-validated
+  (`400 INVALID_URL` for an unsafe hop, `502 TOO_MANY_REDIRECTS` beyond five).
+- Upstream requests send a desktop Chrome `User-Agent`,
+  `Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8` and
+  `Accept-Language: en-US,en;q=0.9`, with a 15 s budget for the whole exchange
+  (`504 UPSTREAM_TIMEOUT`). Connection failures are `502 UPSTREAM_UNREACHABLE`;
+  a non-2xx final answer is `502 UPSTREAM_STATUS`.
+- Only `text/html` and `application/xhtml+xml` are relayed
+  (`415 UNSUPPORTED_MEDIA_TYPE` otherwise); bodies above 8 MB are
+  `413 TOO_LARGE`.
+- Success: `200` with the raw (decompressed) body, the upstream `Content-Type`
+  (charset included), `X-Final-Url` (the URL after redirects, exposed to CORS),
+  `Cache-Control: no-store`, `X-Content-Type-Options: nosniff` and
+  `Content-Security-Policy: default-src 'none'; sandbox`, so opening the relay
+  URL in a tab never runs the page's scripts on this origin.
 
 ## Personal use: no authentication
 

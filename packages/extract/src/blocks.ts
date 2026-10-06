@@ -1,4 +1,4 @@
-import { isCallout, isDataTableCached } from './content';
+import { isCallout, isDataTableCached, isFootnotes } from './content';
 import { detectLanguage, languageFromClass, normalizeLanguage } from './languages';
 import { imageFrom, isDecorativeImage, isSmallImage, lazyVideo, mediaFromElement, mediaFromFrame, socialProvider, TWEET } from './media';
 import type { Block, Callout, Definition, Figure, Footnote, Image, Inline, ListItem, Mark, Table, TableCell, TableRow, TextRun } from './model';
@@ -24,7 +24,6 @@ const BLOCK_TAGS = new Set([
   'table', 'ul', 'iframe', 'video', 'audio', 'summary', 'tbody', 'thead', 'tfoot', 'tr', 'td', 'th', 'caption', 'xmp', 'listing', 'plaintext',
 ]);
 
-const FOOTNOTE_CONTAINER = /(?:^|[\s_-])(?:footnotes|footnote-list|footnotes-list|endnotes|references|reflist|refs|footnote-definitions|notes-list|fn-list)(?:$|[\s_-])/;
 const BACKLINK = /(?:^|[\s_-])(?:footnote-backref|reversefootnote|footnote-back|footnote-return|mw-cite-backlink|backlink|fn-back|footnote-backlink|data-footnote-backref)(?:$|[\s_-])/;
 const PERMALINK = /(?:^|[\s_-])(?:anchor|headerlink|hash-link|permalink|heading-link|anchorjs-link|header-anchor|heading-anchor|anchor-link|deep-link|direct-link|autolink|section-link|copy-link)(?:$|[\s_-])/;
 const CAPTION_CLASS = /(?:^|[\s_-])(?:caption|wp-caption-text|figcaption|image-caption|photo-caption|img-caption|media-caption|caption-text|imagecaption|figure-caption|credit|image-credit|photo-credit)(?:$|[\s_-])/;
@@ -230,11 +229,11 @@ export class Converter {
     let counter = this.notes.size;
     walk(root, (el) => {
       if (el.skip) return false;
-      const isContainer = el.tag !== 'a' && (FOOTNOTE_CONTAINER.test(el.matchString) || el.attrs['role'] === 'doc-endnotes' || el.attrs['data-footnotes'] !== undefined);
+      const isContainer = el.tag !== 'a' && isFootnotes(el);
       if (isContainer) {
         walk(el, (item) => {
           if (item.skip) return false;
-          if (item.tag === 'li' && item.id.length > 0) {
+          if (item !== el && isNoteItem(item)) {
             counter++;
             this.notes.set(item.id, String(counter));
             return false;
@@ -263,14 +262,17 @@ export class Converter {
 
   private isFootnoteContainer(el: VElement): boolean {
     if (el.tag === 'a' || this.notes.size === 0) return false;
-    return FOOTNOTE_CONTAINER.test(el.matchString) || el.attrs['role'] === 'doc-endnotes' || el.attrs['data-footnotes'] !== undefined;
+    return isFootnotes(el);
   }
 
   private footnotes(el: VElement, out: Block[]): void {
     const items: Footnote[] = [];
     walk(el, (item) => {
       if (item.skip) return false;
-      if (item.tag === 'li' && this.notes.has(item.id)) {
+      if (item !== el && isNoteItem(item) && this.notes.has(item.id)) {
+        // Sphinx and docutils put the number in a label span; it is the item's label, not text.
+        const label = firstElement(item, (e) => e.hasClass('label') || e.hasClass('fn-label'));
+        if (label !== null) label.skip = true;
         const blocks: Block[] = [];
         this.children(item, blocks);
         if (blocks.length > 0) items.push({ id: item.id, label: this.notes.get(item.id)!, blocks });
@@ -526,7 +528,7 @@ export class Converter {
         const img = tag === 'picture' ? firstElement(el, (e) => e.tag === 'img') : el;
         if (img === null || /mwe-math-fallback-image/.test(img.className)) return;
         const image = imageFrom(img, this.base) ?? this.noscriptImage(img);
-        if (image === null || isDecorativeImage(img, image)) return;
+        if (image === null || isDecorativeImage(img, image, this.base)) return;
         if (isSmallImage(img, image)) {
           const node: Inline = { type: 'image', src: image.src, alt: image.alt };
           if (image.width !== undefined) node.width = image.width;
@@ -636,7 +638,7 @@ export class Converter {
           const img = tag === 'picture' ? firstElement(child, (e) => e.tag === 'img') : child;
           if (img === null || /mwe-math-fallback-image/.test(img.className)) continue;
           const image = imageFrom(img, this.base);
-          if (image !== null && !isDecorativeImage(img, image) && isSmallImage(img, image)) {
+          if (image !== null && !isDecorativeImage(img, image, this.base) && isSmallImage(img, image)) {
             const node: Inline = { type: 'image', src: image.src, alt: image.alt };
             if (image.width !== undefined) node.width = image.width;
             if (image.height !== undefined) node.height = image.height;
@@ -963,7 +965,7 @@ export class Converter {
     const img = el.tag === 'picture' ? firstElement(el, (e) => e.tag === 'img') : el;
     if (img === null || /mwe-math-fallback-image/.test(img.className)) return;
     const image = imageFrom(img, this.base) ?? this.noscriptImage(img);
-    if (image === null || isDecorativeImage(img, image)) return;
+    if (image === null || isDecorativeImage(img, image, this.base)) return;
     if (isSmallImage(img, image)) {
       const node: Inline = { type: 'image', src: image.src, alt: image.alt };
       if (image.width !== undefined) node.width = image.width;
@@ -993,7 +995,7 @@ export class Converter {
         case 'img': {
           if (/mwe-math-fallback-image/.test(e.className)) return false;
           const image = imageFrom(e, this.base) ?? this.noscriptImage(e);
-          if (image !== null && !isDecorativeImage(e, image) && !images.some((i) => i.src === image.src)) images.push(image);
+          if (image !== null && !isDecorativeImage(e, image, this.base) && !images.some((i) => i.src === image.src)) images.push(image);
           return false;
         }
         case 'noscript':
@@ -1126,6 +1128,11 @@ export class Converter {
     else if (headerRows > 0 && headerRows === rows.length && rows.length > 1) block.headerRows = 1;
     out.push(block);
   }
+}
+
+function isNoteItem(el: VElement): boolean {
+  if (el.id.length === 0) return false;
+  return el.tag === 'li' || el.attrs['role'] === 'doc-footnote' || el.attrs['role'] === 'doc-endnote' || (el.tag !== 'a' && (el.hasClass('footnote') || el.hasClass('footnote-item')));
 }
 
 function inlineTextOf(content: Inline[]): string {
