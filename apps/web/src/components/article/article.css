@@ -477,6 +477,7 @@ h6.article-heading {
   color: var(--purple);
 }
 .hljs-string,
+.hljs-code,
 .hljs-regexp,
 .hljs-char.escape_,
 .hljs-meta .hljs-string {
@@ -792,7 +793,9 @@ h6.article-heading {
   overflow-y: hidden;
   text-align: center;
 }
+/* A font with an OpenType MATH table, so radicals, fences and operators stretch. */
 .article-math math {
+  font-family: 'STIX Two Math', 'Latin Modern Math', 'Cambria Math', 'Noto Sans Math', math;
   font-size: 1.05em;
 }
 .article-math.is-tex code {

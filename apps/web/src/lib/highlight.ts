@@ -91,12 +91,36 @@ const loaders: Record<Grammar, () => Promise<{ default: LanguageFn }>> = {
   yaml: () => import('highlight.js/lib/languages/yaml'),
 };
 
+/**
+ * Grammars a grammar hands embedded code to (`subLanguage`): JSX and inline
+ * styles in scripts, scripts and styles in markup, HTML in Markdown, commands
+ * in shell sessions. Without them that code stays plain.
+ */
+const embeds: Partial<Record<Grammar, Grammar[]>> = {
+  javascript: ['xml', 'css', 'graphql'],
+  typescript: ['xml', 'css', 'graphql'],
+  xml: ['css', 'javascript'],
+  markdown: ['xml'],
+  erb: ['ruby', 'xml'],
+  dockerfile: ['bash'],
+  shell: ['bash'],
+  dart: ['markdown'],
+  nix: ['markdown'],
+};
+
 /** Grammars `highlightAuto` chooses between when the page did not name a language. */
 const detectable: Grammar[] = ['javascript', 'typescript', 'python', 'bash', 'json', 'xml', 'css', 'go', 'rust', 'java', 'cpp', 'csharp', 'sql', 'yaml', 'ruby', 'php'];
 
 const registered = new Map<Grammar, Promise<boolean>>();
 
+/** Registers a grammar and the grammars it embeds; true once `name` itself is usable. */
 function ensure(name: Grammar): Promise<boolean> {
+  const own = load(name);
+  const extra = embeds[name];
+  return extra ? Promise.all([own, ...extra.map(load)]).then(([ok]) => ok) : own;
+}
+
+function load(name: Grammar): Promise<boolean> {
   let ready = registered.get(name);
   if (!ready) {
     ready = loaders[name]().then(
