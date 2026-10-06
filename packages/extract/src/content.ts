@@ -823,7 +823,8 @@ function prepare(root: VElement, flags: Flags): void {
       if (heading !== null && HEADINGS.has(heading.tag) && heading.textLen < 40) heading.skip = true;
       return false;
     }
-    if ((tag === 'h1' || tag === 'h2') && classWeight(el, flags) < 0) {
+    // Negative words in a heading's class drop it, unless it anchors a section (an id that is not negative itself).
+    if ((tag === 'h1' || tag === 'h2') && classWeight(el, flags) < 0 && (el.id.length === 0 || NEGATIVE.test(el.id.toLowerCase()))) {
       el.skip = true;
       return false;
     }
