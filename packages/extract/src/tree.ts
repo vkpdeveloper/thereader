@@ -160,7 +160,8 @@ export function fromDom(doc: Document): VDocument {
       return null;
     }
 
-    const attrs: Record<string, string> = {};
+    // No prototype: an attribute named "__proto__" or "constructor" is just an attribute.
+    const attrs: Record<string, string> = Object.create(null) as Record<string, string>;
     const list = el.attributes;
     for (let i = 0; i < list.length; i++) {
       const a = list[i]!;
