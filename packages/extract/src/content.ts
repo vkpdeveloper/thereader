@@ -876,7 +876,7 @@ class Counts {
   img = 0;
   li = 0;
   input = 0;
-  /** pre, math or a data table: content that is never cleaned away. */
+  /** pre, math, a data table or a player: content that is never cleaned away. */
   protected = 0;
   embeds = 0;
   headingText = 0;
@@ -909,7 +909,7 @@ function cleanConditionally(root: VElement, flags: Flags): void {
       c.img += k.img + (ct === 'img' ? 1 : 0);
       c.li += k.li + (ct === 'li' ? 1 : 0);
       c.input += k.input + (ct === 'input' && (child.attrs['type'] ?? '').toLowerCase() !== 'checkbox' ? 1 : 0);
-      c.protected += k.protected + (ct === 'pre' || ct === 'math' || ct === 'math-tex' || ct === 'table' && isDataTableCached(child) ? 1 : 0);
+      c.protected += k.protected + (ct === 'pre' || ct === 'math' || ct === 'math-tex' || ct === 'table' && isDataTableCached(child) || ct === 'video' || ct === 'audio' || ct === 'iframe' && VIDEO_HOSTS.test(child.attrs['src'] ?? child.attrs['data-src'] ?? '') ? 1 : 0);
       c.embeds += k.embeds + (EMBEDS.has(ct) && !VIDEO_HOSTS.test(child.attrs['src'] ?? '') ? 1 : 0);
       c.headingText += HEADINGS.has(ct) ? k.text : k.headingText;
       c.listText += LISTS.has(ct) ? k.text : k.listText;
