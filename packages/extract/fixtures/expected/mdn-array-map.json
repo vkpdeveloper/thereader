@@ -18,9 +18,59 @@
     "height": 1024
   },
   "favicon": "https://developer.mozilla.org/apple-touch-icon.png",
-  "wordCount": 1339,
+  "wordCount": 1368,
   "readingMinutes": 6,
   "blocks": [
+    {
+      "type": "details",
+      "summary": [
+        {
+          "type": "text",
+          "text": "Baseline"
+        },
+        {
+          "type": "break"
+        },
+        {
+          "type": "text",
+          "text": "Widely available"
+        }
+      ],
+      "blocks": []
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "The "
+        },
+        {
+          "type": "text",
+          "text": "map()",
+          "marks": [
+            "bold",
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " method of "
+        },
+        {
+          "type": "text",
+          "text": "Array",
+          "marks": [
+            "code"
+          ],
+          "href": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array"
+        },
+        {
+          "type": "text",
+          "text": " instances creates a new array populated with the results of calling a provided function on every element in the calling array."
+        }
+      ]
+    },
     {
       "type": "heading",
       "level": 2,

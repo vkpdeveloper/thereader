@@ -248,7 +248,8 @@ function markUnlikely(body: VElement, flags: Flags, state: { bylineRemoved: bool
         // A layout wrapper holding most of the page's prose ("with-sidebar") is never unlikely.
         const prose = proseLength(el);
         // Headings carry no prose of their own; only the hard words drop them ("header-anchor" is not chrome).
-        if ((UNLIKELY_HARD.test(match) || prose < 400 && !HEADINGS.has(el.tag)) && prose <= totalProse * 0.5) {
+        // A header holding the page's h1 and real prose is the article's own header (title, standfirst, intro).
+        if ((UNLIKELY_HARD.test(match) || prose < 400 && !HEADINGS.has(el.tag) && !(prose >= 100 && linkDensity(el) < 0.3 && hasH1(el))) && prose <= totalProse * 0.5) {
           el.skip = true;
           return false;
         }
@@ -276,6 +277,16 @@ function markUnlikely(body: VElement, flags: Flags, state: { bylineRemoved: bool
   });
 }
 
+function hasH1(el: VElement): boolean {
+  let found = false;
+  walk(el, (e) => {
+    if (found) return false;
+    if (e.tag === 'h1') found = true;
+    return !found;
+  });
+  return found;
+}
+
 const ARTICLE = new Set(['article']);
 const QUOTE_OR_FIGURE = new Set(['blockquote', 'figure']);
 
@@ -289,6 +300,7 @@ function countNestedArticles(parent: VElement): number {
 function proseLength(el: VElement): number {
   let n = 0;
   walk(el, (e) => {
+    if (e.skip) return false;
     if (e.tag === 'p') {
       n += e.textLen - e.linkLen;
       return false;
@@ -634,7 +646,9 @@ function isLeadMedia(sibling: VElement, top: VElement): boolean {
 
 /** A container of plain paragraphs right next to the body (an intro split from it). */
 function isAdjacentProse(sibling: VElement, top: VElement): boolean {
-  if (sibling.textLen < 200 || linkDensity(sibling) > 0.25 || NEGATIVE.test(sibling.matchString) || BOILERPLATE.test(sibling.matchString)) return false;
+  // The article's own header (with the h1) needs only a standfirst's worth of prose.
+  const min = sibling.textLen >= 100 && hasH1(sibling) ? 100 : 200;
+  if (sibling.textLen < min || linkDensity(sibling) > 0.25 || NEGATIVE.test(sibling.matchString) || BOILERPLATE.test(sibling.matchString)) return false;
   const parent = top.parent;
   if (parent === null) return false;
   const kids = parent.children;
@@ -645,7 +659,8 @@ function isAdjacentProse(sibling: VElement, top: VElement): boolean {
     const between = kids[k]!;
     if (between.kind === 1 && !between.skip) return false;
   }
-  return proseLength(sibling) >= sibling.textLen * 0.5 && proseLength(sibling) >= 200;
+  const prose = proseLength(sibling);
+  return prose >= sibling.textLen * 0.5 && prose >= min;
 }
 
 function liveChildren(el: VElement): number {
