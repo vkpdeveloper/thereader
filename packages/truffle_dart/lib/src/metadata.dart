@@ -278,7 +278,12 @@ void _addAuthors(List<String> raw, List<String> out) {
 
 bool _isAbsoluteHttp(String? url) => url != null && _httpUrl.hasMatch(url);
 
-final _hostRe = RegExp(r'^https?:\/\/([^/:?#]+)', caseSensitive: false);
+final _userinfo = RegExp(r'^https?:\/\/[^/?#]*@', caseSensitive: false);
+
+/// Userinfo (`https://user:pass@host/`) can dress any host up as another.
+bool _hasUserinfo(String url) => _userinfo.hasMatch(url);
+
+final _hostRe = RegExp(r'^https?:\/\/(?:[^/?#]*@)?([^/:?#]+)', caseSensitive: false);
 
 bool _sameSite(String a, String b) {
   String host(String u) {
@@ -489,7 +494,10 @@ Metadata readMetadata(VDocument doc, String pageUrl) {
   for (final candidate in [canonicalLink?.attrs['href'], m('og:url')]) {
     if (candidate == null) continue;
     final abs = resolveUrl(candidate, pageUrl);
-    if (_isAbsoluteHttp(abs) && _sameSite(abs!, pageUrl) && !(_pathOf(abs) == '/' && _pathOf(pageUrl) != '/')) {
+    if (_isAbsoluteHttp(abs) &&
+        !_hasUserinfo(abs!) &&
+        _sameSite(abs, pageUrl) &&
+        !(_pathOf(abs) == '/' && _pathOf(pageUrl) != '/')) {
       url = _keepHttps(canonicalUrl(abs), pageUrl);
       break;
     }

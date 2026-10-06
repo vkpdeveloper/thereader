@@ -27,9 +27,9 @@ export function resolveHttp(href: string, base: string): string | null {
   return url !== null && /^https?:\/\//i.test(url) ? url : null;
 }
 
-/** Host without `www.`. */
+/** Host without `www.`; userinfo (`https://user:pass@host/`) is not the host. */
 export function hostOf(url: string): string {
-  const m = /^[a-z][a-z0-9+.-]*:\/\/([^/:?#]+)/i.exec(url);
+  const m = /^[a-z][a-z0-9+.-]*:\/\/(?:[^/?#]*@)?([^/:?#]+)/i.exec(url);
   return m === null ? '' : m[1]!.toLowerCase().replace(/^www\./, '');
 }
 

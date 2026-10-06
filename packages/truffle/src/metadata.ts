@@ -190,9 +190,14 @@ function isAbsoluteHttp(url: string | null): url is string {
   return url !== null && /^https?:\/\//i.test(url);
 }
 
+/** Userinfo (`https://user:pass@host/`) can dress any host up as another. */
+function hasUserinfo(url: string): boolean {
+  return /^https?:\/\/[^/?#]*@/i.test(url);
+}
+
 function sameSite(a: string, b: string): boolean {
   const host = (u: string) => {
-    const m = /^https?:\/\/([^/:?#]+)/i.exec(u);
+    const m = /^https?:\/\/(?:[^/?#]*@)?([^/:?#]+)/i.exec(u);
     if (m === null) return '';
     const parts = m[1]!.toLowerCase().split('.');
     return parts.slice(Math.max(0, parts.length - 2)).join('.');
@@ -313,7 +318,7 @@ export function readMetadata(doc: VDocument, pageUrl: string): Metadata {
   for (const candidate of [canonicalLink?.attrs['href'] ?? null, m('og:url')]) {
     if (candidate === null) continue;
     const abs = resolveUrl(candidate, pageUrl);
-    if (isAbsoluteHttp(abs) && sameSite(abs, pageUrl) && !(pathOf(abs) === '/' && pathOf(pageUrl) !== '/')) {
+    if (isAbsoluteHttp(abs) && !hasUserinfo(abs) && sameSite(abs, pageUrl) && !(pathOf(abs) === '/' && pathOf(pageUrl) !== '/')) {
       url = keepHttps(canonicalUrl(abs), pageUrl);
       break;
     }

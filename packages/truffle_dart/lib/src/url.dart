@@ -33,10 +33,10 @@ String? resolveHttp(String href, String base) {
   return url != null && _httpScheme.hasMatch(url) ? url : null;
 }
 
-final _hostPattern = RegExp(r'^[a-z][a-z0-9+.-]*:\/\/([^/:?#]+)', caseSensitive: false);
+final _hostPattern = RegExp(r'^[a-z][a-z0-9+.-]*:\/\/(?:[^/?#]*@)?([^/:?#]+)', caseSensitive: false);
 final _www = RegExp(r'^www\.');
 
-/// Host without `www.`.
+/// Host without `www.`; userinfo (`https://user:pass@host/`) is not the host.
 String hostOf(String url) {
   final m = _hostPattern.firstMatch(url);
   return m == null ? '' : jsLower(m.group(1)!).replaceFirst(_www, '');
