@@ -31,12 +31,16 @@ String page(String title) => '''<!doctype html><html lang="en"><head><meta chars
 class ArticleCloud {
   bool legacy = false;
   bool failPuts = false;
+  bool failSync = false;
   int rev = 0;
   int puts = 0;
   int gets = 0;
   final Map<String, Map<String, dynamic>> rows = {};
   final Map<String, Uint8List> bodies = {};
   final List<Map<String, dynamic>> requests = [];
+
+  /// Requests in arrival order: `sync` or `put`.
+  final List<String> log = [];
 
   ApiClient client(String url) => ApiClient(baseUrl: url, client: MockClient(handle));
 
@@ -55,6 +59,7 @@ class ArticleCloud {
       if (request.method == 'PUT') {
         if (failPuts) throw http.ClientException('Connection refused', request.url);
         puts++;
+        log.add('put');
         expect(request.headers['content-type'], 'application/gzip');
         final plain = Uint8List.fromList(const GZipDecoder().decodeBytes(request.bodyBytes));
         if (sha256.convert(plain).toString() != sha) return error(422, 'CHECKSUM_MISMATCH');
@@ -66,8 +71,10 @@ class ArticleCloud {
       if (stored == null) return error(404, 'NOT_FOUND');
       return http.Response.bytes(stored, 200, headers: {'content-type': 'application/gzip'});
     }
+    if (failSync) throw http.ClientException('Connection refused', request.url);
     final input = (jsonDecode(request.body) as Map).cast<String, dynamic>();
     requests.add(input);
+    log.add('sync');
     final changes = (input['changes'] as List).cast<Map>();
     if (legacy && (input.containsKey('articlesSince') || changes.any((c) => '${c['kind']}'.startsWith('article')))) {
       return error(400, 'INVALID_SYNC');
@@ -94,6 +101,11 @@ class ArticleCloud {
           'positionChangeId': resurrect ? null : row?['positionChangeId'],
           'rev': ++rev,
         };
+        // Like the Worker: a deletion drops a document no live article references.
+        final sha = row?['bodySha256'];
+        if (deleted && sha is String && !rows.values.any((r) => r['deleted'] != true && r['bodySha256'] == sha)) {
+          bodies.remove(sha);
+        }
       } else if (c['kind'] == 'articleProgress') {
         if (row == null || row['deleted'] == true) continue;
         if (!newer(at, c['id'] as String, row['positionUpdatedAt'] as String?, row['positionChangeId'] as String?)) continue;
@@ -199,6 +211,9 @@ void main() {
     expect(saved.id, ArticleRepository.idFor('https://example.com/story'));
     expect(saved.bodySha256, matches(RegExp(r'^[a-f0-9]{64}$')));
     expect(sha256.convert(utf8.encode(a.files.files[saved.id]!)).toString(), saved.bodySha256);
+    // The API checks the document's leading `{"schema":1,` instead of parsing it.
+    expect(a.files.files[saved.id], startsWith('{"schema":1,'));
+    expect(a.files.files[saved.id], endsWith('}'));
     await a.cycle();
     expect(cloud.puts, 1);
     final sent = (cloud.requests.single['changes'] as List).cast<Map>();
@@ -263,6 +278,7 @@ void main() {
     await b.articles.remove(saved.id);
     await b.cycle();
     expect(cloud.rows[saved.id]!['deleted'], isTrue);
+    expect(cloud.bodies.containsKey(saved.bodySha256), isFalse);
     await a.cycle();
     expect(a.articles.byId(saved.id), isNull);
     expect(a.files.files.containsKey(saved.id), isFalse);
@@ -275,10 +291,33 @@ void main() {
     expect(again.id, saved.id);
     await a.cycle();
     expect(cloud.rows[saved.id]!['deleted'], isFalse);
+    // Saving again uploads the document again.
+    expect(cloud.puts, 2);
+    expect(cloud.bodies.containsKey(again.bodySha256), isTrue);
     await b.cycle();
-    expect(b.articles.byId(saved.id), isNotNull);
+    expect(b.articles.byId(saved.id)!.stored, isTrue);
+    expect((await b.articles.loadArticle(saved.id)).title, saved.title);
     await a.dispose();
     await b.dispose();
+  });
+
+  test('a document uploads only after the server accepted its save', () async {
+    final cloud = ArticleCloud()..failSync = true;
+    final clock = Clock();
+    final a = await Device.create(cloud, clock);
+    final saved = await a.articles.add('https://example.com/story');
+    await a.cycle();
+    expect(cloud.log, isEmpty);
+    expect(a.sync.error, isNotNull);
+
+    cloud.failSync = false;
+    await a.cycle();
+    expect(cloud.log, ['sync', 'put']);
+    final sent = (cloud.requests.single['changes'] as List).cast<Map>().single;
+    expect((sent['payload'] as Map)['bodySha256'], saved.bodySha256);
+    await a.cycle();
+    expect(cloud.log, ['sync', 'put', 'sync']);
+    await a.dispose();
   });
 
   test('reading positions sync by time', () async {

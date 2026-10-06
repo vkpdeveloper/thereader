@@ -661,8 +661,6 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
         articles != null &&
         state.articlesUnsupportedUntil?.isAfter(_now()) != true;
     try {
-      // Documents first, so other devices rarely see an article before its text.
-      if (withArticles) await _uploadArticleBodies(origin, client, state);
       // Bound both count and encoded body; huge locator payloads must not block
       // every other queued change behind the API's request-size limit.
       var bytes = 100;
@@ -853,6 +851,10 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
       _capture();
       state.lastSyncedAt = DateTime.now().toUtc();
       await _persist();
+      // Documents go up once the server holds their saves: the server deletes
+      // a document no live article references, so uploading first could race
+      // a deletion and leave a save pointing at nothing.
+      if (withArticles) await _uploadArticleBodies(origin, client, state);
       _failures = 0;
       _scheduleMetadataRefresh(origin, metadataRefresh);
       // Drain further batches without treating a blocked import as an error.
@@ -923,13 +925,15 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
     if (cursor is num) state.highlightCursor = cursor.toInt();
   }
 
-  /// Uploads documents this device saved, a few per cycle. A network or
-  /// server failure keeps the rest queued for the next cycle; a document the
-  /// server refuses (too large, invalid) or that is gone locally is dropped,
-  /// and its article stays readable here and pending elsewhere.
+  /// Uploads documents this device saved, a few per cycle, once the server
+  /// has accepted their saves. A network or server failure keeps the rest
+  /// queued for the next cycle; a document the server refuses (too large,
+  /// invalid) or that is gone locally is dropped, and its article stays
+  /// readable here and pending elsewhere.
   Future<void> _uploadArticleBodies(String origin, ApiClient client, _OriginState state) async {
     final store = articles!;
-    for (final item in state.articleUploads.entries.take(articleUploadsPerCycle).toList()) {
+    final ready = state.articleUploads.entries.where((e) => !state.pending.containsKey('article:${e.key}'));
+    for (final item in ready.take(articleUploadsPerCycle).toList()) {
       final body = await store.bodyFor(item.key);
       if (body != null && body.$2 == item.value) {
         try {
