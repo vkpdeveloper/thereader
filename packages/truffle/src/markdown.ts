@@ -279,32 +279,32 @@ function mathSpan(tex: string, cell: boolean): string {
   return flat.indexOf('$') < 0 ? `$${flat}$` : `$$${flat}$$`;
 }
 
-const DESTINATION_ESCAPE = /[\\&]/;
-const DESTINATION_SPECIAL = /[\x00-\x20<>()\\&]/;
-
 /** A link or image destination: bare, or in `<…>` when it holds spaces, angle brackets or unbalanced parentheses. */
 function destination(url: string): string {
-  if (!DESTINATION_SPECIAL.test(url)) return url;
+  // One pass over the address decides everything; most need nothing.
+  let depth = 0;
+  let bracket = false;
+  let escape = false;
+  for (let i = 0; i < url.length; i++) {
+    const c = url.charCodeAt(i);
+    if (c > 62) {
+      if (c === 92) escape = true;
+    } else if (c <= 32 || c === 60 || c === 62) {
+      bracket = true;
+    } else if (c === 40) {
+      depth++;
+    } else if (c === 41) {
+      if (--depth < 0) bracket = true;
+    } else if (c === 38) {
+      escape = true;
+    }
+  }
   let out = url;
-  if (DESTINATION_ESCAPE.test(out)) {
+  if (escape) {
     out = out.replace(/\\/g, '\\\\');
     out = out.replace(/&(?=(?:#[0-9]{1,7}|#[xX][0-9a-fA-F]{1,6}|[A-Za-z][A-Za-z0-9]{1,31});)/g, '\\&');
   }
-  let depth = 0;
-  let balanced = true;
-  for (let i = 0; i < out.length; i++) {
-    const c = out.charCodeAt(i);
-    if (c <= 32 || c === 60 || c === 62) {
-      balanced = false;
-      break;
-    }
-    if (c === 40) depth++;
-    else if (c === 41 && --depth < 0) {
-      balanced = false;
-      break;
-    }
-  }
-  if (balanced && depth === 0) return out;
+  if (!bracket && depth === 0) return out;
   return '<' + out.replace(/[<>]/g, '\\$&') + '>';
 }
 
@@ -386,6 +386,8 @@ class Writer {
   private readonly notes = new Map<string, string>();
   /** Footnote ids with a `[^label]` call written so far. */
   private readonly called = new Set<string>();
+  /** Footnote ids written as plain text (no call yet) by the latest pass over the footnotes. */
+  private readonly uncalled: string[] = [];
 
   constructor(blocks: readonly Block[]) {
     const used = new Set<string>();
@@ -419,6 +421,10 @@ class Writer {
 
   /** Inline content. `line` writes breaks as spaces (headings, table cells, terms); `mask` marks already applied around it. */
   inline(content: readonly Inline[], line = false, mask = 0, cell = false): string {
+    if (content.length === 1) {
+      const only = content[0]!;
+      if (only.type === 'text' && only.marks === undefined && only.href === undefined) return escapeText(only.text, false);
+    }
     const atoms: Atom[] = [];
     for (let i = 0; i < content.length; i++) {
       const node = content[i]!;
@@ -503,10 +509,10 @@ class Writer {
       if (md.length > 0 || deferred[deferred.length - 1] === i) previous = block.type === 'list' ? block : null;
     }
     if (deferred.length > 0) {
-      const called = this.called.size;
+      this.uncalled.length = 0;
       for (const i of deferred) parts[i] = this.footnotes(blocks[i] as Footnotes);
-      // Notes that call later notes: write again now that every call is known.
-      if (this.called.size !== called) for (const i of deferred) parts[i] = this.footnotes(blocks[i] as Footnotes);
+      // A note written as text before a later note called it: write them again now that every call is known.
+      if (this.uncalled.some((id) => this.called.has(id))) for (const i of deferred) parts[i] = this.footnotes(blocks[i] as Footnotes);
     }
     let out = '';
     for (const md of parts) if (md.length > 0) out = out.length === 0 ? md : out + separator + md;
@@ -665,6 +671,7 @@ class Writer {
         const label = this.notes.get(item.id)!;
         out.push(content.length === 0 ? `[^${label}]:` : indent(content, `[^${label}]: `, '    '));
       } else {
+        this.uncalled.push(item.id);
         const label = escapeText(`[${item.label}]`, false);
         out.push(content.length === 0 ? label : item.blocks[0]?.type === 'paragraph' ? `${label} ${content}` : `${label}\n\n${content}`);
       }
