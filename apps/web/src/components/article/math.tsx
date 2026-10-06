@@ -16,6 +16,12 @@ const attributes = new Set([
   'rowspacing', 'rowspan', 'rspace', 'scriptlevel', 'separator', 'separators', 'stretchy', 'symmetric', 'voffset', 'width',
 ]);
 
+/**
+ * Token elements hold text only. Some converters (older KaTeX) nest `<mi>`
+ * inside `<mtext>`, which Chromium lays out one glyph per line.
+ */
+const tokens = new Set(['mi', 'mn', 'mo', 'ms', 'mtext']);
+
 /** Layout classes from converted TeX (array cell alignment, row spacing), styled in article.css. */
 const classes = new Set(['tml-right', 'tml-left', 'tml-jot', 'tml-small']);
 /** Inline styles are kept only when they are plain cell padding. */
@@ -42,6 +48,10 @@ export function sanitizeMathml(source: string, display: 'block' | 'inline'): Ele
         const kept = attr.value.split(/\s+/).filter((token) => classes.has(token));
         if (kept.length > 0) out.setAttribute('class', kept.join(' '));
       } else if (key === 'style' && paddingStyle.test(attr.value)) out.setAttribute('style', attr.value);
+    }
+    if (tokens.has(name) && node.children.length > 0) {
+      out.textContent = node.textContent ?? '';
+      return out;
     }
     for (const child of Array.from(node.childNodes)) {
       if (child.nodeType === Node.TEXT_NODE) out.appendChild(document.createTextNode(child.textContent ?? ''));
