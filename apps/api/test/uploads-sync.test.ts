@@ -1005,5 +1005,26 @@ describe("shared personal sync", () => {
       const after: any = await jsonRequest("/v1/sync", { deviceId, highlightsSince: 0, changes: [moved] }).then((r) => r.json());
       expect(after.highlights.items).toEqual([expect.objectContaining({ id: "uuid-1", sha256: edition, color: "yellow" })]);
     });
+
+    // Web article highlights (docs/cloud-sync.md): the article id in bookId, a
+    // sentinel edition, and a block/offset locator. No server change needed.
+    it("accepts article highlights on their sentinel edition and returns them as written", async () => {
+      const t0 = "2026-01-23T12:00:00.000000Z";
+      const articleId = "0123456789abcdef0123456789abcdef";
+      const articleLocator = {
+        type: "article", href: "https://example.org/post", articleId, block: 12, start: 5, endBlock: 13, end: 20,
+        title: "A section", locations: { progression: 0.31, totalProgression: 0.31 },
+        text: { before: "Earlier ", highlight: "the passage\nand more", after: " later" },
+      };
+      const articleHighlight = {
+        id: "art-1", bookId: `article-${articleId}`, sha256: "0".repeat(64), kind: "highlight", updatedAt: t0,
+        payload: { highlightId: "uuid-art", locator: articleLocator, text: "the passage\nand more", color: "green", note: "why", createdAt: t0, deleted: false },
+      };
+      const body: any = await jsonRequest("/v1/sync", { deviceId, highlightsSince: 0, changes: [articleHighlight] }).then((r) => r.json());
+      expect(body.acceptedChangeIds).toEqual(["art-1"]);
+      expect(body.highlights.items).toEqual([
+        expect.objectContaining({ id: "uuid-art", bookId: `article-${articleId}`, sha256: "0".repeat(64), locator: articleLocator, note: "why" }),
+      ]);
+    });
   });
 });

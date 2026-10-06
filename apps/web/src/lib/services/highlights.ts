@@ -1,3 +1,4 @@
+import { articleIdOf } from '../articleAnchors';
 import type { Highlight } from '../types';
 import type { HighlightStore, HighlightsSnapshot } from './contract';
 import { randomId } from './hash';
@@ -90,6 +91,22 @@ export class HighlightStoreImpl extends Emitter<HighlightsSnapshot> implements H
     if (!list) {
       list = this.snapshot.all
         .filter((h) => !h.deleted && h.origin === origin && h.sha256 === sha256)
+        .sort((a, b) => position(a) - position(b) || isoOrder(a.createdAt) - isoOrder(b.createdAt));
+      this.editions.set(key, list);
+    }
+    return list;
+  }
+
+  /**
+   * Live highlights of one saved article (any origin, like articles
+   * themselves) in reading order; stable like `forEdition`.
+   */
+  forArticle(articleId: string): Highlight[] {
+    const key = `article\n${articleId}`;
+    let list = this.editions.get(key);
+    if (!list) {
+      list = this.snapshot.all
+        .filter((h) => !h.deleted && articleIdOf(h) === articleId)
         .sort((a, b) => position(a) - position(b) || isoOrder(a.createdAt) - isoOrder(b.createdAt));
       this.editions.set(key, list);
     }

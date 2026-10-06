@@ -204,6 +204,38 @@ describe('highlights', () => {
     expect(h.calls[2]!.changes).toHaveLength(0);
   });
 
+  test('article highlights sync on their own sentinel edition and stay out of book editions', async () => {
+    const h = await harness();
+    const book = makeBook();
+    await addBook(h, book);
+    const articleId = 'c'.repeat(32);
+    const locator = { type: 'article', href: 'https://example.org/post', articleId, block: 3, start: 4, endBlock: 3, end: 9, locations: { progression: 0.2, totalProgression: 0.2 } };
+    // Created under another API origin: articles sync wherever the app points.
+    const mine = await h.highlights.create({ bookId: `article-${articleId}`, sha256: '0'.repeat(64), origin: 'http://elsewhere.test', locator, text: 'quote', color: 'green' });
+    await h.settle();
+    h.setHandler(() => ({
+      ...emptyResponse(),
+      highlights: {
+        items: [
+          { id: 'remote-article', bookId: `article-${articleId}`, sha256: '0'.repeat(64), locator: { ...locator, block: 1 }, text: 'earlier', color: 'blue', note: 'n', createdAt: '2026-09-27T09:00:00.000Z', updatedAt: '2026-09-27T09:00:00.000Z', deleted: false },
+        ],
+        cursor: 3,
+        more: false,
+      },
+    }));
+    await h.sync.syncNow();
+    const sent = h.calls[0]!.changes.find((c) => c.kind === 'highlight')!;
+    expect(sent).toMatchObject({ bookId: `article-${articleId}`, sha256: '0'.repeat(64), payload: { highlightId: mine.id, locator, color: 'green' } });
+
+    expect(h.highlights.forArticle(articleId).map((x) => x.id)).toEqual(['remote-article', mine.id]);
+    expect(h.highlights.forEdition(ORIGIN, book.sha256)).toEqual([]);
+
+    h.setHandler(() => emptyResponse());
+    await h.settle();
+    await h.sync.syncNow();
+    expect(h.calls[1]!.changes).toHaveLength(0);
+  });
+
   test('other errors keep the outbox and report the mobile wording', async () => {
     const h = await harness();
     await addBook(h, makeBook());

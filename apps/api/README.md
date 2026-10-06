@@ -133,7 +133,10 @@ edition. Every accepted write takes a new server `rev`. To pull, add
 `highlights:{items,cursor,more}`: only rows changed since that rev, tombstones
 included, at most 500 per response. When `more` is true, the client pulls again
 from `cursor`. Requests without `highlightsSince` get the old response shape and
-cost no extra reads.
+cost no extra reads. Highlights in saved web articles use the same change with
+`bookId:"article-<articleId>"` and a `sha256` of 64 zeros, and a block/offset
+locator (see [cloud sync](../../docs/cloud-sync.md#article-highlights)); the
+Worker treats them like any other highlight.
 
 Saved web articles ride on the same request too, with the sentinel edition
 `bookId:"_articles"`, `sha256` of 64 zeros. An `article` change carries the

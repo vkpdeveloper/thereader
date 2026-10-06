@@ -3,6 +3,7 @@ import { ApiError, type SyncSnapshot, type SyncStore } from './contract';
 import type { SyncResponse } from './api';
 import { MAX_ARTICLE_BODY_BYTES, positionFromFraction, type ArticleStoreImpl, type RemoteArticle } from './articles';
 import { randomId } from './hash';
+import { articleIdOf } from '../articleAnchors';
 import type { HighlightStoreImpl } from './highlights';
 import type { KeyValueStore } from './kv';
 import type { LibraryStoreImpl } from './library';
@@ -486,15 +487,27 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
     return out;
   }
 
-  /** Highlights of this origin's cloud books. Highlights on unknown editions stay local. */
+  /**
+   * Highlights of this origin's cloud books, and of saved articles (which,
+   * like the articles, go to whichever origin is current). Highlights on
+   * unknown editions, and on articles that stay on this device, stay local.
+   */
   private captureHighlights(origin: string, state: OriginState, entries: LibraryEntry[], out: Capture[]): void {
     const store = this.deps.highlights;
     if (!store?.loaded) return;
     let bySha: Map<string, LibraryEntry> | null = null;
     for (const h of store.getSnapshot().all) {
-      if (h.origin !== origin) continue;
       const key = `highlight:${h.id}`;
       if (state.seen[key] === h.updatedAt) continue;
+      const articleId = articleIdOf(h);
+      if (articleId !== null) {
+        const summary = this.deps.articles?.summary(articleId);
+        if (summary && !articleSyncable(summary)) continue;
+        const payload = highlightPayload(h);
+        out.push([key, h.updatedAt, payload ? { id: randomId(), bookId: h.bookId, sha256: h.sha256, kind: 'highlight', updatedAt: h.updatedAt, payload } : null]);
+        continue;
+      }
+      if (h.origin !== origin) continue;
       bySha ??= new Map(entries.map((e) => [e.book.sha256, e]));
       const entry = bySha.get(h.sha256);
       if (!entry) continue;
