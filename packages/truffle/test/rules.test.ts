@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test';
 import { JSDOM, VirtualConsole } from 'jsdom';
-import { extract, inlineText, type Article, type Inline } from '../src/index';
+import { extract, inlineText, type Article, type Inline, type Video } from '../src/index';
 
 // Single rules on small pages; the same cases as packages/truffle_dart/test/rules_test.dart.
 
@@ -98,4 +98,29 @@ test('the lead of a topic-tag footer at the end goes; the same words inside the 
   };
   expect(blocks('<p>The play opens on Friday.</p><p>Explore more on these topics</p>')).toEqual([PROSE.trim(), 'The play opens on Friday.']);
   expect(blocks('<p>Related topics:</p><p>The play opens on Friday.</p>')).toEqual([PROSE.trim(), 'Related topics:', 'The play opens on Friday.']);
+});
+
+test('a video file and its still image are one video carrying the figure caption', () => {
+  const video = (poster: string) =>
+    `<video src="/media/clip.mp4" ${poster} aria-label="The sidebar loading" width="1320" height="900"></video>`;
+  const still = '<img class="still" src="/media/clip.png" alt="The sidebar loading" width="1320" height="900">';
+  const caption = '<figcaption><b>FIG A</b> Sidebar jank</figcaption>';
+  const one: Video = {
+    type: 'video',
+    provider: 'file',
+    url: 'https://example.com/media/clip.mp4',
+    poster: 'https://example.com/media/clip.png',
+    caption: [{ type: 'text', text: 'FIG A', marks: ['bold'] }, { type: 'text', text: ' Sidebar jank' }],
+  };
+  // The still repeats the poster, after or before the video; without a poster the still becomes it.
+  expect(article(`<figure><div>${video('poster="/media/clip.png"')}${still}</div>${caption}</figure>`).blocks.slice(1, -1)).toEqual([one]);
+  expect(article(`<figure>${still}${video('poster="/media/clip.png"')}${caption}</figure>`).blocks.slice(1, -1)).toEqual([one]);
+  expect(article(`<figure>${video('')}${still}${caption}</figure>`).blocks.slice(1, -1)).toEqual([one]);
+  // Outside a figure, a still right after the video (or in its <noscript>) is dropped.
+  const { caption: _, ...bare } = one;
+  expect(article(`<div>${video('poster="/media/clip.png"')}<noscript>${still}</noscript></div>`).blocks.slice(1, -1)).toEqual([bare]);
+  expect(article(`<div>${video('poster="/media/clip.png"')}${still}</div>`).blocks.slice(1, -1)).toEqual([bare]);
+  // A different image in the figure stays a figure.
+  const other = article(`<figure>${video('poster="/media/clip.png"')}<img src="/media/chart.png" alt="Chart" width="1320" height="900">${caption}</figure>`).blocks;
+  expect(other.slice(1, -1).map((b) => b.type)).toEqual(['figure', 'video']);
 });
