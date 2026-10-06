@@ -18,7 +18,7 @@
     "height": 600
   },
   "favicon": "https://docs.python.org/3/_static/py.svg",
-  "wordCount": 5241,
+  "wordCount": 5253,
   "readingMinutes": 23,
   "blocks": [
     {
@@ -2499,6 +2499,36 @@
         {
           "type": "text",
           "text": " is the current class name with leading underscore(s) stripped. This mangling is done without regard to the syntactic position of the identifier, as long as it occurs within the definition of a class."
+        }
+      ]
+    },
+    {
+      "type": "callout",
+      "variant": "note",
+      "title": [
+        {
+          "type": "text",
+          "text": "See also"
+        }
+      ],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "The "
+            },
+            {
+              "type": "text",
+              "text": "private name mangling specifications",
+              "href": "https://docs.python.org/3/reference/expressions.html#private-name-mangling"
+            },
+            {
+              "type": "text",
+              "text": " for details and special cases."
+            }
+          ]
         }
       ]
     },
