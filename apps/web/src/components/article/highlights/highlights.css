@@ -1,0 +1,40 @@
+/*
+ * Article highlights. The passages themselves are painted with
+ * `::highlight()` rules generated per theme (useArticleHighlights); this is
+ * the note preview a resting mouse brings up, styled like the note above a
+ * highlight's actions.
+ */
+
+.article-note-peek {
+  position: fixed;
+  z-index: 40;
+  width: max-content;
+  max-width: min(360px, calc(100vw - 24px));
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--panel);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--motion-fast) var(--ease);
+}
+.article-note-peek.is-shown {
+  opacity: 1;
+}
+.article-note-peek p {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6;
+  line-clamp: 6;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  margin: 0;
+  padding-left: 10px;
+  border-left: 2px solid var(--border-active);
+  font-family: var(--serif);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--fg);
+  white-space: pre-wrap;
+}
