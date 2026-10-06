@@ -1,3 +1,4 @@
+import { articleSource } from "./article-source";
 import { loadCatalog, toPublicBook, validateBookId } from "./catalog";
 import { CDN_PREFIX, serveCdn } from "./cdn";
 import { downloadBook } from "./download";
@@ -15,7 +16,7 @@ function corsHeaders(): Headers {
     "Access-Control-Allow-Headers": "Content-Type, Range, If-None-Match, If-Range, X-Upload-Id",
     "Access-Control-Allow-Methods": METHODS,
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Expose-Headers": "Accept-Ranges, Content-Disposition, Content-Length, Content-Range, ETag, Last-Modified",
+    "Access-Control-Expose-Headers": "Accept-Ranges, Content-Disposition, Content-Length, Content-Range, ETag, Last-Modified, X-Final-Url",
     "Access-Control-Max-Age": "86400",
   });
 }
@@ -113,6 +114,11 @@ async function route(request: Request, env: Env, ctx: ExecutionContext): Promise
   if (url.pathname === "/v1/link-preview") {
     if (request.method !== "GET") throw new ApiError(405, "METHOD_NOT_ALLOWED", "Method not allowed.", { Allow: "GET, OPTIONS" });
     return linkPreview(request);
+  }
+
+  if (url.pathname === "/v1/article-source") {
+    if (request.method !== "GET") throw new ApiError(405, "METHOD_NOT_ALLOWED", "Method not allowed.", { Allow: "GET, OPTIONS" });
+    return articleSource(request);
   }
 
   if (url.pathname === "/v1/books") {

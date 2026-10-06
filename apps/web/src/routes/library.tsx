@@ -1,37 +1,56 @@
 import { memo, useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
+import { AddArticleDialog } from '../components/AddArticleDialog';
+import { ArticleRow, ArticleThumb } from '../components/ArticleRow';
 import { CoverArt } from '../components/CoverArt';
-import { IconButton } from '../components/buttons';
+import { IconButton, QuietButton } from '../components/buttons';
 import {
+  AddIcon,
   ArrowDownwardIcon,
   ChevronRightIcon,
   CloseIcon,
+  CopyIcon,
   DeleteOutlineIcon,
   InfoOutlineIcon,
   MenuBookIcon,
   MoreHorizIcon,
+  OpenInNewIcon,
   UploadIcon,
 } from '../components/icons';
-import { ContextMenu, menuPoint, useContextMenu, type MenuItem, type MenuPoint } from '../components/overlay';
+import { ContextMenu, hasOpenOverlay, menuPoint, useContextMenu, type MenuItem, type MenuPoint } from '../components/overlay';
+import { useRemoveArticle } from '../components/RemoveArticle';
 import { canRemove, removeLabel, useRemoveBook } from '../components/RemoveBook';
 import { Eyebrow, LoadingLine, ProgressLine, ProgressRing, ScreenHeader, StateMessage, Tag } from '../components/states';
 import { useToast } from '../components/toast';
 import { importAccept } from '../lib/import/contract';
-import { bookLink, readLink, useDocumentTitle, useElementWidth, useStorageInfo, whenIdle } from '../lib/hooks';
-import { loadBook, loadReader } from './lazy';
+import {
+  articleLink,
+  bookLink,
+  isTypingTarget,
+  readLink,
+  useDocumentTitle,
+  useElementWidth,
+  useStorageInfo,
+  whenIdle,
+} from '../lib/hooks';
+import { findArticleUrl } from '../lib/services/articles';
+import { loadArticle, loadBook, loadReader } from './lazy';
 import { downloadFraction, entryPercent, formatBytes, isDownloadActive, isDownloadReady } from '../lib/format';
 import type { AppServices } from '../lib/services/contract';
 import { useServices, useStore } from '../lib/services/react';
-import type { LibraryEntry } from '../lib/types';
+import type { ArticleSummary, LibraryEntry } from '../lib/types';
 
 
-type Filter = 'all' | 'downloaded' | 'inProgress';
+type Filter = 'all' | 'downloaded' | 'inProgress' | 'articles';
 
 const filters: { id: Filter; label: string }[] = [
   { id: 'all', label: 'All' },
   { id: 'downloaded', label: 'Downloaded' },
   { id: 'inProgress', label: 'In progress' },
+  { id: 'articles', label: 'Articles' },
 ];
+
+const isUnfinished = (fraction: number | null) => (fraction ?? 0) < 0.995;
 
 const importExtensions = /\.(epub|mobi|azw3?|prc)$/i;
 
@@ -46,13 +65,15 @@ function columnsFor(width: number): number {
 
 /**
  * Home: an editorial title, one continue-reading entry, then a cover-led grid
- * of everything you have. Works fully offline. Files can be imported with the
- * button or dropped anywhere on the page.
+ * of everything you have and the articles saved from links. Works fully
+ * offline. Files can be imported with the button or dropped anywhere on the
+ * page; a link pasted anywhere opens the add-article dialog.
  */
 export function LibraryScreen() {
   useDocumentTitle('Library');
   const services = useServices();
   const lib = useStore(services.library);
+  const articles = useStore(services.articles);
   const navigate = useNavigate();
   const toast = useToast();
   const [filter, setFilter] = useState<Filter>('all');
@@ -62,6 +83,8 @@ export function LibraryScreen() {
   const [grid, gridWidth] = useElementWidth<HTMLDivElement>();
   const menu = useContextMenu();
   const removal = useRemoveBook();
+  const articleRemoval = useRemoveArticle();
+  const [addArticle, setAddArticle] = useState<{ open: boolean; url: string }>({ open: false, url: '' });
   const { info: storage } = useStorageInfo();
   const importingRef = useRef(false);
 
@@ -88,15 +111,30 @@ export function LibraryScreen() {
   const importLatest = useRef(importFiles);
   importLatest.current = importFiles;
 
-  // Opening a book should not wait for its screen's code.
+  // Opening a book or article should not wait for its screen's code.
+  const hasArticles = articles.items.length > 0;
   useEffect(
     () =>
       whenIdle(() => {
         void loadReader();
         void loadBook();
+        if (hasArticles) void loadArticle();
       }),
-    [],
+    [hasArticles],
   );
+
+  // A link pasted anywhere on the Library (outside text fields) opens the add dialog with it.
+  useEffect(() => {
+    const onPaste = (e: ClipboardEvent) => {
+      if (hasOpenOverlay() || isTypingTarget(e.target) || isTypingTarget(document.activeElement)) return;
+      const url = findArticleUrl(e.clipboardData?.getData('text/uri-list') || e.clipboardData?.getData('text/plain') || '');
+      if (!url) return;
+      e.preventDefault();
+      setAddArticle({ open: true, url });
+    };
+    document.addEventListener('paste', onPaste);
+    return () => document.removeEventListener('paste', onPaste);
+  }, []);
 
   // Drag and drop anywhere on the Library. Listeners are registered once.
   useEffect(() => {
@@ -152,6 +190,14 @@ export function LibraryScreen() {
     },
     [services, navigate, showMenu, askRemove],
   );
+  const askRemoveArticle = articleRemoval.ask;
+  const openArticleMenu = useCallback(
+    (article: ArticleSummary, at: MenuPoint) => {
+      showMenu({ ...at, label: article.title, items: articleActions(article, navigate, askRemoveArticle, toast.show) });
+    },
+    [navigate, showMenu, askRemoveArticle, toast.show],
+  );
+  const openAddArticle = () => setAddArticle({ open: true, url: '' });
 
   const header = (
     <ScreenHeader
@@ -162,7 +208,10 @@ export function LibraryScreen() {
             <ProgressRing value={null} size={20} label="Importing book" />
           </span>
         ) : (
-          <IconButton icon={UploadIcon} label="Import EPUB or MOBI" tooltipSide="left" onClick={() => picker.current?.click()} />
+          <div className="library-actions">
+            <IconButton icon={AddIcon} label="Add article from link" onClick={openAddArticle} />
+            <IconButton icon={UploadIcon} label="Import EPUB or MOBI" tooltipSide="left" onClick={() => picker.current?.click()} />
+          </div>
         )
       }
     />
@@ -183,23 +232,42 @@ export function LibraryScreen() {
     />
   );
 
+  const addDialog = (
+    <AddArticleDialog open={addArticle.open} initialUrl={addArticle.url} onClose={() => setAddArticle((a) => ({ ...a, open: false }))} />
+  );
+
   if (!lib.loaded) {
     return (
       <div className="page-wide">
         {header}
         <LoadingLine />
+        {addDialog}
       </div>
     );
   }
 
   const all = [...lib.entries].sort((a, b) => b.addedAt.localeCompare(a.addedAt));
-  const current = lib.continueReading[0];
+  const book = lib.continueReading[0];
+  const article = articles.items
+    .filter((a) => a.lastOpenedAt != null && isUnfinished(a.progress))
+    .sort((a, b) => (b.lastOpenedAt ?? '').localeCompare(a.lastOpenedAt ?? ''))[0];
+  const continueArticle = article && (!book || (article.lastOpenedAt ?? '') > (book.lastOpenedAt ?? '')) ? article : null;
   const shown =
     filter === 'all'
       ? all
       : filter === 'downloaded'
         ? all.filter((e) => isDownloadReady(e.download))
-        : all.filter((e) => e.progress != null && (entryPercent(e) ?? 0) < 0.995);
+        : filter === 'inProgress'
+          ? all.filter((e) => e.progress != null && isUnfinished(entryPercent(e)))
+          : [];
+  const shownArticles =
+    filter === 'all' || filter === 'articles'
+      ? articles.items
+      : filter === 'inProgress'
+        ? articles.items.filter((a) => a.lastOpenedAt != null && isUnfinished(a.progress))
+        : [];
+  const shownCount = shown.length + shownArticles.length;
+  const countNoun = filter === 'articles' ? (shownCount === 1 ? 'article' : 'articles') : shownCount === 1 ? 'item' : 'items';
   const columns = columnsFor(gridWidth || 360);
   // Mobile tags a store that may lose books ("Session only"); here that is
   // browser storage without the persistence grant, once something is saved.
@@ -209,18 +277,19 @@ export function LibraryScreen() {
     <div className="page-wide library">
       {input}
       {header}
-      {all.length === 0 ? (
+      {all.length === 0 && articles.items.length === 0 ? (
         <StateMessage
           title="Nothing here yet."
-          body="Browse the library and download a book, or import an EPUB or MOBI from your files with the button above. You can also drop a file onto this page. Books are kept on this device for offline reading."
+          body="Browse the library and download a book, import an EPUB or MOBI with the upload button, or save any article from a link with the plus button. You can also drop a book file or paste a link onto this page. Everything is kept on this device for offline reading."
           actionLabel="Browse books"
           onAction={() => void navigate({ to: '/browse' })}
+          secondary={<QuietButton label="Add article from link" icon={AddIcon} onClick={openAddArticle} />}
         />
       ) : (
         <>
-          {current && <ContinueReading entry={current} />}
+          {continueArticle ? <ContinueArticle article={continueArticle} /> : book && <ContinueReading entry={book} />}
           <div className="library-filters">
-            <div className="filter-links" role="group" aria-label="Filter books">
+            <div className="filter-links" role="group" aria-label="Filter library">
               {filters.map((f) => (
                 <button
                   key={f.id}
@@ -244,13 +313,24 @@ export function LibraryScreen() {
                   <Tag color="var(--orange)">May be cleared</Tag>
                 </Link>
               )}
-              <span className="t-label-sm library-count tabular" aria-label={`${shown.length} ${shown.length === 1 ? 'book' : 'books'}`}>
-                {shown.length}
+              <span className="t-label-sm library-count tabular" aria-label={`${shownCount} ${countNoun}`}>
+                {shownCount}
               </span>
             </div>
           </div>
           <hr className="divider" />
-          {shown.length === 0 ? <StateMessage title="No books match." body="Try another filter." /> : null}
+          {shownCount === 0 ? (
+            filter === 'articles' ? (
+              <StateMessage
+                title="No articles yet."
+                body="Save any article from its link with the plus button, or paste a link anywhere on this page."
+                actionLabel="Add article from link"
+                onAction={openAddArticle}
+              />
+            ) : (
+              <StateMessage title="Nothing matches." body="Try another filter." />
+            )
+          ) : null}
           <div
             ref={grid}
             className="library-grid"
@@ -261,6 +341,16 @@ export function LibraryScreen() {
               <GridItem key={entry.id} entry={entry} readable={services.library.canRead(entry.id)} onMenu={openMenu} />
             ))}
           </div>
+          {shownArticles.length > 0 && (
+            <section className="library-articles" aria-label="Articles">
+              {shown.length > 0 && <Eyebrow as="h2">Articles</Eyebrow>}
+              <ul className="article-list">
+                {shownArticles.map((a) => (
+                  <ArticleRow key={a.id} article={a} onMenu={openArticleMenu} />
+                ))}
+              </ul>
+            </section>
+          )}
         </>
       )}
       {dragging && (
@@ -274,8 +364,43 @@ export function LibraryScreen() {
       )}
       <ContextMenu request={menu.request} onClose={menu.close} />
       {removal.dialog}
+      {articleRemoval.dialog}
+      {addDialog}
     </div>
   );
+}
+
+/** Actions for a saved article (context menu, long press and its ⋯ button). */
+function articleActions(
+  article: ArticleSummary,
+  navigate: ReturnType<typeof useNavigate>,
+  askRemove: (article: ArticleSummary) => void,
+  notify: (message: string) => void,
+): MenuItem[] {
+  return [
+    {
+      label: article.progress == null ? 'Read' : 'Continue reading',
+      icon: MenuBookIcon,
+      onSelect: () => void navigate(articleLink(article)),
+    },
+    {
+      label: 'Open original',
+      icon: OpenInNewIcon,
+      onSelect: () => {
+        window.open(article.url, '_blank', 'noopener,noreferrer');
+      },
+    },
+    {
+      label: 'Copy link',
+      icon: CopyIcon,
+      onSelect: () =>
+        void navigator.clipboard.writeText(article.url).then(
+          () => notify('Link copied.'),
+          () => notify("Couldn't copy the link."),
+        ),
+    },
+    { label: 'Remove article…', icon: DeleteOutlineIcon, danger: true, separated: true, onSelect: () => askRemove(article) },
+  ];
 }
 
 /** Actions for a library book: the same ones its tile and book page offer. */
@@ -327,6 +452,27 @@ function ContinueReading({ entry }: { entry: LibraryEntry }) {
           <div className="continue-progress">
             <ProgressLine value={percent} label="Reading progress" />
             <span className="t-label-sm tabular">{Math.round(percent * 100)}%</span>
+          </div>
+        </div>
+        <ChevronRightIcon size={18} className="continue-chevron" />
+      </Link>
+    </section>
+  );
+}
+
+/** The most recently opened unfinished article, in the same place and shape as a book. */
+function ContinueArticle({ article }: { article: ArticleSummary }) {
+  return (
+    <section className="continue" aria-labelledby="continue-eyebrow">
+      <Eyebrow id="continue-eyebrow">Continue reading</Eyebrow>
+      <Link {...articleLink(article)} className="continue-card" aria-label={`Continue reading ${article.title}`}>
+        <ArticleThumb article={article} shape="cover" />
+        <div className="continue-text">
+          <div className="t-headline clamp-2">{article.title}</div>
+          <div className="t-body-sm clamp-1">{article.byline ? `${article.siteName} · ${article.byline}` : article.siteName}</div>
+          <div className="continue-progress">
+            <ProgressLine value={article.progress ?? 0} label="Reading progress" />
+            <span className="t-label-sm tabular">{Math.round((article.progress ?? 0) * 100)}%</span>
           </div>
         </div>
         <ChevronRightIcon size={18} className="continue-chevron" />

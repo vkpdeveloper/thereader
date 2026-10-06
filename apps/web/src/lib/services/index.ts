@@ -1,5 +1,6 @@
 import type { AppServices } from './contract';
 import { createApiClient, type HttpApiClient } from './api';
+import { ArticleStoreImpl } from './articles';
 import { CatalogStoreImpl } from './catalog';
 import { CoverStoreImpl } from './covers';
 import { HighlightStoreImpl } from './highlights';
@@ -52,6 +53,7 @@ function build(): AppServices {
   const catalog = new CatalogStoreImpl(currentOrigin, clientFor, kv);
   const covers = new CoverStoreImpl(coverKv, (origin, path) => clientFor(origin).resolve(path));
   const highlights = new HighlightStoreImpl(kv, bus);
+  const articles = new ArticleStoreImpl({ kv, currentOrigin, bus });
   // The import pipeline (zip parsing, MOBI conversion) loads on first use.
   const imports = new ImportStoreImpl({
     kv,
@@ -87,10 +89,11 @@ function build(): AppServices {
     // The cached listing only: no request until Browse is shown.
     await step('catalog', () => catalog.load());
     await step('library', () => library.load());
+    await step('articles', () => articles.load());
     await step('imports', () => imports.load());
     await step('highlights', () => highlights.load());
     await step('sync', () => sync.load());
   })();
 
-  return { settings, catalog, library, highlights, sync, imports, covers, storage, ready };
+  return { settings, catalog, library, highlights, sync, imports, covers, storage, articles, ready };
 }
