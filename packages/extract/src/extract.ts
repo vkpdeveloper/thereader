@@ -243,6 +243,7 @@ function tidy(input: Block[], title: string, meta: Metadata): Block[] {
     const last = blocks[blocks.length - 1]!;
     const lastText = last.type === 'paragraph' ? collapse(inlineText(last.content)) : '';
     if (last.type === 'paragraph' && (isContactLine(lastText) || isDateLine(lastText.toLowerCase()) || /^(?:last updated|updated|published|posted)(?: on)?:?$/i.test(lastText))) blocks.pop();
+    else if (last.type === 'paragraph' && lastText.length < 100 && linkShare(last.content) >= 0.5 && !/[.!?]["'”’)]?$/.test(lastText)) blocks.pop();
     else if (last.type === 'list' && last.items.every((item) => item.blocks.length === 1 && item.blocks[0]!.type === 'paragraph' && linkShare((item.blocks[0] as { content: Inline[] }).content) > 0.8)) blocks.pop();
     else if (last.type === 'heading') blocks.pop();
     else break;
