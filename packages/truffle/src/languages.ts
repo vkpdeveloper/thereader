@@ -118,75 +118,82 @@ export function languageFromClass(className: string): string | null {
 
 type Rule = [RegExp, number];
 
-/** Weighted evidence per language. Patterns are cheap; the whole table runs in well under a millisecond per block. */
+/**
+ * Weighted evidence per language. Patterns are cheap; the whole table runs in well under a millisecond per block.
+ * A line's indentation is `[^\S\n\r\u2028\u2029]*`, whitespace short of a line break: `^\s*` also runs on across
+ * blank lines, so in a long run of them every line start would rescan the rest. For `test` it is the same rule, as
+ * a match can always start at the last line start. Likewise no two neighbouring quantifiers take the same characters
+ * (`\s*\w*\s*`, `\s+.+\s+`), which would retry every split of a long run of spaces; the rewritten rules match the
+ * same text (a second branch keeps what the old shape matched with spaces alone, as in `let  =`).
+ */
 const RULES: [string, Rule[]][] = [
   ['python', [
-    [/^\s*def \w+\s*\(.*\)\s*(->\s*[\w\[\], .]+)?:\s*$/m, 4], [/^\s*class \w+(\(.*\))?:\s*$/m, 4], [/^\s*(elif|except|finally|try)\b.*:\s*$/m, 3],
-    [/\bself\.\w+/, 2], [/^\s*from [\w.]+ import \w/m, 4], [/^\s*import (numpy|pandas|os|sys|re|json|torch|requests|asyncio|typing)\b/m, 4],
-    [/\b(None|True|False)\b/, 1], [/\bprint\(/, 1], [/__(init|name|main)__/, 4], [/^\s*@\w+(\.\w+)*(\(.*\))?\s*$/m, 1], [/\bf["'][^"'\n]*\{/, 2],
-    [/^>>> /m, 4], [/\blambda \w*:/, 2], [/^\s*for \w+(, \w+)* in .+:\s*$/m, 3], [/^\s*if .+:\s*$/m, 1], [/\bdef \w+\(self/, 4], [/\b(len|range|enumerate|isinstance)\(/, 1],
+    [/^[^\S\n\r\u2028\u2029]*def \w+\s*\(.*\)\s*(->\s*[\w\[\], .]+)?:\s*$/m, 4], [/^[^\S\n\r\u2028\u2029]*class \w+(\(.*\))?:\s*$/m, 4], [/^[^\S\n\r\u2028\u2029]*(elif|except|finally|try)\b.*:\s*$/m, 3],
+    [/\bself\.\w+/, 2], [/^[^\S\n\r\u2028\u2029]*from [\w.]+ import \w/m, 4], [/^[^\S\n\r\u2028\u2029]*import (numpy|pandas|os|sys|re|json|torch|requests|asyncio|typing)\b/m, 4],
+    [/\b(None|True|False)\b/, 1], [/\bprint\(/, 1], [/__(init|name|main)__/, 4], [/^[^\S\n\r\u2028\u2029]*@\w+(\.\w+)*(\(.*\))?\s*$/m, 1], [/\bf["'][^"'\n]*\{/, 2],
+    [/^>>> /m, 4], [/\blambda \w*:/, 2], [/^[^\S\n\r\u2028\u2029]*for \w+(, \w+)* in .+:\s*$/m, 3], [/^[^\S\n\r\u2028\u2029]*if .+:\s*$/m, 1], [/\bdef \w+\(self/, 4], [/\b(len|range|enumerate|isinstance)\(/, 1],
   ]],
   ['javascript', [
-    [/\b(const|let|var)\s+[\w${}\[\], ]+\s*=/, 2], [/=>/, 1], [/\bfunction\s*\*?\s*[\w$]*\s*\(/, 2], [/\bconsole\.(log|error|warn)\(/, 3],
-    [/\b(document|window)\.\w+/, 2], [/\brequire\(['"]/, 3], [/\bexport\s+(default|const|function|class|async)\b/, 2], [/^\s*import\s+.+\s+from\s+['"]/m, 3],
+    [/\b(const|let|var)(?:\s+[\w${}\[\],]+(?: +[\w${}\[\],]+)*|\s[^\S ]* )\s*=/, 2], [/=>/, 1], [/\bfunction\s*(?:\*\s*)?(?:[\w$]+\s*)?\(/, 2], [/\bconsole\.(log|error|warn)\(/, 3],
+    [/\b(document|window)\.\w+/, 2], [/\brequire\(['"]/, 3], [/\bexport\s+(default|const|function|class|async)\b/, 2], [/^[^\S\n\r\u2028\u2029]*import(?:\s+\S(?:.*\S)?|\s[\n\r\u2028\u2029]*[^\S\n\r\u2028\u2029])\s+from\s+['"]/m, 3],
     [/===|!==/, 2], [/\bundefined\b/, 1], [/\bawait\b/, 0.5], [/\bmodule\.exports\b/, 4], [/\.then\(/, 1], [/\bnew Promise\(/, 2], [/\$\{[^}]+\}/, 1],
     [/\buse(State|Effect|Ref|Memo|Callback)\(/, 3], [/<\/?[A-Z]\w*[\s>]/, 1], [/\baddEventListener\(/, 3], [/\bJSON\.(parse|stringify)\(/, 2],
   ]],
   ['typescript', [
-    [/:\s*(string|number|boolean|any|void|unknown|never|object)(\[\])?\s*[;,)=|{]/, 4], [/^\s*(export\s+)?interface\s+\w+(<.+>)?\s*(extends [\w<>, ]+)?\{/m, 4],
-    [/^\s*(export\s+)?type\s+\w+(<.+>)?\s*=/m, 3], [/\bas const\b/, 3], [/\b(private|public|protected|readonly)\s+\w+\s*[:;=(]/, 2], [/^\s*(export\s+)?enum\s+\w+\s*\{/m, 3],
+    [/:\s*(string|number|boolean|any|void|unknown|never|object)(\[\])?\s*[;,)=|{]/, 4], [/^[^\S\n\r\u2028\u2029]*(export\s+)?interface\s+\w+(<.+>)?\s*(extends [\w<>, ]+)?\{/m, 4],
+    [/^[^\S\n\r\u2028\u2029]*(export\s+)?type\s+\w+(<.+>)?\s*=/m, 3], [/\bas const\b/, 3], [/\b(private|public|protected|readonly)\s+\w+\s*[:;=(]/, 2], [/^[^\S\n\r\u2028\u2029]*(export\s+)?enum\s+\w+\s*\{/m, 3],
     [/\bimport type\b/, 4], [/<\w+(\[\])?>\(/, 1], [/\):\s*(Promise<|[\w<>\[\]]+\s*\{)/, 3], [/\bimplements\s+\w+/, 1], [/!\./, 1], [/\bkeyof\b|\btypeof \w+\[/, 2],
   ]],
   ['java', [
     [/\bpublic\s+(static\s+)?(final\s+)?(class|interface|enum|void|record)\b/, 3], [/\bSystem\.(out|err)\.print/, 5], [/String\[\]\s+args/, 5], [/@Override\b/, 3],
-    [/^\s*import\s+java(x)?\.[\w.]+;/m, 5], [/^\s*package\s+[\w.]+;\s*$/m, 4], [/\bprivate\s+(static\s+)?(final\s+)?[A-Z]\w*(<.*>)?\s+\w+\s*[;=]/, 2], [/\bnew\s+[A-Z]\w*(<.*>)?\(/, 1],
+    [/^[^\S\n\r\u2028\u2029]*import\s+java(x)?\.[\w.]+;/m, 5], [/^[^\S\n\r\u2028\u2029]*package\s+[\w.]+;\s*$/m, 4], [/\bprivate\s+(static\s+)?(final\s+)?[A-Z]\w*(<.*>)?\s+\w+\s*[;=]/, 2], [/\bnew\s+[A-Z]\w*(<.*>)?\(/, 1],
     [/\bthrows\s+\w+/, 2], [/\b(ArrayList|HashMap|List<|Map<)/, 1], [/;\s*$/m, 0.5],
   ]],
   ['kotlin', [
-    [/^\s*(suspend\s+|private\s+|override\s+|inline\s+)*fun\s+(<.+>\s*)?[\w.]+\(/m, 4], [/^\s*val\s+\w+(\s*:\s*[\w<>?]+)?\s*=/m, 2], [/^\s*var\s+\w+\s*:\s*\w+/m, 2],
-    [/\bdata class\b/, 4], [/\bcompanion object\b/, 5], [/^\s*import\s+(kotlin|kotlinx|androidx)\./m, 5], [/\?:|\?\./, 1], [/\bprintln\(/, 1], [/\bwhen\s*(\(.*\))?\s*\{/, 2], [/\bit\.\w+/, 1],
+    [/^[^\S\n\r\u2028\u2029]*(suspend\s+|private\s+|override\s+|inline\s+)*fun\s+(<.+>\s*)?[\w.]+\(/m, 4], [/^[^\S\n\r\u2028\u2029]*val\s+\w+(\s*:\s*[\w<>?]+)?\s*=/m, 2], [/^[^\S\n\r\u2028\u2029]*var\s+\w+\s*:\s*\w+/m, 2],
+    [/\bdata class\b/, 4], [/\bcompanion object\b/, 5], [/^[^\S\n\r\u2028\u2029]*import\s+(kotlin|kotlinx|androidx)\./m, 5], [/\?:|\?\./, 1], [/\bprintln\(/, 1], [/\bwhen\s*(\(.*\)\s*)?\{/, 2], [/\bit\.\w+/, 1],
   ]],
   ['swift', [
-    [/^\s*(@\w+\s+)*(public\s+|private\s+|static\s+|override\s+)*func\s+\w+(<.+>)?\(/m, 4], [/^\s*import\s+(UIKit|SwiftUI|Foundation|Combine|AppKit)\s*$/m, 5],
+    [/^[^\S\n\r\u2028\u2029]*(@\w+\s+)*(public\s+|private\s+|static\s+|override\s+)*func\s+\w+(<.+>)?\(/m, 4], [/^[^\S\n\r\u2028\u2029]*import\s+(UIKit|SwiftUI|Foundation|Combine|AppKit)\s*$/m, 5],
     [/\b(guard|if)\s+let\b/, 4], [/->\s*[\w<>\[\]?]+\s*\{/, 1], [/@(State|Published|Binding|ObservedObject|MainActor|escaping)\b/, 4], [/\bstruct\s+\w+\s*:\s*View\b/, 5],
-    [/^\s*let\s+\w+(\s*:\s*[\w<>\[\]?]+)?\s*=/m, 1], [/\bvar body: some View\b/, 5], [/\bprint\(/, 0.5],
+    [/^[^\S\n\r\u2028\u2029]*let\s+\w+(\s*:\s*[\w<>\[\]?]+)?\s*=/m, 1], [/\bvar body: some View\b/, 5], [/\bprint\(/, 0.5],
   ]],
   ['go', [
-    [/^package\s+\w+\s*$/m, 5], [/^\s*func\s+(\(\w+\s+\*?\w+\)\s+)?\w+\(/m, 4], [/:=/, 2], [/\bfmt\.(Print|Sprint|Fprint|Errorf)/, 5], [/\bif err != nil\b/, 5],
+    [/^package\s+\w+\s*$/m, 5], [/^[^\S\n\r\u2028\u2029]*func\s+(\(\w+\s+\*?\w+\)\s+)?\w+\(/m, 4], [/:=/, 2], [/\bfmt\.(Print|Sprint|Fprint|Errorf)/, 5], [/\bif err != nil\b/, 5],
     [/\bgo func\b|\bchan\s+\w+|\bdefer\s+\w+/, 3], [/^import\s+\(\s*$/m, 3], [/\bstruct\s*\{/, 1], [/\[\]\w+\{/, 2], [/\bmake\((map|\[\]|chan)/, 3],
   ]],
   ['rust', [
-    [/^\s*(pub(\(crate\))?\s+)?(async\s+)?fn\s+\w+(<.+>)?\(/m, 4], [/\blet\s+mut\b/, 4], [/\b(println|format|vec|panic|assert_eq|write|eprintln)!\(/, 4], [/\b(println|vec)!\[/, 4],
-    [/^\s*use\s+(std|crate|super|self|tokio|serde)::/m, 5], [/#\[(derive|cfg|test|tokio::main)/, 5], [/\bimpl(<.+>)?\s+[\w:<>]+(\s+for\s+\w+)?\s*\{/, 3], [/&(mut\s+)?(str|self)\b/, 3],
-    [/::new\(/, 1], [/->\s*(Result|Option|Self|impl\s)/, 2], [/\bmatch\s+.+\{/, 1], [/\b(Some|None|Ok|Err)\(/, 1], [/\bunwrap\(\)/, 3],
+    [/^[^\S\n\r\u2028\u2029]*(pub(\(crate\))?\s+)?(async\s+)?fn\s+\w+(<.+>)?\(/m, 4], [/\blet\s+mut\b/, 4], [/\b(println|format|vec|panic|assert_eq|write|eprintln)!\(/, 4], [/\b(println|vec)!\[/, 4],
+    [/^[^\S\n\r\u2028\u2029]*use\s+(std|crate|super|self|tokio|serde)::/m, 5], [/#\[(derive|cfg|test|tokio::main)/, 5], [/\bimpl(<.+>)?\s+[\w:<>]+(\s+for\s+\w+)?\s*\{/, 3], [/&(mut\s+)?(str|self)\b/, 3],
+    [/::new\(/, 1], [/->\s*(Result|Option|Self|impl\s)/, 2], [/\bmatch\s+(?:\S.*|[^\S\n\r\u2028\u2029])\{/, 1], [/\b(Some|None|Ok|Err)\(/, 1], [/\bunwrap\(\)/, 3],
   ]],
   ['c', [
     [/#include\s*<\w+\.h>/, 4], [/\bint\s+main\s*\(/, 3], [/\bprintf\s*\(/, 2], [/\b(malloc|calloc|free|sizeof|memcpy|strlen)\s*\(/, 2], [/\bstruct\s+\w+\s*\{/, 1],
-    [/^\s*#define\s+\w+/m, 2], [/\bvoid\s*\*/, 2], [/\bchar\s*\*\s*\w+/, 2], [/->/, 0.5],
+    [/^[^\S\n\r\u2028\u2029]*#define\s+\w+/m, 2], [/\bvoid\s*\*/, 2], [/\bchar\s*\*\s*\w+/, 2], [/->/, 0.5],
   ]],
   ['cpp', [
     [/#include\s*<(iostream|vector|string|memory|map|algorithm|thread|cstdio|cstdlib|unordered_map)>/, 5], [/\bstd::/, 4], [/\bstd::cout\s*<<|\bcout\s*<</, 5],
-    [/\btemplate\s*</, 4], [/^\s*namespace\s+\w+\s*\{/m, 2], [/\bnullptr\b/, 4], [/\busing namespace\b/, 5], [/\bauto\s+\w+\s*=/, 1], [/\b(virtual|override|constexpr|noexcept)\b/, 2],
+    [/\btemplate\s*</, 4], [/^[^\S\n\r\u2028\u2029]*namespace\s+\w+\s*\{/m, 2], [/\bnullptr\b/, 4], [/\busing namespace\b/, 5], [/\bauto\s+\w+\s*=/, 1], [/\b(virtual|override|constexpr|noexcept)\b/, 2],
     [/::\w+\(/, 1], [/\bclass\s+\w+\s*(:\s*(public|private)\s+\w+)?\s*\{/, 1],
   ]],
   ['csharp', [
-    [/^\s*using\s+System(\.\w+)*;/m, 5], [/\bConsole\.Write(Line)?\(/, 5], [/\{\s*get;\s*(private\s+)?set;\s*\}/, 5], [/^\s*namespace\s+[\w.]+/m, 2],
-    [/\bpublic\s+(async\s+)?(static\s+)?(Task|void|string|int|bool|class|interface|record)\b/, 2], [/\bvar\s+\w+\s*=\s*new\b/, 2], [/\basync\s+Task\b/, 4], [/^\s*\[\w+(\(.*\))?\]\s*$/m, 1],
+    [/^[^\S\n\r\u2028\u2029]*using\s+System(\.\w+)*;/m, 5], [/\bConsole\.Write(Line)?\(/, 5], [/\{\s*get;\s*(private\s+)?set;\s*\}/, 5], [/^[^\S\n\r\u2028\u2029]*namespace\s+[\w.]+/m, 2],
+    [/\bpublic\s+(async\s+)?(static\s+)?(Task|void|string|int|bool|class|interface|record)\b/, 2], [/\bvar\s+\w+\s*=\s*new\b/, 2], [/\basync\s+Task\b/, 4], [/^[^\S\n\r\u2028\u2029]*\[\w+(\(.*\))?\]\s*$/m, 1],
     [/\bstring\[\]\s+args/, 3], [/\bLINQ|\.Where\(|\.Select\(/, 1],
   ]],
   ['ruby', [
-    [/^\s*def\s+(self\.)?\w+[?!]?(\(.*\))?\s*$/m, 3], [/^\s*end\s*$/m, 2], [/\bputs\b/, 2], [/^\s*require(_relative)?\s+['"]/m, 2], [/\.each(_with_index)?\s+do\s*\|/, 5],
-    [/\battr_(accessor|reader|writer)\b/, 5], [/:\w+\s*=>/, 2], [/\bdo\s*\|\w+(, \w+)*\|/, 3], [/^\s*module\s+[A-Z]\w*\s*$/m, 2], [/^\s*class\s+\w+\s*<\s*\w+/m, 3], [/\bnil\b/, 1], [/#\{[^}]+\}/, 2],
+    [/^[^\S\n\r\u2028\u2029]*def\s+(self\.)?\w+[?!]?(\(.*\))?\s*$/m, 3], [/^[^\S\n\r\u2028\u2029]*end\s*$/m, 2], [/\bputs\b/, 2], [/^[^\S\n\r\u2028\u2029]*require(_relative)?\s+['"]/m, 2], [/\.each(_with_index)?\s+do\s*\|/, 5],
+    [/\battr_(accessor|reader|writer)\b/, 5], [/:\w+\s*=>/, 2], [/\bdo\s*\|\w+(, \w+)*\|/, 3], [/^[^\S\n\r\u2028\u2029]*module\s+[A-Z]\w*\s*$/m, 2], [/^[^\S\n\r\u2028\u2029]*class\s+\w+\s*<\s*\w+/m, 3], [/\bnil\b/, 1], [/#\{[^}]+\}/, 2],
   ]],
   ['php', [
-    [/<\?php/, 8], [/\$\w+\s*=[^=]/, 2], [/\$this->\w+/, 4], [/\bfunction\s+\w+\s*\(\s*(\??\w+\s+)?\$/, 4], [/^\s*namespace\s+[\w\\]+;/m, 4], [/\becho\s+/, 1], [/->\w+\(/, 1], [/\barray\(/, 2], [/::class\b/, 2],
+    [/<\?php/, 8], [/\$\w+\s*=[^=]/, 2], [/\$this->\w+/, 4], [/\bfunction\s+\w+\s*\(\s*(\??\w+\s+)?\$/, 4], [/^[^\S\n\r\u2028\u2029]*namespace\s+[\w\\]+;/m, 4], [/\becho\s+/, 1], [/->\w+\(/, 1], [/\barray\(/, 2], [/::class\b/, 2],
   ]],
   ['shell', [
-    [/^\s*[$%❯] \S/m, 3], [/^\s*[\w.-]+@[\w.-]+:[~\/][^$#\n]*[$#] /m, 5], [/^\s*PS [A-Z]:\\.*> /m, 3],
+    [/^[^\S\n\r\u2028\u2029]*[$%❯] \S/m, 3], [/^[^\S\n\r\u2028\u2029]*[\w.-]+@[\w.-]+:[~\/][^$#\n]*[$#] /m, 5], [/^[^\S\n\r\u2028\u2029]*PS [A-Z]:\\.*> /m, 3],
   ]],
   ['bash', [
-    [/^#!\/(usr\/)?bin\/(env\s+)?(ba|z)?sh/m, 6], [/^\s*(sudo\s+)?(apt(-get)?|brew|npm|npx|yarn|pnpm|pip3?|cargo|go|git|docker|kubectl|curl|wget|cd|ls|mkdir|rm|cp|mv|chmod|chown|export|source|cat|grep|echo|tar|ssh|make|bun|deno|helm|terraform|aws|gcloud|systemctl|uv|poetry|conda|rustup|flutter|dart)\s/m, 3],
-    [/^\s*(if|then|fi|for|do|done|case|esac|while)\b/m, 1], [/\b(fi|done|esac)\s*$/m, 2], [/\$\{?\w+\}?/, 0.5], [/\s--?[a-z][\w-]*/, 0.5], [/\s&&\s|\s\|\s/, 0.5], [/^\s*#\s/m, 0.5],
+    [/^#!\/(usr\/)?bin\/(env\s+)?(ba|z)?sh/m, 6], [/^[^\S\n\r\u2028\u2029]*(sudo\s+)?(apt(-get)?|brew|npm|npx|yarn|pnpm|pip3?|cargo|go|git|docker|kubectl|curl|wget|cd|ls|mkdir|rm|cp|mv|chmod|chown|export|source|cat|grep|echo|tar|ssh|make|bun|deno|helm|terraform|aws|gcloud|systemctl|uv|poetry|conda|rustup|flutter|dart)\s/m, 3],
+    [/^[^\S\n\r\u2028\u2029]*(if|then|fi|for|do|done|case|esac|while)\b/m, 1], [/\b(fi|done|esac)\s*$/m, 2], [/\$\{?\w+\}?/, 0.5], [/\s--?[a-z][\w-]*/, 0.5], [/\s&&\s|\s\|\s/, 0.5], [/^[^\S\n\r\u2028\u2029]*#\s/m, 0.5],
   ]],
   ['powershell', [
     [/\b(Get|Set|New|Remove|Write|Invoke|Import|Start|Stop)-\w+/, 4], [/\$\w+\s*=/, 1], [/-Object\b|\|\s*Where-Object|\|\s*ForEach-Object/, 4], [/\$PSScriptRoot|\$env:/, 4],
@@ -202,77 +209,77 @@ const RULES: [string, Rule[]][] = [
     [/^\s*<\?xml\b/, 6], [/<\w+:\w+[\s>]/, 2], [/xmlns(:\w+)?="/, 3], [/<\/\w+>/, 0.5],
   ]],
   ['css', [
-    [/^[ \t]*[.#:@]?[\w-]+(?:(?:[ \t]*[,>+~][ \t]*|[ \t]+)[.#:]?[\w-]+|[.#:][\w-]+|\([^)\n]*\))*[ \t]*\{[ \t]*$/m, 2], [/^\s*(color|margin|padding|display|font-(size|family|weight)|background(-color)?|border(-radius)?|width|height|position|flex|grid-template-columns|transition|transform)\s*:[^;]+;/m, 3],
+    [/^[ \t]*[.#:@]?[\w-]+(?:(?:[ \t]*[,>+~][ \t]*|[ \t]+)[.#:]?[\w-]+|[.#:][\w-]+|\([^)\n]*\))*[ \t]*\{[ \t]*$/m, 2], [/^[^\S\n\r\u2028\u2029]*(color|margin|padding|display|font-(size|family|weight)|background(-color)?|border(-radius)?|width|height|position|flex|grid-template-columns|transition|transform)\s*:[^;]+;/m, 3],
     [/@(media|import|keyframes|font-face|supports|layer)\b/, 3], [/^[ \t]*-?[a-z]+(?:-[a-z]+)*[ \t]*:[ \t]*[^;{}\n]+;[ \t]*$/m, 2], [/:\s*(hover|focus|before|after|root|nth-child)/, 1], [/\b\d+(px|rem|em|vh|vw)\b/, 1], [/var\(--[\w-]+\)/, 2],
   ]],
   ['scss', [
-    [/^\s*\$[\w-]+\s*:/m, 3], [/&(:|\.|-)\w/, 3], [/@(mixin|include|extend|use|forward)\b/, 4],
+    [/^[^\S\n\r\u2028\u2029]*\$[\w-]+\s*:/m, 3], [/&(:|\.|-)\w/, 3], [/@(mixin|include|extend|use|forward)\b/, 4],
   ]],
   ['yaml', [
-    [/^---\s*$/m, 1], [/^\s*[\w.-]+:\s+[^\s{].*$/m, 1], [/^\s*[\w.-]+:\s*$/m, 1], [/^\s*- [\w"'].*$/m, 1], [/^\s*(apiVersion|kind|metadata|spec|services|image|name|steps|jobs|runs-on|on|version|dependencies):/m, 3],
+    [/^---\s*$/m, 1], [/^[^\S\n\r\u2028\u2029]*[\w.-]+:\s+[^\s{].*$/m, 1], [/^[^\S\n\r\u2028\u2029]*[\w.-]+:\s*$/m, 1], [/^[^\S\n\r\u2028\u2029]*- [\w"'].*$/m, 1], [/^[^\S\n\r\u2028\u2029]*(apiVersion|kind|metadata|spec|services|image|name|steps|jobs|runs-on|on|version|dependencies):/m, 3],
   ]],
   ['toml', [
-    [/^\[\[?[\w.-]+\]\]?\s*$/m, 3], [/^\s*[\w.-]+\s*=\s*("|\d|\[|true|false|\{)/m, 2], [/^\[(package|dependencies|tool\.\w+|build-system|workspace)\]/m, 4],
+    [/^\[\[?[\w.-]+\]\]?\s*$/m, 3], [/^[^\S\n\r\u2028\u2029]*[\w.-]+\s*=\s*("|\d|\[|true|false|\{)/m, 2], [/^\[(package|dependencies|tool\.\w+|build-system|workspace)\]/m, 4],
   ]],
   ['ini', [
-    [/^\[[\w .-]+\]\s*$/m, 2], [/^\s*[\w.-]+\s*=\s*[^=\n]*$/m, 1], [/^\s*;/m, 1],
+    [/^\[[\w .-]+\]\s*$/m, 2], [/^[^\S\n\r\u2028\u2029]*[\w.-]+\s*=\s*[^=\n]*$/m, 1], [/^[^\S\n\r\u2028\u2029]*;/m, 1],
   ]],
   ['dockerfile', [
-    [/^\s*FROM\s+[\w./:-]+(\s+AS\s+\w+)?\s*$/im, 5], [/^\s*(RUN|COPY|ADD|CMD|ENTRYPOINT|WORKDIR|EXPOSE|ENV|ARG|USER|VOLUME|LABEL|HEALTHCHECK)\s/m, 2],
+    [/^[^\S\n\r\u2028\u2029]*FROM\s+[\w./:-]+(\s+AS\s+\w+)?\s*$/im, 5], [/^[^\S\n\r\u2028\u2029]*(RUN|COPY|ADD|CMD|ENTRYPOINT|WORKDIR|EXPOSE|ENV|ARG|USER|VOLUME|LABEL|HEALTHCHECK)\s/m, 2],
   ]],
   ['makefile', [
     [/^[\w.%$()/-]+\s*:[^=\n]*\n\t\S/m, 5], [/\$\([\w@<^]+\)/, 1], [/^\.PHONY\s*:/m, 5],
   ]],
   ['markdown', [
-    [/^#{1,6}\s+\S/m, 2], [/^\s*[-*+]\s+\S/m, 0.5], [/\[[^\]]+\]\([^)]+\)/, 2], [/^```/m, 3], [/\*\*[^*]+\*\*/, 1],
+    [/^#{1,6}\s+\S/m, 2], [/^[^\S\n\r\u2028\u2029]*[-*+]\s+\S/m, 0.5], [/\[[^\]]+\]\([^)]+\)/, 2], [/^```/m, 3], [/\*\*[^*]+\*\*/, 1],
   ]],
   ['diff', [
     [/^@@ [-+]\d+(,\d+)? [-+]\d+(,\d+)? @@/m, 6], [/^(\+\+\+|---) [ab]?\//m, 4], [/^diff --git /m, 6], [/^[+-](?![+-])/m, 0.5],
   ]],
   ['graphql', [
-    [/^\s*(query|mutation|subscription|fragment)\s*\w*\s*(\(.*\))?\s*(on \w+\s*)?\{/m, 5], [/^\s*type\s+\w+\s*(implements\s+\w+\s*)?\{/m, 2], [/^\s*schema\s*\{/m, 4],
+    [/^[^\S\n\r\u2028\u2029]*(query|mutation|subscription|fragment)\s*(\w+\s*)?(\(.*\)\s*)?(on \w+\s*)?\{/m, 5], [/^[^\S\n\r\u2028\u2029]*type\s+\w+\s*(implements\s+\w+\s*)?\{/m, 2], [/^[^\S\n\r\u2028\u2029]*schema\s*\{/m, 4],
   ]],
   ['lua', [
-    [/^\s*local\s+(function\s+)?\w+/m, 4], [/\bfunction\s+[\w.:]+\(.*\)\s*$/m, 1], [/\bthen\s*$/m, 2], [/~=/, 3], [/\bend\s*$/m, 1], [/\brequire\s*\(?["']/, 1], [/\bnil\b/, 1], [/\bipairs\(|\bpairs\(/, 4],
+    [/^[^\S\n\r\u2028\u2029]*local\s+(function\s+)?\w+/m, 4], [/\bfunction\s+[\w.:]+\(.*\)\s*$/m, 1], [/\bthen\s*$/m, 2], [/~=/, 3], [/\bend\s*$/m, 1], [/\brequire\s*\(?["']/, 1], [/\bnil\b/, 1], [/\bipairs\(|\bpairs\(/, 4],
   ]],
   ['r', [
-    [/\w+\s*<-\s*/, 3], [/\blibrary\(\w+\)/, 5], [/\bc\(/, 1], [/\b(data\.frame|ggplot|dplyr|tidyverse|summary)\(/, 4], [/%>%|\|>/, 2],
+    [/\b\w+\s*<-\s*/, 3], [/\blibrary\(\w+\)/, 5], [/\bc\(/, 1], [/\b(data\.frame|ggplot|dplyr|tidyverse|summary)\(/, 4], [/%>%|\|>/, 2],
   ]],
   ['haskell', [
-    [/^\w+\s*::\s*.+$/m, 4], [/::\s*\w+\s*->/, 3], [/^\s*import\s+qualified\b/m, 5], [/^module\s+[\w.]+\s+where/m, 5], [/\bwhere\s*$/m, 1], [/<\$>|>>=/, 3], [/\bdata\s+\w+\s*=/, 2],
+    [/^\w+\s*::\s*.+$/m, 4], [/::\s*\w+\s*->/, 3], [/^[^\S\n\r\u2028\u2029]*import\s+qualified\b/m, 5], [/^module\s+[\w.]+\s+where/m, 5], [/\bwhere\s*$/m, 1], [/<\$>|>>=/, 3], [/\bdata\s+\w+\s*=/, 2],
   ]],
   ['elixir', [
-    [/^\s*defmodule\s+[\w.]+\s+do/m, 6], [/^\s*defp?\s+\w+.*\bdo\s*$/m, 3], [/\|>/, 2], [/\b(IO\.puts|Enum\.\w+|%\{)/, 3],
+    [/^[^\S\n\r\u2028\u2029]*defmodule\s+[\w.]+\s+do/m, 6], [/^[^\S\n\r\u2028\u2029]*defp?\s+\w.*\bdo\s*$/m, 3], [/\|>/, 2], [/\b(IO\.puts|Enum\.\w+|%\{)/, 3],
   ]],
   ['dart', [
-    [/^\s*import\s+'package:[\w/.-]+';/m, 6], [/\bWidget\s+build\(BuildContext/, 6], [/\bsetState\(/, 3], [/@override\b/, 2], [/\bvoid\s+main\(\)/, 2], [/\bfinal\s+\w+(\s*<.+>)?\s+\w+\s*=/, 1], [/\bFuture<\w+>/, 2], [/\blate\s+\w+/, 3],
+    [/^[^\S\n\r\u2028\u2029]*import\s+'package:[\w/.-]+';/m, 6], [/\bWidget\s+build\(BuildContext/, 6], [/\bsetState\(/, 3], [/@override\b/, 2], [/\bvoid\s+main\(\)/, 2], [/\bfinal\s+\w+(\s*<.+>)?\s+\w+\s*=/, 1], [/\bFuture<\w+>/, 2], [/\blate\s+\w+/, 3],
   ]],
   ['scala', [
-    [/^\s*object\s+\w+(\s+extends\s+\w+)?\s*\{/m, 3], [/\bdef\s+\w+(\[.+\])?\(.*\)\s*:\s*[\w\[\]]+\s*=/, 4], [/\bcase class\b/, 4], [/^\s*import\s+scala\./m, 5], [/\bval\s+\w+\s*:\s*\w+/, 1],
+    [/^[^\S\n\r\u2028\u2029]*object\s+\w+(\s+extends\s+\w+)?\s*\{/m, 3], [/\bdef\s+\w+(\[.+\])?\(.*\)\s*:\s*[\w\[\]]+\s*=/, 4], [/\bcase class\b/, 4], [/^[^\S\n\r\u2028\u2029]*import\s+scala\./m, 5], [/\bval\s+\w+\s*:\s*\w+/, 1],
   ]],
   ['clojure', [
-    [/^\s*\(defn-?\s/m, 5], [/^\s*\(ns\s/m, 5], [/^\s*\(def\s/m, 3], [/\(let\s*\[/, 3],
+    [/^[^\S\n\r\u2028\u2029]*\(defn-?\s/m, 5], [/^[^\S\n\r\u2028\u2029]*\(ns\s/m, 5], [/^[^\S\n\r\u2028\u2029]*\(def\s/m, 3], [/\(let\s*\[/, 3],
   ]],
   ['latex', [
     [/\\(begin|end)\{\w+\*?\}/, 4], [/\\(documentclass|usepackage|section|subsection|maketitle)\b/, 5], [/\\(frac|sum|int|alpha|beta|mathbb|mathrm|left|right)\b/, 2],
   ]],
   ['nginx', [
-    [/^\s*server\s*\{/m, 3], [/^\s*listen\s+\d+/m, 3], [/^\s*location\s+[~=^]*\s*\S+\s*\{/m, 4], [/\bproxy_pass\b|\bserver_name\b|\broot\s+\//, 4],
+    [/^[^\S\n\r\u2028\u2029]*server\s*\{/m, 3], [/^[^\S\n\r\u2028\u2029]*listen\s+\d+/m, 3], [/^[^\S\n\r\u2028\u2029]*location\s+(?:[~=^]+\s+)?\S+\s*\{/m, 4], [/\bproxy_pass\b|\bserver_name\b|\broot\s+\//, 4],
   ]],
   ['protobuf', [
-    [/^\s*syntax\s*=\s*"proto[23]";/m, 6], [/^\s*message\s+\w+\s*\{/m, 3], [/^\s*(repeated|optional|required)\s+\w+\s+\w+\s*=\s*\d+;/m, 4],
+    [/^[^\S\n\r\u2028\u2029]*syntax\s*=\s*"proto[23]";/m, 6], [/^[^\S\n\r\u2028\u2029]*message\s+\w+\s*\{/m, 3], [/^[^\S\n\r\u2028\u2029]*(repeated|optional|required)\s+\w+\s+\w+\s*=\s*\d+;/m, 4],
   ]],
   ['solidity', [
-    [/^\s*pragma\s+solidity\b/m, 7], [/^\s*contract\s+\w+/m, 3], [/\bmsg\.sender\b/, 4],
+    [/^[^\S\n\r\u2028\u2029]*pragma\s+solidity\b/m, 7], [/^[^\S\n\r\u2028\u2029]*contract\s+\w+/m, 3], [/\bmsg\.sender\b/, 4],
   ]],
   ['objectivec', [
-    [/^\s*@(interface|implementation|property|end|protocol)\b/m, 4], [/^\s*#import\s+[<"]/m, 4], [/\bNS(String|Log|Array|Dictionary|Object)\b/, 4], [/\[\w+\s+\w+(:\w+)?\]/, 1],
+    [/^[^\S\n\r\u2028\u2029]*@(interface|implementation|property|end|protocol)\b/m, 4], [/^[^\S\n\r\u2028\u2029]*#import\s+[<"]/m, 4], [/\bNS(String|Log|Array|Dictionary|Object)\b/, 4], [/\[\w+\s+\w+(:\w+)?\]/, 1],
   ]],
   ['perl', [
-    [/^\s*use\s+(strict|warnings);/m, 5], [/\bmy\s+[$@%]\w+/, 4], [/=~\s*[ms]?\//, 2], [/\$_\b/, 2],
+    [/^[^\S\n\r\u2028\u2029]*use\s+(strict|warnings);/m, 5], [/\bmy\s+[$@%]\w+/, 4], [/=~\s*[ms]?\//, 2], [/\$_\b/, 2],
   ]],
   ['matlab', [
-    [/^\s*function\s+(\[.*\]|\w+)\s*=\s*\w+\(/m, 4], [/\b(zeros|ones|linspace|plot|figure|disp)\(/, 2], [/^\s*%/m, 1], [/\.\*|\.\^/, 2],
+    [/^[^\S\n\r\u2028\u2029]*function\s+(\[.*\]|\w+)\s*=\s*\w+\(/m, 4], [/\b(zeros|ones|linspace|plot|figure|disp)\(/, 2], [/^[^\S\n\r\u2028\u2029]*%/m, 1], [/\.\*|\.\^/, 2],
   ]],
   ['json', []],
 ];
@@ -338,7 +345,7 @@ export function detectLanguage(source: string): string | null {
     if (prompt) prompts++;
   }
   // A session opens with a prompt; what follows may be the command's output.
-  if ((firstIsPrompt || prompts >= nonEmpty * 0.5) && prompts > 0 && !/^\s*>>>/m.test(code)) scores.set('shell', (scores.get('shell') ?? 0) + 4);
+  if ((firstIsPrompt || prompts >= nonEmpty * 0.5) && prompts > 0 && !/^[^\S\n\r\u2028\u2029]*>>>/m.test(code)) scores.set('shell', (scores.get('shell') ?? 0) + 4);
   const bash = scores.get('bash') ?? 0;
   const shell = scores.get('shell') ?? 0;
   if (shell >= 3) scores.set('shell', shell + bash);
