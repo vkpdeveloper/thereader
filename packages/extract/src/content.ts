@@ -364,11 +364,8 @@ function grab(body: VElement, flags: Flags, articleBody: string | null): Attempt
 
   const top: VElement[] = [];
   for (const c of candidates) {
-    if (c.tag === 'body' || c.tag === 'html') {
-      c.score *= 1 - linkDensity(c);
-      continue;
-    }
     c.score *= 1 - linkDensity(c);
+    if (c.tag === 'body' || c.tag === 'html') continue;
     let i = 0;
     while (i < top.length && top[i]!.score >= c.score) i++;
     if (i < 5) {
@@ -378,10 +375,20 @@ function grab(body: VElement, flags: Flags, articleBody: string | null): Attempt
   }
 
   let topCandidate: VElement | null = top[0] ?? null;
+  // Flat pages (specs, old sites) keep their paragraphs directly in <body>: it wins outright.
+  if (body.scored && body.score >= 2 * (topCandidate?.score ?? 0)) topCandidate = body;
   if (articleBody !== null) topCandidate = alignWithStructuredBody(body, topCandidate, articleBody);
 
-  if (topCandidate === null || topCandidate.tag === 'body') {
+  if (topCandidate === null) {
     measure(body);
+    return { roots: [body], textLength: body.textLen };
+  }
+  if (topCandidate.tag === 'body') {
+    // The page header of a flat page is chrome.
+    for (const child of body.children) if (child.kind === 1 && child.tag === 'header') child.skip = true;
+    trimTrailingChrome(body);
+    prepare(body, flags);
+    if (!flags.cleanConditionally) measure(body);
     return { roots: [body], textLength: body.textLen };
   }
 
@@ -458,6 +465,25 @@ function grab(body: VElement, flags: Flags, articleBody: string | null): Attempt
     length += root.textLen;
   }
   return { roots, textLength: length };
+}
+
+/**
+ * A flat page ends with its own chrome (copyright, discussion links) right in
+ * <body>: trailing wrappers that are not article structure, and short link lines.
+ */
+function trimTrailingChrome(body: VElement): void {
+  const kids = body.children;
+  for (let k = kids.length - 1; k >= 0; k--) {
+    const child = kids[k]!;
+    if (child.kind === 0 || child.skip || child.tag === 'br' || child.tag === 'hr') continue;
+    if (!STRUCTURE.has(child.tag) && child.textLen < 500 && !hasMedia(child)) {
+      child.skip = true;
+      continue;
+    }
+    // At most one link line ("Discussion on ...") right before the chrome.
+    if (child.tag === 'p' && child.textLen < 100 && linkDensity(child) > 0.3) child.skip = true;
+    return;
+  }
 }
 
 function isInside(node: VElement, ancestor: VElement): boolean {
