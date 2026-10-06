@@ -257,7 +257,7 @@ export function readMetadata(doc: VDocument, pageUrl: string): Metadata {
     const p = ld['publisher'];
     if (p !== undefined && p !== null && typeof p === 'object' && !Array.isArray(p)) publisher = str(p['name']);
   }
-  const siteName = m('og:site_name') ?? publisher ?? siteNode ?? m('application-name') ?? m('apple-mobile-web-app-title') ?? m('twitter:site:name') ?? null;
+  const siteName = m('og:site_name') ?? titleSite(titleTag ?? m('og:title'), pageUrl) ?? publisher ?? siteNode ?? m('application-name') ?? m('apple-mobile-web-app-title') ?? m('twitter:site:name') ?? null;
 
   // Authors.
   const rawAuthors: string[] = [];
@@ -276,7 +276,7 @@ export function readMetadata(doc: VDocument, pageUrl: string): Metadata {
   addAuthors(rawAuthors, authors);
   if (siteName !== null) {
     const site = siteName.toLowerCase();
-    for (let i = authors.length - 1; i >= 0; i--) if (authors[i]!.toLowerCase() === site && authors.length > 1) authors.splice(i, 1);
+    for (let i = authors.length - 1; i >= 0; i--) if (authors[i]!.toLowerCase() === site) authors.splice(i, 1);
   }
 
   // Dates.
@@ -372,6 +372,19 @@ export function readMetadata(doc: VDocument, pageUrl: string): Metadata {
     favicon,
     articleBody,
   };
+}
+
+/** "Story - Wikipedia" on en.wikipedia.org: the last title segment, when it names the host. */
+function titleSite(title: string | null, pageUrl: string): string | null {
+  if (title === null) return null;
+  const parts = collapse(decodeEntities(title)).split(/\s+[|\-–—·•»]\s+/);
+  if (parts.length < 2) return null;
+  const last = parts[parts.length - 1]!;
+  const key = last.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
+  if (key.length < 3 || last.length > 40) return null;
+  const m = /^https?:\/\/([^/:?#]+)/i.exec(pageUrl);
+  const host = m === null ? '' : m[1]!.toLowerCase().replace(/[^a-z0-9]+/g, '');
+  return host.indexOf(key) >= 0 ? last : null;
 }
 
 const BYLINE_CLASS = /(?:^|[\s_-])(?:byline|by-line|author|authors|author-name|authorname|writer|contributor|byline__name|post-author|entry-author|article-author|meta-author|c-byline)(?:$|[\s_-])/;

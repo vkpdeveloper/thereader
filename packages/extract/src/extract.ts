@@ -151,6 +151,25 @@ function chooseTitle(meta: Metadata, body: VElement, pageUrl: string): string {
       if (hc.length >= 10 && (c.indexOf(hc) >= 0 && hc.length > c.length * 0.6 || hc.indexOf(c) >= 0 && c.length > hc.length * 0.6)) return h;
     }
   }
+  // Rewritten headlines ("Trump says..." vs "Donald Trump says a..."): the visible
+  // heading that shares most of its words with the declared title.
+  let best: string | null = null;
+  let bestOverlap = 0.6;
+  for (const candidate of cleaned) {
+    const words = new Set(comparable(candidate).split(' '));
+    for (const h of headings) {
+      const hw = comparable(h).split(' ');
+      if (hw.length < 3) continue;
+      let shared = 0;
+      for (const w of hw) if (words.has(w)) shared++;
+      const overlap = shared / Math.min(hw.length, words.size);
+      if (overlap > bestOverlap) {
+        bestOverlap = overlap;
+        best = h;
+      }
+    }
+  }
+  if (best !== null) return best;
   if (cleaned.length > 0) return cleaned[0]!;
   if (headings.length > 0) return headings[0]!;
   return host;

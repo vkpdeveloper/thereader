@@ -329,12 +329,16 @@ export function detectLanguage(source: string): string | null {
   // Terminal sessions: most non-empty lines start with a prompt.
   let prompts = 0;
   let nonEmpty = 0;
+  let firstIsPrompt = false;
   for (const line of lines) {
     if (line.trim().length === 0) continue;
+    const prompt = /^\s*(?:[$%❯>]|PS [A-Z]:\\[^>]*>|[\w.-]+@[\w.-]+:[^$#]*[$#])\s/.test(line);
+    if (nonEmpty === 0) firstIsPrompt = prompt;
     nonEmpty++;
-    if (/^\s*(?:[$%❯>]|PS [A-Z]:\\[^>]*>|[\w.-]+@[\w.-]+:[^$#]*[$#])\s/.test(line)) prompts++;
+    if (prompt) prompts++;
   }
-  if (prompts > 0 && prompts >= nonEmpty * 0.5 && !/^\s*>>>/m.test(code)) scores.set('shell', (scores.get('shell') ?? 0) + 4);
+  // A session opens with a prompt; what follows may be the command's output.
+  if ((firstIsPrompt || prompts >= nonEmpty * 0.5) && prompts > 0 && !/^\s*>>>/m.test(code)) scores.set('shell', (scores.get('shell') ?? 0) + 4);
   const bash = scores.get('bash') ?? 0;
   const shell = scores.get('shell') ?? 0;
   if (shell >= 3) scores.set('shell', shell + bash);
