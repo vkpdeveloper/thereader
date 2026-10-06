@@ -1111,6 +1111,16 @@ export class Converter {
       this.children(el, out);
       return;
     }
+    // One listing in several flavours (<code class="language-mjs"> and <code class="language-cjs">): one block each.
+    const flavours: VElement[] = [];
+    for (const child of el.children) if (child.kind === 1 && !child.skip && child.tag === 'code') flavours.push(child);
+    if (flavours.length > 1) {
+      for (const flavour of flavours) {
+        const text = codeText(flavour);
+        if (text.trim().length > 0) out.push(this.codeBlock(text, codeLanguage(flavour)));
+      }
+      return;
+    }
     const code = codeText(el);
     if (code.trim().length === 0) return;
     out.push(this.codeBlock(code, codeLanguage(el)));
