@@ -1,0 +1,117 @@
+{
+  "schema": 1,
+  "url": "https://numbers.example.net/posts/floating-point-sums",
+  "title": "Why floating point sums drift",
+  "subtitle": null,
+  "byline": null,
+  "authors": [],
+  "siteName": null,
+  "publishedAt": null,
+  "modifiedAt": null,
+  "language": "en",
+  "dir": "ltr",
+  "excerpt": "A double stores a sign, an exponent and a significand, and the value it represents is",
+  "leadImage": null,
+  "favicon": "https://numbers.example.net/favicon.ico",
+  "wordCount": 132,
+  "readingMinutes": 1,
+  "blocks": [
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "A double stores a sign, an exponent and a significand, and the value it represents is"
+        }
+      ]
+    },
+    {
+      "type": "math",
+      "text": "\\text{sign} \\times 2^{\\text{exponent}} \\left(1 + \\frac{\\text{significand}}{2^{52}}\\right)",
+      "tex": "\\text{sign} \\times 2^{\\text{exponent}} \\left(1 + \\frac{\\text{significand}}{2^{52}}\\right)"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Adding "
+        },
+        {
+          "type": "math",
+          "tex": "x",
+          "text": "x"
+        },
+        {
+          "type": "text",
+          "text": " and "
+        },
+        {
+          "type": "math",
+          "tex": "y",
+          "text": "y"
+        },
+        {
+          "type": "text",
+          "text": " rounds the exact sum to the nearest representable value, so the error of each step is at most "
+        },
+        {
+          "type": "math",
+          "tex": "\\epsilon |x + y|",
+          "text": "\\epsilon |x + y|"
+        },
+        {
+          "type": "text",
+          "text": " where "
+        },
+        {
+          "type": "math",
+          "tex": "\\epsilon = 2^{-53}",
+          "text": "\\epsilon = 2^{-53}"
+        },
+        {
+          "type": "text",
+          "text": "."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Summing "
+        },
+        {
+          "type": "math",
+          "tex": "n",
+          "text": "n"
+        },
+        {
+          "type": "text",
+          "text": " numbers one after another lets those errors pile up, which is why a ticket that costs $5 and a meal at $10 can add up to 15.000000000000002 in a spreadsheet."
+        }
+      ]
+    },
+    {
+      "type": "math",
+      "text": "\\Bigl| \\sum_{i=1}^{n} x_i - \\operatorname{fl}\\Bigl(\\sum_{i=1}^{n} x_i\\Bigr) \\Bigr| \\le (n-1)\\,\\epsilon \\sum_{i=1}^{n} |x_i|",
+      "tex": "\\Bigl| \\sum_{i=1}^{n} x_i - \\operatorname{fl}\\Bigl(\\sum_{i=1}^{n} x_i\\Bigr) \\Bigr| \\le (n-1)\\,\\epsilon \\sum_{i=1}^{n} |x_i|"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Pairwise summation brings the bound down to a logarithmic factor, and Kahan summation removes most of it for a few extra operations per element."
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "code": "total = sum(prices)  # $ signs in code stay as they are: $x$",
+      "language": "python",
+      "languageSource": "markup"
+    }
+  ]
+}

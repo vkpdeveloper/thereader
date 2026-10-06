@@ -5,6 +5,11 @@ import type { Block, Callout, Definition, Figure, Footnote, Image, Inline, ListI
 import { collapse, firstElement, rawText, textOf, walk, type VElement, type VNode } from './tree';
 import { resolveUrl } from './url';
 
+/** TeX left for MathJax/KaTeX: $$…$$ and \[…\] display, \(…\) inline. */
+const TEX_DELIMITED = /\$\$([^$]+?)\$\$|\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)/g;
+/** The same plus $…$ inline, for pages that show they use TeX (never "$5 and $10"). */
+const TEX_ANY = /\$\$([^$]+?)\$\$|\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)|\$([^\s$\d](?:[^$\n]{0,300}?[^\s$\\])?)\$(?![\d\w])/g;
+
 const MARK_ORDER: Mark[] = ['bold', 'italic', 'underline', 'strike', 'code', 'sub', 'sup', 'highlight', 'small', 'kbd'];
 
 const TAG_MARK: Record<string, Mark> = {
@@ -62,12 +67,35 @@ class InlineBuilder {
     if (value.length === 0) return;
     const text = value.replace(ZERO_WIDTH, '');
     if (text.length === 0) return;
+    if (this.converter.tex && (text.indexOf('$') >= 0 || text.indexOf('\\') >= 0) && ctx.marks.indexOf('code') < 0 && this.texRuns(text, ctx)) return;
     if (this.breaks > 0 && text.replace(SPACES, '').length === 0) return;
     this.breaks = 0;
     const run: TextRun = { type: 'text', text };
     if (ctx.marks.length > 0) run.marks = sortMarks(ctx.marks);
     if (ctx.href !== null) run.href = ctx.href;
     this.nodes.push(run);
+  }
+
+  /** Splits TeX written for a client-side renderer out of `text` as math; false when there is none. */
+  private texRuns(text: string, ctx: Ctx): boolean {
+    const re = this.converter.dollars ? TEX_ANY : TEX_DELIMITED;
+    re.lastIndex = 0;
+    let m = re.exec(text);
+    if (m === null) return false;
+    let at = 0;
+    while (m !== null) {
+      if (m.index > at) this.text(text.slice(at, m.index), ctx);
+      const tex = (m[1] ?? m[2] ?? m[3] ?? m[4] ?? '').trim();
+      if (tex.length > 0) {
+        const node: Inline = { type: 'math', tex, text: tex };
+        if (m[1] !== undefined || m[2] !== undefined) this.converter.lastDisplayMath = node;
+        this.push(node);
+      }
+      at = m.index + m[0].length;
+      m = re.exec(text);
+    }
+    if (at < text.length) this.text(text.slice(at), ctx);
+    return true;
   }
 
   lineBreak(): void {
@@ -227,11 +255,15 @@ export class Converter {
   /** Label of the first reference to each listed note. */
   private readonly refLabels = new Map<string, string>();
   lastDisplayMath: Inline | null = null;
+  /** The text holds TeX delimiters (`$$`, `\[`, `\(`), so it is parsed as math; `dollars` adds $…$ inline. */
+  tex = false;
+  dollars = false;
 
   constructor(private readonly base: string) {}
 
   convert(roots: VElement[]): Block[] {
     for (const root of roots) this.scanFootnotes(root);
+    for (const root of roots) this.scanTex(root);
     const out: Block[] = [];
     for (const root of roots) {
       if (root.skip) continue;
@@ -326,6 +358,25 @@ export class Converter {
       content.length = 0;
       content.push(...normalized);
     });
+  }
+
+  // ---------------------------------------------------------------- TeX
+
+  /** Display delimiters ($$, \[) or \( anywhere in the prose mean the page renders TeX client-side. */
+  private scanTex(root: VElement): void {
+    const visit = (el: VElement): void => {
+      if (this.tex || el.skip || el.tag === 'pre' || el.tag === 'code' || el.tag === 'math' || el.tag === 'math-tex') return;
+      for (const child of el.children) {
+        if (child.kind === 1) visit(child);
+        else if (child.text.indexOf('$$') >= 0 || /\\[([]/.test(child.text)) {
+          if (TEX_DELIMITED.test(child.text)) this.tex = true;
+          TEX_DELIMITED.lastIndex = 0;
+        }
+        if (this.tex) return;
+      }
+    };
+    visit(root);
+    this.dollars = this.tex;
   }
 
   // ---------------------------------------------------------------- footnotes
