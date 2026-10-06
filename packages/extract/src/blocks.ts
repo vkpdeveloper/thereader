@@ -1075,6 +1075,17 @@ export class Converter {
       }
       return e.tag === 'div' || e.tag === 'p';
     });
+    // A short heading opening the box ("Note") is its title.
+    if (titleEl === null) {
+      for (const child of el.children) {
+        if (child.kind === 0 ? child.text.trim().length > 0 : child.skip) {
+          if (child.kind === 0) break;
+          continue;
+        }
+        if (child.kind === 1 && /^h[2-6]$/.test(child.tag) && child.textLen < 60) titleEl = child;
+        break;
+      }
+    }
     let title: Inline[] | undefined;
     if (titleEl !== null) {
       title = this.inlineOnly(titleEl);

@@ -350,7 +350,7 @@ function isNoteMarkup(el: VElement): boolean {
 }
 
 export function isCallout(el: VElement): boolean {
-  return /(?:^|[\s_-])(?:note|tip|warning|caution|important|admonition|callout|alert|info|danger|notice|hint|notecard)(?:$|[\s_-])/.test(el.matchString);
+  return /(?:^|[\s_-])(?:note|tip|warning|caution|important|admonition|callout|alert|info|danger|notice|hint|notecard)(?:$|[\s_-])|(?:^|[\s_-])(?:callout|admonition)(?:wrapper|box|container|block)(?:$|[\s_-])/.test(el.matchString);
 }
 
 function ancestors(el: VElement, max: number): VElement[] {
