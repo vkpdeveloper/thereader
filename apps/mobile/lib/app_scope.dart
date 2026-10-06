@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import 'data/api/api_client.dart';
 import 'data/import/epub_import_service.dart';
+import 'data/repositories/article_repository.dart';
 import 'data/repositories/highlight_repository.dart';
 import 'data/repositories/sync_repository.dart';
 import 'data/api/catalog_source.dart';
@@ -25,6 +26,7 @@ class AppServices {
     this.imports,
     this.sync,
     this.highlights,
+    this.articles,
   }) : _fixed = catalogSource {
     catalog = CatalogRepository(sourceFor(settings.settings));
     settings.addListener(_onSettings);
@@ -35,6 +37,9 @@ class AppServices {
 
   /// Null in widget tests that do not exercise annotations.
   final HighlightRepository? highlights;
+
+  /// Saved web articles. Null in widget tests that do not exercise them.
+  final ArticleRepository? articles;
   final SettingsRepository settings;
   final LibraryRepository library;
   final ReaderService readerService;
@@ -85,6 +90,7 @@ class AppServices {
   void dispose() {
     imports?.dispose();
     sync?.dispose();
+    articles?.dispose();
     settings.removeListener(_onSettings);
     catalog.dispose();
     for (final source in _apis.values) {

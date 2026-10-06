@@ -3,17 +3,20 @@ import 'package:flutter/material.dart';
 import '../../app_scope.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/tokens.dart';
+import '../../data/models/article_summary.dart';
 import '../../data/models/book.dart';
 import '../../data/models/library.dart';
+import '../articles/add_article_sheet.dart';
+import '../articles/article_tile.dart';
 import '../book/book_detail_screen.dart';
 import '../reader/reader_screen.dart';
 import '../shared/cover_art.dart';
 import '../shared/states.dart';
 
-enum _Filter { all, downloaded, inProgress }
+enum _Filter { all, downloaded, inProgress, articles }
 
-/// Home: an editorial title, one continue-reading entry, then a cover-led
-/// grid of everything you have. Works fully offline.
+/// Home: an editorial title, one continue-reading entry, saved articles, then
+/// a cover-led grid of everything you have. Works fully offline.
 class LibraryScreen extends StatefulWidget {
   const LibraryScreen({super.key, required this.onBrowse});
 
@@ -24,6 +27,7 @@ class LibraryScreen extends StatefulWidget {
 }
 
 class _LibraryScreenState extends State<LibraryScreen> {
+  static const _articlePreview = 3;
   _Filter _filter = _Filter.all;
   bool _importing = false;
 
@@ -58,10 +62,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
   Widget build(BuildContext context) {
     final services = AppScope.of(context);
     final imports = services.imports;
+    final articles = services.articles;
     // Upload and sync progress are deliberately not observed here: the
     // library stays quiet and Settings is the one place that reports them.
     return ListenableBuilder(
-      listenable: Listenable.merge([services.library, services.settings]),
+      listenable: Listenable.merge([services.library, services.settings, ?articles]),
       builder: (context, _) {
         final lib = services.library;
         final text = Theme.of(context).textTheme;
@@ -75,6 +80,19 @@ class _LibraryScreenState extends State<LibraryScreen> {
           _Filter.downloaded => all.where((e) => e.download.isReady).toList(),
           _Filter.inProgress =>
             all.where((e) => e.progress != null && e.progress!.percent < 0.995).toList(),
+          _Filter.articles => <LibraryEntry>[],
+        };
+        final saved = articles != null && articles.loaded ? articles.articles : const <ArticleSummary>[];
+        final shownArticles = switch (_filter) {
+          _Filter.all => saved.take(_articlePreview).toList(),
+          _Filter.inProgress => saved.where((a) => a.progress != null && !a.progress!.finished).toList(),
+          _Filter.articles => saved,
+          _Filter.downloaded => const <ArticleSummary>[],
+        };
+        final both = shown.isNotEmpty && shownArticles.isNotEmpty;
+        final count = switch (_filter) {
+          _Filter.all => all.length + saved.length,
+          _ => shown.length + shownArticles.length,
         };
         final width = MediaQuery.sizeOf(context).width;
         final columns = width >= 900
@@ -94,38 +112,54 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 child: ScreenHeader(
                   title: 'Library',
                   style: text.displayLarge,
-                  trailing: !canImport
+                  trailing: !canImport && articles == null
                       ? null
-                      : _importing
-                          ? Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: Semantics(
-                                  label: 'Importing book',
-                                  child: CircularProgressIndicator(strokeWidth: 1.5),
-                                ),
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (canImport)
+                              _importing
+                                  ? Padding(
+                                      padding: const EdgeInsets.all(12),
+                                      child: SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: Semantics(
+                                          label: 'Importing book',
+                                          child: CircularProgressIndicator(strokeWidth: 1.5),
+                                        ),
+                                      ),
+                                    )
+                                  : QuietIconButton(
+                                      icon: Icons.file_upload_outlined,
+                                      label: 'Import EPUB or MOBI',
+                                      // Uploads run in the background; only the pick
+                                      // and local copy block a second import.
+                                      onPressed: _import,
+                                    ),
+                            if (articles != null)
+                              QuietIconButton(
+                                icon: Icons.add,
+                                label: 'Save article from link',
+                                onPressed: () => showAddArticleSheet(context, articles),
                               ),
-                            )
-                          : QuietIconButton(
-                              icon: Icons.file_upload_outlined,
-                              label: 'Import EPUB or MOBI',
-                              // Uploads run in the background; only the pick
-                              // and local copy block a second import.
-                              onPressed: _import,
-                            ),
+                          ],
+                        ),
                 ),
               ),
             ),
-            if (all.isEmpty)
+            if (all.isEmpty && saved.isEmpty)
               SliverFillRemaining(
                 hasScrollBody: false,
                 child: StateMessage(
                   title: 'Nothing here yet.',
-                  body: canImport
-                      ? 'Browse the library and download a book, or import an EPUB or MOBI from your files with the button above. Books are kept on this device for offline reading.'
-                      : 'Browse the library and download a book. Downloads are kept on this device for offline reading.',
+                  body: [
+                    canImport
+                        ? 'Browse the library and download a book, or import an EPUB or MOBI from your files with the button above.'
+                        : 'Browse the library and download a book.',
+                    if (articles != null) 'Save any article from the web with the + button.',
+                    'Everything is kept on this device for offline reading.',
+                  ].join(' '),
                   actionLabel: 'Browse books',
                   onAction: widget.onBrowse,
                 ),
@@ -141,23 +175,34 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 sliver: SliverToBoxAdapter(
                   child: Row(
                     children: [
-                      for (final f in _Filter.values) ...[
-                        _FilterLink(
-                          label: switch (f) {
-                            _Filter.all => 'All',
-                            _Filter.downloaded => 'Downloaded',
-                            _Filter.inProgress => 'In progress',
-                          },
-                          selected: _filter == f,
-                          onTap: () => setState(() => _filter = f),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              for (final f in _Filter.values)
+                                if (f != _Filter.articles || articles != null) ...[
+                                  _FilterLink(
+                                    label: switch (f) {
+                                      _Filter.all => 'All',
+                                      _Filter.downloaded => 'Downloaded',
+                                      _Filter.inProgress => 'In progress',
+                                      _Filter.articles => 'Articles',
+                                    },
+                                    selected: _filter == f,
+                                    onTap: () => setState(() => _filter = f),
+                                  ),
+                                  const SizedBox(width: Space.md),
+                                ],
+                            ],
+                          ),
                         ),
-                        const SizedBox(width: Space.md),
-                      ],
-                      const Spacer(),
+                      ),
+                      const SizedBox(width: Space.sm),
                       if (!lib.bookStore.isDurable)
                         Tag('Session only', color: colors.orange)
                       else
-                        Text('${shown.length}', style: text.labelSmall),
+                        Text('$count', style: text.labelSmall),
                     ],
                   ),
                 ),
@@ -166,11 +211,46 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 padding: EdgeInsets.symmetric(horizontal: Space.gutter),
                 sliver: SliverToBoxAdapter(child: Divider()),
               ),
-              if (shown.isEmpty)
-                const SliverToBoxAdapter(
-                  child: StateMessage(title: 'No books match.', body: 'Try another filter.'),
+              if (shownArticles.isNotEmpty) ...[
+                if (both)
+                  const SliverPadding(
+                    padding: EdgeInsets.fromLTRB(Space.gutter, Space.lg, Space.gutter, 0),
+                    sliver: SliverToBoxAdapter(child: Eyebrow('Articles')),
+                  ),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(Space.gutter, Space.sm, Space.gutter, 0),
+                  sliver: SliverList.builder(
+                    itemCount: shownArticles.length,
+                    itemBuilder: (context, i) => ArticleTile(summary: shownArticles[i], articles: articles!),
+                  ),
+                ),
+                if (_filter == _Filter.all && saved.length > _articlePreview)
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: Space.gutter),
+                    sliver: SliverToBoxAdapter(
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: _FilterLink(
+                          label: 'All ${saved.length} articles',
+                          selected: false,
+                          onTap: () => setState(() => _filter = _Filter.articles),
+                        ),
+                      ),
+                    ),
+                  ),
+                if (both)
+                  const SliverPadding(
+                    padding: EdgeInsets.fromLTRB(Space.gutter, Space.lg, Space.gutter, 0),
+                    sliver: SliverToBoxAdapter(child: Eyebrow('Books')),
+                  ),
+              ],
+              if (shown.isEmpty && shownArticles.isEmpty)
+                SliverToBoxAdapter(
+                  child: _filter == _Filter.articles
+                      ? const StateMessage(title: 'No articles yet.', body: 'Save one from a link with the + button above.')
+                      : const StateMessage(title: 'Nothing matches.', body: 'Try another filter.'),
                 )
-              else
+              else if (shown.isNotEmpty)
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(
                     Space.gutter,
