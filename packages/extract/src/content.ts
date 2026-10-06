@@ -57,7 +57,7 @@ function isWhitespace(node: VNode): boolean {
 export function isPhrasing(node: VNode): boolean {
   if (node.kind === 0) return true;
   if (PHRASING.has(node.tag)) return true;
-  if (node.tag === 'a' || node.tag === 'del' || node.tag === 'ins') return node.children.every(isPhrasing);
+  if (node.tag === 'a' || node.tag === 'del' || node.tag === 'ins' || node.tag.indexOf('-') > 0) return node.children.every(isPhrasing);
   return false;
 }
 

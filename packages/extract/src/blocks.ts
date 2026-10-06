@@ -220,7 +220,9 @@ function hasBlock(el: VElement): boolean {
 }
 
 function isInline(el: VElement): boolean {
-  return INLINE_TAGS.has(el.tag) && !hasBlock(el);
+  if (INLINE_TAGS.has(el.tag)) return !hasBlock(el);
+  // Custom elements holding only phrasing (<dt-math>, <d-cite>) sit inside the sentence; video placeholders do not.
+  return el.tag.indexOf('-') > 0 && !hasBlock(el) && lazyVideo(el) === null;
 }
 
 function intAttr(el: VElement, name: string): number | undefined {
