@@ -1,11 +1,11 @@
 {
- "generatedAt": "2026-10-06T03:01:26.266Z",
+ "generatedAt": "2026-10-06T03:57:56.221Z",
  "engines": {
   "ours": {
-   "version": "ced4ecf",
+   "version": "fb86153",
    "runtime": "Chromium DOMParser",
    "settings": "extract(doc, { url }); text = articleText(article)",
-   "ranAt": "2026-10-06T03:01:26.240Z",
+   "ranAt": "2026-10-06T03:57:56.192Z",
    "runs": 3,
    "workers": 4,
    "environment": {
@@ -13,15 +13,15 @@
     "cpu": "Apple M5 x10",
     "chromium": "153.0.8010.12",
     "bun": "1.4.0",
-    "load avg at start": "3.5 3.5 3.9",
-    "load avg at end": "4.0 3.7 4.0"
+    "load avg at start": "4.7 4.4 6.3",
+    "load avg at end": "4.6 4.4 6.3"
    }
   },
   "ours-dart": {
-   "version": "ced4ecf",
+   "version": "fb86153",
    "runtime": "Dart 3.13.4 AOT, package:html 0.15.7, one process",
    "settings": "package:html parse, then extractTree(fromDocument(doc), url) (base href added as for Chromium); text = articleText(article)",
-   "ranAt": "2026-10-06T03:01:26.261Z",
+   "ranAt": "2026-10-06T03:57:56.214Z",
    "runs": 3,
    "workers": 4,
    "environment": {
@@ -29,8 +29,8 @@
     "cpu": "Apple M5 x10",
     "chromium": "153.0.8010.12",
     "bun": "1.4.0",
-    "load avg at start": "3.5 3.5 3.9",
-    "load avg at end": "4.0 3.7 4.0"
+    "load avg at start": "4.7 4.4 6.3",
+    "load avg at end": "4.6 4.4 6.3"
    }
   },
   "readability": {
@@ -103,45 +103,45 @@
    "docs": 326,
    "failed": 0,
    "parse": {
-    "median": 0.833,
-    "p95": 7.13,
-    "mean": 1.714
+    "median": 0.892,
+    "p95": 7.19,
+    "mean": 1.81
    },
    "extract": {
-    "median": 1.227,
-    "p95": 9.11,
-    "mean": 2.932
+    "median": 1.262,
+    "p95": 10.205,
+    "mean": 3.135
    },
    "total": {
-    "median": 2.188,
-    "p95": 13.665,
-    "mean": 4.658
+    "median": 2.337,
+    "p95": 14.785,
+    "mean": 4.956
    },
    "bySize": {
     "<50KB": {
      "docs": 35,
-     "median": 1.005,
-     "p95": 3.59
+     "median": 1.14,
+     "p95": 4.02
     },
     "50-200KB": {
      "docs": 176,
-     "median": 1.743,
-     "p95": 4.99
+     "median": 1.863,
+     "p95": 5.93
     },
     "200-500KB": {
      "docs": 76,
-     "median": 3.103,
-     "p95": 9.44
+     "median": 3.335,
+     "p95": 9.725
     },
     "0.5-1MB": {
      "docs": 21,
-     "median": 6.515,
-     "p95": 18.32
+     "median": 6.365,
+     "p95": 19.535
     },
     ">1MB": {
      "docs": 18,
-     "median": 31.59,
-     "p95": 93.695
+     "median": 31.817,
+     "p95": 101.02
     }
    }
   },
@@ -149,45 +149,45 @@
    "docs": 326,
    "failed": 0,
    "parse": {
-    "median": 2.57,
-    "p95": 18.806,
-    "mean": 5.359
+    "median": 2.677,
+    "p95": 20.015,
+    "mean": 5.546
    },
    "extract": {
-    "median": 1.007,
-    "p95": 14.408,
-    "mean": 3.35
+    "median": 1.052,
+    "p95": 14.899,
+    "mean": 3.432
    },
    "total": {
-    "median": 3.762,
-    "p95": 27.838,
-    "mean": 8.727
+    "median": 3.845,
+    "p95": 29.266,
+    "mean": 9.014
    },
    "bySize": {
     "<50KB": {
      "docs": 35,
-     "median": 1.381,
-     "p95": 10.2
+     "median": 1.537,
+     "p95": 10.33
     },
     "50-200KB": {
      "docs": 176,
-     "median": 3.109,
-     "p95": 8.693
+     "median": 3.319,
+     "p95": 9.484
     },
     "200-500KB": {
      "docs": 76,
-     "median": 6.12,
-     "p95": 17.327
+     "median": 6.14,
+     "p95": 16.922
     },
     "0.5-1MB": {
      "docs": 21,
-     "median": 10.556,
-     "p95": 34.748
+     "median": 10.535,
+     "p95": 31.98
     },
     ">1MB": {
      "docs": 18,
-     "median": 66.04,
-     "p95": 172.33
+     "median": 62.317,
+     "p95": 171.625
     }
    }
   },
@@ -474,45 +474,45 @@
      "docs": 181,
      "failed": 0,
      "parse": {
-      "median": 0.67,
-      "p95": 3.62,
-      "mean": 1.043
+      "median": 0.715,
+      "p95": 3.97,
+      "mean": 1.09
      },
      "extract": {
-      "median": 0.955,
-      "p95": 2.125,
-      "mean": 1.063
+      "median": 1,
+      "p95": 2.11,
+      "mean": 1.108
      },
      "total": {
-      "median": 1.67,
-      "p95": 5.095,
-      "mean": 2.124
+      "median": 1.74,
+      "p95": 5.405,
+      "mean": 2.203
      },
      "bySize": {
       "<50KB": {
        "docs": 17,
-       "median": 0.86,
-       "p95": 1.415
+       "median": 0.845,
+       "p95": 1.325
       },
       "50-200KB": {
        "docs": 119,
-       "median": 1.505,
-       "p95": 3.205
+       "median": 1.615,
+       "p95": 3.14
       },
       "200-500KB": {
        "docs": 34,
-       "median": 2.7,
-       "p95": 5.095
+       "median": 2.755,
+       "p95": 5.405
       },
       "0.5-1MB": {
        "docs": 8,
-       "median": 5.645,
-       "p95": 9.085
+       "median": 5.595,
+       "p95": 10.175
       },
       ">1MB": {
        "docs": 3,
-       "median": 10.65,
-       "p95": 10.85
+       "median": 11.41,
+       "p95": 11.82
       }
      }
     },
@@ -1171,7 +1171,7 @@
       "recall": 0.9911,
       "f1": 0.9653,
       "accuracy": 0,
-      "chars": 2083
+      "chars": 2084
      },
      {
       "id": "7a664e40d256470fdb12d10c3f8d1c6db0581e9b080c71765e55f273a3ac7d03",
@@ -1988,45 +1988,45 @@
      "docs": 181,
      "failed": 0,
      "parse": {
-      "median": 2.235,
-      "p95": 6.736,
-      "mean": 2.713
+      "median": 2.359,
+      "p95": 7.098,
+      "mean": 2.875
      },
      "extract": {
-      "median": 0.75,
-      "p95": 1.713,
-      "mean": 0.917
+      "median": 0.792,
+      "p95": 1.776,
+      "mean": 0.958
      },
      "total": {
-      "median": 3.039,
-      "p95": 8.246,
-      "mean": 3.645
+      "median": 3.301,
+      "p95": 8.501,
+      "mean": 3.858
      },
      "bySize": {
       "<50KB": {
        "docs": 17,
-       "median": 1.165,
-       "p95": 1.642
+       "median": 1.429,
+       "p95": 1.84
       },
       "50-200KB": {
        "docs": 119,
-       "median": 2.694,
-       "p95": 5.192
+       "median": 2.878,
+       "p95": 5.598
       },
       "200-500KB": {
        "docs": 34,
-       "median": 4.8,
-       "p95": 7.701
+       "median": 5.2,
+       "p95": 8.224
       },
       "0.5-1MB": {
        "docs": 8,
-       "median": 8.518,
-       "p95": 10.556
+       "median": 8.916,
+       "p95": 11.366
       },
       ">1MB": {
        "docs": 3,
-       "median": 16.79,
-       "p95": 17.772
+       "median": 18.234,
+       "p95": 19.128
       }
      }
     },
@@ -2685,7 +2685,7 @@
       "recall": 0.9911,
       "f1": 0.9653,
       "accuracy": 0,
-      "chars": 2083
+      "chars": 2084
      },
      {
       "id": "7a664e40d256470fdb12d10c3f8d1c6db0581e9b080c71765e55f273a3ac7d03",
@@ -10101,45 +10101,45 @@
      "docs": 145,
      "failed": 0,
      "parse": {
-      "median": 1.215,
-      "p95": 11.325,
-      "mean": 2.553
+      "median": 1.33,
+      "p95": 11.65,
+      "mean": 2.708
      },
      "extract": {
-      "median": 1.955,
-      "p95": 27.91,
-      "mean": 5.264
+      "median": 2.155,
+      "p95": 29.875,
+      "mean": 5.666
      },
      "total": {
-      "median": 3.555,
-      "p95": 39.29,
-      "mean": 7.821
+      "median": 3.8,
+      "p95": 42.44,
+      "mean": 8.394
      },
      "bySize": {
       "<50KB": {
        "docs": 18,
-       "median": 1.538,
-       "p95": 5.055
+       "median": 1.67,
+       "p95": 5.515
       },
       "50-200KB": {
        "docs": 57,
-       "median": 2.465,
-       "p95": 8.56
+       "median": 2.62,
+       "p95": 9.955
       },
       "200-500KB": {
        "docs": 42,
-       "median": 4.138,
-       "p95": 9.64
+       "median": 4.463,
+       "p95": 10.295
       },
       "0.5-1MB": {
        "docs": 13,
-       "median": 10.585,
-       "p95": 39.29
+       "median": 11.175,
+       "p95": 45.655
       },
       ">1MB": {
        "docs": 15,
-       "median": 38.865,
-       "p95": 93.695
+       "median": 41.825,
+       "p95": 101.02
       }
      }
     },
@@ -11935,7 +11935,7 @@
       "structurePass": 1,
       "languageRecall": null,
       "combined": 1,
-      "chars": 21975
+      "chars": 21700
      },
      {
       "id": "arxiv-mixtral",
@@ -11959,7 +11959,7 @@
       "structurePass": 1,
       "languageRecall": null,
       "combined": 1,
-      "chars": 27889
+      "chars": 27395
      },
      {
       "id": "distill-momentum",
@@ -11984,7 +11984,7 @@
       "structurePass": 0.6667,
       "languageRecall": null,
       "combined": 0.8333,
-      "chars": 40525
+      "chars": 40402
      },
      {
       "id": "distill-augmented-rnns",
@@ -12030,7 +12030,7 @@
       "structurePass": 1,
       "languageRecall": null,
       "combined": 1,
-      "chars": 99576
+      "chars": 99577
      },
      {
       "id": "ciechanowski-watch",
@@ -12126,7 +12126,7 @@
       "structurePass": 1,
       "languageRecall": null,
       "combined": 1,
-      "chars": 1358
+      "chars": 1070
      },
      {
       "id": "bbc-news-a",
@@ -12385,7 +12385,7 @@
       "structurePass": 1,
       "languageRecall": null,
       "combined": 1,
-      "chars": 5905
+      "chars": 5907
      },
      {
       "id": "wired-exoplanet",
@@ -13833,45 +13833,45 @@
      "docs": 145,
      "failed": 0,
      "parse": {
-      "median": 3.758,
-      "p95": 44.301,
-      "mean": 8.662
+      "median": 3.98,
+      "p95": 40.925,
+      "mean": 8.881
      },
      "extract": {
-      "median": 1.718,
-      "p95": 35.6,
-      "mean": 6.386
+      "median": 1.791,
+      "p95": 35.475,
+      "mean": 6.52
      },
      "total": {
-      "median": 6.374,
-      "p95": 79.83,
-      "mean": 15.071
+      "median": 6.402,
+      "p95": 82.856,
+      "mean": 15.451
      },
      "bySize": {
       "<50KB": {
        "docs": 18,
-       "median": 2.38,
-       "p95": 11.067
+       "median": 2.402,
+       "p95": 11.12
       },
       "50-200KB": {
        "docs": 57,
-       "median": 3.83,
-       "p95": 16.609
+       "median": 3.847,
+       "p95": 18.819
       },
       "200-500KB": {
        "docs": 42,
-       "median": 8.595,
-       "p95": 20.934
+       "median": 8.8,
+       "p95": 21.406
       },
       "0.5-1MB": {
        "docs": 13,
-       "median": 19.526,
-       "p95": 60.519
+       "median": 21.04,
+       "p95": 63.183
       },
       ">1MB": {
        "docs": 15,
-       "median": 79.83,
-       "p95": 172.33
+       "median": 82.856,
+       "p95": 171.625
       }
      }
     },
@@ -15667,7 +15667,7 @@
       "structurePass": 1,
       "languageRecall": null,
       "combined": 1,
-      "chars": 21975
+      "chars": 21700
      },
      {
       "id": "arxiv-mixtral",
@@ -15691,7 +15691,7 @@
       "structurePass": 1,
       "languageRecall": null,
       "combined": 1,
-      "chars": 27889
+      "chars": 27395
      },
      {
       "id": "distill-momentum",
@@ -15716,7 +15716,7 @@
       "structurePass": 0.6667,
       "languageRecall": null,
       "combined": 0.8333,
-      "chars": 40525
+      "chars": 40402
      },
      {
       "id": "distill-augmented-rnns",
@@ -15762,7 +15762,7 @@
       "structurePass": 1,
       "languageRecall": null,
       "combined": 1,
-      "chars": 99576
+      "chars": 99577
      },
      {
       "id": "ciechanowski-watch",
@@ -15858,7 +15858,7 @@
       "structurePass": 1,
       "languageRecall": null,
       "combined": 1,
-      "chars": 1358
+      "chars": 1070
      },
      {
       "id": "bbc-news-a",
@@ -16117,7 +16117,7 @@
       "structurePass": 1,
       "languageRecall": null,
       "combined": 1,
-      "chars": 5905
+      "chars": 5907
      },
      {
       "id": "wired-exoplanet",

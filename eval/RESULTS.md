@@ -1,19 +1,19 @@
 # Article extraction eval results
 
-Generated 2026-10-06T03:01:26.266Z by `bun run eval` (see [eval/README.md](README.md)). Scores are re-derived from the stored outputs on every run.
+Generated 2026-10-06T03:57:56.221Z by `bun run eval` (see [eval/README.md](README.md)). Scores are re-derived from the stored outputs on every run.
 
 ## Engines
 
 | engine | version | runtime | settings | ran at |
 | --- | ---: | ---: | ---: | ---: |
-| ours | ced4ecf | Chromium DOMParser | extract(doc, { url }); text = articleText(article) | 2026-10-06 03:01 |
-| ours-dart | ced4ecf | Dart 3.13.4 AOT, package:html 0.15.7, one process | package:html parse, then extractTree(fromDocument(doc), url) (base href added as for Chromium); text = articleText(article) | 2026-10-06 03:01 |
+| ours | fb86153 | Chromium DOMParser | extract(doc, { url }); text = articleText(article) | 2026-10-06 03:57 |
+| ours-dart | fb86153 | Dart 3.13.4 AOT, package:html 0.15.7, one process | package:html parse, then extractTree(fromDocument(doc), url) (base href added as for Chromium); text = articleText(article) | 2026-10-06 03:57 |
 | readability | 0.6.0 | Chromium DOMParser | new Readability(doc).parse() defaults; text from content HTML | 2026-10-06 00:14 |
 | defuddle | 0.19.4 | Chromium DOMParser | new Defuddle(doc, { url }).parse(), core bundle defaults; text from content HTML | 2026-10-06 00:14 |
 | trafilatura | 2.3.0 | CPython 3.12 + lxml | extract(tree, url, include_comments=False), txt output; stats from xml output | 2026-10-06 00:14 |
 | postlight | 2.2.3 | Node v22.22.2 | Parser.parse(url, { html, fetchAllPages: false }); text from content HTML | 2026-10-06 00:14 |
 
-Machine: os darwin 27.0.0, cpu Apple M5 x10, chromium 153.0.8010.12, bun 1.4.0, load avg at start 3.5 3.5 3.9, load avg at end 4.0 3.7 4.0.
+Machine: os darwin 27.0.0, cpu Apple M5 x10, chromium 153.0.8010.12, bun 1.4.0, load avg at start 4.7 4.4 6.3, load avg at end 4.6 4.4 6.3.
 
 ## Zyte article-extraction-benchmark (181 pages, scrapinghub/article-extraction-benchmark@4a3bc97)
 
@@ -21,8 +21,8 @@ Official metric: 4-token shingle precision/recall per page, averaged; F1 from th
 
 | engine | F1 | F1 95% CI | precision | recall | accuracy | failed | empty | median ms |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| ours | **0.977** ± 0.002 | 0.972–0.982 | 0.967 ± 0.004 | 0.987 ± 0.003 | 0.343 ± 0.035 | 0 | 0 | 1.67 |
-| ours-dart | **0.977** ± 0.002 | 0.972–0.982 | 0.967 ± 0.004 | 0.987 ± 0.003 | 0.343 ± 0.035 | 0 | 0 | 3.04 |
+| ours | **0.977** ± 0.002 | 0.972–0.982 | 0.967 ± 0.004 | 0.987 ± 0.003 | 0.343 ± 0.035 | 0 | 0 | 1.74 |
+| ours-dart | **0.977** ± 0.002 | 0.972–0.982 | 0.967 ± 0.004 | 0.987 ± 0.003 | 0.343 ± 0.035 | 0 | 0 | 3.30 |
 | readability | **0.952** ± 0.005 | 0.943–0.961 | 0.918 ± 0.008 | 0.988 ± 0.003 | 0.177 ± 0.028 | 0 | 0 | 3.58 |
 | defuddle | **0.932** ± 0.010 | 0.911–0.951 | 0.899 ± 0.012 | 0.968 ± 0.010 | 0.171 ± 0.028 | 0 | 0 | 15.0 |
 | trafilatura | **0.955** ± 0.007 | 0.940–0.968 | 0.938 ± 0.009 | 0.974 ± 0.008 | 0.293 ± 0.033 | 0 | 0 | 14.6 |
@@ -90,8 +90,8 @@ JS engines run in headless Chromium on a fresh `DOMParser` document per run; our
 
 | engine | pages | parse median | extract median | extract p95 | extract mean | total median | total p95 | total mean |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| ours | 326 | 0.83 | 1.23 | 9.11 | 2.93 | 2.19 | 13.7 | 4.66 |
-| ours-dart | 326 | 2.57 | 1.01 | 14.4 | 3.35 | 3.76 | 27.8 | 8.73 |
+| ours | 326 | 0.89 | 1.26 | 10.2 | 3.13 | 2.34 | 14.8 | 4.96 |
+| ours-dart | 326 | 2.68 | 1.05 | 14.9 | 3.43 | 3.85 | 29.3 | 9.01 |
 | readability | 326 | 1.64 | 3.34 | 29.1 | 9.56 | 5.27 | 36.0 | 12.9 |
 | defuddle | 326 | 1.79 | 17.0 | 117.4 | 39.6 | 19.1 | 121.8 | 43.1 |
 | trafilatura | 326 | 2.26 | 15.3 | 151.4 | 52.8 | 17.7 | 156.0 | 57.4 |
@@ -101,8 +101,8 @@ JS engines run in headless Chromium on a fresh `DOMParser` document per run; our
 
 | engine | <50KB (35) | 50-200KB (176) | 200-500KB (76) | 0.5-1MB (21) | >1MB (18) |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| ours | 1.00 / 3.59 | 1.74 / 4.99 | 3.10 / 9.44 | 6.51 / 18.3 | 31.6 / 93.7 |
-| ours-dart | 1.38 / 10.2 | 3.11 / 8.69 | 6.12 / 17.3 | 10.6 / 34.7 | 66.0 / 172.3 |
+| ours | 1.14 / 4.02 | 1.86 / 5.93 | 3.33 / 9.72 | 6.37 / 19.5 | 31.8 / 101.0 |
+| ours-dart | 1.54 / 10.3 | 3.32 / 9.48 | 6.14 / 16.9 | 10.5 / 32.0 | 62.3 / 171.6 |
 | readability | 2.50 / 5.97 | 4.05 / 13.8 | 8.30 / 29.5 | 17.5 / 37.1 | 102.4 / 350.2 |
 | defuddle | 10.2 / 20.9 | 15.8 / 48.0 | 27.1 / 80.5 | 48.2 / 136.2 | 303.2 / 874.6 |
 | trafilatura | 9.69 / 24.7 | 15.0 / 55.4 | 24.6 / 108.8 | 44.0 / 236.9 | 577.4 / 2057.6 |
