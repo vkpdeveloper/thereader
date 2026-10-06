@@ -1,100 +1,100 @@
 {
- "generatedAt": "2026-10-06T03:57:56.221Z",
+ "generatedAt": "2026-10-06T04:00:58.487Z",
  "engines": {
   "ours": {
-   "version": "fb86153",
+   "version": "0009aa3",
    "runtime": "Chromium DOMParser",
    "settings": "extract(doc, { url }); text = articleText(article)",
-   "ranAt": "2026-10-06T03:57:56.192Z",
+   "ranAt": "2026-10-06T04:00:58.420Z",
    "runs": 3,
-   "workers": 4,
+   "workers": 3,
    "environment": {
     "os": "darwin 27.0.0",
     "cpu": "Apple M5 x10",
     "chromium": "153.0.8010.12",
     "bun": "1.4.0",
-    "load avg at start": "4.7 4.4 6.3",
-    "load avg at end": "4.6 4.4 6.3"
+    "load avg at start": "3.9 4.2 5.9",
+    "load avg at end": "5.2 4.6 5.9"
    }
   },
   "ours-dart": {
-   "version": "fb86153",
+   "version": "0009aa3",
    "runtime": "Dart 3.13.4 AOT, package:html 0.15.7, one process",
    "settings": "package:html parse, then extractTree(fromDocument(doc), url) (base href added as for Chromium); text = articleText(article)",
-   "ranAt": "2026-10-06T03:57:56.214Z",
+   "ranAt": "2026-10-06T04:00:58.443Z",
    "runs": 3,
-   "workers": 4,
+   "workers": 3,
    "environment": {
     "os": "darwin 27.0.0",
     "cpu": "Apple M5 x10",
     "chromium": "153.0.8010.12",
     "bun": "1.4.0",
-    "load avg at start": "4.7 4.4 6.3",
-    "load avg at end": "4.6 4.4 6.3"
+    "load avg at start": "3.9 4.2 5.9",
+    "load avg at end": "5.2 4.6 5.9"
    }
   },
   "readability": {
    "version": "0.6.0",
    "runtime": "Chromium DOMParser",
    "settings": "new Readability(doc).parse() defaults; text from content HTML",
-   "ranAt": "2026-10-06T00:14:26.655Z",
-   "runs": 5,
-   "workers": 2,
+   "ranAt": "2026-10-06T04:00:58.451Z",
+   "runs": 3,
+   "workers": 3,
    "environment": {
     "os": "darwin 27.0.0",
     "cpu": "Apple M5 x10",
     "chromium": "153.0.8010.12",
     "bun": "1.4.0",
-    "load avg at start": "11.2 23.7 21.6",
-    "load avg at end": "19.5 20.0 20.3"
+    "load avg at start": "3.9 4.2 5.9",
+    "load avg at end": "5.2 4.6 5.9"
    }
   },
   "defuddle": {
    "version": "0.19.4",
    "runtime": "Chromium DOMParser",
    "settings": "new Defuddle(doc, { url }).parse(), core bundle defaults; text from content HTML",
-   "ranAt": "2026-10-06T00:14:26.668Z",
-   "runs": 5,
-   "workers": 2,
+   "ranAt": "2026-10-06T04:00:58.457Z",
+   "runs": 3,
+   "workers": 3,
    "environment": {
     "os": "darwin 27.0.0",
     "cpu": "Apple M5 x10",
     "chromium": "153.0.8010.12",
     "bun": "1.4.0",
-    "load avg at start": "11.2 23.7 21.6",
-    "load avg at end": "19.5 20.0 20.3"
+    "load avg at start": "3.9 4.2 5.9",
+    "load avg at end": "5.2 4.6 5.9"
    }
   },
   "trafilatura": {
    "version": "2.3.0",
    "runtime": "CPython 3.12 + lxml",
    "settings": "extract(tree, url, include_comments=False), txt output; stats from xml output",
-   "ranAt": "2026-10-06T00:14:26.680Z",
-   "runs": 5,
-   "workers": 2,
+   "ranAt": "2026-10-06T04:00:58.464Z",
+   "runs": 3,
+   "workers": 3,
    "environment": {
     "os": "darwin 27.0.0",
     "cpu": "Apple M5 x10",
     "chromium": "153.0.8010.12",
     "bun": "1.4.0",
-    "load avg at start": "11.2 23.7 21.6",
-    "load avg at end": "19.5 20.0 20.3"
+    "load avg at start": "3.9 4.2 5.9",
+    "load avg at end": "5.2 4.6 5.9"
    }
   },
   "postlight": {
    "version": "2.2.3",
    "runtime": "Node v22.22.2",
    "settings": "Parser.parse(url, { html, fetchAllPages: false }); text from content HTML",
-   "ranAt": "2026-10-06T00:14:26.714Z",
-   "runs": 5,
-   "workers": 2,
+   "ranAt": "2026-10-06T04:00:58.481Z",
+   "runs": 3,
+   "workers": 3,
    "environment": {
     "os": "darwin 27.0.0",
     "cpu": "Apple M5 x10",
     "chromium": "153.0.8010.12",
     "bun": "1.4.0",
-    "load avg at start": "11.2 23.7 21.6",
-    "load avg at end": "19.5 20.0 20.3"
+    "load avg at start": "3.9 4.2 5.9",
+    "load avg at end": "5.2 4.6 5.9"
    }
   }
  },
@@ -103,45 +103,45 @@
    "docs": 326,
    "failed": 0,
    "parse": {
-    "median": 0.892,
-    "p95": 7.19,
-    "mean": 1.81
+    "median": 0.882,
+    "p95": 6.85,
+    "mean": 1.754
    },
    "extract": {
-    "median": 1.262,
-    "p95": 10.205,
-    "mean": 3.135
+    "median": 1.23,
+    "p95": 10.185,
+    "mean": 3
    },
    "total": {
-    "median": 2.337,
-    "p95": 14.785,
-    "mean": 4.956
+    "median": 2.252,
+    "p95": 14.98,
+    "mean": 4.757
    },
    "bySize": {
     "<50KB": {
      "docs": 35,
-     "median": 1.14,
-     "p95": 4.02
+     "median": 1.11,
+     "p95": 3.75
     },
     "50-200KB": {
      "docs": 176,
-     "median": 1.863,
-     "p95": 5.93
+     "median": 1.778,
+     "p95": 5.68
     },
     "200-500KB": {
      "docs": 76,
-     "median": 3.335,
-     "p95": 9.725
+     "median": 3.24,
+     "p95": 9.61
     },
     "0.5-1MB": {
      "docs": 21,
-     "median": 6.365,
-     "p95": 19.535
+     "median": 6.085,
+     "p95": 18.765
     },
     ">1MB": {
      "docs": 18,
-     "median": 31.817,
-     "p95": 101.02
+     "median": 30.512,
+     "p95": 93.32
     }
    }
   },
@@ -149,45 +149,45 @@
    "docs": 326,
    "failed": 0,
    "parse": {
-    "median": 2.677,
-    "p95": 20.015,
-    "mean": 5.546
+    "median": 2.741,
+    "p95": 19.879,
+    "mean": 5.717
    },
    "extract": {
-    "median": 1.052,
-    "p95": 14.899,
-    "mean": 3.432
+    "median": 1.054,
+    "p95": 15.51,
+    "mean": 3.603
    },
    "total": {
-    "median": 3.845,
-    "p95": 29.266,
-    "mean": 9.014
+    "median": 4.154,
+    "p95": 30.261,
+    "mean": 9.687
    },
    "bySize": {
     "<50KB": {
      "docs": 35,
-     "median": 1.537,
-     "p95": 10.33
+     "median": 1.583,
+     "p95": 10.245
     },
     "50-200KB": {
      "docs": 176,
-     "median": 3.319,
-     "p95": 9.484
+     "median": 3.211,
+     "p95": 9.674
     },
     "200-500KB": {
      "docs": 76,
-     "median": 6.14,
-     "p95": 16.922
+     "median": 6.36,
+     "p95": 17.839
     },
     "0.5-1MB": {
      "docs": 21,
-     "median": 10.535,
-     "p95": 31.98
+     "median": 10.939,
+     "p95": 34.656
     },
     ">1MB": {
      "docs": 18,
-     "median": 62.317,
-     "p95": 171.625
+     "median": 71.653,
+     "p95": 297.19
     }
    }
   },
@@ -195,45 +195,45 @@
    "docs": 326,
    "failed": 0,
    "parse": {
-    "median": 1.638,
-    "p95": 12.87,
-    "mean": 3.302
+    "median": 0.845,
+    "p95": 7.205,
+    "mean": 1.745
    },
    "extract": {
-    "median": 3.34,
-    "p95": 29.105,
-    "mean": 9.558
+    "median": 1.77,
+    "p95": 16.64,
+    "mean": 5.021
    },
    "total": {
-    "median": 5.273,
-    "p95": 35.97,
-    "mean": 12.875
+    "median": 2.778,
+    "p95": 19.185,
+    "mean": 6.777
    },
    "bySize": {
     "<50KB": {
      "docs": 35,
-     "median": 2.505,
-     "p95": 5.975
+     "median": 1.32,
+     "p95": 3.35
     },
     "50-200KB": {
      "docs": 176,
-     "median": 4.048,
-     "p95": 13.77
+     "median": 2.02,
+     "p95": 7.07
     },
     "200-500KB": {
      "docs": 76,
-     "median": 8.305,
-     "p95": 29.53
+     "median": 4.683,
+     "p95": 15.235
     },
     "0.5-1MB": {
      "docs": 21,
-     "median": 17.5,
-     "p95": 37.075
+     "median": 8.375,
+     "p95": 22.58
     },
     ">1MB": {
      "docs": 18,
-     "median": 102.38,
-     "p95": 350.22
+     "median": 52.585,
+     "p95": 181.555
     }
    }
   },
@@ -241,45 +241,45 @@
    "docs": 326,
    "failed": 0,
    "parse": {
-    "median": 1.793,
-    "p95": 13.32,
-    "mean": 3.445
+    "median": 0.962,
+    "p95": 6.86,
+    "mean": 1.847
    },
    "extract": {
-    "median": 16.975,
-    "p95": 117.41,
-    "mean": 39.557
+    "median": 9.19,
+    "p95": 59.57,
+    "mean": 20.783
    },
    "total": {
-    "median": 19.14,
-    "p95": 121.785,
-    "mean": 43.051
+    "median": 10.445,
+    "p95": 61.56,
+    "mean": 22.633
    },
    "bySize": {
     "<50KB": {
      "docs": 35,
-     "median": 10.18,
-     "p95": 20.945
+     "median": 5.45,
+     "p95": 16.29
     },
     "50-200KB": {
      "docs": 176,
-     "median": 15.752,
-     "p95": 48.01
+     "median": 8.4,
+     "p95": 27.07
     },
     "200-500KB": {
      "docs": 76,
-     "median": 27.085,
-     "p95": 80.48
+     "median": 12.695,
+     "p95": 47.11
     },
     "0.5-1MB": {
      "docs": 21,
-     "median": 48.155,
-     "p95": 136.19
+     "median": 24.885,
+     "p95": 76.485
     },
     ">1MB": {
      "docs": 18,
-     "median": 303.227,
-     "p95": 874.625
+     "median": 145.698,
+     "p95": 567.195
     }
    }
   },
@@ -287,45 +287,45 @@
    "docs": 326,
    "failed": 0,
    "parse": {
-    "median": 2.258,
-    "p95": 13.588,
-    "mean": 4.655
+    "median": 1.206,
+    "p95": 8.074,
+    "mean": 2.45
    },
    "extract": {
-    "median": 15.274,
-    "p95": 151.377,
-    "mean": 52.759
+    "median": 7.364,
+    "p95": 80.895,
+    "mean": 24.998
    },
    "total": {
-    "median": 17.727,
-    "p95": 156.017,
-    "mean": 57.38
+    "median": 8.982,
+    "p95": 83.369,
+    "mean": 27.595
    },
    "bySize": {
     "<50KB": {
      "docs": 35,
-     "median": 9.687,
-     "p95": 24.654
+     "median": 4.851,
+     "p95": 13.417
     },
     "50-200KB": {
      "docs": 176,
-     "median": 14.993,
-     "p95": 55.438
+     "median": 7.628,
+     "p95": 29.567
     },
     "200-500KB": {
      "docs": 76,
-     "median": 24.591,
-     "p95": 108.828
+     "median": 12.062,
+     "p95": 66.514
     },
     "0.5-1MB": {
      "docs": 21,
-     "median": 43.983,
-     "p95": 236.903
+     "median": 23.21,
+     "p95": 189.642
     },
     ">1MB": {
      "docs": 18,
-     "median": 577.382,
-     "p95": 2057.615
+     "median": 258.898,
+     "p95": 770.345
     }
    }
   },
@@ -334,40 +334,40 @@
    "failed": 0,
    "parse": null,
    "extract": {
-    "median": 33.803,
-    "p95": 403.894,
-    "mean": 99.692
+    "median": 15.096,
+    "p95": 163.076,
+    "mean": 40.626
    },
    "total": {
-    "median": 33.803,
-    "p95": 403.894,
-    "mean": 99.692
+    "median": 15.096,
+    "p95": 163.076,
+    "mean": 40.626
    },
    "bySize": {
     "<50KB": {
      "docs": 35,
-     "median": 17.879,
-     "p95": 62.969
+     "median": 7.354,
+     "p95": 28.771
     },
     "50-200KB": {
      "docs": 176,
-     "median": 29.507,
-     "p95": 130.437
+     "median": 12.326,
+     "p95": 45.101
     },
     "200-500KB": {
      "docs": 76,
-     "median": 55.93,
-     "p95": 322.4
+     "median": 22.995,
+     "p95": 112.347
     },
     "0.5-1MB": {
      "docs": 21,
-     "median": 50.011,
-     "p95": 477.449
+     "median": 33.111,
+     "p95": 163.393
     },
     ">1MB": {
      "docs": 18,
-     "median": 735.245,
-     "p95": 2244.385
+     "median": 306.135,
+     "p95": 834.349
     }
    }
   }
@@ -474,45 +474,45 @@
      "docs": 181,
      "failed": 0,
      "parse": {
-      "median": 0.715,
-      "p95": 3.97,
-      "mean": 1.09
+      "median": 0.69,
+      "p95": 3.72,
+      "mean": 1.054
      },
      "extract": {
-      "median": 1,
-      "p95": 2.11,
-      "mean": 1.108
+      "median": 0.945,
+      "p95": 2.055,
+      "mean": 1.078
      },
      "total": {
-      "median": 1.74,
-      "p95": 5.405,
-      "mean": 2.203
+      "median": 1.64,
+      "p95": 5.215,
+      "mean": 2.143
      },
      "bySize": {
       "<50KB": {
        "docs": 17,
-       "median": 0.845,
-       "p95": 1.325
+       "median": 0.855,
+       "p95": 1.195
       },
       "50-200KB": {
        "docs": 119,
-       "median": 1.615,
-       "p95": 3.14
+       "median": 1.505,
+       "p95": 3.15
       },
       "200-500KB": {
        "docs": 34,
-       "median": 2.755,
-       "p95": 5.405
+       "median": 2.685,
+       "p95": 4.785
       },
       "0.5-1MB": {
        "docs": 8,
-       "median": 5.595,
-       "p95": 10.175
+       "median": 5.565,
+       "p95": 9.8
       },
       ">1MB": {
        "docs": 3,
-       "median": 11.41,
-       "p95": 11.82
+       "median": 10.78,
+       "p95": 11.31
       }
      }
     },
@@ -1988,45 +1988,45 @@
      "docs": 181,
      "failed": 0,
      "parse": {
-      "median": 2.359,
-      "p95": 7.098,
-      "mean": 2.875
+      "median": 2.252,
+      "p95": 7.204,
+      "mean": 2.858
      },
      "extract": {
-      "median": 0.792,
-      "p95": 1.776,
-      "mean": 0.958
+      "median": 0.776,
+      "p95": 1.769,
+      "mean": 0.947
      },
      "total": {
-      "median": 3.301,
-      "p95": 8.501,
-      "mean": 3.858
+      "median": 3.168,
+      "p95": 8.569,
+      "mean": 3.814
      },
      "bySize": {
       "<50KB": {
        "docs": 17,
-       "median": 1.429,
-       "p95": 1.84
+       "median": 1.294,
+       "p95": 1.779
       },
       "50-200KB": {
        "docs": 119,
-       "median": 2.878,
-       "p95": 5.598
+       "median": 2.815,
+       "p95": 5.417
       },
       "200-500KB": {
        "docs": 34,
-       "median": 5.2,
-       "p95": 8.224
+       "median": 5.22,
+       "p95": 8.205
       },
       "0.5-1MB": {
        "docs": 8,
-       "median": 8.916,
-       "p95": 11.366
+       "median": 8.949,
+       "p95": 11.382
       },
       ">1MB": {
        "docs": 3,
-       "median": 18.234,
-       "p95": 19.128
+       "median": 17.929,
+       "p95": 18.69
       }
      }
     },
@@ -3502,45 +3502,45 @@
      "docs": 181,
      "failed": 0,
      "parse": {
-      "median": 1.255,
-      "p95": 7.32,
-      "mean": 1.967
+      "median": 0.68,
+      "p95": 3.715,
+      "mean": 1.038
      },
      "extract": {
-      "median": 2.155,
-      "p95": 7.445,
-      "mean": 3.069
+      "median": 1.14,
+      "p95": 4.275,
+      "mean": 1.63
      },
      "total": {
-      "median": 3.585,
-      "p95": 12.405,
-      "mean": 5.049
+      "median": 1.84,
+      "p95": 6.92,
+      "mean": 2.668
      },
      "bySize": {
       "<50KB": {
        "docs": 17,
-       "median": 1.745,
-       "p95": 7.665
+       "median": 0.97,
+       "p95": 4.83
       },
       "50-200KB": {
        "docs": 119,
-       "median": 3.115,
-       "p95": 8.73
+       "median": 1.68,
+       "p95": 4.73
       },
       "200-500KB": {
        "docs": 34,
-       "median": 6.2,
-       "p95": 12.405
+       "median": 3.213,
+       "p95": 6.92
       },
       "0.5-1MB": {
        "docs": 8,
-       "median": 10.845,
-       "p95": 23.15
+       "median": 5.743,
+       "p95": 10.56
       },
       ">1MB": {
        "docs": 3,
-       "median": 18.9,
-       "p95": 22.025
+       "median": 11.105,
+       "p95": 11.535
       }
      }
     },
@@ -5016,45 +5016,45 @@
      "docs": 181,
      "failed": 0,
      "parse": {
-      "median": 1.375,
-      "p95": 7.435,
-      "mean": 2.111
+      "median": 0.785,
+      "p95": 3.725,
+      "mean": 1.137
      },
      "extract": {
-      "median": 13.5,
-      "p95": 38.9,
-      "mean": 17.311
+      "median": 6.965,
+      "p95": 20.75,
+      "mean": 9.106
      },
      "total": {
-      "median": 14.99,
-      "p95": 47.375,
-      "mean": 19.441
+      "median": 7.945,
+      "p95": 25.835,
+      "mean": 10.247
      },
      "bySize": {
       "<50KB": {
        "docs": 17,
-       "median": 9.77,
-       "p95": 19.65
+       "median": 4.54,
+       "p95": 15.895
       },
       "50-200KB": {
        "docs": 119,
-       "median": 13.52,
-       "p95": 35.07
+       "median": 6.885,
+       "p95": 16.84
       },
       "200-500KB": {
        "docs": 34,
-       "median": 21.153,
-       "p95": 39.63
+       "median": 11.295,
+       "p95": 19.005
       },
       "0.5-1MB": {
        "docs": 8,
-       "median": 32.127,
-       "p95": 49.155
+       "median": 16.938,
+       "p95": 26.48
       },
       ">1MB": {
        "docs": 3,
-       "median": 100.13,
-       "p95": 235.2
+       "median": 45.855,
+       "p95": 134.415
       }
      }
     },
@@ -6530,45 +6530,45 @@
      "docs": 181,
      "failed": 0,
      "parse": {
-      "median": 1.892,
-      "p95": 5.464,
-      "mean": 2.386
+      "median": 1.008,
+      "p95": 2.843,
+      "mean": 1.248
      },
      "extract": {
-      "median": 12.512,
-      "p95": 31.043,
-      "mean": 14.788
+      "median": 6.066,
+      "p95": 17.855,
+      "mean": 7.261
      },
      "total": {
-      "median": 14.609,
-      "p95": 35.662,
-      "mean": 17.177
+      "median": 7.088,
+      "p95": 21.232,
+      "mean": 8.517
      },
      "bySize": {
       "<50KB": {
        "docs": 17,
-       "median": 9.282,
-       "p95": 28.382
+       "median": 4.093,
+       "p95": 14.885
       },
       "50-200KB": {
        "docs": 119,
-       "median": 14,
-       "p95": 31.43
+       "median": 6.684,
+       "p95": 19.641
       },
       "200-500KB": {
        "docs": 34,
-       "median": 18.976,
-       "p95": 74.564
+       "median": 9.016,
+       "p95": 37.706
       },
       "0.5-1MB": {
        "docs": 8,
-       "median": 24.009,
-       "p95": 46.565
+       "median": 10.656,
+       "p95": 23.664
       },
       ">1MB": {
        "docs": 3,
-       "median": 32.485,
-       "p95": 40.279
+       "median": 16.958,
+       "p95": 21.381
       }
      }
     },
@@ -8045,40 +8045,40 @@
      "failed": 0,
      "parse": null,
      "extract": {
-      "median": 24.213,
-      "p95": 97.072,
-      "mean": 32.831
+      "median": 10.803,
+      "p95": 28.565,
+      "mean": 13.347
      },
      "total": {
-      "median": 24.213,
-      "p95": 97.072,
-      "mean": 32.831
+      "median": 10.803,
+      "p95": 28.565,
+      "mean": 13.347
      },
      "bySize": {
       "<50KB": {
        "docs": 17,
-       "median": 17.879,
-       "p95": 33.812
+       "median": 7.425,
+       "p95": 11.413
       },
       "50-200KB": {
        "docs": 119,
-       "median": 23.836,
-       "p95": 79.273
+       "median": 9.75,
+       "p95": 26.447
       },
       "200-500KB": {
        "docs": 34,
-       "median": 32.593,
-       "p95": 110.891
+       "median": 15.226,
+       "p95": 45.909
       },
       "0.5-1MB": {
        "docs": 8,
-       "median": 31.968,
-       "p95": 50.011
+       "median": 17.602,
+       "p95": 29.251
       },
       ">1MB": {
        "docs": 3,
-       "median": 94.958,
-       "p95": 132.494
+       "median": 29.571,
+       "p95": 32.038
       }
      }
     },
@@ -10101,45 +10101,45 @@
      "docs": 145,
      "failed": 0,
      "parse": {
-      "median": 1.33,
-      "p95": 11.65,
-      "mean": 2.708
+      "median": 1.35,
+      "p95": 11.465,
+      "mean": 2.627
      },
      "extract": {
       "median": 2.155,
-      "p95": 29.875,
-      "mean": 5.666
+      "p95": 28.955,
+      "mean": 5.4
      },
      "total": {
-      "median": 3.8,
-      "p95": 42.44,
-      "mean": 8.394
+      "median": 3.79,
+      "p95": 40.975,
+      "mean": 8.019
      },
      "bySize": {
       "<50KB": {
        "docs": 18,
-       "median": 1.67,
-       "p95": 5.515
+       "median": 1.698,
+       "p95": 4.965
       },
       "50-200KB": {
        "docs": 57,
-       "median": 2.62,
-       "p95": 9.955
+       "median": 2.725,
+       "p95": 8.905
       },
       "200-500KB": {
        "docs": 42,
-       "median": 4.463,
-       "p95": 10.295
+       "median": 4.38,
+       "p95": 10.08
       },
       "0.5-1MB": {
        "docs": 13,
-       "median": 11.175,
-       "p95": 45.655
+       "median": 10.435,
+       "p95": 41.625
       },
       ">1MB": {
        "docs": 15,
-       "median": 41.825,
-       "p95": 101.02
+       "median": 39.83,
+       "p95": 93.32
       }
      }
     },
@@ -13833,45 +13833,45 @@
      "docs": 145,
      "failed": 0,
      "parse": {
-      "median": 3.98,
-      "p95": 40.925,
-      "mean": 8.881
+      "median": 4.141,
+      "p95": 44.663,
+      "mean": 9.286
      },
      "extract": {
-      "median": 1.791,
-      "p95": 35.475,
-      "mean": 6.52
+      "median": 1.909,
+      "p95": 36.193,
+      "mean": 6.918
      },
      "total": {
-      "median": 6.402,
-      "p95": 82.856,
-      "mean": 15.451
+      "median": 6.65,
+      "p95": 82.285,
+      "mean": 17.018
      },
      "bySize": {
       "<50KB": {
        "docs": 18,
-       "median": 2.402,
-       "p95": 11.12
+       "median": 2.774,
+       "p95": 12.091
       },
       "50-200KB": {
        "docs": 57,
-       "median": 3.847,
-       "p95": 18.819
+       "median": 4.302,
+       "p95": 18.298
       },
       "200-500KB": {
        "docs": 42,
-       "median": 8.8,
-       "p95": 21.406
+       "median": 9.233,
+       "p95": 22.121
       },
       "0.5-1MB": {
        "docs": 13,
-       "median": 21.04,
-       "p95": 63.183
+       "median": 20.984,
+       "p95": 61.29
       },
       ">1MB": {
        "docs": 15,
-       "median": 82.856,
-       "p95": 171.625
+       "median": 82.285,
+       "p95": 297.19
       }
      }
     },
@@ -17565,45 +17565,45 @@
      "docs": 145,
      "failed": 0,
      "parse": {
-      "median": 2.415,
-      "p95": 21.33,
-      "mean": 4.968
+      "median": 1.3,
+      "p95": 11.545,
+      "mean": 2.628
      },
      "extract": {
-      "median": 5.525,
-      "p95": 103.91,
-      "mean": 17.658
+      "median": 2.905,
+      "p95": 54,
+      "mean": 9.254
      },
      "total": {
-      "median": 8.565,
-      "p95": 132.225,
-      "mean": 22.644
+      "median": 4.74,
+      "p95": 67.54,
+      "mean": 11.907
      },
      "bySize": {
       "<50KB": {
        "docs": 18,
-       "median": 3.225,
-       "p95": 5.975
+       "median": 1.72,
+       "p95": 3.35
       },
       "50-200KB": {
        "docs": 57,
-       "median": 6.03,
-       "p95": 28.965
+       "median": 3.26,
+       "p95": 15.095
       },
       "200-500KB": {
        "docs": 42,
-       "median": 10.675,
-       "p95": 29.845
+       "median": 5.21,
+       "p95": 15.48
       },
       "0.5-1MB": {
        "docs": 13,
-       "median": 19.94,
-       "p95": 139.38
+       "median": 9.83,
+       "p95": 65.365
       },
       ">1MB": {
        "docs": 15,
-       "median": 123.115,
-       "p95": 350.22
+       "median": 67.54,
+       "p95": 181.555
       }
      }
     },
@@ -21379,45 +21379,45 @@
      "docs": 145,
      "failed": 0,
      "parse": {
-      "median": 2.595,
-      "p95": 24.015,
-      "mean": 5.109
+      "median": 1.395,
+      "p95": 11.95,
+      "mean": 2.733
      },
      "extract": {
-      "median": 27.84,
-      "p95": 313.79,
-      "mean": 67.326
+      "median": 15.07,
+      "p95": 183.305,
+      "mean": 35.358
      },
      "total": {
-      "median": 30.94,
-      "p95": 331.49,
-      "mean": 72.523
+      "median": 16.58,
+      "p95": 199.235,
+      "mean": 38.095
      },
      "bySize": {
       "<50KB": {
        "docs": 18,
-       "median": 12.905,
-       "p95": 25.36
+       "median": 6.52,
+       "p95": 17.825
       },
       "50-200KB": {
        "docs": 57,
-       "median": 24.58,
-       "p95": 84.89
+       "median": 11.885,
+       "p95": 41.695
       },
       "200-500KB": {
        "docs": 42,
-       "median": 36.605,
-       "p95": 87.565
+       "median": 18.058,
+       "p95": 50.78
       },
       "0.5-1MB": {
        "docs": 13,
-       "median": 83.07,
-       "p95": 406.82
+       "median": 42.69,
+       "p95": 227.035
       },
       ">1MB": {
        "docs": 15,
-       "median": 313.82,
-       "p95": 874.625
+       "median": 175.93,
+       "p95": 567.195
       }
      }
     },
@@ -25190,45 +25190,45 @@
      "docs": 145,
      "failed": 0,
      "parse": {
-      "median": 3.401,
-      "p95": 38.581,
-      "mean": 7.487
+      "median": 1.919,
+      "p95": 16.297,
+      "mean": 3.95
      },
      "extract": {
-      "median": 23.193,
-      "p95": 613.921,
-      "mean": 100.158
+      "median": 11.966,
+      "p95": 292.285,
+      "mean": 47.138
      },
      "total": {
-      "median": 27.796,
-      "p95": 655.008,
-      "mean": 107.564
+      "median": 14.284,
+      "p95": 311.963,
+      "mean": 51.41
      },
      "bySize": {
       "<50KB": {
        "docs": 18,
-       "median": 10.683,
-       "p95": 24.654
+       "median": 5.437,
+       "p95": 13.417
       },
       "50-200KB": {
        "docs": 57,
-       "median": 18.892,
-       "p95": 117.579
+       "median": 10.216,
+       "p95": 64.359
       },
       "200-500KB": {
        "docs": 42,
-       "median": 33.718,
-       "p95": 119.636
+       "median": 16.387,
+       "p95": 72.251
       },
       "0.5-1MB": {
        "docs": 13,
-       "median": 72.462,
-       "p95": 604.58
+       "median": 39.193,
+       "p95": 357.77
       },
       ">1MB": {
        "docs": 15,
-       "median": 655.008,
-       "p95": 2057.615
+       "median": 291.756,
+       "p95": 770.345
       }
      }
     },
@@ -29018,40 +29018,40 @@
      "failed": 0,
      "parse": null,
      "extract": {
-      "median": 60.678,
-      "p95": 766.708,
-      "mean": 183.152
+      "median": 26.535,
+      "p95": 367.83,
+      "mean": 74.678
      },
      "total": {
-      "median": 60.678,
-      "p95": 766.708,
-      "mean": 183.152
+      "median": 26.535,
+      "p95": 367.83,
+      "mean": 74.678
      },
      "bySize": {
       "<50KB": {
        "docs": 18,
-       "median": 18.289,
-       "p95": 64.079
+       "median": 7.341,
+       "p95": 37.443
       },
       "50-200KB": {
        "docs": 57,
-       "median": 45.529,
-       "p95": 403.894
+       "median": 17.324,
+       "p95": 123.819
       },
       "200-500KB": {
        "docs": 42,
-       "median": 83.502,
-       "p95": 341.8
+       "median": 35.618,
+       "p95": 116.063
       },
       "0.5-1MB": {
        "docs": 13,
-       "median": 171.203,
-       "p95": 779.536
+       "median": 65.162,
+       "p95": 273.922
       },
       ">1MB": {
        "docs": 15,
-       "median": 762.27,
-       "p95": 2244.385
+       "median": 367.83,
+       "p95": 834.349
       }
      }
     },
