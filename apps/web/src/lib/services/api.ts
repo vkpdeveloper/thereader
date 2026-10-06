@@ -13,7 +13,6 @@ export type FetchLike = (input: string, init?: RequestInit) => Promise<Response>
 export interface SyncResponse {
   serverTime?: string;
   books: unknown[];
-  preferences: unknown;
   highlights?: unknown;
   articles?: unknown;
   [key: string]: unknown;

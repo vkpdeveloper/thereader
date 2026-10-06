@@ -83,13 +83,13 @@ export interface SyncCall {
 
 export type SyncHandler = (call: SyncCall) => Promise<SyncResponse> | SyncResponse;
 
-export const emptyResponse = (): SyncResponse => ({ serverTime: '2026-09-27T10:00:00.000Z', books: [], preferences: null });
+export const emptyResponse = (): SyncResponse => ({ serverTime: '2026-09-27T10:00:00.000Z', books: [] });
 
 export async function harness(
-  options: { handler?: SyncHandler; books?: Record<string, Book>; pollInterval?: number; startTimers?: boolean } = {},
+  options: { handler?: SyncHandler; books?: Record<string, Book>; pollInterval?: number; startTimers?: boolean; kv?: MemoryKv } = {},
 ) {
   const clock = new Clock();
-  const kv = new MemoryKv();
+  const kv = options.kv ?? new MemoryKv();
   const blobs = new MemoryKv();
   const locks = createMemoryLocks();
   const settings = new SettingsStoreImpl(kv, ORIGIN, undefined, clock.now);

@@ -133,7 +133,7 @@ export function fontFamilyById(id: string | null | undefined): ReaderFontFamily 
 
 /**
  * The family to render. A known id applies only while its class matches the
- * synced `font`; otherwise serif renders Libron and sans the system sans.
+ * saved `font`; otherwise serif renders Libron and sans the system sans.
  */
 export function resolveFontFamily(prefs: Pick<ReaderPreferences, 'font' | 'fontFamilyId'>): ReaderFontFamily {
   const chosen = fontFamilyById(prefs.fontFamilyId);

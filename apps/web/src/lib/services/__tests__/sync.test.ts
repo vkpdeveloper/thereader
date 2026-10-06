@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test';
 import { ApiError } from '../contract';
 import { entryIdentity } from '../models';
-import { MAX_BACKOFF_MS, READING_IDLE_MS, cycleDelay, wirePreferences } from '../sync';
+import { MemoryKv } from '../kv';
+import { MAX_BACKOFF_MS, READING_IDLE_MS, cycleDelay } from '../sync';
 import { defaultReaderPreferences } from '../../types';
 import { ORIGIN, addBook, emptyResponse, harness, makeBook } from './helpers';
 
@@ -15,16 +16,15 @@ const locator = (progression: number) => ({
 });
 
 describe('outbox capture and acknowledgement', () => {
-  test('queues library membership, progress and preferences, then acknowledges them', async () => {
+  test('queues library membership and progress, then acknowledges them', async () => {
     const h = await harness();
     const book = makeBook();
     const entry = await addBook(h, book);
     await h.library.saveProgress(entry.id, locator(0.25), book.sha256);
-    await h.settings.updateReader((p) => ({ ...p, fontSize: 22 }));
     await h.settle();
 
-    expect(Object.keys(h.pending()).sort()).toEqual(['library:' + book.sha256, 'preferences', 'progress:' + book.sha256]);
-    expect(h.sync.getSnapshot().pendingCount).toBe(3);
+    expect(Object.keys(h.pending()).sort()).toEqual(['library:' + book.sha256, 'progress:' + book.sha256]);
+    expect(h.sync.getSnapshot().pendingCount).toBe(2);
 
     await h.sync.syncNow();
     expect(h.calls).toHaveLength(1);
@@ -32,14 +32,10 @@ describe('outbox capture and acknowledgement', () => {
     expect(call.deviceId).toMatch(/^[a-f0-9]{32}$/);
     expect(call.highlightsSince).toBe(0);
     const kinds = call.changes.map((c) => c.kind).sort();
-    expect(kinds).toEqual(['library', 'preferences', 'progress']);
+    expect(kinds).toEqual(['library', 'progress']);
     const progress = call.changes.find((c) => c.kind === 'progress')!;
     expect(Object.keys(progress.payload).sort()).toEqual(['engine', 'href', 'progression', 'raw', 'title', 'totalProgression']);
     expect(progress.bookId).toBe('moby-dick');
-    const prefs = call.changes.find((c) => c.kind === 'preferences')!;
-    expect(prefs.bookId).toBe('_preferences');
-    expect(prefs.sha256).toBe('0'.repeat(64));
-    expect((prefs.payload.value as Record<string, unknown>).fontSize).toBe(22);
 
     expect(Object.keys(h.pending())).toHaveLength(0);
     expect(h.sync.getSnapshot().lastSyncedAt).not.toBeNull();
@@ -334,35 +330,88 @@ describe('applying pulled state', () => {
     expect(h.pending()['library:' + other.sha256]).toBeUndefined();
   });
 
-  test('preferences resolve by last write wins', async () => {
+});
+
+describe('reader preferences stay on the device', () => {
+  test('editing them queues nothing and no request carries them', async () => {
+    const h = await harness();
+    await h.sync.syncNow();
+    await h.settings.updateReader((p) => ({ ...p, fontSize: 22, lineHeight: 1.85 }));
+    await h.settings.setThemeId('nord');
+    await h.settings.setFontFamily('inter');
+    await h.settings.updateReader((p) => ({ ...p, highlightColor: 'green' }));
+    await h.settle();
+
+    expect(h.pending()).toEqual({});
+    expect(h.sync.getSnapshot().pendingCount).toBe(0);
+    expect(Object.keys(h.sync.stored.origins[ORIGIN]!.seen)).not.toContain('preferences');
+
+    await h.sync.syncNow();
+    expect(h.calls).toHaveLength(2);
+    expect(h.calls.flatMap((c) => c.changes)).toEqual([]);
+  });
+
+  test('a preferences field from an older server is ignored', async () => {
     const h = await harness();
     await h.settings.updateReader((p) => ({ ...p, fontSize: 20 }));
-    await h.settle();
-    const localStamp = h.settings.readerUpdatedAt!;
-
-    // Older cloud copy: ignored; local change stays queued until acknowledged.
     h.setHandler(() => ({
       ...emptyResponse(),
-      preferences: { value: { ...defaultReaderPreferences, fontSize: 26 }, updatedAt: '2020-01-01T00:00:00.000Z' },
+      preferences: { value: { ...defaultReaderPreferences, fontSize: 26, themeId: 'dracula' }, updatedAt: '2099-01-01T00:00:00.000Z' },
     }));
     await h.sync.syncNow();
+    await h.settle();
     expect(h.settings.reader.fontSize).toBe(20);
-    expect(h.settings.readerUpdatedAt).toBe(localStamp);
+    expect(h.settings.reader.themeId).toBeUndefined();
+    expect(h.pending()).toEqual({});
+  });
 
-    // Newer cloud copy (with a future theme id): applied and not echoed.
-    h.setHandler(() => ({
-      ...emptyResponse(),
-      preferences: {
-        value: { ...defaultReaderPreferences, fontSize: 24, themeId: 'solarized-future', highlightColor: 'teal' },
-        updatedAt: '2026-09-27T12:00:00.000123Z',
+  test('a preferences change queued by an older build is dropped on load and never sent', async () => {
+    const OTHER = 'http://other.test';
+    const legacy = (id: string) => ({
+      id,
+      kind: 'preferences',
+      bookId: '_preferences',
+      sha256: '0'.repeat(64),
+      updatedAt: '2026-09-26T10:00:00.000Z',
+      payload: { value: { ...defaultReaderPreferences, fontSize: 26 } },
+    });
+    const session = {
+      id: 'b'.repeat(32),
+      kind: 'session',
+      bookId: 'moby-dick',
+      sha256: 'a'.repeat(64),
+      updatedAt: '2026-09-26T10:00:00.000Z',
+      payload: { readingMilliseconds: 5_000 },
+    };
+    const origin = (pending: Record<string, unknown>) => ({
+      pending,
+      seen: { preferences: '2026-09-26T10:00:00.000Z', 'library:x': '2026-09-01T00:00:00.000Z' },
+      totals: {},
+      sessionAcknowledged: {},
+      lastSyncedAt: null,
+    });
+    const kv = new MemoryKv();
+    await kv.set('cloud_sync.v1', {
+      deviceId: 'c'.repeat(32),
+      origins: {
+        [ORIGIN]: origin({ preferences: legacy('d'.repeat(32)), [`session:${session.id}`]: session }),
+        [OTHER]: origin({ preferences: legacy('e'.repeat(32)) }),
       },
-    }));
+    });
+
+    const h = await harness({ kv });
+    const stored = (await kv.get<{ origins: Record<string, { pending: object; seen: object }> }>('cloud_sync.v1'))!;
+    for (const o of [ORIGIN, OTHER]) {
+      expect(Object.keys(stored.origins[o]!.pending)).not.toContain('preferences');
+      expect(Object.keys(stored.origins[o]!.seen)).toEqual(['library:x']);
+    }
+    expect(Object.keys(h.pending())).toEqual([`session:${session.id}`]);
+    expect(h.sync.getSnapshot().pendingCount).toBe(1);
+
     await h.sync.syncNow();
-    expect(h.settings.reader.fontSize).toBe(24);
-    expect(h.settings.reader.themeId).toBe('solarized-future');
-    expect(h.settings.readerUpdatedAt).toBe('2026-09-27T12:00:00.000123Z');
-    await h.settle();
-    expect(h.pending().preferences).toBeUndefined();
+    expect(h.calls).toHaveLength(1);
+    expect(h.calls[0]!.changes.map((c) => c.kind)).toEqual(['session']);
+    expect(h.pending()).toEqual({});
   });
 });
 
@@ -406,17 +455,6 @@ describe('reading time', () => {
     await h.sync.syncNow();
     expect(Object.keys(h.pending())).toHaveLength(0);
     expect(h.sync.getSnapshot().totalReadingMilliseconds).toBe(30_000);
-  });
-});
-
-describe('wire values', () => {
-  test('drops preference values the API would reject', () => {
-    const value = wirePreferences({ ...defaultReaderPreferences, themeId: 'web-only', fontFamilyId: 'Bad Id', highlightColor: 'yellow', lineHeight: 5 });
-    expect(value.themeId).toBeUndefined();
-    expect(value.fontFamilyId).toBeUndefined();
-    expect(value.highlightColor).toBe('yellow');
-    expect(value.lineHeight).toBe(2.2);
-    expect(wirePreferences({ ...defaultReaderPreferences, themeId: 'nord' }).themeId).toBe('nord');
   });
 });
 

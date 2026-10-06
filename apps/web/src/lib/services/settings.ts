@@ -21,11 +21,17 @@ const SETTINGS_KEY = 'settings.v1';
 const READER_KEY = 'reader_prefs.v1';
 
 /**
- * API URL and reader preferences, persisted immediately. Every preference
- * edit stamps `_updatedAt` so the cloud copy resolves by last write wins.
+ * API URL and reader preferences, persisted immediately. Both belong to this
+ * browser: preferences never sync to other devices, not even the theme.
+ *
+ * Tabs of the same browser share them. Every preference edit stamps
+ * `_updatedAt`, so a tab adopts another tab's preferences only when they are
+ * newer than its own, and an edit still being saved is never undone by an
+ * older one arriving from another tab.
  */
 export class SettingsStoreImpl extends Emitter<SettingsSnapshot> implements SettingsStore {
   private readonly writes = new WriteQueue();
+  private readerUpdatedAt: string | null = null;
 
   constructor(
     private readonly kv: KeyValueStore,
@@ -37,7 +43,6 @@ export class SettingsStoreImpl extends Emitter<SettingsSnapshot> implements Sett
       loaded: false,
       settings: { apiBaseUrl: defaultApiBaseUrl },
       reader: { ...defaultReaderPreferences },
-      readerUpdatedAt: null,
     });
     bus.listen((topic) => {
       if (topic === 'settings') void this.reload();
@@ -52,16 +57,13 @@ export class SettingsStoreImpl extends Emitter<SettingsSnapshot> implements Sett
     return this.snapshot.reader;
   }
 
-  get readerUpdatedAt(): string | null {
-    return this.snapshot.readerUpdatedAt;
-  }
-
   async load(): Promise<void> {
-    const next = await this.read();
+    const { readerUpdatedAt, ...next } = await this.read();
+    this.readerUpdatedAt = readerUpdatedAt;
     this.emit({ ...next, loaded: true });
   }
 
-  private async read(): Promise<Omit<SettingsSnapshot, 'loaded'>> {
+  private async read(): Promise<Omit<SettingsSnapshot, 'loaded'> & { readerUpdatedAt: string | null }> {
     const s = await this.kv.get<unknown>(SETTINGS_KEY).catch(() => null);
     const r = await this.kv.get<unknown>(READER_KEY).catch(() => null);
     const apiBaseUrl = isRecord(s) && typeof s.apiBaseUrl === 'string' && s.apiBaseUrl.trim() ? s.apiBaseUrl : this.defaultApiBaseUrl;
@@ -75,13 +77,14 @@ export class SettingsStoreImpl extends Emitter<SettingsSnapshot> implements Sett
   /** Another tab changed settings: adopt its API URL and any newer preferences. */
   private async reload(): Promise<void> {
     const stored = await this.read();
-    const newerReader = isAfter(stored.readerUpdatedAt, this.snapshot.readerUpdatedAt);
+    const newerReader = isAfter(stored.readerUpdatedAt, this.readerUpdatedAt);
     const urlChanged = stored.settings.apiBaseUrl !== this.snapshot.settings.apiBaseUrl;
     if (!newerReader && !urlChanged) return;
+    if (newerReader) this.readerUpdatedAt = stored.readerUpdatedAt;
     this.emit({
       ...this.snapshot,
       settings: urlChanged ? stored.settings : this.snapshot.settings,
-      ...(newerReader ? { reader: stored.reader, readerUpdatedAt: stored.readerUpdatedAt } : {}),
+      reader: newerReader ? stored.reader : this.snapshot.reader,
     });
   }
 
@@ -118,34 +121,27 @@ export class SettingsStoreImpl extends Emitter<SettingsSnapshot> implements Sett
 
   /**
    * Applies and stamps an edit. An edit that changes nothing is dropped, so
-   * it neither re-renders nor queues a sync change. The stamp always moves
-   * forward, even if the clock is behind a pulled copy, so a local edit is
-   * never lost to an older one under last write wins.
+   * it neither re-renders nor wakes other tabs. The stamp always moves
+   * forward, even if the clock is behind another tab's edit, so this edit
+   * wins over every earlier one.
    */
   async updateReader(change: (prefs: ReaderPreferences) => ReaderPreferences): Promise<void> {
     const reader = clampReaderPreferences(change({ ...this.snapshot.reader }));
     if (stableStringify(readerPreferencesToJson(reader)) === stableStringify(readerPreferencesToJson(this.snapshot.reader))) return;
-    this.emit({ ...this.snapshot, reader, readerUpdatedAt: this.stamp() });
+    this.readerUpdatedAt = this.stamp();
+    this.emit({ ...this.snapshot, reader });
     await this.persistReader();
   }
 
   private stamp(): string {
     const now = nowIso(this.now);
-    const previous = this.snapshot.readerUpdatedAt;
+    const previous = this.readerUpdatedAt;
     if (previous !== null && !isAfter(now, previous)) return new Date(parseIso(previous) + 1).toISOString();
     return now;
   }
 
-  /** Applies the cloud copy only when it is newer than the local edit. */
-  async applyCloudReader(value: ReaderPreferences, updatedAt: string): Promise<void> {
-    const current = this.snapshot.readerUpdatedAt;
-    if (current !== null && !isAfter(updatedAt, current)) return;
-    this.emit({ ...this.snapshot, reader: clampReaderPreferences(value), readerUpdatedAt: updatedAt });
-    await this.persistReader();
-  }
-
   private persistReader(): Promise<void> {
-    const value = { ...readerPreferencesToJson(this.snapshot.reader), _updatedAt: this.snapshot.readerUpdatedAt };
+    const value = { ...readerPreferencesToJson(this.snapshot.reader), _updatedAt: this.readerUpdatedAt };
     return this.writes.run(async () => {
       await this.kv.set(READER_KEY, value);
       this.bus.post('settings');

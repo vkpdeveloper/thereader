@@ -22,7 +22,7 @@ const layouts: { value: ReaderFlow; label: string }[] = [
   { value: 'paginated', label: 'Pages' },
 ];
 
-/** Snaps a synced value (possibly written by another build) to the nearest option. */
+/** Snaps a saved value (possibly written by another build) to the nearest option. */
 function nearest(value: number, options: { value: number }[]): number {
   return options.reduce((best, o) => (Math.abs(o.value - value) < Math.abs(best - value) ? o.value : best), options[0].value);
 }

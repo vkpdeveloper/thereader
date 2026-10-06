@@ -1,4 +1,4 @@
-import type { ArticleSummary, Book, Highlight, LibraryEntry, ReaderPreferences, ReadingLocator, ReadingProgress } from '../types';
+import type { ArticleSummary, Book, Highlight, LibraryEntry, ReadingLocator, ReadingProgress } from '../types';
 import { ApiError, type SyncSnapshot, type SyncStore } from './contract';
 import type { SyncResponse } from './api';
 import { MAX_ARTICLE_BODY_BYTES, positionFromFraction, type ArticleStoreImpl, type RemoteArticle } from './articles';
@@ -7,19 +7,7 @@ import { articleIdOf } from '../articleAnchors';
 import type { HighlightStoreImpl } from './highlights';
 import type { KeyValueStore } from './kv';
 import type { LibraryStoreImpl } from './library';
-import {
-  clampReaderPreferences,
-  isRecord,
-  isoOrder,
-  nowIso,
-  parseLocator,
-  parseReaderPreferences,
-  progressToJson,
-  readerPreferencesToJson,
-  stableStringify,
-  toIso,
-  utf8Length,
-} from './models';
+import { isRecord, isoOrder, nowIso, parseLocator, progressToJson, stableStringify, toIso, utf8Length } from './models';
 import { Emitter, WriteQueue } from './observable';
 import type { SettingsStoreImpl } from './settings';
 import { createMemoryLocks, noopBus, type Locks, type TabBus } from './tabs';
@@ -37,6 +25,9 @@ import { createMemoryLocks, noopBus, type Locks, type TabBus } from './tabs';
  *
  * Several tabs may be open. Outbox edits are read-modify-write sequences on
  * the stored state under a Web Lock, and only one tab sends at a time.
+ *
+ * Reader preferences (theme, typography, highlight colour) stay on this
+ * device and are never sent; see `SettingsStoreImpl`.
  */
 
 export const SYNC_INTERVAL_MS = 2 * 60_000;
@@ -77,20 +68,18 @@ const METADATA_FRESH_MS = 6 * 60 * 60_000;
 const STATE_LOCK = 'thereader-sync-state';
 const REQUEST_LOCK = 'thereader-sync-request';
 
-/** Values the API validates; anything else would reject the whole batch. */
-const SERVER_THEME_IDS = new Set(['default', 'dracula', 'nord', 'tokyo-night', 'catppuccin-mocha', 'gruvbox']);
-const FONT_FAMILY_ID = /^[a-z0-9][a-z0-9-]{0,63}$/;
+/** Highlight colours the API validates; anything else would reject the whole batch. */
 const HIGHLIGHT_COLOR = /^[a-z]{1,16}$/;
-const PREFERENCES_SHA = '0'.repeat(64);
 /** Article changes use a sentinel edition; the article is `payload.articleId`. */
 const ARTICLES_BOOK_ID = '_articles';
+const ARTICLES_SHA = '0'.repeat(64);
 const ARTICLE_IMAGE = /^(?:https?:\/\/|data:image\/)\S+$/i;
 
 export interface SyncChange {
   id: string;
   bookId: string;
   sha256: string;
-  kind: 'library' | 'progress' | 'session' | 'preferences' | 'highlight' | 'article' | 'articleProgress';
+  kind: 'library' | 'progress' | 'session' | 'highlight' | 'article' | 'articleProgress';
   updatedAt: string;
   payload: Record<string, unknown>;
 }
@@ -364,7 +353,7 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
         this.readingProgressChanged();
         capture();
       }),
-      // A new API URL switches the status shown to that origin's state.
+      // A new API URL switches the status shown, and the queue, to that origin.
       this.deps.settings.subscribe(() => {
         this.publish();
         capture();
@@ -469,21 +458,6 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
     }
     this.captureHighlights(origin, state, entries, out);
     this.captureArticles(state, out);
-    const updatedAt = this.deps.settings.readerUpdatedAt;
-    if (updatedAt !== null && state.seen.preferences !== updatedAt) {
-      out.push([
-        'preferences',
-        updatedAt,
-        {
-          id: randomId(),
-          kind: 'preferences',
-          bookId: '_preferences',
-          sha256: PREFERENCES_SHA,
-          updatedAt,
-          payload: { value: wirePreferences(this.deps.settings.reader) },
-        },
-      ]);
-    }
     return out;
   }
 
@@ -700,7 +674,7 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
         if (value.kind === 'highlight' && !withHighlights) continue;
         if (isArticleKind(value.kind)) {
           if (!withArticles) continue;
-        } else if (value.kind !== 'preferences') {
+        } else {
           const entry = library.find((e) => e.origin === origin && e.book.sha256 === value.sha256);
           if (entry) {
             if (this.deps.isUploadPending?.(entry.id)) continue;
@@ -782,15 +756,6 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
         const pulled = response.highlights;
         if (withHighlights && isRecord(pulled)) cursor = await this.applyHighlights(origin, pulled, seen);
         if (withArticles && isRecord(response.articles)) articleCursor = await this.applyArticles(response.articles, seen);
-        const prefs = response.preferences;
-        if (isRecord(prefs) && origin === this.origin) {
-          const updatedAt = toIso(prefs.updatedAt);
-          if (updatedAt) {
-            await this.deps.settings.applyCloudReader(parseReaderPreferences(prefs.value), updatedAt);
-            const local = this.deps.settings.readerUpdatedAt;
-            if (local !== null && isoOrder(local) === isoOrder(updatedAt)) seen.preferences = local;
-          }
-        }
         await this.mutate((s) => {
           const st = (s.origins[origin] ??= emptyOrigin());
           Object.assign(st.seen, seen);
@@ -1214,16 +1179,23 @@ export function totalMilliseconds(state: OriginState): number {
   return total;
 }
 
+/**
+ * Older builds synced reader preferences under this outbox key. They are
+ * device-local now, so a change queued before the upgrade is dropped.
+ */
+const LEGACY_PREFERENCES = 'preferences';
+
 function parseOriginState(value: unknown): OriginState {
   if (!isRecord(value)) throw new Error('Origin state must be an object.');
   const st = emptyOrigin();
   if (isRecord(value.pending)) {
     for (const [key, change] of Object.entries(value.pending)) {
-      if (isRecord(change) && typeof change.id === 'string' && isRecord(change.payload)) st.pending[key] = change as unknown as SyncChange;
+      if (key === LEGACY_PREFERENCES || !isRecord(change) || change.kind === LEGACY_PREFERENCES) continue;
+      if (typeof change.id === 'string' && isRecord(change.payload)) st.pending[key] = change as unknown as SyncChange;
     }
   }
   if (isRecord(value.seen)) {
-    for (const [key, stamp] of Object.entries(value.seen)) if (typeof stamp === 'string') st.seen[key] = stamp;
+    for (const [key, stamp] of Object.entries(value.seen)) if (key !== LEGACY_PREFERENCES && typeof stamp === 'string') st.seen[key] = stamp;
   }
   for (const field of ['totals', 'sessionAcknowledged'] as const) {
     const map = value[field];
@@ -1299,7 +1271,7 @@ function highlightPayload(h: Highlight): Record<string, unknown> | null {
 const isArticleKind = (kind: string): boolean => kind === 'article' || kind === 'articleProgress';
 
 function articleChange(kind: 'article' | 'articleProgress', updatedAt: string, payload: Record<string, unknown>): SyncChange {
-  return { id: randomId(), bookId: ARTICLES_BOOK_ID, sha256: PREFERENCES_SHA, kind, updatedAt, payload };
+  return { id: randomId(), bookId: ARTICLES_BOOK_ID, sha256: ARTICLES_SHA, kind, updatedAt, payload };
 }
 
 const clampInt = (v: unknown, min: number, max: number): number =>
@@ -1377,16 +1349,4 @@ function parseRemoteArticle(row: unknown): RemoteArticle | null {
     updatedAt,
     deleted: row.deleted === true,
   };
-}
-
-/**
- * Preferences as the API validates them. Values it would reject (a web-only
- * theme, say) are left out, which keeps the server's copy of that field.
- */
-export function wirePreferences(p: ReaderPreferences): Record<string, unknown> {
-  const value = readerPreferencesToJson(clampReaderPreferences(p));
-  if (typeof value.themeId === 'string' && !SERVER_THEME_IDS.has(value.themeId)) delete value.themeId;
-  if (typeof value.fontFamilyId === 'string' && !FONT_FAMILY_ID.test(value.fontFamilyId)) delete value.fontFamilyId;
-  if (typeof value.highlightColor === 'string' && !HIGHLIGHT_COLOR.test(value.highlightColor)) delete value.highlightColor;
-  return value;
 }

@@ -252,7 +252,7 @@ export const MARGIN_SCALE_RANGE = [0.5, 2] as const;
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
-/** Keeps values inside the ranges the API validates; ids stay as written. */
+/** Keeps values inside the reader's supported ranges; ids stay as written. */
 export function clampReaderPreferences(p: ReaderPreferences): ReaderPreferences {
   const next: ReaderPreferences = {
     ...p,

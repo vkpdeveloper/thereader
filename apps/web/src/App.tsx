@@ -7,7 +7,7 @@ import { applyTheme } from './lib/themes';
 import { useServices, useStore } from './lib/services/react';
 
 /**
- * Root: follows the synced theme preset, hosts the snackbar, takes books
+ * Root: follows this device's theme preset, hosts the snackbar, takes books
  * opened from the OS and names the API whose relay shows media that other
  * hosts refuse to serve here.
  */

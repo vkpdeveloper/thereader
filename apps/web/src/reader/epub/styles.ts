@@ -3,7 +3,7 @@ import type { EngineColors } from '../engine';
 
 /**
  * Reader typography. Families mirror the mobile app's `ReaderFonts`
- * (apps/mobile/lib/core/typography/reader_fonts.dart); ids are synced, never rename.
+ * (apps/mobile/lib/core/typography/reader_fonts.dart); ids are saved in preferences, never rename.
  */
 interface FontFamily {
   id: string;
