@@ -777,6 +777,8 @@ export class Converter {
           this.inlineChildren(el, b, ctx, out);
           return;
         }
+        // <a id="introduction">Introduction</a> outside a heading: a section anchor whose label is shown only to screen readers or the TOC.
+        if (href === undefined && el.id.length > 0 && slug(collapse(rawText(el))) === el.id.toLowerCase() && closestHeading(el) === null) return;
         if (href === undefined && b.nodes.length <= 1 && inlineTextOf(b.nodes).trim().replace(/^[[(]$/, '').length === 0) {
           const anchor = el.attrs['name'] ?? el.id;
           if (anchor.length > 0 && this.pendingRefs.has(anchor)) b.anchor = anchor;
@@ -1510,6 +1512,15 @@ function isAlternative(el: VElement): boolean {
   const x = /^\s*([\d.,]+)/.exec(rawText(prev));
   const y = /^\s*([\d.,]+)/.exec(rawText(el));
   return x !== null && y !== null && x[1] === y[1];
+}
+
+function slug(text: string): string {
+  return text.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '');
+}
+
+function closestHeading(el: VElement): VElement | null {
+  for (let p = el.parent; p !== null; p = p.parent) if (/^h[1-6]$/.test(p.tag)) return p;
+  return null;
 }
 
 function loneCode(el: VElement): VElement | null {
