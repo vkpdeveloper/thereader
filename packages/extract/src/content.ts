@@ -795,7 +795,8 @@ function prepare(root: VElement, flags: Flags): void {
       el.skip = true;
       return false;
     }
-    const match = el.matchString;
+    // A heading's id is a slug of its own words ("nav_relaxing-in-...") and says nothing about it.
+    const match = HEADINGS.has(tag) ? el.className.toLowerCase() : el.matchString;
     if (match.length > 1 && el.textLen < Math.max(500, rootLen * 0.3)) {
       if (SHARE.test(match) && el.textLen < 500 || BOILERPLATE.test(match) && !MAYBE_CONTENT.test(match)) {
         el.skip = true;
