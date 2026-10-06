@@ -30,7 +30,7 @@ for (const e of entries) {
     const ok = cjk.test(snippet) ? snippet.length >= 12 && snippet.length <= 80 : words >= 8 && words <= 20;
     if (!ok) warnings.push(`${e.id}: mustInclude length (${words} words) "${snippet}"`);
   }
-  for (const snippet of e.mustExclude) if (matchKey(snippet).length < 12) warnings.push(`${e.id}: mustExclude too short to be specific "${snippet}"`);
+  for (const snippet of e.mustExclude) if (matchKey(snippet).length < (cjk.test(snippet) ? 6 : 12)) warnings.push(`${e.id}: mustExclude too short to be specific "${snippet}"`);
   for (const snippet of e.mustInclude) if (e.mustExclude.some((x) => matchKey(x).includes(matchKey(snippet)) || matchKey(snippet).includes(matchKey(x)))) fail(`snippet in both lists "${snippet}"`);
   const meta = await loadSnapshotMeta(e.id);
   if (!meta) fail('no snapshot (run bun run snapshot)');

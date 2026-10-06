@@ -939,10 +939,25 @@
     "tier": 4,
     "category": "tech-blog",
     "language": "en",
-    "notes": "Next.js marketing site, figures",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Next.js marketing site, figures; Next.js/emotion page (1.6MB); body in div.fig-1gglwvl (p.fig-14u2zfy) but inline link cards (h3 + teaser) are injected mid-sentence, splitting the first paragraph ('When we first started building multiplayer functionality' / 'in Figma four years ago…'); margin sidenotes (h6 title + definition, e.g. 'Critique of OT', 'HTML DOM') and 'Read more…' promo callouts sit inside the body - all left neutral; 5 of 6 figures are client-rendered animations (BAILOUT_TO_CLIENT_SIDE_RENDERING, only figcaptions in HTML) so minImages counts only the prototype screenshot; 4 h2 + 5 h3; last paragraph before the 'We’re hiring!' line used as the end",
+    "title": "How Figma’s multiplayer technology works",
+    "mustInclude": [
+      "No other design tool offered this feature, and we didn’t want to use operational transforms",
+      "CRDTs are designed for decentralized systems where there is no single central authority",
+      "Arranging objects in an eventually-consistent tree structure is the most complicated part of our multiplayer system.",
+      "Undo history has a natural definition for single-player mode, but undo in a multiplayer environment is inherently confusing.",
+      "you should now have enough information to make your own collaborative tree data structure."
+    ],
+    "mustExclude": [
+      "Subscribe to Figma’s editorial newsletter",
+      "I agree to opt-in to Figma's mailing list.",
+      "Evan Wallace is the co-founder and former Chief Technology Officer at Figma.",
+      "Today, after three years of silence and hard work, I finally get to announce the launch of Figma",
+      "Create and collaborate with Figma"
+    ],
+    "minImages": 1,
+    "minHeadings": 9,
+    "annotationConfidence": "medium"
   },
   {
     "id": "webdev-vitals",
@@ -950,10 +965,29 @@
     "tier": 3,
     "category": "docs",
     "language": "en",
-    "notes": "web.dev (DevSite), JS code, figures",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "web.dev (DevSite), JS code, figures; DevSite: body in div.devsite-article-body; h1 also contains the 'Stay organized with collections' bookmark widget text; left book-nav, breadcrumbs, content-footer license, footer linkboxes; 1 <pre syntax=JavaScript>, 2 data tables (tool x metric support), 4 SVG figures (3 threshold diagrams + lifecycle), 13 h2-h4; aside.note/key-point admonitions are content; newsletter banner <img> inside the body is not counted",
+    "title": "Web Vitals",
+    "mustInclude": [
+      "Optimizing for quality of user experience is key to the long-term success of any site on the web.",
+      "Metrics on the Core Web Vitals track go through a lifecycle consisting of three phases",
+      "The easiest way to measure all the Core Web Vitals is to use the web-vitals JavaScript library",
+      "The performance of a site can substantially vary based on a user's device capabilities, their network conditions",
+      "For all Web Vitals, changes will be clearly documented in this public CHANGELOG."
+    ],
+    "mustExclude": [
+      "Save and categorize content based on your preferences.",
+      "Best practices for cookie notices",
+      "the content of this page is licensed under the Creative Commons Attribution 4.0 License",
+      "Chrome for Developers on LinkedIn"
+    ],
+    "minCodeBlocks": 1,
+    "codeLanguages": [
+      "javascript"
+    ],
+    "minImages": 4,
+    "minHeadings": 13,
+    "minTables": 2,
+    "annotationConfidence": "high"
   },
   {
     "id": "lilian-agents",
@@ -961,10 +995,24 @@
     "tier": 3,
     "category": "tech-blog",
     "language": "en",
-    "notes": "Hugo PaperMod, images, code, citations",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Hugo PaperMod, images, code, citations; Hugo PaperMod: body in div.post-content; top-level sections use <h1> (8, incl. Citation/References) with 7 h2 subsections - minHeadings counts only the h2s; TOC widget above body, tags + prev/next in post-footer; 13 figures with captions, 6 <pre> (prompt/JSON/BibTeX, no language classes), no math; main text ends with the Challenges section, Citation block and reference list (neutral) follow",
+    "title": "LLM Powered Autonomous Agents",
+    "mustInclude": [
+      "Building agents with LLM (large language model) as its core controller is a cool concept.",
+      "The external memory can alleviate the restriction of finite attention span.",
+      "Tool use is a remarkable and distinguishing characteristic of human beings.",
+      "After going through key ideas and demos of building LLM-centered agents, I start to see a couple common limitations:",
+      "LLMs may make formatting errors and occasionally exhibit rebellious behavior"
+    ],
+    "mustExclude": [
+      "Adversarial Attacks on LLMs »",
+      "© 2026 Lil'Log Powered by Hugo & PaperMod",
+      "Steerability"
+    ],
+    "minCodeBlocks": 6,
+    "minImages": 13,
+    "minHeadings": 7,
+    "annotationConfidence": "high"
   },
   {
     "id": "lilian-diffusion",
@@ -1338,7 +1386,7 @@
     "title": "4. More Control Flow Tools",
     "mustInclude": [
       "As well as the while statement just introduced, Python uses a few more that we will encounter in this chapter.",
-      "Python’s for statement iterates over the items of any sequence (a list or a string), in the order that they appear",
+      "Python’s for statement iterates over the items of any sequence (a list or a string)",
       "Making it easy for others to read your code is always a good idea",
       "don’t use non-ASCII characters in identifiers if there is only the slightest chance people speaking a different language will read",
       "Actually, call by object reference would be a better description, since if a mutable object is passed"
@@ -1392,10 +1440,28 @@
     "tier": 3,
     "category": "docs",
     "language": "en",
-    "notes": "mdBook, Rust code, figures",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "mdBook, Rust code, figures; page h1 is the book title in the menu bar; the chapter headline is main > h2 'What Is Ownership?'; body is main (Stack and Heap note section, 7 h3 + 4 h4, 15 pre language-rust/console, 5 SVG memory diagrams with p captions, listings as figure.listing); sidebar ToC is JS-loaded and absent; boilerplate is the keyboard-help popup, theme menu and arrow-only prev/next nav",
+    "title": "What Is Ownership?",
+    "mustInclude": [
+      "Ownership is a set of rules that govern how a Rust program manages memory.",
+      "The memory allocator finds an empty spot in the heap that is big enough, marks it as being in use",
+      "Doing this correctly has historically been a difficult programming problem.",
+      "Rust will never automatically create “deep” copies of your data.",
+      "Assigning a value to another variable moves it.",
+      "Luckily for us, Rust has a feature for using a value without transferring ownership: references."
+    ],
+    "mustExclude": [
+      "Press ← or → to navigate between chapters",
+      "Press S or / to search in the book",
+      "Press Esc to hide this help"
+    ],
+    "minCodeBlocks": 13,
+    "codeLanguages": [
+      "rust"
+    ],
+    "minImages": 4,
+    "minHeadings": 10,
+    "annotationConfidence": "high"
   },
   {
     "id": "react-thinking",
@@ -1403,10 +1469,29 @@
     "tier": 4,
     "category": "docs",
     "language": "en",
-    "notes": "react.dev Next.js, sandpack code",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "react.dev Next.js, sandpack code; body is the max-w-4xl column after h1.mdx-heading (intro dek paragraph, 7 h2 steps, Pitfall callout, 'Deep Dive' details block, 2 mockup images, 6 static Sandpack code pre + 3 interactive Sandpack pre-placeholders with Reload/Clear/Fork chrome and preview iframes); left nav sidebar, 'On this page' ToC, prev/next cards and footer are boilerplate; ends with 'Where to go from here'",
+    "title": "Thinking in React",
+    "mustInclude": [
+      "React can change how you think about the designs you look at and the apps you build.",
+      "That’s because UI and data models often have the same information architecture—that is, the same shape.",
+      "The most important principle for structuring state is to keep it DRY (Don’t Repeat Yourself).",
+      "Remember: React uses one-way data flow, passing data down the component hierarchy from parent to child component.",
+      "React makes this data flow explicit, but it requires a little more typing than two-way data binding.",
+      "You can start a React project right now or dive deeper on all the syntax used in this tutorial."
+    ],
+    "mustExclude": [
+      "Copyright © Meta Platforms, Inc",
+      "Build a React App from Scratch",
+      "Importing and Exporting Components",
+      "Debugging and Troubleshooting"
+    ],
+    "minCodeBlocks": 8,
+    "codeLanguages": [
+      "javascript"
+    ],
+    "minImages": 2,
+    "minHeadings": 7,
+    "annotationConfidence": "high"
   },
   {
     "id": "react-usestate",
@@ -1414,10 +1499,28 @@
     "tier": 4,
     "category": "docs",
     "language": "en",
-    "notes": "react.dev reference, many code blocks, tabs",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "react.dev reference, many code blocks, tabs; body is the max-w-4xl column after h1.mdx-heading (dek, in-body mini ToC list, Reference/Usage/Troubleshooting h2s with 14 h3 + 15 h4, Pitfall/Note callouts, 'Deep Dive' details, 29 Sandpack pre incl. 6 interactive playgrounds with Reload/Clear/Fork chrome); tabbed example galleries ('Example 1 of 4' + Next Example) only contain the first tab's content in raw HTML; huge left API sidebar, 'On this page' ToC, prev/next and footer are boilerplate",
+    "title": "useState",
+    "mustInclude": [
+      "useState is a React Hook that lets you add a state variable to your component.",
+      "If you need that, extract a new component and move the state into it.",
+      "In React, state is considered read-only, so you should replace it rather than mutate your existing objects.",
+      "You’ll often encounter the key attribute when rendering lists. However, it also serves another purpose.",
+      "React limits the number of renders to prevent an infinite loop.",
+      "To actually store a function, you have to put () => before them in both cases."
+    ],
+    "mustExclude": [
+      "Copyright © Meta Platforms, Inc",
+      "experimental_taintObjectReference",
+      "prerenderToNodeStream",
+      "Docs Contributors"
+    ],
+    "minCodeBlocks": 25,
+    "codeLanguages": [
+      "javascript"
+    ],
+    "minHeadings": 25,
+    "annotationConfidence": "medium"
   },
   {
     "id": "docusaurus-codeblocks",
@@ -1425,10 +1528,31 @@
     "tier": 4,
     "category": "docs",
     "language": "en",
-    "notes": "Docusaurus, code blocks with titles, tabs",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Docusaurus, code blocks with titles, tabs; body is article > div.theme-doc-markdown (8 h2, 8 h3, 1 h4, 59 prism pre of which 19 sit in hidden tab panels (40 visible) for npm/yarn/pnpm/bun and multi-language tabs, 2 tables, admonitions, browserWindow live-editor demos with 'Live Editor/Reset/Result/Loading...' chrome); announcement bar, navbar version/locale menus, docs sidebar, breadcrumbs, mobile/desktop ToC, 'Edit this page', pagination and footer are boilerplate; minCodeBlocks counts only visible panels",
+    "title": "Code blocks",
+    "mustInclude": [
+      "You can add a title to the code block by adding a title key after the language",
+      "By default, the Prism syntax highlighting theme we use is Palenight.",
+      "Note that different comment styles have no semantic difference, only their content does.",
+      "The noInline option should be used to avoid errors when your code spans multiple components or variables.",
+      "to display code in multiple programming languages and switch between them using a tabs component",
+      "As previously stated, syntax highlighting is only applied when the children is a simple string."
+    ],
+    "mustExclude": [
+      "🎉️ Docusaurus v3.10 is out! 🥳️",
+      "Copyright © 2026 Meta Platforms, Inc. Built with Docusaurus.",
+      "Help Us Translate",
+      "Migration from v1 to v2"
+    ],
+    "minCodeBlocks": 30,
+    "codeLanguages": [
+      "javascript",
+      "bash",
+      "markdown"
+    ],
+    "minHeadings": 15,
+    "minTables": 2,
+    "annotationConfidence": "medium"
   },
   {
     "id": "jest-getting-started",
@@ -1588,8 +1712,7 @@
     "minCodeBlocks": 20,
     "codeLanguages": [
       "javascript",
-      "html",
-      "vue"
+      "html"
     ],
     "minHeadings": 12,
     "annotationConfidence": "medium"
@@ -1655,25 +1778,32 @@
   },
   {
     "id": "mslearn-csharp",
-    "url": "https://learn.microsoft.com/en-us/dotnet/csharp/tour-of-csharp/",
+    "url": "https://learn.microsoft.com/en-us/dotnet/csharp/tour-of-csharp/overview",
     "tier": 3,
     "category": "docs",
     "language": "en",
-    "notes": "Microsoft Learn, C# code; NOT-ARTICLE: the tour-of-csharp URL now serves the 'C# documentation' landing hub (meta page_type=landing, ms.topic=landing-page): only a dek plus boxes of link lists, no prose and no code; mustInclude picks the dek and link-list items (short, so length warnings are expected)",
-    "title": "C# documentation",
+    "notes": "Microsoft Learn, C# code, TIP/NOTE callouts; the original tour-of-csharp/ URL became a landing hub, replaced with the overview article (annotated by the lead eval agent)",
+    "title": "A tour of the C# language",
     "mustInclude": [
-      "Learn how to write any application using the C# programming language.",
-      "New to programming? Start with beginner tutorials",
-      "Experienced developer? A tour of C#",
-      "Breaking changes in the C# compiler"
+      "This article gives you a high-level overview of the C# language.",
+      "C# syntax is familiar if you used C, C++, JavaScript, TypeScript, or Java.",
+      "C# apps use exceptions to report and handle errors. This practice is familiar if you used C++ or Java.",
+      "The preceding query works for many storage types represented by Students.",
+      "Learn how to build file-based apps for small programs and prototypes."
     ],
     "mustExclude": [
-      "This browser is no longer supported.",
-      "Upgrade to Microsoft Edge to take advantage of the latest features",
-      "Your Privacy Choices",
-      "Consumer Health Privacy"
+      "Upgrade to Microsoft Edge to take advantage of the latest features, security updates, and technical support.",
+      "The source for this content can be found on GitHub, where you can also create and review issues and pull requests.",
+      "Want to try using Ask Learn to clarify or guide you through this topic?",
+      "Summarize this article for me"
     ],
-    "annotationConfidence": "low"
+    "minCodeBlocks": 12,
+    "codeLanguages": [
+      "csharp",
+      "bash"
+    ],
+    "minHeadings": 5,
+    "annotationConfidence": "high"
   },
   {
     "id": "requests-quickstart",
@@ -1858,10 +1988,30 @@
     "tier": 4,
     "category": "docs",
     "language": "en",
-    "notes": "Next.js docs, HTML/CSS code, previews",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Next.js docs, HTML/CSS code, previews; article = the div.prose.mt-10 column (h1 + dek above it) up to the 'On this page' TOC; prose is interleaved with live demo previews (div.not-prose, fake people/emails/avatars) that belong to the article but are unsuitable as snippets; 111 <pre> HTML/CSS examples (no language classes), 9 h2 + 38 h3 + 44 h4; 4 tables of which 2 are data tables (ARIA variant table, Quick reference) and 2 are demos; ends with the Pseudo-class reference ':read-only' entry",
+    "title": "Hover, focus, and other states",
+    "mustInclude": [
+      "Every utility class in Tailwind can be applied conditionally by adding a variant to the beginning of the class name",
+      "Tailwind also includes variants for other interactive states like :visited, :focus-within, :focus-visible, and more.",
+      "This makes it possible to do all sorts of neat tricks, like floating labels for example without any JS.",
+      "This is useful for adding visual cues that make it clear that sections of content aren't interactive.",
+      "With at-rule custom variants the & placeholder isn't necessary, just like when nesting with a preprocessor.",
+      "Style an input when it is read-only using the read-only variant:"
+    ],
+    "mustExclude": [
+      "Make your ideas look awesome, without relying on a designer.",
+      "This is the survival kit I wish I had when I started building apps.",
+      "Detecting classes in source files",
+      "Copyright © 2026 Tailwind Labs Inc."
+    ],
+    "minCodeBlocks": 80,
+    "codeLanguages": [
+      "html",
+      "css"
+    ],
+    "minHeadings": 80,
+    "minTables": 2,
+    "annotationConfidence": "medium"
   },
   {
     "id": "github-docs-git",
@@ -1869,10 +2019,28 @@
     "tier": 3,
     "category": "docs",
     "language": "en",
-    "notes": "GitHub Docs (Next.js)",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "GitHub Docs (Next.js); article = div#article-contents (markdown-body) after the intro lead; 5 h2 + 4 h3, 3 bash <pre> examples; huge left NavList sidebar, 'In this article' mini-TOC, survey/support footer are boilerplate",
+    "title": "About Git",
+    "mustInclude": [
+      "A version control system, or VCS, tracks the history of changes as people and teams collaborate on projects together.",
+      "Through platforms like GitHub, Git also provides more opportunities for project transparency and collaboration.",
+      "git clone creates a local copy of a project that already exists remotely.",
+      "This example assumes that you already have a project called repo on the machine",
+      "There are two primary ways people collaborate on GitHub:",
+      "Every developer has full control of their fork and is free to implement a fix or a new feature."
+    ],
+    "mustExclude": [
+      "Resolve conflicts after rebase",
+      "Archive account and public repos",
+      "All Docs are open source. See something that's wrong or unclear? Submit a pull request.",
+      "Was this Doc helpful?"
+    ],
+    "minCodeBlocks": 3,
+    "codeLanguages": [
+      "bash"
+    ],
+    "minHeadings": 9,
+    "annotationConfidence": "high"
   },
   {
     "id": "stripe-docs-payment",
@@ -1880,10 +2048,32 @@
     "tier": 5,
     "category": "docs",
     "language": "en",
-    "notes": "Stripe docs: heavy JS, language tabs",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Stripe docs: heavy JS, language tabs; article = article#content; only the default variant (Checkout > Stripe-hosted page) is server-rendered: Elements/Mobile and 'Full embedded page' tabs and the four 'Optional...' sections are collapsed/absent (headings only), so the annotation covers just the rendered variant; 5 <pre> (bash gem install, Gemfile, Ruby server, checkout.html, success.html), 1 test-card table; language-select menus, 'See also' list, feedback widget and footer are boilerplate; last prose is 'See Testing for additional information...'",
+    "title": "Accept a payment",
+    "mustInclude": [
+      "Build a payment form or use a prebuilt checkout page to start accepting online payments.",
+      "Redirect to a Stripe-hosted payment page using Stripe Checkout.",
+      "After creating a Checkout Session, redirect your customer to the URL returned in the response.",
+      "It’s important for your customer to see a success page after they submit the payment form.",
+      "Listen to events rather than waiting for your customer to be redirected back to your website.",
+      "See Testing for additional information to test your integration."
+    ],
+    "mustExclude": [
+      "Build a custom integration with Elements",
+      "Balances and settlement time",
+      "Customize your branding",
+      "Chat with Stripe developers on Discord.",
+      "Questions? Contact Sales."
+    ],
+    "minCodeBlocks": 5,
+    "codeLanguages": [
+      "ruby",
+      "html",
+      "bash"
+    ],
+    "minHeadings": 6,
+    "minTables": 1,
+    "annotationConfidence": "medium"
   },
   {
     "id": "whatwg-parsing",
@@ -1891,10 +2081,27 @@
     "tier": 5,
     "category": "reference",
     "language": "en",
-    "notes": "Huge spec page, algorithms, notes",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Huge spec page, algorithms, notes; multipage spec chapter with no article container: content sits directly in <body> after header#head (HTML / Living Standard masthead), the prev/next <nav> and the ol.toc, and ends with the bottom <nav>; covers 13.2 Parsing HTML documents through 13.4 Parsing HTML fragments; page <title> is just 'HTML Standard' and the h1 is the masthead 'HTML', so the expected title is the first content heading (could also be judged as 'HTML Standard'); TOC entries duplicate the 139 h3-h6 headings so none are used as mustExclude; MDN browser-support annotations (div.mdn-anno) are boilerplate; 26 <pre> examples, 7 tables, 1 parsing-model diagram; last block 'Return fragment.' is too short, so the end snippet is the step before it",
+    "title": "13.2 Parsing HTML documents",
+    "mustInclude": [
+      "User agents must use the parsing rules described in this section to generate the DOM trees from text/html resources.",
+      "The input to the HTML parsing process consists of a stream of code points",
+      "When the steps below require the user agent to adjust foreign attributes for a token",
+      "The following steps form the HTML fragment serialization algorithm.",
+      "For performance reasons, an implementation that does not report errors and that uses the actual state machine",
+      "Start the HTML parser and let it run until it has consumed all the characters"
+    ],
+    "mustExclude": [
+      "Living Standard — Last Updated 5 October 2026",
+      "13 The HTML syntax — Table of Contents — 13.5 Named character references",
+      "Support in all current engines.",
+      "Document/DOMContentLoaded_event"
+    ],
+    "minCodeBlocks": 20,
+    "minImages": 1,
+    "minHeadings": 120,
+    "minTables": 5,
+    "annotationConfidence": "medium"
   },
   {
     "id": "wiki-fourier",
@@ -1902,10 +2109,27 @@
     "tier": 4,
     "category": "reference",
     "language": "en",
-    "notes": "Wikipedia, math-heavy (MathML + images), tables",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Wikipedia, math-heavy (MathML + images), tables; article = div.mw-parser-output through the 'Tables of important Fourier transforms' section (See also / Notes / Citations / References / External links follow; reference lists are neutral); ~724 inline formulas as MathML + fallback math images (the dump shows them as Unicode + {\\displaystyle} TeX, so snippets avoid formula text); 7 wikitables (several are formula tables), 12 non-math images (figures + multiple-image galleries), 15 h2 + 41 h3 + 9 h4 in the body; navigational 'Fourier transforms' sidebar table near the top is ambiguous and not used; main text ends with the n-dimensional formula table, so the end snippet is that table's last remarks cell",
+    "title": "Fourier transform",
+    "mustInclude": [
+      "In mathematics, the Fourier transform (FT) is an integral transform that takes a function as input",
+      "Functions that are localized in the time domain have Fourier transforms that are spread out across the frequency domain",
+      "Upon extending the Fourier transform to distributions the Dirac comb is also an eigenfunction of the Fourier transform.",
+      "Many computer algebra systems such as Matlab and Mathematica that are capable of symbolic integration",
+      "The following tables record some closed-form Fourier transforms.",
+      "This is the formula for a multivariate normal distribution normalized to 1 with a mean of 0."
+    ],
+    "mustExclude": [
+      "Pages that use a deprecated format of the math tags",
+      "Authority control databases",
+      "This page was last edited on 28 September 2026, at 01:44 (UTC).",
+      "Text is available under the Creative Commons Attribution-ShareAlike 4.0 License"
+    ],
+    "minImages": 8,
+    "minHeadings": 55,
+    "minTables": 6,
+    "hasMath": true,
+    "annotationConfidence": "medium"
   },
   {
     "id": "wiki-tokyo",
@@ -2401,10 +2625,24 @@
     "tier": 3,
     "category": "news",
     "language": "en",
-    "notes": "ProPublica long investigation, images, charts",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "ProPublica long investigation, images, charts; body in article div.content; 10 small comparison tables (mugshots + scores) plus one race-stats data table; mid-article aside.promotion 'Read the Documents/Get the Data' box left out of both lists; ends before div.author-bio",
+    "title": "Machine Bias",
+    "mustInclude": [
+      "On a spring afternoon in 2014, Brisha Borden was running late to pick up her god-sister from school",
+      "Two years later, we know the computer algorithm got it exactly backward.",
+      "In 2011, Brennan and Wells sold Northpointe to Toronto-based conglomerate Constellation Software for an undisclosed sum.",
+      "The scores are provided to the judges who decide which defendants can be released from jail.",
+      "I went to McDonald’s and a dollar store, and they all said no because of my background"
+    ],
+    "mustExclude": [
+      "From 2000 to 2013, she was a reporter at The Wall Street Journal",
+      "Go behind the scenes of ProPublica’s biggest investigations.",
+      "Sign up for ProPublica's Big Story newsletter and get our latest stories delivered straight to your inbox.",
+      "Investigative Journalism in the Public Interest"
+    ],
+    "minImages": 8,
+    "minTables": 1,
+    "annotationConfidence": "high"
   },
   {
     "id": "propublica-enid",
@@ -2412,10 +2650,24 @@
     "tier": 3,
     "category": "news",
     "language": "en",
-    "notes": "ProPublica article, donation boxes",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "ProPublica article, donation boxes; body in div.entry-content.wp-block-post-content; inline 'Read More' story promo is boilerplate; the 'Republish This Story' box contains a full HTML copy of the article text, so mustInclude snippets occur twice on the page; 1 inline figure (plus opener hero art)",
+    "title": "Oklahoma Oil Company Plugs Disposal Well That Posed Threat to City’s Drinking Water",
+    "mustInclude": [
+      "An Oklahoma oil and gas company plugged a well that disposes of oil production’s toxic byproduct",
+      "Enid city officials said they did not know the well had been plugged until our reporter informed them.",
+      "In the last five years, the state has shut down the wastewater disposal well repeatedly",
+      "Across Oklahoma, the news outlets identified at least 114 injection wells that were located within a half-mile",
+      "The case will continue to be heard in the agency’s administrative law court later this year."
+    ],
+    "mustExclude": [
+      "Thank you for your interest in republishing this story.",
+      "To Protect Its Drinking Water, This City Has to Appeal to the Oil Regulators That Put It at Risk",
+      "Four Kids in One Faith-Healing Family Died. Authorities Could Do Nothing.",
+      "As a nonprofit newsroom, we rely on donations from individuals like you to fuel our work.",
+      "Go behind the scenes of ProPublica’s biggest investigations."
+    ],
+    "minImages": 1,
+    "annotationConfidence": "high"
   },
   {
     "id": "verge-wikipedia-bots",
@@ -2423,10 +2675,23 @@
     "tier": 3,
     "category": "news",
     "language": "en",
-    "notes": "The Verge article, embeds",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "The Verge article, embeds; body in div#zephr-anchor > div.duet--article--article-body-co (paragraphs + one blockquote with 3 paras); no embeds/iframes or inline images in the snapshot body, only the lede hero image; very last block is a 7-word 'Update, October 5th: Added statement from OpenAI.' so the last-paragraph snippet comes from the paragraph just before it; author bio blurb sits before the body",
+    "title": "Wikipedia operator says OpenAI’s ‘rogue’ bots may be linked to a May outage",
+    "mustInclude": [
+      "Following many recent disclosures about AI agents accessing third-party websites and services, the Wikimedia Foundation",
+      "heavy traffic that the foundation says “may” have contributed to a partial outage that happened in May",
+      "Agents unsuccessfully tried to use it to fetch data from other websites as a proxy.",
+      "“The open web is a public good,” the Wikimedia Foundation says.",
+      "OpenAI’s investigation hasn’t been able to verify if its bots contributed to the May outage, according to Pusateri."
+    ],
+    "mustExclude": [
+      "is a senior reporter covering technology, gaming, and more. He joined The Verge in 2019",
+      "Follow topics and authors from this story to see more like this in your personalized homepage feed",
+      "A free daily digest of the news that matters most.",
+      "This startup is issuing AI-generated acne prescriptions",
+      "TCL’s paperlike OLED phone made me more excited for the iPhone Duo"
+    ],
+    "annotationConfidence": "high"
   },
   {
     "id": "verge-decomps",
@@ -2434,10 +2699,24 @@
     "tier": 5,
     "category": "boilerplate",
     "language": "en",
-    "notes": "The Verge StoryStream hub: list of many posts",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "The Verge StoryStream hub: list of many posts; main content = 3 intro paragraphs (div.duet--article--article-body-co) + stream entries in div._1j7mcyg3; snapshot only contains 3 stream entries (Halo web port post, Lego Racers post with galleries, and a 2022 Zelda article teaser ending in 'Read Article >'); 'Highlights' list is a nav widget whose text duplicates the Zelda entry heading so it is not used; boundary of a hub is debatable (last snippet is from the Zelda teaser), hence medium",
+    "title": "Reverse-engineered games: All the news on video game decomps, recomps, VR and web and 3D ports",
+    "mustInclude": [
+      "Thanks to decompilations and recompilations of classic titles, those games are becoming unshackled from their proprietary code",
+      "These are unofficial versions of games, so they may sit in a legal gray area.",
+      "Below, you’ll find our coverage of gaming decomps, recomps, and all the other ways gamers are reverse-engineering games",
+      "you can also just fire it up in a web browser thanks to OpenHaloCE",
+      "NavigatorSharp’s fan recreation Step On It works in a web browser on desktop or phone",
+      "Instead, I’ve been playing it on something called Ship of Harkinian"
+    ],
+    "mustExclude": [
+      "A free daily digest of the news that matters most.",
+      "The Verge is a part of PMX Global, LLC, a subsidiary of Penske Media Corporation.",
+      "Our minds aren’t equipped to handle AI",
+      "Sign in to see your notifications or create an account to join the conversation."
+    ],
+    "minImages": 3,
+    "annotationConfidence": "medium"
   },
   {
     "id": "quanta-fourth-dimension",
@@ -2445,10 +2724,24 @@
     "tier": 3,
     "category": "news",
     "language": "en",
-    "notes": "Quanta: illustrations, pull quotes",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Quanta: illustrations, pull quotes; actually a Joy of Why podcast episode page: 3-4 intro paragraphs + audio player + long 'Transcript' (h2) in div.post__content; a 'Related:' aside list sits inside post__content between the end of the conversation and the closing credits paragraphs; transcript ends with credits and host sign-off before '[Music plays]'; guest portrait figure sits in an aside (not counted); no pull quotes in snapshot",
+    "title": "What Does the Fourth Dimension Actually Look Like?",
+    "mustInclude": [
+      "Physicists often talk about time as a fourth dimension, but what if there were a fourth spatial dimension",
+      "So a disc is two-dimensional, and because two plus two is equal to four",
+      "If I increase the dimension enough, eventually they’ll all be the same.",
+      "It really sort of helps connect with the physicality of these spaces.",
+      "I’m your host, Janna Levin. If you have any questions or comments"
+    ],
+    "mustExclude": [
+      "Get Quanta Magazine delivered to your inbox",
+      "A Simple Way To Measure Knots Has Come Unraveled",
+      "Quanta Magazine moderates comments to facilitate an informed, substantive, civil conversation.",
+      "Mathematicians Harness Randomness To Crack a 55-Year-Old Conjecture",
+      "Surprisingly Complex Waves Reveal the Brain’s Inner Workings"
+    ],
+    "minHeadings": 1,
+    "annotationConfidence": "high"
   },
   {
     "id": "quanta-ai-math",
@@ -2456,10 +2749,24 @@
     "tier": 3,
     "category": "news",
     "language": "en",
-    "notes": "Quanta essay",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Quanta essay; body in div.post__content (Qualia column); in-body 'qualia' explainer aside and three pull quotes (text duplicated from body paragraphs) left out of both lists; 'Related:' aside list sits between the last paragraphs; body ends with an 'Editor’s note' paragraph; no inline images/headings (hero image only)",
+    "title": "Is AI the End of Math As We Know It?",
+    "mustInclude": [
+      "Every week, it seemed, artificial intelligence models were offering proofs of decades-old mathematical conjectures.",
+      "It’s as if you were teleported to the peak of a tall mountain.",
+      "I’m less certain about whether new generations of mathematicians will be attracted to this remade discipline.",
+      "Goh is determined and would rather leave the field than use AI in his creative work.",
+      "If we can’t adapt, he added, “whose fault is that?”",
+      "Editor’s note: Scott Aaronson is a member of Quanta Magazine’s advisory board."
+    ],
+    "mustExclude": [
+      "Get Quanta Magazine delivered to your inbox",
+      "Why the Legendary Erdős Problems Are Falling to AI",
+      "Quanta Magazine moderates comments to facilitate an informed, substantive, civil conversation.",
+      "Sea Monkeys Show Scientists How To Rewrite a Rule of Turbulence",
+      "Get highlights of the most important news delivered to your email inbox"
+    ],
+    "annotationConfidence": "high"
   },
   {
     "id": "aeon-intelligence",
@@ -2467,10 +2774,22 @@
     "tier": 3,
     "category": "news",
     "language": "en",
-    "notes": "Aeon long essay (Next.js)",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Aeon long essay (Next.js); full essay text (~3,900 words) is in div#article-content > div.has-dropcap; on-page headline h1 is 'Reason is more than a tool' while <title>/og:title use 'Why real intelligence is something more than optimisation' (title set to the h1); 3 p.pullquote blocks duplicate body text and are not used; author bio blurb in aside before body",
+    "title": "Reason is more than a tool",
+    "mustInclude": [
+      "I sat in a packed university auditorium listening to a celebrated computer scientist explain the brilliance",
+      "Immanuel Kant, the Königsberg revolutionary who did more than anyone else to set the terms of modern ethics",
+      "A navigation system finds the fastest route to a destination it did not choose.",
+      "AI gives this old temptation a powerful and ever-expanding new interface.",
+      "But we should resist every pressure that asks people to understand themselves as mere tools."
+    ],
+    "mustExclude": [
+      "is associate professor of philosophy at the Pontifical Catholic University of Chile in Santiago",
+      "As the 18th-century war between mechanism and romanticism returns, we face a new question",
+      "We already have a way to teach morals to alien intelligences: it’s called parenting.",
+      "Aeon is published by registered charity Aeon Media Group Ltd in association with Aeon America"
+    ],
+    "annotationConfidence": "high"
   },
   {
     "id": "restofworld-memory",
@@ -2478,10 +2797,24 @@
     "tier": 3,
     "category": "news",
     "language": "en",
-    "notes": "Rest of World article",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Rest of World article; body in div.post-content; 3 h2 sections, 1 Datawrapper iframe chart embed (lazy data-src), 2 pull quotes that duplicate body sentences; inline glossary tooltips (e.g. 'XiaomiiXiaomi...') create odd text runs, avoided; no inline images besides the header hero; ends before footer.post-footer author bio",
+    "title": "The AI boom is making the world’s cheapest smartphones disappear",
+    "mustInclude": [
+      "The world’s cheapest smartphones are disappearing because AI infrastructure is absorbing the components.",
+      "In 2025, more than one in four smartphones shipped globally cost less than $150.",
+      "Samsung Electronics, SK Hynix, and Micron Technology make up more than 90% of the global memory chip market.",
+      "For many lower-income consumers, gains in income are unlikely to keep pace with the sudden rise in handset prices.",
+      "They might delay upgrading, borrow or share their devices, remain on older feature phones"
+    ],
+    "mustExclude": [
+      "Kinling Lo is a reporter at Rest of World covering China.",
+      "South Korea’s AI chip giants are fighting for a bigger role in America’s AI boom",
+      "African companies race to adopt American and Chinese AI, with little attention paid to safety.",
+      "Reporting Global Tech Stories"
+    ],
+    "minHeadings": 3,
+    "hasEmbeds": true,
+    "annotationConfidence": "high"
   },
   {
     "id": "wired-exoplanet",
@@ -2489,10 +2822,22 @@
     "tier": 4,
     "category": "news",
     "language": "en",
-    "notes": "Wired (Condé Nast), ads, newsletter, paywall overlay",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Wired (Condé Nast), ads, newsletter, paywall overlay; full article text is in the raw HTML (paragraphs after the first carry class 'paywall' but are present) inside div.body__inner-container; no inline images/headings (header illustration only); last block is the 'originally appeared on WIRED Japan' note",
+    "title": "Astronomers Confirm Discovery of the Youngest Known Exoplanet Ever",
+    "mustInclude": [
+      "All the planets in our solar system are the same age, 4.6 billion years old.",
+      "The European Southern Observatory’s Very Large Telescope (yes, that’s its official name) had detected a point of light",
+      "Despite being 55 astronomical units from its host star, it’s already a giant",
+      "we are actually able to see planet formation in action, and Roman will take planet hunting to the next level",
+      "This story originally appeared on WIRED Japan and has been translated from Japanese."
+    ],
+    "mustExclude": [
+      "Meta failed to catch hundreds of AI child abuse ads",
+      "Introducing the app: More ways to make the most of WIRED",
+      "© 2026 Condé Nast. All rights reserved.",
+      "WIRED is obsessed with what comes next."
+    ],
+    "annotationConfidence": "high"
   },
   {
     "id": "techcrunch-openai-watermark",
@@ -2500,10 +2845,24 @@
     "tier": 3,
     "category": "news",
     "language": "en",
-    "notes": "TechCrunch WordPress VIP",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "TechCrunch WordPress VIP; body in div.entry-content.wp-block-post-content (13 paragraphs + 1 inline figure credited to OpenAI); ends before the 'Topics' terms block and affiliate disclaimer; author bio card, Disrupt promo, Most Popular in right rail",
+    "title": "OpenAI will start watermarking ChatGPT’s text in the EU",
+    "mustInclude": [
+      "OpenAI will start adding an invisible watermark to text generated by ChatGPT and Codex in the European Union",
+      "Because it lives in the words themselves, it travels with the text when it’s copied and pasted.",
+      "In one test, replacing 10% of words with synonyms dropped detection from about 92% to 66%.",
+      "The announcement comes two months after Anthropic said it would watermark text generated by Claude",
+      "Anthropic, Google, Meta, Microsoft, and OpenAI are among the companies that have committed to following the EU’s code of practice"
+    ],
+    "mustExclude": [
+      "When you purchase through links in our articles, we may earn a small commission.",
+      "Aditya Mehta is a reporter at TechCrunch covering AI.",
+      "The Disrupt experience is meant to be shared.",
+      "Federal judge calls Flock ‘indiscriminate mass surveillance’",
+      "© 2026 TechCrunch Media LLC."
+    ],
+    "minImages": 1,
+    "annotationConfidence": "high"
   },
   {
     "id": "theregister-debian",
@@ -2511,10 +2870,23 @@
     "tier": 3,
     "category": "news",
     "language": "en",
-    "notes": "The Register",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "The Register; short news piece in section#main > div.bodytext (8 paragraphs, interleaved REG AD placeholders); a 'READ MORE' related box sits between header and body; ends with ® after last paragraph, followed by tag footer and recirc lists",
+    "title": "Debian's latest kernel security update has 1,313 reasons to patch",
+    "mustInclude": [
+      "Debian's latest Linux kernel security update comes with a formidable reading list of 1,313 CVE identifiers.",
+      "Debian 13.7 was released on September 12, before upstream kernel 6.12.111 arrived nine days later.",
+      "The Linux kernel project became a CVE Numbering Authority (CNA) in February 2024.",
+      "A CVE identifier alone therefore says little about severity or exploitability.",
+      "Whether coding bots constitute a net benefit to the projects, to software, or to humanity as a whole"
+    ],
+    "mustExclude": [
+      "FBI confirms 'multiple' arrests related to ShinyHunters hack",
+      "Schneider Electric drops $22.6B on PTC as datacenter boom rains money on infra companies",
+      "AI models keep posting screenshots showing sensitive data from inside tech companies",
+      "Biting the hand that feeds IT",
+      "Copyright. All rights reserved © 1998-2026."
+    ],
+    "annotationConfidence": "high"
   },
   {
     "id": "engadget-wikimedia",
@@ -2522,10 +2894,21 @@
     "tier": 3,
     "category": "news",
     "language": "en",
-    "notes": "Engadget",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Engadget; body in article.news-post div.columns-holder (8 paragraphs); page boilerplate is mostly duplicated nav menus (aside + top nav) and an 'Add Engadget on Google' widget before the body; snapshot ends right after a bare 'Recommended' header (no recirc items in HTML); hero image is outside the body, no inline images",
+    "title": "Wikimedia links OpenAI agents to an outage and unauthorized activity",
+    "mustInclude": [
+      "OpenAI agents have been running amok online, and it seems the Wikimedia Foundation has been affected too.",
+      "Almost all of these were test edits in sandbox sections of wikis and weren't visible on pages",
+      "bots have been hammering its platforms since early 2024 to scrape data for generative AI training purposes",
+      "partnered with several tech companies to offer them streamlined access to data, but OpenAI isn't among them"
+    ],
+    "mustExclude": [
+      "© 2026 Static Media. All Rights Reserved",
+      "Add Engadget on Google:",
+      "Preferred Source Google Discover",
+      "Best Wireless Earbuds"
+    ],
+    "annotationConfidence": "high"
   },
   {
     "id": "nasa-hubble",
@@ -2533,10 +2916,25 @@
     "tier": 3,
     "category": "news",
     "language": "en",
-    "notes": "NASA science WordPress, images",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "NASA science WordPress, images; body in div.entry-content (paragraphs, 2 inline images with hds-caption figcaptions, 1 YouTube embed); the closing 'About Hubble' paragraph is inside entry-content and treated as the last paragraph; 'Related Images & Videos' block after the body repeats the figure captions, so captions are not used as snippets; header hero figure outside entry-content",
+    "title": "Suspected Second-generation Planet Solves NASA Hubble Cold Case",
+    "mustInclude": [
+      "Diligent sleuthing by astronomers has broken open a cold case in the data archive of NASA’s Hubble Space Telescope.",
+      "Earth and the other planets in our solar system are first-generation planets",
+      "Williams went back to those records armed with an updated chemical database and found that niobium matched",
+      "Despite this mass loss, Williams said that the planet is likely not a temporary blip on the cosmic radar.",
+      "Hubble is a project of international cooperation between NASA and ESA (European Space Agency)."
+    ],
+    "mustExclude": [
+      "What if a star’s death could give rise to an entirely new planet?",
+      "Since its 1990 launch, the Hubble Space Telescope has changed our fundamental understanding of the universe.",
+      "NASA explores the unknown in air and space, innovates for the benefit of humanity",
+      "Did you find what you were looking for?",
+      "This story on ESA/Hubble’s website."
+    ],
+    "minImages": 2,
+    "hasEmbeds": true,
+    "annotationConfidence": "high"
   },
   {
     "id": "foxnews-planet-fitness",
@@ -2544,10 +2942,24 @@
     "tier": 4,
     "category": "boilerplate",
     "language": "en",
-    "notes": "Fox News: ads, related links, video",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Fox News: ads, related links, video; body in div.article-body; body is interleaved with ALL-CAPS in-body related-story link paragraphs and a 'CLICK HERE TO DOWNLOAD THE FOX NEWS APP' line (boilerplate, used in mustExclude); 3 inline images with captions; featured top video is a 'Fox News Flash' headlines clip (not article-specific); ends with Planet Fitness statement before div.author-bio",
+    "title": "Convicted child predator allegedly attacks two women inside Planet Fitness women's locker room",
+    "mustInclude": [
+      "A convicted child rapist allegedly attacked a woman after bringing her to a Planet Fitness gym to use the showers",
+      "Prosecutors said Holland, a member of the Porter Square gym, arrived around 9 a.m. Oct. 1",
+      "Police arrived to find Holland in the locker room trying to put his clothes back on",
+      "The DA’s office said Holland, who is homeless and was known to stay in Cambridge and Boston",
+      "The franchise group has cancelled the membership of the individual involved and is working with local law enforcement"
+    ],
+    "mustExclude": [
+      "MICHIGAN DECISION FORCES REMOVAL OF DISGRACED SPORTS DOCTOR LARRY NASSAR FROM SEX OFFENDER REGISTRY",
+      "CLICK HERE TO DOWNLOAD THE FOX NEWS APP",
+      "Stepheny Price is a Writer at Fox News with a focus on West Coast and Midwest news",
+      "The hottest stories ripped from the headlines, from crime to courts, legal and scandal.",
+      "Fox News Flash top headlines are here. Check out what's clicking on FoxNews.com."
+    ],
+    "minImages": 3,
+    "annotationConfidence": "high"
   },
   {
     "id": "hn-debugbear",
@@ -2555,10 +2967,26 @@
     "tier": 3,
     "category": "tech-blog",
     "language": "en",
-    "notes": "Marketing blog post, screenshots",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Marketing blog post, screenshots; Docusaurus blog: body in div#__blog-post-container.markdown (14 h2 + 1 h3, 11 screenshots, 1 <video>, 1 small text code block, IANA statement quotes); left sidebar 'Recent Articles' + CTA and right TOC are boilerplate; body ends with a one-line DebugBear trial CTA paragraph inside the markdown, so the last-paragraph snippet is taken from the paragraph just before it",
+    "title": "Example.com Just Launched The Biggest Redesign In Decades",
+    "mustInclude": [
+      "example.com is a reserved domain name set aside by the Internet Assigned Numbers Authority (IANA) for documentation purposes.",
+      "Each character is wrapped in its own span element, and each span gets a slightly larger CSS transition-delay",
+      "The website then went unchanged for seven years.",
+      "every now and then the example.com server doesn't respond correctly",
+      "We have been monitoring the page for several years in our public demo project."
+    ],
+    "mustExclude": [
+      "Deliver a great user experience with in-depth page speed insights and monitoring.",
+      "Get a monthly email with page speed tips",
+      "New Data From Google: See How Ads Impact Web Performance",
+      "Monitor Page Speed & Core Web Vitals",
+      "Website Speed Test HTML Size Analyzer JSON Size Analyzer"
+    ],
+    "minCodeBlocks": 1,
+    "minImages": 8,
+    "minHeadings": 12,
+    "annotationConfidence": "high"
   },
   {
     "id": "zenn-npm",
@@ -2566,10 +2994,26 @@
     "tier": 3,
     "category": "non-english",
     "language": "ja",
-    "notes": "Zenn (Next.js), Japanese, code",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Zenn (Next.js), Japanese, code; full article is server-rendered in div.znc.BodyContentViewer (section headings are markdown h1 in-body (22) plus 15 h2; minHeadings counts h2 only), 14 shiki <pre> blocks (mostly plain-text flow diagrams, some PHP; no language markup), 8 data tables, 2 screenshots, 1 Zenn link-card iframe embed; right-rail TOC duplicates all headings; little other boilerplate (Discussion heading, footer nav), so mustExclude uses short footer labels",
+    "title": "ユーザー検索した作品名の人気キーワード機能",
+    "mustInclude": [
+      "以下のようなユーザーが検索した作品名の人気キーワード機能の内容になります。",
+      "そこで、Jobの管理にはRedisを使用し、業務DBへの負荷集中を抑えています。",
+      "保存の確実性を高めるメリットよりも、書き込み負荷や実装・運用コストを抑えることを優先し",
+      "最近の検索傾向を反映しつつ、日ごとの変動を抑える期間として7日間を採用します。",
+      "30日前のデータは削除する方針であるのでそこまで問題にならないと考えています。"
+    ],
+    "mustExclude": [
+      "情報共有コミュニティ",
+      "Publication / Pro",
+      "法人向けメニューNew"
+    ],
+    "minCodeBlocks": 12,
+    "minImages": 2,
+    "minHeadings": 12,
+    "minTables": 6,
+    "hasEmbeds": true,
+    "annotationConfidence": "high"
   },
   {
     "id": "zenn-tokium",
@@ -2577,10 +3021,27 @@
     "tier": 3,
     "category": "non-english",
     "language": "ja",
-    "notes": "Zenn, Japanese, code",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Zenn, Japanese, code; long hands-on tutorial fully server-rendered in div.znc.BodyContentViewer: 27 h2 sections, 95 shiki <pre> blocks (shell/Java/XML, no language markup), 5 screenshots, 2 embeds (Zenn mermaid diagram iframe + link card iframe); article ends with '最後に、…では。' (last snippet from the question line before the 2-char 'では。'); publication's pinned recruiting aside (PublicationFixedSentences), profile card and disabled-comments note follow",
+    "title": "こんな時代だから Seasar2 を構築してみようか",
+    "mustInclude": [
+      "Claude CodeやCodexに聞けば、知らない技術でもそれっぽいものが完成します。",
+      "ちょうど手元に古い Surface がありましたので、Windowsを差し替えて Ubuntu を入れました。",
+      "おそらく CentOS 5 の yum にデフォルトで定義されたミラーサイトが閉鎖か移動されたのだろう。",
+      "しかし、AIがその回答に至った判断は、細かく質問しないといけませんし、そのためには「言葉」が必要です。",
+      "ブラウザで Hello World が表示されたときの気持ちはどうでしたか？"
+    ],
+    "mustExclude": [
+      "あらゆる経理作業から人々を解放する」挑戦に本気で取り組んでいます",
+      "ご興味を持っていただけたら、ぜひこちらからカジュアルにお話ししましょう！",
+      "TOKIUMでエンジニアリングマネージャーをしています。",
+      "設定によりコメント欄が無効化されています",
+      "株式会社TOKIUMの技術ブログです"
+    ],
+    "minCodeBlocks": 80,
+    "minImages": 4,
+    "minHeadings": 22,
+    "hasEmbeds": true,
+    "annotationConfidence": "high"
   },
   {
     "id": "qiita-a",
@@ -2588,10 +3049,24 @@
     "tier": 3,
     "category": "non-english",
     "language": "ja",
-    "notes": "Qiita, Japanese, code",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Qiita, Japanese, code; actually a short prose essay with no code blocks (4 h2 sections incl. 'あとがき', a few short lists); body in div#personal-public-article-body > div.mdContent-inner; boilerplate: like/share widgets, delete-article modal text, signup prompt, footer",
+    "title": "最近プロジェクトマネジメントで感じたこと",
+    "mustInclude": [
+      "最近のプロジェクトマネジメント業務を振り返って、学びの言語化をします。",
+      "しかし、問題を積極的に拾い、大きくなる前に問題を見つけられたなら、小さいうちに対応できる可能性が上がります。",
+      "プロジェクトをシステムとみなしてみます。そこにはいくつかの構成要素があり、構成要素間に何かの関係があります。",
+      "それでも線表を書くと、まだ存在していない未来が一度具体的になります。",
+      "こう書いていると、プロジェクトマネージャーに限らず、誰にでも意識できることのような気はしますね。"
+    ],
+    "mustExclude": [
+      "Register as a new user and use Qiita more conveniently",
+      "You get articles that match your needs",
+      "Are you sure you want to delete this article?",
+      "How developers code is here.",
+      "View the Qiita 15th anniversary article"
+    ],
+    "minHeadings": 4,
+    "annotationConfidence": "high"
   },
   {
     "id": "qiita-b",
@@ -2599,10 +3074,27 @@
     "tier": 3,
     "category": "non-english",
     "language": "ja",
-    "notes": "Qiita, Japanese, code",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Qiita, Japanese, code; body in div#personal-public-article-body (7 h2, 2 data tables, 3 code blocks (data-lang text/markdown), 5 blockquotes of changelog/doc quotes, 1 Qiita mermaid iframe embed); main text ends with the 'まとめ' section; after it the author put a '関連記事' link list and a JQIT corporate/recruiting blurb inside the markdown body, left out of both lists",
+    "title": "新しく作ったファイルに、そのフォルダの CLAUDE.md は効いていなかった。直った今も指示は書いた後に届く",
+    "mustInclude": [
+      "Claude Code 2.1.288（2026-10-02）の changelog に、こう書かれています。",
+      "つまり新しいファイルを作るだけの作業では、そのフォルダの指示が届いていなかったことになります。",
+      "指示を置かない対照では先頭行は付かないので、モデルが勝手に書いたものでもありません。",
+      "ファイル1本につき、費用が約15%、時間が約8割増えました。",
+      "新規作成では最初の1回が指示なしで書かれることは覚えておいたほうがよいと思います。"
+    ],
+    "mustExclude": [
+      "Register as a new user and use Qiita more conveniently",
+      "You get articles that match your needs",
+      "Are you sure you want to delete this article?",
+      "How developers code is here.",
+      "View the Qiita 15th anniversary article"
+    ],
+    "minCodeBlocks": 3,
+    "minHeadings": 6,
+    "minTables": 2,
+    "hasEmbeds": true,
+    "annotationConfidence": "high"
   },
   {
     "id": "ruanyifeng-commit",
@@ -2610,10 +3102,27 @@
     "tier": 2,
     "category": "non-english",
     "language": "zh",
-    "notes": "Ruan Yifeng blog, Chinese, code, comments",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Ruan Yifeng blog, Chinese, code, comments; Movable Type blog; body is div#main-content.entry-content inside article.hentry, ends with '（完）' after the last code block; asset-footer license box, related entries, 64 comments and comment form follow; 18 <pre> (shell/plain/json, no language classes), 5 images (Angular commit screenshots), 5 h2 + 4 h3",
+    "title": "Commit message 和 Change log 编写指南",
+    "mustInclude": [
+      "Git 每次提交代码，都要写 Commit message（提交说明），否则就不允许提交。",
+      "这是目前使用最广的写法，比较合理和系统化，并且有配套的工具。",
+      "如果当前 commit 与被撤销的 commit，在同一个发布（release）里面，那么它们都不会出现在 Change log 里面。",
+      "以后，凡是用到git commit命令，一律改为使用git cz。这时，就会出现选项，用来生成符合格式的 Commit message。",
+      "上面命令不会覆盖以前的 Change log，只会在CHANGELOG.md的头部加上自从上次发布以来的变动。",
+      "以后，直接运行下面的命令即可。"
+    ],
+    "mustExclude": [
+      "版权声明：自由转载-非商用-非衍生-保持署名（创意共享3.0许可证）",
+      "字节全家桶 Seed 2.0 + TRAE 玩转 Skill",
+      "昨天睡前还在想怎么从commit生成changelog，阮老师这篇文章真是太及时了",
+      "我信任你，不会填写广告链接",
+      "上一篇：网站的肥胖症危机"
+    ],
+    "minCodeBlocks": 18,
+    "minImages": 5,
+    "minHeadings": 9,
+    "annotationConfidence": "high"
   },
   {
     "id": "ruanyifeng-weekly",
@@ -2621,10 +3130,26 @@
     "tier": 3,
     "category": "non-english",
     "language": "zh",
-    "notes": "Weekly digest: Chinese, many images and links",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Weekly digest: Chinese, many images and links; same Movable Type template as ruanyifeng-commit; body is div#main-content (11 h2 sections, 35 content images, no code); main-content ends with an author-curated '往年回顾' list of past issues + '（完）' (left neutral, minHeadings excludes that h2), so the last snippet is from the final '言论' quote (the closing line '欢迎来到魔法师时代' is quoted in comments, so the preceding sentence is used); related entries, 51 comments, comment form follow",
+    "title": "科技爱好者周刊（第 413 期）：再见了，React Native",
+    "mustInclude": [
+      "下周五开始的中秋和十一假期，周刊休息。",
+      "也就是说，它决定采用原生语言，开发 iOS 和安卓客户端，不再采用 Web 技术开发一个中间版本",
+      "平等地球投影法的核心原则是不改变面积比例。如果一块土地占地球面积1%，那么它占地图面积也应该是1%",
+      "它的原理是，发光二极管发出的光，会被隐藏的摄像头反射。",
+      "即使无法写出优秀出众的代码，你也要尽量避免意大利面式代码，争取写出千层面式代码。",
+      "但 AI 就不同了，它越先进，就越难知道它是否出错"
+    ],
+    "mustExclude": [
+      "科技爱好者周刊（第 412 期）：禁止 issue，只用 PR",
+      "我有一个推测，既然现在大模型这么强了，框架和库这些还有必要用吗？",
+      "版权声明：自由转载-非商用-非衍生-保持署名（创意共享3.0许可证）",
+      "正在发表您的评论，请稍候",
+      "第一个摄像头检测的、华为也好像有个类似的成熟产品"
+    ],
+    "minImages": 35,
+    "minHeadings": 10,
+    "annotationConfidence": "high"
   },
   {
     "id": "sspai-post",
@@ -2632,10 +3157,26 @@
     "tier": 4,
     "category": "non-english",
     "language": "zh",
-    "notes": "sspai (Vue), Chinese",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "sspai (Vue), Chinese; Vue SSR: full body is in the raw HTML in div.article__main__content.wangEditor-txt (4 h2, 19 figure images with figcaptions, ends with the '结语' section); many hidden author/share popovers before the body; tags, copyright notice, charge card, empty JS comment box and 关联阅读, footer follow",
+    "title": "方方面面都熟悉，方方面面都更好：iPhone 18 Pro 体验",
+    "mustInclude": [
+      "今年的 iPhone 18 Pro 毫不意外地转向「查缺补漏」：既把已有体验打磨得更为扎实",
+      "iPhone 18 Pro 的重量从上一代的 204 克增加到了 211 克。",
+      "快门速度则能让我们拍出更有意思的画面：调快可以凝固运动中的瞬间，将主体拍得更清晰",
+      "三种质感都可以单独调整强度，颗粒则是一个独立的开关，可以叠加在任意质感之上。",
+      "国行版 iPhone 18 Pro 并没有像其它仍然保留实体 SIM 卡槽的版本一样，只设置一个 nano-SIM 卡槽",
+      "作为 John Ternus 上任后推出的第一台 iPhone，我认为 iPhone 18 Pro 算是交出了一份还不错的答卷"
+    ],
+    "mustExclude": [
+      "© 本文著作权归作者所有，并授权少数派独家使用，未经少数派许可，不得转载使用。",
+      "© 2013-2026 深圳市烧麦网络科技有限公司 - 少数派 粤ICP备09128966号-4",
+      "任何用户都可使用写作功能。成功发布 3 篇符合基本规则的内容，可成为正式作者。",
+      "下载 App 联系我们 商务合作 关于我们 用户协议",
+      "请用微信手机端扫码咨询客服"
+    ],
+    "minImages": 19,
+    "minHeadings": 4,
+    "annotationConfidence": "high"
   },
   {
     "id": "zhwiki-great-wall",
@@ -2643,10 +3184,25 @@
     "tier": 4,
     "category": "non-english",
     "language": "zh",
-    "notes": "Chinese Wikipedia",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Chinese Wikipedia; MediaWiki Vector 2022; body in div.mw-parser-output: infobox table (neutral), lead, 6 h2 / 13 h3 / 2 h4 sections, 12 thumb figures + 9-image gallery, 2 quoteboxes; main text ends with the last paragraph of '保护' (参见 links, references, navboxes, categories follow); huge header/TOC/interlanguage chrome before the body",
+    "title": "长城",
+    "mustInclude": [
+      "长城是在中國大陸華北一帶歷朝修筑的大規模軍用隔離牆的统称，旨在抵御来自欧亚草原的游牧民族入侵。",
+      "秦始皇派將軍蒙恬率领三十万人攻擊匈奴，占据河套",
+      "关隘一般由关口的方形或多边形城墙、城门、城门楼、瓮城组成。",
+      "在古代，游牧骑兵有优良的机动能力和强大的攻击力，但是对于城垣防御体系却无能为力",
+      "2003年山西朔州右玉县将杀虎口长城全部推倒，在原址新建长城关口以发展旅游。",
+      "不少地方在《长城保护条例》出台后都开始重视和保护长城。"
+    ],
+    "mustExclude": [
+      "Wikipedia®和维基百科标志是维基媒体基金会的注册商标",
+      "维基媒体基金会是按美国国內稅收法501(c)(3)登记的非营利慈善机构。",
+      "本页面最后修订于2026年9月29日",
+      "本模板主要针对城市城墙，关于长城的规划和建筑参见长城"
+    ],
+    "minImages": 15,
+    "minHeadings": 20,
+    "annotationConfidence": "medium"
   },
   {
     "id": "yna-news",
@@ -2654,10 +3210,25 @@
     "tier": 3,
     "category": "non-english",
     "language": "ko",
-    "notes": "Yonhap, Korean news",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Yonhap, Korean news; short stock-analyst news item; body is article#articleWrap > div.story-news.article: 1 photo figure + 10 p, ends with reporter email and copyright line (neutral); AI '세 줄 요약' tooltip in the header, 핫뉴스/에디터스 픽/랭킹 boxes, Dable/Taboola widgets and a huge footer menu",
+    "title": "DS증권, 현대로템 목표가↓…\"환율 등 영향에 실적전망 하향\"",
+    "mustInclude": [
+      "DS투자증권은 현대로템[064350]에 대한 목표주가를 23만6천원에서 22만6천원으로 하향 조정했다고 6일 밝혔다.",
+      "현대로템은 작년 페루 육군과 전차·장갑차 공급 총괄합의를 체결하고 본계약을 위한 협상을 진행 중이다.",
+      "게이코 후지모리 페루 대통령의 방한이 12월로 조율되고 있어 해당 회담에서 구체적인 협상이 이뤄질 가능성이 크다",
+      "한편, 현대로템의 2026년 3분기 매출액과 영업이익은 전년 동기 대비 7.1%와 4.0% 증가한",
+      "프로젝트는 리스크 요인이 해소되면서 충당금 일부가 환입되고 1차 계약 때처럼 이익률이 상향 조정될 것으로",
+      "현대로템의 현 주가는 전 거래일 종가 기준 11만6천500원이다."
+    ],
+    "mustExclude": [
+      "인공지능이 자동으로 줄인 '세 줄 요약' 기술을 사용합니다.",
+      "양양 송이 가격 역대 최고가 경신…1등품 ㎏당 171만원대 기록",
+      "구글 검색에서 연합뉴스 기사를 우선적으로 보여줍니다.",
+      "다양한 채널에서 연합뉴스를 만나보세요!",
+      "©2026 Yonhapnews Agency"
+    ],
+    "minImages": 1,
+    "annotationConfidence": "high"
   },
   {
     "id": "hani-news",
@@ -2665,10 +3236,25 @@
     "tier": 3,
     "category": "non-english",
     "language": "ko",
-    "notes": "Hankyoreh, Korean news",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Hankyoreh, Korean news; Next.js (hashed classes) but SSR body present; headline is an h3 (no h1), two h4 subtitles (series name) before the body; body is div.article-text: editor's-note box, 6 figure photos, section labels are div.cont-midtitle > p (not h-tags, so no minHeadings), interleaved ad slots; body ends at the '대륙철도의 의미는…' paragraph, followed by a credit line (neutral), support banner, reactions, tag series list, 뉴스룸 PICK, 오늘의 주요기사, footer",
+    "title": "끊긴 철길 이으면 유라시아 한달음…탄소무역 시대, 동해선이 달린다",
+    "mustInclude": [
+      "한반도는 대륙의 동쪽 끝이다. 중국과 러시아, 북한과 한국, 그리고 바다 건너 일본이 이곳에 맞닿아 있다.",
+      "북한의 1435㎜ 표준궤와 러시아의 1520㎜ 광궤를 함께 사용하는 복합궤로, 러시아 화물열차가 나진항까지 직접 들어갈 수 있다.",
+      "북쪽 울진에서는 철도가 가져온 변화가 더 선명했다. 2025년 문을 연 울진역 앞에는 관광택시가 자리 잡았고",
+      "한국교통연구원 분석에서는 100만톤 화물을 1㎞ 옮길 때 온실가스 배출량이 도로화물 214톤, 철도화물 7톤으로 나타났다.",
+      "한국도 2024년 오봉역에서 부산항과 중국 연운항을 거쳐 중앙아시아로 컨테이너를 보내는 국제복합운송을 네 차례 시험했다.",
+      "생산공정에서 당장 줄이기 어려운 탄소를 물류에서도 줄이고, 유라시아 철도물류망과 접속해 한국의 무역 공간을 대륙으로 넓히는"
+    ],
+    "mustExclude": [
+      "한겨레 저널리즘을 후원해주세요",
+      "철도는 멀어지고 도로는 주차장…‘자동차 중심’의 그늘",
+      "경찰청 국수본, ‘금융권 해킹’ 정식수사 착수…중수청 통보 검토",
+      "이 기사 어떻게 생각하시나요?",
+      "© 한겨레신문사 All Rights Reserved. 무단 전재, 재배포, AI 학습 및 활용 금지"
+    ],
+    "minImages": 6,
+    "annotationConfidence": "high"
   },
   {
     "id": "kowiki-hangul",
@@ -2676,10 +3262,26 @@
     "tier": 4,
     "category": "non-english",
     "language": "ko",
-    "notes": "Korean Wikipedia",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Korean Wikipedia; Parsoid-rendered MediaWiki (section#mwXX wrappers, p ids); infobox + '한국어의 표기법' sidebar table + old-Hangul font notice before the lead; 11 h2 / 11 h3 / 18 h4 before '같이 보기'; main text ends with the '오해와 사실' bullet list (last item is only 5 words, so the last snippet is the second-to-last item); 1 wikitable + ~9 small captioned jamo tables (minTables kept at 1), 7 figures + 3-image gallery; references, navboxes, categories, footer follow",
+    "title": "한글",
+    "mustInclude": [
+      "한글은 한국어의 공식 표기 문자이며 세종대왕이 한국어를 표기하기 위하여 1443년 창제한 《훈민정음》을",
+      "집현전 부제학 최만리는 신석조, 김문, 하위지, 송처검, 조근, 정창손과 함께 1444년 2월 20일에",
+      "한글 표기를 읽을 수 없는 외국인이나 그들을 대상으로 한국어를 알려야 하는 경우, 한국어를 로마자로 표기해 의사소통하는 것이 필요하다.",
+      "현재 유니코드에 포함돼 있는 옛한글 자모의 총 개수는 초성 124개, 중성 94개, 종성 137개와",
+      "2012년 솔로몬 제도의 토착어를 한글로 표기하여 교육하는 활동이 시작됐다.",
+      "현재 한글은 한국어 발음에만 사용하고 있으나 원래의 훈민정음에서는 모아쓰기가 좀 더 다양하며,"
+    ],
+    "mustExclude": [
+      "이 문서는 2026년 9월 10일 (목) 08:58에 마지막으로 편집되었습니다.",
+      "Wikipedia®는 미국 및 다른 국가에 등록되어 있는 Wikimedia Foundation, Inc. 소유의 등록 상표입니다.",
+      "위키미디어 공용에 관련된 미디어 자료와 분류가 있습니다.",
+      "관련 글꼴이 설치되지 않은 경우, 일부 문자가 깨진 글자로 표시될 수 있습니다."
+    ],
+    "minImages": 8,
+    "minHeadings": 35,
+    "minTables": 1,
+    "annotationConfidence": "medium"
   },
   {
     "id": "bbc-arabic",
@@ -2687,10 +3289,26 @@
     "tier": 3,
     "category": "non-english",
     "language": "ar",
-    "notes": "BBC Arabic, RTL",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "BBC Arabic, RTL; BBC World Service Next.js template (emotion css-* classes, RTL); body = p.css-1gwj4p3 + 3 h2 inside main, interrupted by inline related-link lists, a 'الأكثر قراءة' (most read) block and a podcast promo inside main; 2 content figures (lead + mid); ends at 'وهكذا، يعود سانشيز…' before 'اكتشف المزيد' topics, short-video carousel, top stories, most read, footer",
+    "title": "سانشيز يدعو لانتخابات مبكرة في إسبانيا بعد أزمة السكن، فلماذا تعثرت تدابير الحكومة؟",
+    "mustInclude": [
+      "دعا رئيس الوزراء الإسباني بيدرو سانشيز إلى إجراء انتخابات مبكرة في 29 نوفمبر/تشرين الثاني",
+      "بعد إجبار ماريكارمن أباسكال، البالغة 87 عاما، على مغادرة شقتها في مدريد، حيث عاشت لأكثر من سبعة عقود.",
+      "حاولت حكومة سانشيز مواجهة الأزمة بتدابير تضمنت التجديد التلقائي لعقود الإيجار",
+      "ولا يزال كثيرون منهم يقيمون في مخيمات مؤقتة، وسط احتجاجات شبه يومية لسكان يطالبون بعودة الأوضاع إلى طبيعتها.",
+      "قد يفتح ذلك الباب أمام مشاركة حزب من أقصى اليمين في الحكومة المركزية للمرة الأولى",
+      "وهكذا، يعود سانشيز إلى الناخبين طلبا لدعم يتيح له تجاوز الانقسام البرلماني"
+    ],
+    "mustExclude": [
+      "إخلاء لامرأة عمرها 87 عاماً يسلط الضوء على أزمة السكن في إسبانيا",
+      "تخطى الأكثر قراءة وواصل القراءة",
+      "شرح معمق لأبرز الأحداث والموضوعات، لمساعدتك على فهم أهم المتغيرات حولك وأثرها على حياتك",
+      "مخيمات تعج بالجرذان وجروح لا تلتئم: هكذا صارت الأوضاع في غزة",
+      "بي بي سي ليست مسؤولة عن محتوى المواقع الخارجية."
+    ],
+    "minImages": 2,
+    "minHeadings": 3,
+    "annotationConfidence": "high"
   },
   {
     "id": "aljazeera-arabic",
@@ -2698,10 +3316,23 @@
     "tier": 3,
     "category": "non-english",
     "language": "ar",
-    "notes": "Al Jazeera Arabic, RTL",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Al Jazeera Arabic, RTL; WordPress-based AJ template (RTL); body is main#main-content-area > div.wysiwyg: featured figure + 1 in-body figure, 'قصص مقترحة' suggested-stories box (h2) embedded mid-body, an in-article ad slot, then 'المصدر: وكالات' (neutral); some paragraphs contain zero-width non-joiners, snippets chosen to avoid them; short article, ends at the Interfax paragraph",
+    "title": "ترمب يعرض مساعدة روسيا بعد حادثة مختبر سيبيريا",
+    "mustInclude": [
+      "إن الولايات المتحدة ستقدم المساعدة لروسيا عقب وفاة موظفة في مختبر تابع لمعهد أبحاث الطاعون في سيبيريا",
+      "ومن جهتها، قالت وزارة الخارجية الأمريكية إنها تراقب الحالة مع مراكز السيطرة على الأمراض والوقاية منها",
+      "مما دفع السلطات إلى فرض الحجر الصحي على عشرات الأشخاص",
+      "ووصف ترمب الرئيس الروسي فلاديمير بوتين بأنه شخص يمكنه العمل معه، رغم التوترات الناجمة عن حرب أوكرانيا.",
+      "وذكرت وكالة \"إنترفاكس\" الروسية أن الموظفة توفيت بسبب \"التهاب رئوي مجهول المنشأ\""
+    ],
+    "mustExclude": [
+      "أوكرانيا تستعين بالذكاء الاصطناعي لمواجهة المسيّرات الروسية النفاثة",
+      "سيناريو الكابوس.. هل تتحول حرب أوكرانيا إلى مواجهة بين روسيا والناتو؟",
+      "مركز الجزيرة للحريات العامة وحقوق الإنسان",
+      "جميع الحقوق محفوظة © 2026 شبكة الجزيرة الاعلامية"
+    ],
+    "minImages": 2,
+    "annotationConfidence": "high"
   },
   {
     "id": "ynet-news",
@@ -2709,10 +3340,25 @@
     "tier": 4,
     "category": "non-english",
     "language": "he",
-    "notes": "ynet Hebrew, RTL, heavy ads",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "ynet Hebrew, RTL, heavy ads; ynet (RTL) Draft.js-rendered body inside div#ArticleBodyComponent: text_editor_paragraph blocks, 1 h3.pHeader, 2 image components (each img appears twice in markup), a video player component, and an in-body 'כתבות נוספות' related-links list (boilerplate); h2 dek in the header left neutral; body ends at 'עם זאת, נציין כי…' before the first-published line, contact/mistake links and the comment form; no footer in the snapshot",
+    "title": "הבכיר במשרד התחבורה שקיבל תשלום מפליי דובאי, והתעקשות טראמפ: \"לדעתי איראן אחראית\"",
+    "mustInclude": [
+      "בישראל מעריכים כי הטייס-מחבל העומאני המאם אל-המאמי פעל כמפגע בודד",
+      "הוא מפעיל חברה פרטית ומספק שירותי ייעוץ והדרכה לחברות תעופה, ובהן פליי דובאי ואמירייטס.",
+      "ניסיון חטיפת טיסת פליי דובאי, שהציף את הפרצה באבטחת הטיסות הזרות הנכנסות לישראל",
+      "במאי 2024 פרסם מבקר המדינה דוח חריף שהתריע על פערים באבטחת התעופה הבינלאומית",
+      "בין השנים 2023 ל-2025 קיימה רגב 160 פגישות עם ראשי רשויות מ-40 ערים ומועצות",
+      "עם זאת, נציין כי הנתונים ביומנים מתייחסים לשנים 2023 עד 2025 בלבד"
+    ],
+    "mustExclude": [
+      "נתניהו קבע: אבטחת הטיסות הזרות - של משרד התחבורה",
+      "מצאתם טעות? כתבו לנו | המייל האדום גם בווטסאפ",
+      "לרבות דברי הסתה, דיבה וסגנון החורג מהטעם הטוב.",
+      "אנחנו גם כאן, עקבו אחרינו"
+    ],
+    "minImages": 2,
+    "minHeadings": 1,
+    "annotationConfidence": "high"
   },
   {
     "id": "hewiki-jerusalem",
@@ -2720,10 +3366,26 @@
     "tier": 4,
     "category": "non-english",
     "language": "he",
-    "notes": "Hebrew Wikipedia, RTL",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Hebrew Wikipedia, RTL; very large Parsoid-rendered RTL article (1.4MB); infobox with demographics pie before the lead; 21 h2 / 41 h3 / 19 h4 before 'ראו גם'; the final content sections are lists (אתרים על שם ירושלים, ערים תאומות) and a 38-image gallery, so the last snippet is a gallery caption from the last content section; 65 figures + gallery, 9 wikitables; see-also, further reading, external links, footnotes, large navboxes, categories, footer follow",
+    "title": "ירושלים",
+    "mustInclude": [
+      "העיר מקודשת לשלוש הדתות האברהמיות: היהדות, הנצרות והאסלאם. היא הייתה המרכז הדתי והמדיני של חיי העם היהודי בימי קדם",
+      "רבים מגולי בבל שבו אליה והקימו בה את בית המקדש השני.",
+      "בשנת 2022 עמד שיעור ההשתתפות בכוח העבודה בירושלים בגילי העבודה העיקריים",
+      "בשלהי שנת 2018 נפתח קו הרכבת המהיר, אשר מקשר בין תל אביב ותחנת הרכבת ירושלים",
+      "צעדת ירושלים, תהלוכה מסורתית המתקיימת בירושלים מדי שנה בחול המועד סוכות.",
+      "חומת העיר העתיקה הנוכחית, במקטע שבין מגדל דוד ושער ציון"
+    ],
+    "mustExclude": [
+      "דף זה נערך לאחרונה ב־29 בספטמבר 2026, בשעה 22:55.",
+      "הטקסט מוגש בכפוף לרישיון Creative Commons ייחוס-שיתוף זהה 4.0",
+      "אנשי קשר לענייני משפטים ובטיחות",
+      "כפרים קדומים שצורפו לעיר"
+    ],
+    "minImages": 80,
+    "minHeadings": 70,
+    "minTables": 5,
+    "annotationConfidence": "medium"
   },
   {
     "id": "bbc-hindi",
@@ -2731,10 +3393,25 @@
     "tier": 3,
     "category": "non-english",
     "language": "hi",
-    "notes": "BBC Hindi, Devanagari",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "BBC Hindi, Devanagari; same BBC World Service Next.js template as bbc-arabic; body p.css-d8mtc1 + 2 h2 in main, interrupted by 'सबसे अधिक पढ़ी गईं' most-read block, 2 short-video figures (BBC media player, no iframe in snapshot) and a podcast promo; 2 photo figures; article ends at the Australian-authorities paragraph, then a 'published by Collective Newsroom' note (neutral) and a BBC app promo (3 p inside the same body div, boilerplate)",
+    "title": "फ़्लाईदुबई के को-पायलट ने विमान को तेल अवीव एयरपोर्ट या किसी इमारत से टकराने की योजना बनाई थी: रिपोर्ट्स",
+    "mustInclude": [
+      "फ़्लाईदुबई के विमान को हाईजैक करने की कोशिश के अभियुक्त को-पायलट की योजना",
+      "बताया गया है कि उसकी योजना 11 सितंबर 2001 के अमेरिका में हुए अल-क़ायदा के हमलों जैसी थी.",
+      "ओमान की सरकारी एयरलाइन ओमान एयर ने को-पायलट को उड़ान भरने से रोक दिया था.",
+      "इसराइल की घरेलू सुरक्षा एजेंसी शिन बेट ने कहा कि विदेशी एयरलाइंस की ऐसी सूचियों की जांच",
+      "स्थानीय मीडिया को सूत्रों ने बताया है कि उसने 2015 से 2017 के बीच ऑस्ट्रेलिया में पढ़ाई की थी."
+    ],
+    "mustExclude": [
+      "BBC News हिन्दी को चुनें और पाइए न्यूज़ अलर्ट, लाइव टीवी, पॉडकास्ट... सब एक जगह",
+      "कृपया नोट करें: नया ऐप ब्रिटेन और अमेरिका में उपलब्ध नहीं है.",
+      "इलेक्ट्रिक कारों में बैठते ही कुछ लोगों की तबीयत क्यों बिगड़ने लगती है",
+      "देश - दुनिया की बड़ी ख़बरें जिन्होंने बटोरी सुर्खियां.",
+      "बाहरी साइटों की सामग्री के लिए बीबीसी ज़िम्मेदार नहीं है."
+    ],
+    "minImages": 2,
+    "minHeadings": 2,
+    "annotationConfidence": "high"
   },
   {
     "id": "habr-a",
@@ -2742,10 +3419,27 @@
     "tier": 3,
     "category": "non-english",
     "language": "ru",
-    "notes": "Habr, Russian, code",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Habr, Russian, code; Habr SSR; body is div#post-content-body > div.article-formatted-body: opinion essay (labelled 'Мнение'), 1 h2 + 8 h3, 2 figure images, 3 <pre> blocks holding prose/arrow diagrams (not real code, so no codeLanguages despite class='xml'); many one-line paragraphs; the last paragraph is only 2 words ('Теперь думаю.'), so the last snippet is from the closing question paragraph; tags/hubs, author card, sponsor block, 'Ежедневный Хабр' digest, publications, footer follow",
+    "title": "Что мы на самом деле открываем?",
+    "mustInclude": [
+      "Я буквально чудом поднял для EvertyDesk крутой автотестовый стенд, на котором сейчас гоняю кучу разных сценариев.",
+      "За условными десятью строками может стоять неделя, в течение которой ты вообще не понимал, где искать проблему.",
+      "Есть RDP, VNC, RustDesk, AnyDesk, TeamViewer, Sunshine, Moonlight, WebRTC и огромное количество других технологий.",
+      "Мы все живём внутри огромного наследства людей, которые когда-то решили не запирать свою работу в шкафу.",
+      "мне всё труднее отделаться от чувства, что мы пока ведём себя как люди, впервые получившие бесплатный телефон.",
+      "а извлечь его завтра станет ещё дешевле, то что я хочу получить взамен?"
+    ],
+    "mustExclude": [
+      "Большая витрина: от крупнейших школ до частных авторов. Сравнивайте по цене, длительности, формату и выбирайте самый подходящий курс!",
+      "Поток AI и ML доступен 24/7 благодаря поддержке друзей Хабра",
+      "Я завёл реестр реестров. Теперь в России на один реестр больше",
+      "На информационном ресурсе применяются рекомендательные технологии",
+      "© 2006–2026, Habr"
+    ],
+    "minCodeBlocks": 3,
+    "minImages": 2,
+    "minHeadings": 9,
+    "annotationConfidence": "high"
   },
   {
     "id": "habr-b",
@@ -2753,10 +3447,29 @@
     "tier": 3,
     "category": "non-english",
     "language": "ru",
-    "notes": "Habr, Russian, code",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Habr, Russian, code; Habr SSR tutorial; body in div#post-content-body > div.article-formatted-body opens with an h2 subtitle ('155 строк против…', counted as a heading) then 8 h3 sections; 6 <pre> blocks (4 Python functions + a REPL line + an arrow-order line, no language classes); no images; ends at 'Код открыт, лицензия MIT…' before tags/hubs, author card, sponsor block, daily digest, footer",
+    "title": "Голосовой ИИ Агент",
+    "mustInclude": [
+      "разница между хорошим и отличным TTS вообще теряется. Выдаёт другое: как он читает числа.",
+      "Слой нормализации не знает, какой движок стоит за ним, и переезжает без единой правки.",
+      "Правило простое: от частного к общему. Самые структурированные форматы разбираются первыми, пока их цифры целы.",
+      "Группа «005», прочитанная числом, превращается в «пять» — и человек на том конце записывает неверный номер.",
+      "Их семь, они выполняются за сотые доли секунды и уже дважды ловили меня за руку при правках окончаний.",
+      "Если вам нужен такой же — берите, порядок замен уже выстрадан."
+    ],
+    "mustExclude": [
+      "Большая витрина: от крупнейших школ до частных авторов. Сравнивайте по цене, длительности, формату и выбирайте самый подходящий курс!",
+      "Поток AI и ML доступен 24/7 благодаря поддержке друзей Хабра",
+      "P2P-переводы, грязная крипта и Revolut. Пять популярных ошибок, которые совершают релоканты",
+      "На информационном ресурсе применяются рекомендательные технологии",
+      "© 2006–2026, Habr"
+    ],
+    "minCodeBlocks": 6,
+    "codeLanguages": [
+      "python"
+    ],
+    "minHeadings": 9,
+    "annotationConfidence": "high"
   },
   {
     "id": "heise-github",
@@ -2764,10 +3477,25 @@
     "tier": 3,
     "category": "non-english",
     "language": "de",
-    "notes": "heise online, German, cookie consent",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "heise online, German, cookie consent; heise news item; snapshot has no visible consent banner text (only footer 'Cookies & Tracking' link); body is article#meldung div.article-content: 3 p + 1 h3 + 1 inline screenshot figure, ends with '(jam)' initials; a hidden heise+ paywall 'curtain' (gift-link/Wochenpass text) sits inside div.article-content after the body (boilerplate); header lead/dek and header image left neutral; newsletter box, ad microsites, topics, Bestenlisten teasers, sitemap and footer follow",
+    "title": "Ausfall bei GitHub: Actions, Pages und Abrechnung gestört",
+    "mustInclude": [
+      "Entwickler und Teams, die sich darauf verlassen, dass GitHub Actions Code automatisch testet, paketiert und ausliefert",
+      "Auch GitHub Pages und Seiten mit Abrechnungsdetails waren zeitweilig gestört.",
+      "Auf der Status-Seite heißt es, man habe Maßnahmen gegen die Störung unternommen",
+      "Um 23:32 MESZ meldete GitHub, eine Lösung für das Problem gefunden zu haben.",
+      "sollten die Logs ihrer Actions überprüfen und die Läufe bei Bedarf manuell anstoßen."
+    ],
+    "mustExclude": [
+      "Keine News verpassen! Jeden Morgen der frische Nachrichtenüberblick von heise online",
+      "Sie benötigen ein heise+ Paket, um diesen Artikel zu lesen.",
+      "Immer informiert bleiben: Klicken Sie auf das Plus-Symbol an einem Thema, um diesem zu folgen.",
+      "Top 10: Der beste Saugroboter im Test",
+      "Copyright © 2025 heise medien"
+    ],
+    "minImages": 1,
+    "minHeadings": 1,
+    "annotationConfidence": "high"
   },
   {
     "id": "spiegel-spain",
@@ -2775,10 +3503,25 @@
     "tier": 3,
     "category": "non-english",
     "language": "de",
-    "notes": "Der Spiegel, German",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Der Spiegel, German; SPIEGEL Tailwind template; the only h1 is the nav breadcrumb (og:title wording), the visible headline is a header h2 = kicker 'Wohnungskrise' + title (JSON-LD headline 'Wohnungskrise: Spanische Gewerkschaften kündigen Generalstreik an'); header dek left neutral; empty JS-loaded AI-summary box; body = div.RichText blocks (6 p + 1 h3) + lead figure, interrupted by an X.com consent placeholder and a 'Mehr zum Thema' box; final p 'Mehr zu den Hintergründen … lesen Sie hier.' is a read-more link line (left neutral), so the last snippet is from the paragraph before it; 'dtt/dpa' credit, games, partner services, footer follow",
+    "title": "Spanische Gewerkschaften kündigen Generalstreik an",
+    "mustInclude": [
+      "Die eintägige Arbeitsniederlegung soll noch vor der am 29. November geplanten Parlamentswahl stattfinden.",
+      "Auf der Plattform X fordert die CCOO »ordentliche Löhne« und ein bezahlbares Zuhause.",
+      "Die UGT erklärt, die Löhne reichten nicht aus, um die Wohnkosten und die Inflation auszugleichen.",
+      "demonstrieren landesweit Zehntausende gegen hohe Mieten, fehlenden Wohnraum und unzureichenden Schutz vor Zwangsräumungen.",
+      "Der spanische Mieterbund hatte zuvor bereits zu einem Generalstreik aufgerufen."
+    ],
+    "mustExclude": [
+      "An dieser Stelle finden Sie einen externen Inhalt von X.com, der den Artikel ergänzt und von der Redaktion empfohlen wird.",
+      "Spaniens Regierungschef: Sánchez kündigt Neuwahlen in Spanien an",
+      "Dieser Ausdruck wurde am 06.10.2026 erstellt und ist ausschließlich für den persönlichen Gebrauch lizenziert.",
+      "War die Zusammenfassung hilfreich? Danke für Ihr Feedback!",
+      "Serviceangebote von SPIEGEL-Partnern"
+    ],
+    "minImages": 1,
+    "minHeadings": 1,
+    "annotationConfidence": "medium"
   },
   {
     "id": "linuxfr-debian",
@@ -2786,10 +3529,22 @@
     "tier": 4,
     "category": "non-english",
     "language": "fr",
-    "notes": "LinuxFr news with long comment threads",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "LinuxFr news with long comment threads; LinuxFr dépêche: short body (9 p, no headings/images/link list) in article.node.hentry > div.content.entry-content, followed by a huge 87-comment thread (div#comments, each comment with h2 titles) that dwarfs the article; sidebar login box before the article, footer links at the end; body ends at 'Bref, est-on à une croisée des chemins ?…'; one comment quotes the 15-septembre paragraph verbatim, so it is not used as a snippet",
+    "title": "Debian, IA, vibe coding & rsync : la croisée des chemins ?",
+    "mustInclude": [
+      "rsync est un logiciel libre de synchronisation distante de fichiers (remote synchronisation), très utilisé et fréquemment évoqué sur LinuxFr.org.",
+      "Le 20 mai 2026, la version 3.4.3 a été publiée, amenant des correctifs sécurité et des corrections de bugs.",
+      "En juillet et août 2026 a eu lieu un scrutin pour les personnes développant la distribution Debian",
+      "ainsi le sondage StackOverflow 2025 rapportait 20% de défavorables à l’IA, 60% de favorables",
+      "La réponse est laissée en exercice au lectorat (moi à la base je voulais juste mettre à jour des Debian)."
+    ],
+    "mustExclude": [
+      "Ça ne répond certes pas au débat de fond sur l'inclusion de logiciels teintés à l'IA dans Debian",
+      "Je pense qu'openrsync doit pouvoir le remplacer de manière transparente dans 99% des cas.",
+      "Proposer un contenu",
+      "Suivi des suggestions et bogues"
+    ],
+    "annotationConfidence": "high"
   },
   {
     "id": "frwiki-paris",
@@ -2797,10 +3552,26 @@
     "tier": 4,
     "category": "non-english",
     "language": "fr",
-    "notes": "French Wikipedia",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "French Wikipedia; huge Parsoid-rendered article (3MB snapshot); infobox + geobox maps before the lead; 9 h2 / 57 h3 / 52 h4 before 'Notes et références'; ~69 figures + 76 gallery images, 12 wikitables; many 'Article détaillé' hatnote bandeaux and a collapsed 'travail inédit' maintenance banner inside sections (boilerplate); main text ends with the heraldry/devise paragraphs, which sit inside a layout table; notes, references, 'Voir aussi', many navboxes, categories, footer follow",
+    "title": "Paris",
+    "mustInclude": [
+      "Elle est située au centre du bassin qui porte son nom, sur une boucle de la Seine",
+      "En 508, après avoir conquis la majeure partie de la Gaule, Clovis fait de Paris sa capitale",
+      "Le siège social de Renault, qui dirige l'alliance Renault-Nissan-Mitsubishi, premier groupe automobile mondial au premier semestre 2017",
+      "Outre l'importante production française, les réalisateurs étrangers qui l'ont choisie pour cadre sont nombreux.",
+      "a été réalisée à Paris, le 2 février 2000, par Philippe Binant",
+      "La mairie s'est en outre dotée d'un logotype reprenant les couleurs bleu et rouge"
+    ],
+    "mustExclude": [
+      "La dernière modification de cette page a été faite le 24 septembre 2026 à 12:05.",
+      "Wikipedia® est une marque déposée de la Wikimedia Foundation, Inc.",
+      "Communes de l'aire d'attraction de Paris",
+      "Si vous ne connaissez pas le sujet, laissez ce bandeau (vous pouvez alors contacter les auteurs)."
+    ],
+    "minImages": 120,
+    "minHeadings": 100,
+    "minTables": 8,
+    "annotationConfidence": "medium"
   },
   {
     "id": "bbc-mundo",
@@ -2808,10 +3579,26 @@
     "tier": 3,
     "category": "non-english",
     "language": "es",
-    "notes": "BBC Mundo, Spanish",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "BBC Mundo, Spanish; same BBC World Service Next.js template as bbc-arabic/bbc-hindi; body p.css-s4cjt0 + 3 h2 + 4 photo figures in main, interrupted by 'Más leídas' and an app promo; ends at 'Si bien el tema de la vivienda…', followed by an AI-translation disclaimer p (neutral) and an app/social/newsletter promo list (boilerplate), then topics, video carousel, top stories, footer",
+    "title": "Por qué Pedro Sánchez decidió convocar elecciones anticipadas en España ahora",
+    "mustInclude": [
+      "de convocar elecciones anticipadas el 29 de noviembre se produjo tras una derrota parlamentaria.",
+      "la convocatoria de elecciones no es una reacción impulsiva, sino una maniobra cuidadosamente planificada.",
+      "con casos que implican a figuras destacadas del partido como Santos Cerdán y José Luis Ábalos.",
+      "Ceuta se ha convertido en un quebradero de cabeza político y logístico para el jefe del gobierno español.",
+      "parece tener más probabilidades de movilizar el apoyo a la izquierda.",
+      "mantenerse en el poder después de estas elecciones será probablemente el mayor desafío de su carrera."
+    ],
+    "mustExclude": [
+      "Descarga la nueva app del BBC World Service. Elige BBC News Mundo y recibe alertas de noticias",
+      "Y no olvides suscribirte aquí a nuestro newsletter para recibir cada viernes una selección especial de nuestro mejor contenido.",
+      "Identifican una nueva especie de pingüino por primera vez en más de 100 años",
+      "Todas las noticias que necesitas están en BBC World Service",
+      "La BBC no se hace responsable del contenido de sitios externos."
+    ],
+    "minImages": 4,
+    "minHeadings": 3,
+    "annotationConfidence": "high"
   },
   {
     "id": "elpais-vivienda",
@@ -2819,10 +3606,24 @@
     "tier": 3,
     "category": "non-english",
     "language": "es",
-    "notes": "El País, Spanish",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "El País, Spanish; article = article#main-content > div.a_c (11 paragraphs, no subheadings); standfirst p.a_st and lead figure with caption in header.a_e; inline 'Más información' aside, author box 'Sobre la firma', newsletter widget, comments stub, related list, tags, 'Últimas noticias'/'Lo más visto' sidebars and huge 'Recomendaciones EL PAÍS' shopping/course blocks follow; last paragraph quotes Alicia del Río",
+    "title": "Los sindicatos UGT y CC OO irán a la huelga general por la crisis de la vivienda",
+    "mustInclude": [
+      "irán a una huelga general por la crisis de acceso a la vivienda, según han confirmado fuentes sindicales",
+      "La última huelga general respaldada por las centrales mayoritarias tuvo lugar en 2012",
+      "El actual secretario general, Miguel Fadrique, se impuso en la votación del domingo por un estrechísimo margen",
+      "las huelgas generales de carácter solo político son ilegales, pero si tienen una naturaleza mixta",
+      "movimiento que lleva 10 días en la calle luchando por el derecho a una vivienda digna"
+    ],
+    "mustExclude": [
+      "Recibe nuestro boletín de actualidad económica solo para suscriptores.",
+      "El Sindicato de Inquilinas irá a la huelga general de la mano de CGT y presiona a CC OO y UGT para que se sumen",
+      "Redactor de Economía. Empezó su trayectoria en EL PAÍS en 2016 en Verne",
+      "Los candidatos derrotados de la derecha en Brasil evitan pedir el voto para Bolsonaro en la segunda vuelta",
+      "Si quieres seguir toda la actualidad sin límites, únete a EL PAÍS por 1€ el primer mes"
+    ],
+    "minImages": 1,
+    "annotationConfidence": "high"
   },
   {
     "id": "dewiki-berlin",
@@ -2830,10 +3631,26 @@
     "tier": 4,
     "category": "non-english",
     "language": "de",
-    "notes": "German Wikipedia",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "German Wikipedia; Parsoid-rendered (section#mwXX wrappers, '[Bearbeiten | Quelltext bearbeiten]' links); article = div.mw-parser-output from the lead (after the infobox) through the end of 'Kultur' > 'Berlin in der Kunst' > Musik; 'Siehe auch', Literatur, Weblinks, Einzelnachweise (neutral), spoken-version box and Klappleiste navboxes follow; 8 h2 + 53 h3 in main text; ~70 figures (incl. dewiki-gallery units) after the lead; data tables: climate table + 3 sortable wikitables (infobox and navbox wikitables not counted); last main paragraph is about international musicians/Hansa-Tonstudios",
+    "title": "Berlin",
+    "mustInclude": [
+      "die flächengrößte Gemeinde Deutschlands sowie die bevölkerungsreichste Stadt der Europäischen Union",
+      "Der Name der hochmittelalterlichen Gründungsstadt Berlin geht auf das altpolabische Wort Birlin, Berlin zurück",
+      "Gemessen am nominalen BIP ist Berlin die größte städtische Wirtschaft in Deutschland",
+      "Die Schrippe, Splitterbrötchen und der Berliner Pfannkuchen sind berlintypische Gebäcke.",
+      "Die Hansa-Tonstudios waren dabei für viele Künstler eine wichtige Anlaufstelle um ihre Musikaufnahmen zu realisieren"
+    ],
+    "mustExclude": [
+      "Diese Seite wurde zuletzt am 4. Oktober 2026 um 16:40 Uhr bearbeitet.",
+      "Wikipedia® ist eine eingetragene Marke der Wikimedia Foundation Inc.",
+      "aus Wikipedia, der freien Enzyklopädie",
+      "Hauptstädte der Mitgliedstaaten der Europäischen Union",
+      "Landeshauptstädte und Stadtstaaten der Bundesrepublik Deutschland"
+    ],
+    "minImages": 30,
+    "minHeadings": 50,
+    "minTables": 3,
+    "annotationConfidence": "medium"
   },
   {
     "id": "jawiki-tokyo",
@@ -2841,10 +3658,26 @@
     "tier": 4,
     "category": "non-english",
     "language": "ja",
-    "notes": "Japanese Wikipedia",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Japanese Wikipedia; Parsoid-rendered; article = div.mw-parser-output from the lead paragraphs (after the large infobox table) through the 'シンボル' section (記念日 subsection); 脚注 (notes/references, neutral), 参考文献, 関連項目, 外部リンク, succession boxes and navboxes follow; 15 h2 + 48 h3 + 32 h4 in main text; 7 data wikitables (climate/population/etc., infoboxes not counted); ~20 figures + 7 gallery boxes; last main paragraph is the 東京都平和の日 one",
+    "title": "東京都",
+    "mustInclude": [
+      "東京都（とうきょうと、（英: Tokyo Metropolis）は、日本の関東地方に位置する都",
+      "徳川家康の都市計画によって大いに発展した。幕末の動乱を経て明治元年の文書から「東京」と表記されるようになった。",
+      "2021年度の都内総生産は116兆7000億円であり、日本の国内総生産の20.7%を占めている",
+      "東京の木選定委員会で選定したケヤキ、イチョウ、ソメイヨシノの三種について都民の一般投票を行い",
+      "多数の都民が犠牲となった第二次世界大戦の悲惨を我々は忘れることはできない"
+    ],
+    "mustExclude": [
+      "出典: フリー百科事典『ウィキペディア（Wikipedia）』",
+      "最終更新 2026年10月5日 (月) 08:31",
+      "テキストはクリエイティブ・コモンズ 表示-継承ライセンスのもとで利用できます。",
+      "オープンストリートマップに東京都の地図があります。",
+      "出典を必要とする記述のある記事/2024年6月"
+    ],
+    "minImages": 15,
+    "minHeadings": 70,
+    "minTables": 5,
+    "annotationConfidence": "medium"
   },
   {
     "id": "arwiki-cairo",
@@ -2852,10 +3685,26 @@
     "tier": 4,
     "category": "non-english",
     "language": "ar",
-    "notes": "Arabic Wikipedia, RTL",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Arabic Wikipedia, RTL; RTL, Parsoid-rendered; article = div.mw-parser-output from the lead (after infobox) through the 'معرض صور' gallery (last prose paragraph is in مشاكل المدينة > الزحام, then the أعلام المدينة people list, the twinning list in a multicol layout table, and the gallery whose last caption is used as end snippet); انظر أيضًا, ملاحظات, مصادر, مراجع, وصلات خارجية and navboxes follow; 11 h2 + 19 h3 + 30 h4 in main text; ~60 figures + 25 gallery boxes; data tables: collapsible climate wikitable + sortable wikitable (hieroglyph and layout tables not counted); lead review: dropped the \"قائمة كنائس القاهرة\" mustExclude (a see-also style list item, ambiguous)",
+    "title": "القاهرة",
+    "mustInclude": [
+      "كما أنها جزء من أكبر تجمع حضري في أفريقيا والوطن العربي والشرق الأوسط",
+      "كانت مدينة أون القديمة وموقعها حالياً منطقة المطرية وعين شمس من أبرز مراكز الثقافة المصرية القديمة",
+      "القاهرة هي مركز مصر الاقتصادي، كونها عاصمة البلاد وأكثر المدن المصرية المأهولة بالسكان",
+      "أصبحت مشكلة التكدس المروري والزحام بالقاهرة أحد أزمات المدينة اليومية، وخصوصاً خلال ساعات الذروة.",
+      "عمل مدرّسًا في جامعة كاليفورنيا في لوس أنجلوس، وفي جامعة إكستر في بريطانيا.",
+      "مأذنة مسجد الإمام الحسين بالقاهرة تُضاء بالأنوار ليلا"
+    ],
+    "mustExclude": [
+      "من ويكيبيديا، الموسوعة الحرة",
+      "آخر تعديل لهذه الصفحة كان يوم 10 سبتمبر 2026، الساعة 17:37.",
+      "النصوص متاحة تحت رخصة المشاع الإبداعي",
+      "مدن مصر حسب عدد السكان (يوليو 2024)"
+    ],
+    "minImages": 30,
+    "minHeadings": 45,
+    "minTables": 2,
+    "annotationConfidence": "medium"
   },
   {
     "id": "ruwiki-moscow",
@@ -2863,10 +3712,26 @@
     "tier": 4,
     "category": "non-english",
     "language": "ru",
-    "notes": "Russian Wikipedia",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Russian Wikipedia; Parsoid-rendered; article = div.mw-parser-output from the lead (after the infobox) through 'Города-побратимы' (one paragraph, end snippet); Примечания (neutral), Литература, Ссылки and navboxes follow; 17 h2 + 39 h3 + 14 h4 in main text; 8 wikitables (climate, population, etc.) + 'standard' tables; ~59 figures + 19 gallery boxes + ts-panorama figures",
+    "title": "Москва",
+    "mustInclude": [
+      "столица России, город федерального значения, административный центр Центрального федерального округа",
+      "Первые поселения возникли на территории города в эпоху неолита, около 8 тысяч лет до н. э.",
+      "Москва — крупнейший в общероссийском масштабе финансовый центр, международный деловой центр и центр управления большой частью экономики страны.",
+      "Исторический центр Москвы — Московский Кремль. Свой нынешний вид стены и башни крепости приобрели ещё в XVII веке.",
+      "Первыми стали Берлин и Буэнос-Айрес в 1990 году; с Веной были установлены партнёрские отношения уже в 1956 году"
+    ],
+    "mustExclude": [
+      "Материал из Википедии — свободной энциклопедии",
+      "Страница в последний раз была отредактирована 5 октября 2026 года в 14:23.",
+      "Wikipedia® — зарегистрированный товарный знак некоммерческой организации «Фонд Викимедиа»",
+      "Ссылки на внешние ресурсы",
+      "В библиографических каталогах"
+    ],
+    "minImages": 30,
+    "minHeadings": 55,
+    "minTables": 6,
+    "annotationConfidence": "medium"
   },
   {
     "id": "recipetineats-schnitzel",
@@ -2874,10 +3739,27 @@
     "tier": 5,
     "category": "boilerplate",
     "language": "en",
-    "notes": "Recipe blog: ads, step photos, recipe card, comments",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Recipe blog: ads, step photos, recipe card, comments; article = article.post > div.entry-content: intro + 6 h2 sections with 13 step/food photos, a 'related recipes' carousel inside the 'What to serve' section (boilerplate), YouTube video embed (iframe src=about:blank with data-cmp-src, consent-lazy), the WPRM recipe card (ingredients, full instructions, notes; nutrition box is neutral), then a short 'Life of Jaffle' dog section with 2 photos, which is the end of the post content and is used as the end snippet (boundary judgement: it is inside entry-content and post-specific, but some may call it off-topic); prev/next links, author box, newsletter, comment form and 87 comments, sidebar and footer follow",
+    "title": "Oven Baked Chicken Schnitzel",
+    "mustInclude": [
+      "pull 4 hot schnitzels out of the oven at once, rather than frying them one by one!",
+      "These Japanese breadcrumbs are larger and flakier than regular breadcrumbs, so they make an extra-crispy, crunchier coating.",
+      "In Austria, Wiener Schnitzels are commonly served with a vinegary potato salad side, it’s not the mayo sort.",
+      "Pick up a piece of chicken, letting excess Dredge drip off, then place in the panko.",
+      "I haven’t tried crumbing ahead and leaving it in the fridge or freezing",
+      "with Dozer, doing recipe research and brainstorming for my first cookbook in 2021"
+    ],
+    "mustExclude": [
+      "I believe you can make great food with everyday ingredients even if you’re short on time and cost conscious.",
+      "Join my free email list to receive THREE free cookbooks!",
+      "Super recipe for fam dinner. Also love the fact that you always have suggestions of suitable sides.",
+      "Gravy recipe – easy, from scratch, no drippings",
+      "Official taste tester of RecipeTin Eats!"
+    ],
+    "minImages": 12,
+    "minHeadings": 8,
+    "hasEmbeds": true,
+    "annotationConfidence": "medium"
   },
   {
     "id": "loveandlemons-pumpkin-soup",
@@ -2885,10 +3767,26 @@
     "tier": 5,
     "category": "boilerplate",
     "language": "en",
-    "notes": "Recipe blog: ads, recipe card, comments",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Recipe blog: ads, recipe card, comments; article = article.post > div.entry-content.entry-content-single: dek p.first-sentence, intro, h2 sections (incl. div.callout boxes 'Pumpkin Options' and 'Storage') with 8 step/food photos, an in-content 'More Favorite Soup Recipes' link list (ambiguous, not used), then the WPRM recipe card (an email-me form 'Get This Recipe In Your Inbox' sits at its top = boilerplate; ingredients, instructions; nutrition facts neutral); last main-text block is the final recipe instruction; subscribe popup, 156 comments, 'You may like these too...' related cards, about/subscribe/favorites widgets and footer follow",
+    "title": "Pumpkin Soup",
+    "mustInclude": [
+      "I love to make it with fresh roasted pumpkin in the fall, which gives it an intensely sweet flavor",
+      "The best types of fresh pumpkin for this recipe are kabocha squash, red kuri squash, buttercup squash, and butternut squash.",
+      "Then, transfer it to a blender and puree until smooth (you could also use an immersion blender for this step!)",
+      "This soup also freezes well for up to 3 months.",
+      "Heat the 2 tablespoons of oil in a large pot or Dutch oven over medium heat.",
+      "Pour into bowls and garnish with additional coconut milk, fresh black pepper, and microgreens, if desired."
+    ],
+    "mustExclude": [
+      "We’ll send it right away, plus fresh recipe inspiration every week!",
+      "Copyright © 2026 Love and Lemons, LLC. All rights reserved.",
+      "I'm Jeanine, a New York Times bestselling cookbook author, recipe developer, and founder of Love & Lemons",
+      "Can I cook the pumpkin a week earlier and leave the purée in fridge or freeze it.",
+      "Get my best 30-minute recipes for fall weeknights in your inbox!"
+    ],
+    "minImages": 6,
+    "minHeadings": 6,
+    "annotationConfidence": "high"
   },
   {
     "id": "scottaaronson-post",
@@ -2896,10 +3794,23 @@
     "tier": 3,
     "category": "boilerplate",
     "language": "en",
-    "notes": "WordPress blog post with long comment wall",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "WordPress blog post with long comment wall; post title is in div#post-10062 > h2 (page h1 is the blog name 'Shtetl-Optimized'); article = div.entry (~40 paragraphs + one bullet list, no headings/images; two paragraphs are just 'AAAA…' and are avoided); ends with the Mike Winer / Logan Graves paragraph, then share widget and p.postmetadata; 261 comments (incl. trackbacks that quote the post, so snippets were checked to occur once) and a tiny footer follow",
+    "title": "The Age of Wonders and Terrors",
+    "mustInclude": [
+      "the idea of AI taking over the world in our lifetimes still struck most of us as the unconstrained fantasy",
+      "OpenAI burned at least ~$15 million in compute to produce its 166-page solution",
+      "Nearly every conversation is about the AI tsunami, or eventually circles around to the tsunami",
+      "There’s surely at most a tiny market for “certified organic theorems.”",
+      "a meditation on mathematicians’ possible future as priests or monks, by Stanford math undergrad Logan Graves"
+    ],
+    "mustExclude": [
+      "OK, thanks everyone, closing the thread!",
+      "But I really don’t understand at all this fuzz about stopping doing human mathematics?",
+      "Shtetl-Optimized is proudly powered by WordPress",
+      "Theory Beyond Theorems and Proofs: A Guest Post",
+      "If you take nothing else from this blog: quantum computers won't"
+    ],
+    "annotationConfidence": "high"
   },
   {
     "id": "slashdot-wikipedia-bots",
@@ -2907,10 +3818,22 @@
     "tier": 4,
     "category": "boilerplate",
     "language": "en",
-    "notes": "Slashdot story: short summary, huge comment threads",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Slashdot story: short summary, huge comment threads; article = article.fhitem-story > div#text-186031832 (single div: one intro sentence + an <i> quote from Wikimedia split by <br><br> into three bold-labelled parts; no images/headings); h1 has the comment count '13' appended, so the expected title omits it; related-links aside, 13 comments (with 'The Fine Print' disclaimer), 'Related Links Top of the day' list, prev/next, deals, random quote blockquote and footer follow",
+    "title": "Wikipedia Operator Says OpenAI's 'Rogue' Bots May Be Linked to a May Outage",
+    "mustInclude": [
+      "edited Wikimedia wikis without approval, unsuccessfully tried to exploit its Etherpad service",
+      "While Wikipedia policies allow bots to edit when they are disclosed and approved by the community",
+      "took notes about their tasks, though this did not appear to turn into coordination",
+      "This traffic may have contributed to a partial outage on WQDS in May."
+    ],
+    "mustExclude": [
+      "The Fine Print: The following comments are owned by whoever posted them.",
+      "I'm positive that openAI's rogue agents caused my rheumatism.",
+      "Rogue OpenAI Agents Posted 53 User-Uploaded Images Onto the Internet, Accessed US Government Websites",
+      "Copyright © 2026 Slashdot Media. All Rights Reserved.",
+      "Mediocrity finds safety in standardization."
+    ],
+    "annotationConfidence": "high"
   },
   {
     "id": "lesswrong-how-would-we-know",
@@ -2918,10 +3841,25 @@
     "tier": 4,
     "category": "tech-blog",
     "language": "en",
-    "notes": "LessWrong (React SSR), footnotes, comments",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "LessWrong (React SSR), footnotes, comments; SSR body is present (not jsOnly); article = div#postContent (6 h2 + 8 h3, one editor-table data table with 4 proposals, several lists); main text ends with the italic acknowledgements paragraph, then <hr> + plain <ol> endnotes (4 notes, marker [1] etc.); post has 0 comments, so page boilerplate is thin (vote widgets, tag list, comment box, 'Moderation Log', bottom recommendations) and mustExclude only has 3 short items",
+    "title": "How Would We Know? Reflections on trying to make AI go well amid deep uncertainty",
+    "mustInclude": [
+      "I try to make sense of live debates in AI safety. Then I explore the implications",
+      "as capabilities increase, the slightest misstep could have catastrophic outcomes",
+      "developing a grand, unifying theory of artificial intelligence has seemed out of reach",
+      "knowing when we're wrong may be one of the most important capacities the field can build",
+      "Thanks to Jess Berg and Nathan Naidoo for feedback on earlier versions of the thinking in this piece",
+      "Though if anyone has better shorthand, I'm all ears - naming things has never been my forte!"
+    ],
+    "mustExclude": [
+      "Curated and popular this week",
+      "More from mikey jm",
+      "Moderation Log"
+    ],
+    "minHeadings": 12,
+    "minTables": 1,
+    "hasFootnotes": true,
+    "annotationConfidence": "high"
   },
   {
     "id": "noahpinion-sf-eras",
@@ -2929,10 +3867,25 @@
     "tier": 3,
     "category": "simple-blog",
     "language": "en",
-    "notes": "Substack custom domain, subscribe boxes, images",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "Substack custom domain, subscribe boxes, images; PAID post, truncated by Substack paywall: only the free part is in the HTML (div.available-content > div.body.markup: lead photo with caption, YouTube embed iframe, one blockquote, intro, a 4-item era list, 3 h4 sections) and it stops right after the 'The Corporate Era (2012-2019)' heading, followed by the 'Continue reading this post for free' paywall box; annotations cover only the free part (end snippet = last paragraph of the Rebel Era section); 4 footnote anchors exist but the footnote bodies are behind the paywall, so hasFootnotes is not set; subtitle h3 'An anthropological reflection.' is the dek",
+    "title": "Four eras of San Francisco tech culture",
+    "mustInclude": [
+      "I went on the Monitoring the Situation livestream, and we talked about the history of San Francisco tech culture",
+      "Ladies and gentlemen, it really happened. The nerds took over the world.",
+      "San Francisco began as a marginal bit player in the whole tech ecosystem.",
+      "Fire tornadoes and slapping LEDs on everything still felt like art.",
+      "Its bohemian, socially flattened culture was always predicated on a lack of money"
+    ],
+    "mustExclude": [
+      "Continue reading this post for free, courtesy of Noah Smith.",
+      "Or purchase a paid subscription.",
+      "© 2026 Noah Smith · Privacy ∙ Terms ∙ Collection notice",
+      "Substack is the home for great culture"
+    ],
+    "minImages": 1,
+    "minHeadings": 3,
+    "hasEmbeds": true,
+    "annotationConfidence": "high"
   },
   {
     "id": "tagesschau-nobel",
@@ -2940,9 +3893,23 @@
     "tier": 3,
     "category": "non-english",
     "language": "de",
-    "notes": "tagesschau.de, German news",
-    "title": "",
-    "mustInclude": [],
-    "mustExclude": []
+    "notes": "tagesschau.de, German news; h1 = topline span 'Medizin-Nobelpreis' + headline span 'Ein Lichtschalter für Nervenzellen' (og:title differs: 'Optogenetik: Medizin-Nobelpreis für den Lichtschalter im Gehirn'); expected title is the headline span; article = article.content-wrapper__group: shorttext dek, author line, p.textabsatz paragraphs under 5 h2 subheads; inline 'teaser-absatz' related teasers, ARD video/audio player blocks (JS players, poster images only, no iframes) and a podcast promo infobox sit inside the article (teasers used as mustExclude, podcast box avoided); last paragraph is the Dirk Becker quote; tag list, 'Dieses Thema im Programm', share buttons, 'Mehr zum Thema' and footer follow; no minImages because the only lead image is a video poster",
+    "title": "Ein Lichtschalter für Nervenzellen",
+    "mustInclude": [
+      "Sie machten es möglich, ausgewählte Nervenzellen mit Licht gezielt zu aktivieren oder zu hemmen.",
+      "Hegemann wollte verstehen, wie sich Chlamydomonas reinhardtii so schnell zum Licht hin orientiert.",
+      "Sie brachten das Gen für Channelrhodopsin-2 in Nervenzellen von Säugetieren ein.",
+      "Bei Erkrankungen der Netzhaut wird eine optogenetische Therapie bereits klinisch erprobt.",
+      "Die Arbeiten von Nagel und seinen Mitforschenden waren in dieser Hinsicht wirklich bahnbrechend."
+    ],
+    "mustExclude": [
+      "Die Wissenschaftler Deisseroth, Hegemann und Nagel forschen im Bereich der Optogenetik.",
+      "Von morgen an wird bekanntgegeben, wer die Nobelpreise erhält",
+      "Pionier der Genforschung US-Forscher und Nobelpreisträger James Watson gestorben",
+      "Dieses Thema im Programm: Das Erste | tagesschau | 05.10.2026 | 16:00 Uhr",
+      "© ARD-aktuell / tagesschau.de"
+    ],
+    "minHeadings": 5,
+    "annotationConfidence": "high"
   }
 ]

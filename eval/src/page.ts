@@ -239,21 +239,28 @@ export function load(html: string, url: string): number {
   return html.length;
 }
 
-/** One warm-up run (its output is the one scored), then `runs` timed runs. */
-export function runEngine(name: BrowserEngine, runs: number): EngineRun {
+/**
+ * One warm-up run (its output is the one scored), then `runs` timed runs. A
+ * warm-up slower than `slowMs` becomes the only timing sample, so a
+ * pathological page cannot stall the whole eval.
+ */
+export function runEngine(name: BrowserEngine, runs: number, slowMs = 5000): EngineRun {
   const engine = engines[name];
   const { html, url } = current;
   const result: EngineRun = { ok: true, parseMs: [], extractMs: [] };
   try {
-    result.summary = engine.summarize(engine.run(parse(html, url), url));
-    for (let i = 0; i < runs; i++) {
+    for (let i = 0; i <= runs; i++) {
       const t0 = performance.now();
       const doc = parse(html, url);
       const t1 = performance.now();
-      engine.run(doc, url);
+      const output = engine.run(doc, url);
       const t2 = performance.now();
-      result.parseMs.push(t1 - t0);
-      result.extractMs.push(t2 - t1);
+      if (i === 0) result.summary = engine.summarize(output);
+      if (i > 0 || t2 - t0 > slowMs) {
+        result.parseMs.push(t1 - t0);
+        result.extractMs.push(t2 - t1);
+      }
+      if (t2 - t0 > slowMs) break;
     }
   } catch (error) {
     result.ok = false;
