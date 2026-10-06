@@ -387,6 +387,10 @@ bool _isDisplayMath(VElement el) {
   return false;
 }
 
+/// The still of a video file drawn right after it (its poster, for browsers that do not play video): that video already shows it.
+bool _isStillOf(Block? prev, ArticleImage image) =>
+    prev is VideoBlock && prev.provider == 'file' && prev.poster == image.src;
+
 int? _intAttr(VElement el, String name) {
   final v = el.attrs[name];
   if (v == null) return null;
@@ -959,6 +963,7 @@ class Converter {
           return;
         }
         b.flush();
+        if (_isStillOf(out.lastOrNull, image)) return;
         final href = ctx.href;
         if (href != null && image.href == null && href != image.src && _imageLink.hasMatch(href)) image.href = href;
         out.add(FigureBlock(images: [image]));
@@ -1552,6 +1557,7 @@ class Converter {
     if (img == null || _mathFallback.hasMatch(img.className)) return;
     final image = imageFrom(img, base) ?? _noscriptImage(img);
     if (image == null || isDecorativeImage(img, image, base)) return;
+    if (_isStillOf(out.lastOrNull, image)) return;
     if (isSmallImage(img, image)) {
       out.add(ParagraphBlock([_inlineImage(image)]));
       return;
@@ -1629,6 +1635,13 @@ class Converter {
       }
       caption = inlineOnly(cap);
       if (creditEl != null) creditEl.skip = false;
+    }
+
+    // A video file's still drawn as an image (the poster, for browsers that do not play it): one video, not a figure and a video.
+    final file = media.length == 1 ? media[0] : null;
+    if (file is VideoBlock && file.provider == 'file' && !other) {
+      if (file.poster == null && images.length == 1) file.poster = images[0].src;
+      images.removeWhere((i) => i.src == file.poster);
     }
 
     if (images.isEmpty && media.isEmpty || other) {

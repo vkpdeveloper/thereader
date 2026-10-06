@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { Audio, Video } from 'truffle';
 import { OpenInNewIcon, PlayArrowIcon } from '../icons';
 
@@ -47,6 +47,70 @@ export function safeHref(url: string | undefined | null): string | undefined {
 export function safeSrc(url: string | undefined | null): string | undefined {
   if (!url) return undefined;
   return /^https?:\/\//i.test(url) || /^data:image\/(?:png|jpe?g|gif|webp|avif|svg\+xml)[;,]/i.test(url) ? url : undefined;
+}
+
+/** The API's media relay for an absolute http(s) file; `origin` is the API's. */
+export function mediaRelayUrl(origin: string, url: string): string | undefined {
+  return /^https?:\/\//i.test(url) ? `${origin}/v1/media?url=${encodeURIComponent(url)}` : undefined;
+}
+
+/** The API origin article media falls back to; outside the article reader there is no fallback. */
+export const MediaRelayOrigin = createContext<string | null>(null);
+
+/**
+ * How long an image may stay unloaded while on screen, directly and then
+ * through the relay, before it counts as failed: a host that stalls or never
+ * answers must not leave an empty reserved box.
+ */
+const STALL_MS = { direct: 10_000, relayed: 20_000 } as const;
+
+const loaded = (img: HTMLImageElement) => img.complete && img.naturalWidth > 0;
+
+/**
+ * A media source loaded directly first and, when that fails (hosts that
+ * refuse to be embedded on other sites), once more through the API relay;
+ * `failed` once neither loaded. The relay is never asked while the direct
+ * load works, so most articles cost the API nothing. An image given `ref`
+ * also fails over when it sits on screen without loading or erroring.
+ */
+export function useRelayedSrc(src: string | undefined): {
+  src: string | undefined;
+  relayed: boolean;
+  failed: boolean;
+  onError: () => void;
+  ref: (img: HTMLImageElement | null) => void;
+} {
+  const origin = useContext(MediaRelayOrigin);
+  const [stage, setStage] = useState<'direct' | 'relayed' | 'failed'>('direct');
+  const [img, setImg] = useState<HTMLImageElement | null>(null);
+  const relay = origin && src ? mediaRelayUrl(origin, src) : undefined;
+  const onError = () => setStage((current) => (current === 'direct' && relay ? 'relayed' : 'failed'));
+
+  useEffect(() => {
+    if (!img || stage === 'failed' || typeof IntersectionObserver === 'undefined') return;
+    // Lazy images start loading near the viewport; the clock runs while one is on screen.
+    let timer: number | undefined;
+    const observer = new IntersectionObserver(([entry]) => {
+      window.clearTimeout(timer);
+      if (!entry?.isIntersecting || loaded(img)) return;
+      timer = window.setTimeout(() => {
+        if (!loaded(img)) setStage((current) => (current === 'direct' && relay ? 'relayed' : 'failed'));
+      }, STALL_MS[stage]);
+    });
+    observer.observe(img);
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(timer);
+    };
+  }, [img, stage, relay]);
+
+  return {
+    src: stage === 'direct' ? src : stage === 'relayed' ? relay : undefined,
+    relayed: stage === 'relayed',
+    failed: !src || stage === 'failed',
+    onError,
+    ref: setImg,
+  };
 }
 
 function youtubeId(url: string): string | null {
@@ -108,23 +172,37 @@ function MediaLink({ url, label }: { url: string; label: string }) {
 }
 
 /**
- * A video as a click-to-load facade: poster and play button, no third-party
- * request until the reader asks. Video files use the native player.
+ * A video as a click-to-load facade: poster and play button, no player and
+ * no video request until the reader asks. Video files then play in the
+ * native player; their facade takes the poster's shape.
  */
 export function VideoBlock({ video, caption }: { video: Video; caption: ReactNode }) {
   const [playing, setPlaying] = useState(false);
+  const [ratio, setRatio] = useState<string>();
   const name = providerName(video.provider, video.url);
-  const poster = posterFor(video);
-  const file = video.provider === 'file' ? safeHref(video.url) : undefined;
-  const player = file ? null : playerUrl(video);
+  const poster = useRelayedSrc(posterFor(video));
+  const fileUrl = video.provider === 'file' ? safeHref(video.url) : undefined;
+  // Mounted by the click, so it starts at once; a file that fails directly plays through the relay.
+  const file = useRelayedSrc(fileUrl);
+  const player = fileUrl ? null : playerUrl(video);
   const label = video.title ? `Play video: ${video.title}` : `Play ${name} video`;
 
   let body: ReactNode;
-  if (file) {
-    body = <video className="article-video-frame" src={file} poster={poster} controls preload="none" playsInline />;
-  } else if (!player) {
+  if (file.failed && !player) {
     body = null;
-  } else if (playing) {
+  } else if (playing && !file.failed) {
+    body = (
+      <video
+        className="article-video-frame"
+        src={file.src}
+        poster={poster.failed ? undefined : poster.src}
+        controls
+        autoPlay
+        playsInline
+        onError={file.onError}
+      />
+    );
+  } else if (playing && player) {
     body = (
       <iframe
         className="article-video-frame"
@@ -139,22 +217,45 @@ export function VideoBlock({ video, caption }: { video: Video; caption: ReactNod
   } else {
     body = (
       <button type="button" className="article-video-facade" aria-label={label} onClick={() => setPlaying(true)}>
-        {poster && <img src={poster} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" />}
+        {!poster.failed && (
+          <img
+            ref={poster.ref}
+            src={poster.src}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            referrerPolicy="no-referrer"
+            onError={poster.onError}
+            onLoad={fileUrl ? (e) => setRatio(`${e.currentTarget.naturalWidth} / ${e.currentTarget.naturalHeight}`) : undefined}
+          />
+        )}
         <span className="article-play" aria-hidden="true">
           <PlayArrowIcon size={28} />
         </span>
-        <span className="article-video-name">{video.title ?? name}</span>
+        {/* A file's host name says nothing its caption does not. */}
+        {(video.title || !fileUrl) && <span className="article-video-name">{video.title ?? name}</span>}
       </button>
     );
   }
 
   return (
     <figure className="article-media">
-      {body && <div className="article-video">{body}</div>}
+      {body && (
+        <div className="article-video" style={ratio ? { aspectRatio: ratio } : undefined}>
+          {body}
+        </div>
+      )}
       {!body && <MediaLink url={video.url} label={video.title ? `${video.title} · Watch on ${name}` : `Watch on ${name}`} />}
       {caption && <figcaption>{caption}</figcaption>}
     </figure>
   );
+}
+
+/** An audio file's native player, loading nothing until played; falls back to the relay (playing on), then a link. */
+function FileAudio({ url, label }: { url: string; label: string }) {
+  const media = useRelayedSrc(url);
+  if (media.failed) return <MediaLink url={url} label={label} />;
+  return <audio className="article-audio" src={media.src} controls preload="none" autoPlay={media.relayed} onError={media.onError} />;
 }
 
 /** Audio files play natively; hosted players load on click. */
@@ -166,7 +267,7 @@ export function AudioBlock({ audio, caption }: { audio: Audio; caption: ReactNod
 
   let body: ReactNode;
   if (file) {
-    body = <audio className="article-audio" src={file} controls preload="none" />;
+    body = <FileAudio url={file} label={audio.title ? `${audio.title} · Listen on ${name}` : `Listen on ${name}`} />;
   } else if (player && loaded) {
     body = (
       <iframe

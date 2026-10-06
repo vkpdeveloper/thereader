@@ -1,8 +1,8 @@
-import { Fragment, cloneElement, isValidElement, useState, type ReactElement, type ReactNode } from 'react';
-import { inlineText, type Block, type Figure, type Image, type Inline, type InlineImage, type Mark, type Table, type TextRun } from 'truffle';
+import { Fragment, cloneElement, isValidElement, type ReactElement, type ReactNode } from 'react';
+import { inlineText, type Block, type Figure, type Image, type Inline, type InlineImage, type Mark, type Table, type TextRun, type Video } from 'truffle';
 import { CodeBlock } from './CodeBlock';
 import { MathView } from './math';
-import { AudioBlock, VideoBlock, providerName, safeHref, safeSrc } from './media';
+import { AudioBlock, VideoBlock, providerName, safeHref, safeSrc, useRelayedSrc } from './media';
 
 /**
  * Renders the article document model to semantic HTML. Plain functions build
@@ -54,22 +54,22 @@ function marked(run: TextRun): ReactNode {
   return node;
 }
 
-/** A small image inside a line; when it cannot load, its alt text stands in. */
+/** A small image inside a line; when it cannot load (directly or relayed), its alt text stands in. */
 function InlineImageView({ image }: { image: InlineImage }) {
-  const [failed, setFailed] = useState(false);
-  const src = safeSrc(image.src);
-  if (!src || failed) return <>{image.alt}</>;
+  const media = useRelayedSrc(safeSrc(image.src));
+  if (media.failed) return <>{image.alt}</>;
   return (
     <img
+      ref={media.ref}
       className="article-inline-image"
-      src={src}
+      src={media.src}
       alt={image.alt}
       width={image.width}
       height={image.height}
       loading="lazy"
       decoding="async"
       referrerPolicy="no-referrer"
-      onError={() => setFailed(true)}
+      onError={media.onError}
     />
   );
 }
@@ -155,23 +155,27 @@ function cleanSrcset(srcset: string | undefined): string | undefined {
   return parts.length > 0 ? parts.join(', ') : undefined;
 }
 
-/** An article image with reserved space (width/height), lazy decoding and no referrer; failures show the alt text. */
+/**
+ * An article image with reserved space (width/height), lazy decoding and no
+ * referrer. One that fails is retried once through the relay (its best
+ * source, no srcset); after that the alt text stands in.
+ */
 export function ArticleImage({ image, sizes }: { image: Image; sizes: string }) {
-  const [failed, setFailed] = useState(false);
-  const src = safeSrc(image.src);
-  if (!src || failed) return <span className="article-image-missing">{image.alt || 'Image unavailable'}</span>;
+  const media = useRelayedSrc(safeSrc(image.src));
+  if (media.failed) return <span className="article-image-missing">{image.alt || 'Image unavailable'}</span>;
   return (
     <img
-      src={src}
-      srcSet={cleanSrcset(image.srcset)}
-      sizes={image.srcset ? sizes : undefined}
+      ref={media.ref}
+      src={media.src}
+      srcSet={media.relayed ? undefined : cleanSrcset(image.srcset)}
+      sizes={image.srcset && !media.relayed ? sizes : undefined}
       width={image.width}
       height={image.height}
       alt={image.alt}
       loading="lazy"
       decoding="async"
       referrerPolicy="no-referrer"
-      onError={() => setFailed(true)}
+      onError={media.onError}
     />
   );
 }
@@ -354,8 +358,27 @@ function renderBlock(block: Block, ctx: RenderContext): ReactNode {
   }
 }
 
+/**
+ * A figure holding only a video file's still, right before that video: how
+ * articles saved before extraction merged the two look.
+ */
+function isStillOf(block: Block | undefined, next: Block | undefined): block is Figure {
+  return block?.type === 'figure' && block.images.length === 1 && next?.type === 'video' && next.provider === 'file' && next.poster === block.images[0].src;
+}
+
+/** `blocks[i]`, except that a video's still draws nothing and the video takes the still's caption. */
+function renderBlockAt(blocks: readonly Block[], i: number, ctx: RenderContext): ReactNode {
+  const block = blocks[i];
+  if (isStillOf(block, blocks[i + 1])) return null;
+  const still = blocks[i - 1];
+  if (block.type === 'video' && !block.caption && isStillOf(still, block) && still.caption) {
+    return renderBlock({ ...block, caption: still.caption } satisfies Video, ctx);
+  }
+  return renderBlock(block, ctx);
+}
+
 export function renderBlocks(blocks: readonly Block[], ctx: RenderContext): ReactNode[] {
-  return blocks.map((block, i) => <Fragment key={i}>{renderBlock(block, ctx)}</Fragment>);
+  return blocks.map((_, i) => <Fragment key={i}>{renderBlockAt(blocks, i, ctx)}</Fragment>);
 }
 
 /**
@@ -365,8 +388,8 @@ export function renderBlocks(blocks: readonly Block[], ctx: RenderContext): Reac
  * element carries the marker itself; a component gets a box-less wrapper.
  */
 export function renderArticleBlocks(blocks: readonly Block[], ctx: RenderContext): ReactNode[] {
-  return blocks.map((block, i) => {
-    const node = renderBlock(block, ctx);
+  return blocks.map((_, i) => {
+    const node = renderBlockAt(blocks, i, ctx);
     if (node == null) return null;
     if (isValidElement(node) && typeof node.type === 'string') {
       return cloneElement(node as ReactElement<{ 'data-block-index'?: number }>, { key: i, 'data-block-index': i });

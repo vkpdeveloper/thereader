@@ -30,6 +30,8 @@ Paths are versioned beneath `/v1`.
   ETag, Content-Disposition. Support HEAD and valid single byte ranges if feasible.
 - `GET /v1/books/:id/cover` -> optional cover image; 404 if none.
 - `GET /v1/article-source?url=...` -> the raw HTML of a public article page (see below).
+- `GET /v1/media?url=...` -> an article image, video or audio file whose host
+  refuses to be embedded elsewhere; a fallback only (see below).
 - `PUT /v1/article-bodies/:sha256`, `GET`/`HEAD /v1/article-bodies/:sha256` -> a saved
   article's extracted document, uploaded once by the device that saved it (see below).
 
@@ -83,6 +85,39 @@ parses the page; clients decode, extract and store the article themselves.
   `Cache-Control: no-store`, `X-Content-Type-Options: nosniff` and
   `Content-Security-Policy: default-src 'none'; sandbox`, so opening the relay
   URL in a tab never runs the page's scripts on this origin.
+
+### Media relay
+
+`GET /v1/media?url=<encoded absolute URL>` serves an article's image, video or
+audio file when the browser could not load it directly: hosts that send
+`Cross-Origin-Resource-Policy: same-origin` (claude.dev, for one) or check the
+referrer. Clients only ask for it after a direct load failed, so articles whose
+media load normally cost no Worker request.
+
+- URLs are validated, and redirects followed and re-validated, exactly as for
+  the article source relay (`400 INVALID_URL`, `502 TOO_MANY_REDIRECTS`); the
+  API's own host is refused too.
+- Upstream requests send a desktop Chrome `User-Agent`, an image/video/audio
+  `Accept` and `Referer: <the file's own origin>/`, which hotlink protection
+  accepts. 15 s for the upstream to answer (`504 UPSTREAM_TIMEOUT`), then the
+  body streams for as long as it takes. Connection failures are
+  `502 UPSTREAM_UNREACHABLE`; other than 200/206 is `502 UPSTREAM_STATUS`.
+- Only `image/*`, `video/*` and `audio/*` answers pass
+  (`415 UNSUPPORTED_MEDIA_TYPE` otherwise). Images above 20 MB are
+  `413 TOO_LARGE` when declared; a longer undeclared stream is cut off.
+- `Range` works so videos seek: `bytes=0-` (how browsers open a video) fetches
+  the whole file and answers `206` with `Content-Range: bytes 0-<last>/<size>`;
+  any other range is forwarded upstream and its `206` passed through. An
+  upstream `416` is `416 RANGE_NOT_SATISFIABLE`.
+- Whole files up to 100 MB with a declared length are kept in the Workers
+  Cache API (`media` cache, keyed by the validated URL), which answers later
+  requests, ranges included, without an upstream fetch.
+- Success: the upstream `Content-Type` and `Content-Length`,
+  `Accept-Ranges: bytes`, `Cache-Control: public, max-age=2592000`,
+  `X-Content-Type-Options: nosniff`, `Cross-Origin-Resource-Policy: cross-origin`
+  and `Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; sandbox`,
+  so an SVG opened from the relay URL never runs script on this origin. No
+  upstream cookies or other headers are passed on.
 
 ### Saved-article sync
 

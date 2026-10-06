@@ -259,6 +259,11 @@ function isDisplayMath(el: VElement): boolean {
   return false;
 }
 
+/** The still of a video file drawn right after it (its poster, for browsers that do not play video): that video already shows it. */
+function isStillOf(prev: Block | undefined, image: Image): boolean {
+  return prev !== undefined && prev.type === 'video' && prev.provider === 'file' && prev.poster === image.src;
+}
+
 function intAttr(el: VElement, name: string): number | undefined {
   const v = el.attrs[name];
   if (v === undefined) return undefined;
@@ -777,6 +782,7 @@ export class Converter {
           return;
         }
         b.flush();
+        if (isStillOf(out[out.length - 1], image)) return;
         if (ctx.href !== null && image.href === undefined && ctx.href !== image.src && /\.(?:jpe?g|png|webp|gif|avif)(?:$|[?#])/i.test(ctx.href)) image.href = ctx.href;
         out.push({ type: 'figure', images: [image] });
         return;
@@ -1295,6 +1301,7 @@ export class Converter {
     if (img === null || /mwe-math-fallback-image/.test(img.className)) return;
     const image = imageFrom(img, this.base) ?? this.noscriptImage(img);
     if (image === null || isDecorativeImage(img, image, this.base)) return;
+    if (isStillOf(out[out.length - 1], image)) return;
     if (isSmallImage(img, image)) {
       const node: Inline = { type: 'image', src: image.src, alt: image.alt };
       if (image.width !== undefined) node.width = image.width;
@@ -1373,6 +1380,13 @@ export class Converter {
       }
       caption = this.inlineOnly(cap);
       if (creditEl !== null) creditEl.skip = false;
+    }
+
+    // A video file's still drawn as an image (the poster, for browsers that do not play it): one video, not a figure and a video.
+    const file = media.length === 1 ? media[0]! : null;
+    if (file !== null && file.type === 'video' && file.provider === 'file' && !other) {
+      if (file.poster === undefined && images.length === 1) file.poster = images[0]!.src;
+      for (let i = images.length - 1; i >= 0; i--) if (images[i]!.src === file.poster) images.splice(i, 1);
     }
 
     if (images.length === 0 && media.length === 0 || other) {
