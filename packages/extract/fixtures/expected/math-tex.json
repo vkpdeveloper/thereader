@@ -27,8 +27,8 @@
     },
     {
       "type": "math",
-      "text": "\\text{sign} \\times 2^{\\text{exponent}} \\left(1 + \\frac{\\text{significand}}{2^{52}}\\right)",
-      "tex": "\\text{sign} \\times 2^{\\text{exponent}} \\left(1 + \\frac{\\text{significand}}{2^{52}}\\right)"
+      "tex": "\\text{sign} \\times 2^{\\text{exponent}} \\left(1 + \\frac{\\text{significand}}{2^{52}}\\right)",
+      "text": "\\text{sign} \\times 2^{\\text{exponent}} \\left(1 + \\frac{\\text{significand}}{2^{52}}\\right)"
     },
     {
       "type": "paragraph",
@@ -95,8 +95,8 @@
     },
     {
       "type": "math",
-      "text": "\\Bigl| \\sum_{i=1}^{n} x_i - \\operatorname{fl}\\Bigl(\\sum_{i=1}^{n} x_i\\Bigr) \\Bigr| \\le (n-1)\\,\\epsilon \\sum_{i=1}^{n} |x_i|",
-      "tex": "\\Bigl| \\sum_{i=1}^{n} x_i - \\operatorname{fl}\\Bigl(\\sum_{i=1}^{n} x_i\\Bigr) \\Bigr| \\le (n-1)\\,\\epsilon \\sum_{i=1}^{n} |x_i|"
+      "tex": "\\Bigl| \\sum_{i=1}^{n} x_i - \\operatorname{fl}\\Bigl(\\sum_{i=1}^{n} x_i\\Bigr) \\Bigr| \\le (n-1)\\,\\epsilon \\sum_{i=1}^{n} |x_i|",
+      "text": "\\Bigl| \\sum_{i=1}^{n} x_i - \\operatorname{fl}\\Bigl(\\sum_{i=1}^{n} x_i\\Bigr) \\Bigr| \\le (n-1)\\,\\epsilon \\sum_{i=1}^{n} |x_i|"
     },
     {
       "type": "paragraph",

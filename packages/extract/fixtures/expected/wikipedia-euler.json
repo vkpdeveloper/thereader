@@ -88,9 +88,9 @@
         },
         {
           "type": "math",
-          "text": "e^{i\\pi }+1=0",
           "tex": "e^{i\\pi }+1=0",
-          "mathml": "<math display=\"block\" alttext=\"{\\displaystyle e^{i\\pi }+1=0}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n        <mo>+</mo>\n        <mn>1</mn>\n        <mo>=</mo>\n        <mn>0</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math display=\"block\" alttext=\"{\\displaystyle e^{i\\pi }+1=0}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n        <mo>+</mo>\n        <mn>1</mn>\n        <mo>=</mo>\n        <mn>0</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "e^{i\\pi }+1=0"
         },
         {
           "type": "text",
@@ -109,9 +109,9 @@
               "content": [
                 {
                   "type": "math",
-                  "text": "e",
                   "tex": "e",
-                  "mathml": "<math alttext=\"{\\displaystyle e}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>e</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+                  "mathml": "<math alttext=\"{\\displaystyle e}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>e</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+                  "text": "e"
                 },
                 {
                   "type": "text",
@@ -146,9 +146,9 @@
               "content": [
                 {
                   "type": "math",
-                  "text": "i",
                   "tex": "i",
-                  "mathml": "<math alttext=\"{\\displaystyle i}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>i</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+                  "mathml": "<math alttext=\"{\\displaystyle i}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>i</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+                  "text": "i"
                 },
                 {
                   "type": "text",
@@ -165,9 +165,9 @@
                 },
                 {
                   "type": "math",
-                  "text": "i^{2}=-1",
                   "tex": "i^{2}=-1",
-                  "mathml": "<math alttext=\"{\\displaystyle i^{2}=-1}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>i</mi>\n          <mrow>\n            <mn>2</mn>\n          </mrow>\n        </msup>\n        <mo>=</mo>\n        <mo>−</mo>\n        <mn>1</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+                  "mathml": "<math alttext=\"{\\displaystyle i^{2}=-1}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>i</mi>\n          <mrow>\n            <mn>2</mn>\n          </mrow>\n        </msup>\n        <mo>=</mo>\n        <mo>−</mo>\n        <mn>1</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+                  "text": "i^{2}=-1"
                 },
                 {
                   "type": "text",
@@ -184,9 +184,9 @@
               "content": [
                 {
                   "type": "math",
-                  "text": "\\pi",
                   "tex": "\\pi",
-                  "mathml": "<math alttext=\"{\\displaystyle \\pi }\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>π</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+                  "mathml": "<math alttext=\"{\\displaystyle \\pi }\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>π</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+                  "text": "\\pi"
                 },
                 {
                   "type": "text",
@@ -252,9 +252,9 @@
         },
         {
           "type": "math",
-          "text": "e^{ix}=\\cos x+i\\sin x",
           "tex": "e^{ix}=\\cos x+i\\sin x",
-          "mathml": "<math alttext=\"{\\displaystyle e^{ix}=\\cos x+i\\sin x}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>x</mi>\n          </mrow>\n        </msup>\n        <mo>=</mo>\n        <mi>cos</mi>\n        <mo>⁡</mo>\n        <mi>x</mi>\n        <mo>+</mo>\n        <mi>i</mi>\n        <mi>sin</mi>\n        <mo>⁡</mo>\n        <mi>x</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math alttext=\"{\\displaystyle e^{ix}=\\cos x+i\\sin x}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>x</mi>\n          </mrow>\n        </msup>\n        <mo>=</mo>\n        <mi>cos</mi>\n        <mo>⁡</mo>\n        <mi>x</mi>\n        <mo>+</mo>\n        <mi>i</mi>\n        <mi>sin</mi>\n        <mo>⁡</mo>\n        <mi>x</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "e^{ix}=\\cos x+i\\sin x"
         },
         {
           "type": "text",
@@ -262,9 +262,9 @@
         },
         {
           "type": "math",
-          "text": "x=\\pi",
           "tex": "x=\\pi",
-          "mathml": "<math alttext=\"{\\displaystyle x=\\pi }\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>x</mi>\n        <mo>=</mo>\n        <mi>π</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math alttext=\"{\\displaystyle x=\\pi }\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>x</mi>\n        <mo>=</mo>\n        <mi>π</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "x=\\pi"
         },
         {
           "type": "text",
@@ -1054,9 +1054,9 @@
         },
         {
           "type": "math",
-          "text": "e^{i\\pi }",
           "tex": "e^{i\\pi }",
-          "mathml": "<math alttext=\"{\\displaystyle e^{i\\pi }}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math alttext=\"{\\displaystyle e^{i\\pi }}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "e^{i\\pi }"
         },
         {
           "type": "text",
@@ -1064,9 +1064,9 @@
         },
         {
           "type": "math",
-          "text": "e^{i\\pi }",
           "tex": "e^{i\\pi }",
-          "mathml": "<math alttext=\"{\\displaystyle e^{i\\pi }}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math alttext=\"{\\displaystyle e^{i\\pi }}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "e^{i\\pi }"
         },
         {
           "type": "text",
@@ -1074,9 +1074,9 @@
         },
         {
           "type": "math",
-          "text": "e^{z}",
           "tex": "e^{z}",
-          "mathml": "<math alttext=\"{\\displaystyle e^{z}}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>z</mi>\n          </mrow>\n        </msup>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math alttext=\"{\\displaystyle e^{z}}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>z</mi>\n          </mrow>\n        </msup>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "e^{z}"
         },
         {
           "type": "text",
@@ -1104,9 +1104,9 @@
         },
         {
           "type": "math",
-          "text": "e^{z}",
           "tex": "e^{z}",
-          "mathml": "<math alttext=\"{\\displaystyle e^{z}}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>z</mi>\n          </mrow>\n        </msup>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math alttext=\"{\\displaystyle e^{z}}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>z</mi>\n          </mrow>\n        </msup>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "e^{z}"
         },
         {
           "type": "text",
@@ -1136,9 +1136,9 @@
     },
     {
       "type": "math",
-      "text": "e^{z}=\\lim _{n\\to \\infty }\\left(1+{\\frac {z}{n}}\\right)^{n}.",
       "tex": "e^{z}=\\lim _{n\\to \\infty }\\left(1+{\\frac {z}{n}}\\right)^{n}.",
-      "mathml": "<math display=\"block\" alttext=\"{\\displaystyle e^{z}=\\lim _{n\\to \\infty }\\left(1+{\\frac {z}{n}}\\right)^{n}.}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>z</mi>\n          </mrow>\n        </msup>\n        <mo>=</mo>\n        <munder>\n          <mo movablelimits=\"true\" form=\"prefix\">lim</mo>\n          <mrow>\n            <mi>n</mi>\n            <mo stretchy=\"false\">→</mo>\n            <mi mathvariant=\"normal\">∞</mi>\n          </mrow>\n        </munder>\n        <msup>\n          <mrow>\n            <mo>(</mo>\n            <mrow>\n              <mn>1</mn>\n              <mo>+</mo>\n              <mrow>\n                <mfrac>\n                  <mi>z</mi>\n                  <mi>n</mi>\n                </mfrac>\n              </mrow>\n            </mrow>\n            <mo>)</mo>\n          </mrow>\n          <mrow>\n            <mi>n</mi>\n          </mrow>\n        </msup>\n        <mo>.</mo>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+      "mathml": "<math display=\"block\" alttext=\"{\\displaystyle e^{z}=\\lim _{n\\to \\infty }\\left(1+{\\frac {z}{n}}\\right)^{n}.}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>z</mi>\n          </mrow>\n        </msup>\n        <mo>=</mo>\n        <munder>\n          <mo movablelimits=\"true\" form=\"prefix\">lim</mo>\n          <mrow>\n            <mi>n</mi>\n            <mo stretchy=\"false\">→</mo>\n            <mi mathvariant=\"normal\">∞</mi>\n          </mrow>\n        </munder>\n        <msup>\n          <mrow>\n            <mo>(</mo>\n            <mrow>\n              <mn>1</mn>\n              <mo>+</mo>\n              <mrow>\n                <mfrac>\n                  <mi>z</mi>\n                  <mi>n</mi>\n                </mfrac>\n              </mrow>\n            </mrow>\n            <mo>)</mo>\n          </mrow>\n          <mrow>\n            <mi>n</mi>\n          </mrow>\n        </msup>\n        <mo>.</mo>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+      "text": "e^{z}=\\lim _{n\\to \\infty }\\left(1+{\\frac {z}{n}}\\right)^{n}."
     },
     {
       "type": "paragraph",
@@ -1160,9 +1160,9 @@
         },
         {
           "type": "math",
-          "text": "(1+{\\tfrac {i\\pi }{n}})^{n}",
           "tex": "(1+{\\tfrac {i\\pi }{n}})^{n}",
-          "mathml": "<math alttext=\"{\\displaystyle (1+{\\tfrac {i\\pi }{n}})^{n}}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mo stretchy=\"false\">(</mo>\n        <mn>1</mn>\n        <mo>+</mo>\n        <mrow>\n          <mstyle displaystyle=\"false\" scriptlevel=\"0\">\n            <mfrac>\n              <mrow>\n                <mi>i</mi>\n                <mi>π</mi>\n              </mrow>\n              <mi>n</mi>\n            </mfrac>\n          </mstyle>\n        </mrow>\n        <msup>\n          <mo stretchy=\"false\">)</mo>\n          <mrow>\n            <mi>n</mi>\n          </mrow>\n        </msup>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math alttext=\"{\\displaystyle (1+{\\tfrac {i\\pi }{n}})^{n}}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mo stretchy=\"false\">(</mo>\n        <mn>1</mn>\n        <mo>+</mo>\n        <mrow>\n          <mstyle displaystyle=\"false\" scriptlevel=\"0\">\n            <mfrac>\n              <mrow>\n                <mi>i</mi>\n                <mi>π</mi>\n              </mrow>\n              <mi>n</mi>\n            </mfrac>\n          </mstyle>\n        </mrow>\n        <msup>\n          <mo stretchy=\"false\">)</mo>\n          <mrow>\n            <mi>n</mi>\n          </mrow>\n        </msup>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "(1+{\\tfrac {i\\pi }{n}})^{n}"
         },
         {
           "type": "text",
@@ -1237,9 +1237,9 @@
     },
     {
       "type": "math",
-      "text": "e^{ix}=\\cos x+i\\sin x",
       "tex": "e^{ix}=\\cos x+i\\sin x",
-      "mathml": "<math display=\"block\" alttext=\"{\\displaystyle e^{ix}=\\cos x+i\\sin x}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>x</mi>\n          </mrow>\n        </msup>\n        <mo>=</mo>\n        <mi>cos</mi>\n        <mo>⁡</mo>\n        <mi>x</mi>\n        <mo>+</mo>\n        <mi>i</mi>\n        <mi>sin</mi>\n        <mo>⁡</mo>\n        <mi>x</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+      "mathml": "<math display=\"block\" alttext=\"{\\displaystyle e^{ix}=\\cos x+i\\sin x}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>x</mi>\n          </mrow>\n        </msup>\n        <mo>=</mo>\n        <mi>cos</mi>\n        <mo>⁡</mo>\n        <mi>x</mi>\n        <mo>+</mo>\n        <mi>i</mi>\n        <mi>sin</mi>\n        <mo>⁡</mo>\n        <mi>x</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+      "text": "e^{ix}=\\cos x+i\\sin x"
     },
     {
       "type": "paragraph",
@@ -1301,9 +1301,9 @@
     },
     {
       "type": "math",
-      "text": "e^{i\\pi }=\\cos \\pi +i\\sin \\pi .",
       "tex": "e^{i\\pi }=\\cos \\pi +i\\sin \\pi .",
-      "mathml": "<math display=\"block\" alttext=\"{\\displaystyle e^{i\\pi }=\\cos \\pi +i\\sin \\pi .}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n        <mo>=</mo>\n        <mi>cos</mi>\n        <mo>⁡</mo>\n        <mi>π</mi>\n        <mo>+</mo>\n        <mi>i</mi>\n        <mi>sin</mi>\n        <mo>⁡</mo>\n        <mi>π</mi>\n        <mo>.</mo>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+      "mathml": "<math display=\"block\" alttext=\"{\\displaystyle e^{i\\pi }=\\cos \\pi +i\\sin \\pi .}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n        <mo>=</mo>\n        <mi>cos</mi>\n        <mo>⁡</mo>\n        <mi>π</mi>\n        <mo>+</mo>\n        <mi>i</mi>\n        <mi>sin</mi>\n        <mo>⁡</mo>\n        <mi>π</mi>\n        <mo>.</mo>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+      "text": "e^{i\\pi }=\\cos \\pi +i\\sin \\pi ."
     },
     {
       "type": "paragraph",
@@ -1316,9 +1316,9 @@
     },
     {
       "type": "math",
-      "text": "\\cos \\pi =-1",
       "tex": "\\cos \\pi =-1",
-      "mathml": "<math display=\"block\" alttext=\"{\\displaystyle \\cos \\pi =-1}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>cos</mi>\n        <mo>⁡</mo>\n        <mi>π</mi>\n        <mo>=</mo>\n        <mo>−</mo>\n        <mn>1</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+      "mathml": "<math display=\"block\" alttext=\"{\\displaystyle \\cos \\pi =-1}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>cos</mi>\n        <mo>⁡</mo>\n        <mi>π</mi>\n        <mo>=</mo>\n        <mo>−</mo>\n        <mn>1</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+      "text": "\\cos \\pi =-1"
     },
     {
       "type": "paragraph",
@@ -1331,9 +1331,9 @@
     },
     {
       "type": "math",
-      "text": "\\sin \\pi =0,",
       "tex": "\\sin \\pi =0,",
-      "mathml": "<math display=\"block\" alttext=\"{\\displaystyle \\sin \\pi =0,}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>sin</mi>\n        <mo>⁡</mo>\n        <mi>π</mi>\n        <mo>=</mo>\n        <mn>0</mn>\n        <mo>,</mo>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+      "mathml": "<math display=\"block\" alttext=\"{\\displaystyle \\sin \\pi =0,}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>sin</mi>\n        <mo>⁡</mo>\n        <mi>π</mi>\n        <mo>=</mo>\n        <mn>0</mn>\n        <mo>,</mo>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+      "text": "\\sin \\pi =0,"
     },
     {
       "type": "paragraph",
@@ -1346,9 +1346,9 @@
     },
     {
       "type": "math",
-      "text": "e^{i\\pi }=-1+0i,",
       "tex": "e^{i\\pi }=-1+0i,",
-      "mathml": "<math display=\"block\" alttext=\"{\\displaystyle e^{i\\pi }=-1+0i,}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n        <mo>=</mo>\n        <mo>−</mo>\n        <mn>1</mn>\n        <mo>+</mo>\n        <mn>0</mn>\n        <mi>i</mi>\n        <mo>,</mo>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+      "mathml": "<math display=\"block\" alttext=\"{\\displaystyle e^{i\\pi }=-1+0i,}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n        <mo>=</mo>\n        <mo>−</mo>\n        <mn>1</mn>\n        <mo>+</mo>\n        <mn>0</mn>\n        <mi>i</mi>\n        <mo>,</mo>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+      "text": "e^{i\\pi }=-1+0i,"
     },
     {
       "type": "paragraph",
@@ -1361,9 +1361,9 @@
     },
     {
       "type": "math",
-      "text": "e^{i\\pi }+1=0.",
       "tex": "e^{i\\pi }+1=0.",
-      "mathml": "<math display=\"block\" alttext=\"{\\displaystyle e^{i\\pi }+1=0.}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n        <mo>+</mo>\n        <mn>1</mn>\n        <mo>=</mo>\n        <mn>0.</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+      "mathml": "<math display=\"block\" alttext=\"{\\displaystyle e^{i\\pi }+1=0.}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n        <mo>+</mo>\n        <mn>1</mn>\n        <mo>=</mo>\n        <mn>0.</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+      "text": "e^{i\\pi }+1=0."
     },
     {
       "type": "heading",
@@ -1385,9 +1385,9 @@
         },
         {
           "type": "math",
-          "text": "z=x+iy",
           "tex": "z=x+iy",
-          "mathml": "<math alttext=\"{\\displaystyle z=x+iy}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>z</mi>\n        <mo>=</mo>\n        <mi>x</mi>\n        <mo>+</mo>\n        <mi>i</mi>\n        <mi>y</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math alttext=\"{\\displaystyle z=x+iy}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>z</mi>\n        <mo>=</mo>\n        <mi>x</mi>\n        <mo>+</mo>\n        <mi>i</mi>\n        <mi>y</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "z=x+iy"
         },
         {
           "type": "text",
@@ -1395,9 +1395,9 @@
         },
         {
           "type": "math",
-          "text": "(x,y)",
           "tex": "(x,y)",
-          "mathml": "<math alttext=\"{\\displaystyle (x,y)}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mo stretchy=\"false\">(</mo>\n        <mi>x</mi>\n        <mo>,</mo>\n        <mi>y</mi>\n        <mo stretchy=\"false\">)</mo>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math alttext=\"{\\displaystyle (x,y)}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mo stretchy=\"false\">(</mo>\n        <mi>x</mi>\n        <mo>,</mo>\n        <mi>y</mi>\n        <mo stretchy=\"false\">)</mo>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "(x,y)"
         },
         {
           "type": "text",
@@ -1423,9 +1423,9 @@
         },
         {
           "type": "math",
-          "text": "(r,\\theta )",
           "tex": "(r,\\theta )",
-          "mathml": "<math alttext=\"{\\displaystyle (r,\\theta )}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mo stretchy=\"false\">(</mo>\n        <mi>r</mi>\n        <mo>,</mo>\n        <mi>θ</mi>\n        <mo stretchy=\"false\">)</mo>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math alttext=\"{\\displaystyle (r,\\theta )}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mo stretchy=\"false\">(</mo>\n        <mi>r</mi>\n        <mo>,</mo>\n        <mi>θ</mi>\n        <mo stretchy=\"false\">)</mo>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "(r,\\theta )"
         },
         {
           "type": "text",
@@ -1455,9 +1455,9 @@
         },
         {
           "type": "math",
-          "text": "\\theta",
           "tex": "\\theta",
-          "mathml": "<math alttext=\"{\\displaystyle \\theta }\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>θ</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math alttext=\"{\\displaystyle \\theta }\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>θ</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "\\theta"
         },
         {
           "type": "text",
@@ -1487,9 +1487,9 @@
         },
         {
           "type": "math",
-          "text": "(r\\cos \\theta ,r\\sin \\theta )",
           "tex": "(r\\cos \\theta ,r\\sin \\theta )",
-          "mathml": "<math alttext=\"{\\displaystyle (r\\cos \\theta ,r\\sin \\theta )}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mo stretchy=\"false\">(</mo>\n        <mi>r</mi>\n        <mi>cos</mi>\n        <mo>⁡</mo>\n        <mi>θ</mi>\n        <mo>,</mo>\n        <mi>r</mi>\n        <mi>sin</mi>\n        <mo>⁡</mo>\n        <mi>θ</mi>\n        <mo stretchy=\"false\">)</mo>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math alttext=\"{\\displaystyle (r\\cos \\theta ,r\\sin \\theta )}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mo stretchy=\"false\">(</mo>\n        <mi>r</mi>\n        <mi>cos</mi>\n        <mo>⁡</mo>\n        <mi>θ</mi>\n        <mo>,</mo>\n        <mi>r</mi>\n        <mi>sin</mi>\n        <mo>⁡</mo>\n        <mi>θ</mi>\n        <mo stretchy=\"false\">)</mo>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "(r\\cos \\theta ,r\\sin \\theta )"
         },
         {
           "type": "text",
@@ -1497,9 +1497,9 @@
         },
         {
           "type": "math",
-          "text": "z=r(\\cos \\theta +i\\sin \\theta )",
           "tex": "z=r(\\cos \\theta +i\\sin \\theta )",
-          "mathml": "<math alttext=\"{\\displaystyle z=r(\\cos \\theta +i\\sin \\theta )}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>z</mi>\n        <mo>=</mo>\n        <mi>r</mi>\n        <mo stretchy=\"false\">(</mo>\n        <mi>cos</mi>\n        <mo>⁡</mo>\n        <mi>θ</mi>\n        <mo>+</mo>\n        <mi>i</mi>\n        <mi>sin</mi>\n        <mo>⁡</mo>\n        <mi>θ</mi>\n        <mo stretchy=\"false\">)</mo>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math alttext=\"{\\displaystyle z=r(\\cos \\theta +i\\sin \\theta )}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>z</mi>\n        <mo>=</mo>\n        <mi>r</mi>\n        <mo stretchy=\"false\">(</mo>\n        <mi>cos</mi>\n        <mo>⁡</mo>\n        <mi>θ</mi>\n        <mo>+</mo>\n        <mi>i</mi>\n        <mi>sin</mi>\n        <mo>⁡</mo>\n        <mi>θ</mi>\n        <mo stretchy=\"false\">)</mo>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "z=r(\\cos \\theta +i\\sin \\theta )"
         },
         {
           "type": "text",
@@ -1507,9 +1507,9 @@
         },
         {
           "type": "math",
-          "text": "z=re^{i\\theta }",
           "tex": "z=re^{i\\theta }",
-          "mathml": "<math alttext=\"{\\displaystyle z=re^{i\\theta }}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>z</mi>\n        <mo>=</mo>\n        <mi>r</mi>\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>θ</mi>\n          </mrow>\n        </msup>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math alttext=\"{\\displaystyle z=re^{i\\theta }}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>z</mi>\n        <mo>=</mo>\n        <mi>r</mi>\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>θ</mi>\n          </mrow>\n        </msup>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "z=re^{i\\theta }"
         },
         {
           "type": "text",
@@ -1526,9 +1526,9 @@
         },
         {
           "type": "math",
-          "text": "-1=e^{i\\pi }",
           "tex": "-1=e^{i\\pi }",
-          "mathml": "<math alttext=\"{\\displaystyle -1=e^{i\\pi }}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mo>−</mo>\n        <mn>1</mn>\n        <mo>=</mo>\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math alttext=\"{\\displaystyle -1=e^{i\\pi }}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mo>−</mo>\n        <mn>1</mn>\n        <mo>=</mo>\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "-1=e^{i\\pi }"
         },
         {
           "type": "text",
@@ -1536,9 +1536,9 @@
         },
         {
           "type": "math",
-          "text": "e^{i\\pi }",
           "tex": "e^{i\\pi }",
-          "mathml": "<math alttext=\"{\\displaystyle e^{i\\pi }}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math alttext=\"{\\displaystyle e^{i\\pi }}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "e^{i\\pi }"
         },
         {
           "type": "text",
@@ -1546,9 +1546,9 @@
         },
         {
           "type": "math",
-          "text": "re^{i\\theta }",
           "tex": "re^{i\\theta }",
-          "mathml": "<math alttext=\"{\\displaystyle re^{i\\theta }}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>r</mi>\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>θ</mi>\n          </mrow>\n        </msup>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math alttext=\"{\\displaystyle re^{i\\theta }}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>r</mi>\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>θ</mi>\n          </mrow>\n        </msup>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "re^{i\\theta }"
         },
         {
           "type": "text",
@@ -1567,9 +1567,9 @@
         },
         {
           "type": "math",
-          "text": "\\theta =\\pi",
           "tex": "\\theta =\\pi",
-          "mathml": "<math alttext=\"{\\displaystyle \\theta =\\pi }\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>θ</mi>\n        <mo>=</mo>\n        <mi>π</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math alttext=\"{\\displaystyle \\theta =\\pi }\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>θ</mi>\n        <mo>=</mo>\n        <mi>π</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "\\theta =\\pi"
         },
         {
           "type": "text",
@@ -1588,9 +1588,9 @@
         },
         {
           "type": "math",
-          "text": "\\pi",
           "tex": "\\pi",
-          "mathml": "<math alttext=\"{\\displaystyle \\pi }\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>π</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math alttext=\"{\\displaystyle \\pi }\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>π</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "\\pi"
         },
         {
           "type": "text",
@@ -1627,9 +1627,9 @@
         },
         {
           "type": "math",
-          "text": "e^{i\\theta }",
           "tex": "e^{i\\theta }",
-          "mathml": "<math alttext=\"{\\displaystyle e^{i\\theta }}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>θ</mi>\n          </mrow>\n        </msup>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math alttext=\"{\\displaystyle e^{i\\theta }}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>i</mi>\n            <mi>θ</mi>\n          </mrow>\n        </msup>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "e^{i\\theta }"
         },
         {
           "type": "text",
@@ -1637,9 +1637,9 @@
         },
         {
           "type": "math",
-          "text": "z",
           "tex": "z",
-          "mathml": "<math alttext=\"{\\displaystyle z}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>z</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math alttext=\"{\\displaystyle z}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>z</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "z"
         },
         {
           "type": "text",
@@ -1647,9 +1647,9 @@
         },
         {
           "type": "math",
-          "text": "\\theta",
           "tex": "\\theta",
-          "mathml": "<math alttext=\"{\\displaystyle \\theta }\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>θ</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math alttext=\"{\\displaystyle \\theta }\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>θ</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "\\theta"
         },
         {
           "type": "text",
@@ -1657,9 +1657,9 @@
         },
         {
           "type": "math",
-          "text": "\\pi",
           "tex": "\\pi",
-          "mathml": "<math alttext=\"{\\displaystyle \\pi }\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>π</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math alttext=\"{\\displaystyle \\pi }\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>π</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "\\pi"
         },
         {
           "type": "text",
@@ -1667,9 +1667,9 @@
         },
         {
           "type": "math",
-          "text": "\\theta",
           "tex": "\\theta",
-          "mathml": "<math alttext=\"{\\displaystyle \\theta }\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>θ</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math alttext=\"{\\displaystyle \\theta }\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>θ</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "\\theta"
         },
         {
           "type": "text",
@@ -1677,9 +1677,9 @@
         },
         {
           "type": "math",
-          "text": "2\\pi",
           "tex": "2\\pi",
-          "mathml": "<math alttext=\"{\\displaystyle 2\\pi }\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mn>2</mn>\n        <mi>π</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math alttext=\"{\\displaystyle 2\\pi }\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mn>2</mn>\n        <mi>π</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "2\\pi"
         },
         {
           "type": "text",
@@ -1687,9 +1687,9 @@
         },
         {
           "type": "math",
-          "text": "e^{2\\pi i}=1",
           "tex": "e^{2\\pi i}=1",
-          "mathml": "<math alttext=\"{\\displaystyle e^{2\\pi i}=1}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mn>2</mn>\n            <mi>π</mi>\n            <mi>i</mi>\n          </mrow>\n        </msup>\n        <mo>=</mo>\n        <mn>1</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math alttext=\"{\\displaystyle e^{2\\pi i}=1}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mn>2</mn>\n            <mi>π</mi>\n            <mi>i</mi>\n          </mrow>\n        </msup>\n        <mo>=</mo>\n        <mn>1</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "e^{2\\pi i}=1"
         },
         {
           "type": "text",
@@ -1759,9 +1759,9 @@
     },
     {
       "type": "math",
-      "text": "\\sum _{k=0}^{n-1}e^{2\\pi i{\\frac {k}{n}}}=0.",
       "tex": "\\sum _{k=0}^{n-1}e^{2\\pi i{\\frac {k}{n}}}=0.",
-      "mathml": "<math display=\"block\" alttext=\"{\\displaystyle \\sum _{k=0}^{n-1}e^{2\\pi i{\\frac {k}{n}}}=0.}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <munderover>\n          <mo>∑</mo>\n          <mrow>\n            <mi>k</mi>\n            <mo>=</mo>\n            <mn>0</mn>\n          </mrow>\n          <mrow>\n            <mi>n</mi>\n            <mo>−</mo>\n            <mn>1</mn>\n          </mrow>\n        </munderover>\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mn>2</mn>\n            <mi>π</mi>\n            <mi>i</mi>\n            <mrow>\n              <mfrac>\n                <mi>k</mi>\n                <mi>n</mi>\n              </mfrac>\n            </mrow>\n          </mrow>\n        </msup>\n        <mo>=</mo>\n        <mn>0.</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+      "mathml": "<math display=\"block\" alttext=\"{\\displaystyle \\sum _{k=0}^{n-1}e^{2\\pi i{\\frac {k}{n}}}=0.}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <munderover>\n          <mo>∑</mo>\n          <mrow>\n            <mi>k</mi>\n            <mo>=</mo>\n            <mn>0</mn>\n          </mrow>\n          <mrow>\n            <mi>n</mi>\n            <mo>−</mo>\n            <mn>1</mn>\n          </mrow>\n        </munderover>\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mn>2</mn>\n            <mi>π</mi>\n            <mi>i</mi>\n            <mrow>\n              <mfrac>\n                <mi>k</mi>\n                <mi>n</mi>\n              </mfrac>\n            </mrow>\n          </mrow>\n        </msup>\n        <mo>=</mo>\n        <mn>0.</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+      "text": "\\sum _{k=0}^{n-1}e^{2\\pi i{\\frac {k}{n}}}=0."
     },
     {
       "type": "paragraph",
@@ -1843,9 +1843,9 @@
         },
         {
           "type": "math",
-          "text": "e^{{\\frac {1}{\\sqrt {3}}}(i\\pm j\\pm k)\\pi }+1=0.",
           "tex": "e^{{\\frac {1}{\\sqrt {3}}}(i\\pm j\\pm k)\\pi }+1=0.",
-          "mathml": "<math display=\"block\" alttext=\"{\\displaystyle e^{{\\frac {1}{\\sqrt {3}}}(i\\pm j\\pm k)\\pi }+1=0.}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mrow>\n              <mfrac>\n                <mn>1</mn>\n                <msqrt>\n                  <mn>3</mn>\n                </msqrt>\n              </mfrac>\n            </mrow>\n            <mo stretchy=\"false\">(</mo>\n            <mi>i</mi>\n            <mo>±</mo>\n            <mi>j</mi>\n            <mo>±</mo>\n            <mi>k</mi>\n            <mo stretchy=\"false\">)</mo>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n        <mo>+</mo>\n        <mn>1</mn>\n        <mo>=</mo>\n        <mn>0.</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math display=\"block\" alttext=\"{\\displaystyle e^{{\\frac {1}{\\sqrt {3}}}(i\\pm j\\pm k)\\pi }+1=0.}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mrow>\n              <mfrac>\n                <mn>1</mn>\n                <msqrt>\n                  <mn>3</mn>\n                </msqrt>\n              </mfrac>\n            </mrow>\n            <mo stretchy=\"false\">(</mo>\n            <mi>i</mi>\n            <mo>±</mo>\n            <mi>j</mi>\n            <mo>±</mo>\n            <mi>k</mi>\n            <mo stretchy=\"false\">)</mo>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n        <mo>+</mo>\n        <mn>1</mn>\n        <mo>=</mo>\n        <mn>0.</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "e^{{\\frac {1}{\\sqrt {3}}}(i\\pm j\\pm k)\\pi }+1=0."
         }
       ]
     },
@@ -1869,9 +1869,9 @@
         },
         {
           "type": "math",
-          "text": "q=ai+bj+ck,",
           "tex": "q=ai+bj+ck,",
-          "mathml": "<math alttext=\"{\\displaystyle q=ai+bj+ck,}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>q</mi>\n        <mo>=</mo>\n        <mi>a</mi>\n        <mi>i</mi>\n        <mo>+</mo>\n        <mi>b</mi>\n        <mi>j</mi>\n        <mo>+</mo>\n        <mi>c</mi>\n        <mi>k</mi>\n        <mo>,</mo>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math alttext=\"{\\displaystyle q=ai+bj+ck,}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>q</mi>\n        <mo>=</mo>\n        <mi>a</mi>\n        <mi>i</mi>\n        <mo>+</mo>\n        <mi>b</mi>\n        <mi>j</mi>\n        <mo>+</mo>\n        <mi>c</mi>\n        <mi>k</mi>\n        <mo>,</mo>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "q=ai+bj+ck,"
         },
         {
           "type": "text",
@@ -1879,9 +1879,9 @@
         },
         {
           "type": "math",
-          "text": "a^{2}+b^{2}+c^{2}=1.",
           "tex": "a^{2}+b^{2}+c^{2}=1.",
-          "mathml": "<math alttext=\"{\\displaystyle a^{2}+b^{2}+c^{2}=1.}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>a</mi>\n          <mrow>\n            <mn>2</mn>\n          </mrow>\n        </msup>\n        <mo>+</mo>\n        <msup>\n          <mi>b</mi>\n          <mrow>\n            <mn>2</mn>\n          </mrow>\n        </msup>\n        <mo>+</mo>\n        <msup>\n          <mi>c</mi>\n          <mrow>\n            <mn>2</mn>\n          </mrow>\n        </msup>\n        <mo>=</mo>\n        <mn>1.</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math alttext=\"{\\displaystyle a^{2}+b^{2}+c^{2}=1.}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>a</mi>\n          <mrow>\n            <mn>2</mn>\n          </mrow>\n        </msup>\n        <mo>+</mo>\n        <msup>\n          <mi>b</mi>\n          <mrow>\n            <mn>2</mn>\n          </mrow>\n        </msup>\n        <mo>+</mo>\n        <msup>\n          <mi>c</mi>\n          <mrow>\n            <mn>2</mn>\n          </mrow>\n        </msup>\n        <mo>=</mo>\n        <mn>1.</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "a^{2}+b^{2}+c^{2}=1."
         },
         {
           "type": "text",
@@ -1889,9 +1889,9 @@
         },
         {
           "type": "math",
-          "text": "e^{q\\pi }+1=0.",
           "tex": "e^{q\\pi }+1=0.",
-          "mathml": "<math display=\"block\" alttext=\"{\\displaystyle e^{q\\pi }+1=0.}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>q</mi>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n        <mo>+</mo>\n        <mn>1</mn>\n        <mo>=</mo>\n        <mn>0.</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math display=\"block\" alttext=\"{\\displaystyle e^{q\\pi }+1=0.}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <msup>\n          <mi>e</mi>\n          <mrow>\n            <mi>q</mi>\n            <mi>π</mi>\n          </mrow>\n        </msup>\n        <mo>+</mo>\n        <mn>1</mn>\n        <mo>=</mo>\n        <mn>0.</mn>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "e^{q\\pi }+1=0."
         }
       ]
     },
@@ -1913,9 +1913,9 @@
         },
         {
           "type": "math",
-          "text": "i",
           "tex": "i",
-          "mathml": "<math alttext=\"{\\displaystyle i}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>i</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math alttext=\"{\\displaystyle i}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mi>i</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "i"
         },
         {
           "type": "text",
@@ -1923,9 +1923,9 @@
         },
         {
           "type": "math",
-          "text": "-i",
           "tex": "-i",
-          "mathml": "<math alttext=\"{\\displaystyle -i}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mo>−</mo>\n        <mi>i</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>"
+          "mathml": "<math alttext=\"{\\displaystyle -i}\">\n  <semantics>\n    <mrow>\n      <mstyle displaystyle=\"true\" scriptlevel=\"0\">\n        <mo>−</mo>\n        <mi>i</mi>\n      </mstyle>\n    </mrow>\n    \n  </semantics>\n</math>",
+          "text": "-i"
         },
         {
           "type": "text",

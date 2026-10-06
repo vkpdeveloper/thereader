@@ -39,6 +39,7 @@ export function extractTree(doc: VDocument, options: ExtractOptions): Article | 
   if (blocksText(blocks).length < 50 && !blocks.some((b) => b.type === 'figure' || b.type === 'video' || b.type === 'code' || b.type === 'embed')) return null;
 
   addLeadImage(blocks, meta.leadImage);
+  blocks = blocks.map(canonical);
 
   const text = blocksText(blocks);
   const wordCount = countWords(text);
@@ -426,6 +427,65 @@ function paragraphsFrom(text: string): Block[] {
     if (current.trim().length > 0) parts.push(current.trim());
   }
   return parts.map((p) => ({ type: 'paragraph', content: [{ type: 'text', text: p }] }) as Block);
+}
+
+/** Field order of each block type in model.ts; JSON output follows it whatever order fields were set in. */
+const KEY_ORDER: Record<string, string[]> = {
+  heading: ['type', 'level', 'content', 'anchor'],
+  paragraph: ['type', 'content'],
+  list: ['type', 'ordered', 'start', 'items'],
+  quote: ['type', 'blocks', 'cite', 'pull'],
+  code: ['type', 'code', 'language', 'languageSource', 'title'],
+  figure: ['type', 'images', 'caption', 'credit'],
+  video: ['type', 'provider', 'url', 'embedUrl', 'poster', 'title', 'caption'],
+  audio: ['type', 'provider', 'url', 'embedUrl', 'title', 'caption'],
+  embed: ['type', 'provider', 'url', 'author', 'blocks'],
+  table: ['type', 'caption', 'rows', 'headerRows'],
+  rule: ['type'],
+  math: ['type', 'tex', 'mathml', 'text'],
+  definitions: ['type', 'items'],
+  details: ['type', 'summary', 'blocks'],
+  callout: ['type', 'variant', 'title', 'blocks'],
+  footnotes: ['type', 'items'],
+};
+
+function inOrder(obj: object, keys: string[]): boolean {
+  let at = -1;
+  for (const key of Object.keys(obj)) {
+    const i = keys.indexOf(key);
+    if (i < at) return false;
+    at = i;
+  }
+  return true;
+}
+
+/** `block` (and blocks nested in it) with keys in model order. */
+function canonical(block: Block): Block {
+  switch (block.type) {
+    case 'list':
+      for (const item of block.items) item.blocks = item.blocks.map(canonical);
+      break;
+    case 'quote':
+    case 'details':
+    case 'callout':
+      block.blocks = block.blocks.map(canonical);
+      break;
+    case 'embed':
+      if (block.blocks !== undefined) block.blocks = block.blocks.map(canonical);
+      break;
+    case 'definitions':
+      for (const item of block.items) item.details = item.details.map(canonical);
+      break;
+    case 'footnotes':
+      for (const item of block.items) item.blocks = item.blocks.map(canonical);
+      break;
+  }
+  const keys = KEY_ORDER[block.type]!;
+  if (inOrder(block, keys)) return block;
+  const source = block as unknown as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  for (const key of keys) if (source[key] !== undefined) out[key] = source[key];
+  return out as unknown as Block;
 }
 
 function imageKey(src: string): string {

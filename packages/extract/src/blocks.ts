@@ -1606,10 +1606,12 @@ function mathInline(el: VElement): (Inline & { type: 'math' }) | null {
   }
   const tex = texFrom(el.attrs['data-tex'] ?? el.attrs['alttext']);
   const mathml = el.attrs['data-xml'];
-  const text = collapse(rawText(el));
-  const node: Inline & { type: 'math' } = { type: 'math', text: tex ?? text };
+  const text = tex ?? collapse(rawText(el));
+  if (text.length === 0 && (mathml === undefined || mathml.length === 0)) return null;
+  // Keys in model order: type, tex, mathml, text.
+  const node: Inline & { type: 'math' } = { type: 'math' } as Inline & { type: 'math' };
   if (tex !== undefined) node.tex = tex;
   if (mathml !== undefined && mathml.length > 0) node.mathml = mathml;
-  if (node.text.length === 0 && node.mathml === undefined) return null;
+  node.text = text;
   return node;
 }
