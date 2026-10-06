@@ -789,6 +789,12 @@ function prepare(root: VElement, flags: Flags): void {
       el.skip = true;
       return false;
     }
+    if ((tag === 'ul' || tag === 'ol') && isTableOfContents(el)) {
+      el.skip = true;
+      const heading = previousElement(el);
+      if (heading !== null && HEADINGS.has(heading.tag) && heading.textLen < 40) heading.skip = true;
+      return false;
+    }
     if ((tag === 'h1' || tag === 'h2') && classWeight(el, flags) < 0) {
       el.skip = true;
       return false;
@@ -803,6 +809,34 @@ function prepare(root: VElement, flags: Flags): void {
   if (flags.cleanConditionally) {
     cleanConditionally(root, flags);
   }
+}
+
+/** A list of three or more items that is almost all links to sections of this page. */
+function isTableOfContents(list: VElement): boolean {
+  if (list.textLen === 0 || list.linkLen < list.textLen * 0.2) return false;
+  let items = 0;
+  let inPage = 0;
+  walk(list, (e) => {
+    if (e.skip) return false;
+    if (e.tag === 'li') items++;
+    if (e.tag === 'a' && (e.attrs['href'] ?? '').charCodeAt(0) === 35) {
+      inPage += e.textLen;
+      return false;
+    }
+    return true;
+  });
+  return items >= 3 && inPage >= list.textLen * 0.8;
+}
+
+function previousElement(el: VElement): VElement | null {
+  const parent = el.parent;
+  if (parent === null) return null;
+  for (let i = parent.children.indexOf(el) - 1; i >= 0; i--) {
+    const prev = parent.children[i]!;
+    if (prev.kind === 1) return prev.skip ? null : prev;
+    if (prev.text.trim().length > 0) return null;
+  }
+  return null;
 }
 
 /** Teaser cards: a nested article whose heading links elsewhere. */
