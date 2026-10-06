@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "url": "https://notes.example.org/part-2.html",
-  "title": "Tokenizer Notes",
+  "title": "2 The tokenizer",
   "subtitle": null,
   "byline": null,
   "authors": [],
@@ -13,20 +13,9 @@
   "excerpt": "The tokenizer turns a stream of characters into tokens. It is a state machine: each state consumes one character and either emits a token, switches to another state, or both.",
   "leadImage": null,
   "favicon": "https://notes.example.org/favicon.ico",
-  "wordCount": 221,
+  "wordCount": 218,
   "readingMinutes": 1,
   "blocks": [
-    {
-      "type": "heading",
-      "level": 2,
-      "content": [
-        {
-          "type": "text",
-          "text": "2 The tokenizer"
-        }
-      ],
-      "anchor": "tokenizer"
-    },
     {
       "type": "paragraph",
       "content": [
@@ -62,7 +51,7 @@
     },
     {
       "type": "heading",
-      "level": 3,
+      "level": 2,
       "content": [
         {
           "type": "text",
@@ -88,7 +77,7 @@
     },
     {
       "type": "heading",
-      "level": 3,
+      "level": 2,
       "content": [
         {
           "type": "text",

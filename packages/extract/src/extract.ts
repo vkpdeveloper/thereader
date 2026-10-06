@@ -25,10 +25,12 @@ export function extractTree(doc: VDocument, options: ExtractOptions): Article | 
   const pageUrl = options.url;
   const base = doc.baseHref !== null ? resolveUrl(doc.baseHref, pageUrl) ?? pageUrl : pageUrl;
   const meta = readMetadata(doc, pageUrl);
-  const title = chooseTitle(meta, doc.body, pageUrl);
+  let title = chooseTitle(meta, doc.body, pageUrl);
+  const titleMatched = title !== titleFallback(meta, pageUrl);
   const roots = findContent(doc.body, meta.articleBody);
 
   let blocks = new Converter(base).convert(roots);
+  if (!titleMatched) title = sectionTitle(blocks, title);
   blocks = tidy(blocks, title, meta);
 
   const bodyText = blocksText(blocks);
@@ -122,6 +124,32 @@ function countH1(body: VElement): number {
     return true;
   });
   return n;
+}
+
+/** What `chooseTitle` falls back to when no heading on the page matches the declared title. */
+function titleFallback(meta: Metadata, pageUrl: string): string {
+  const host = hostOf(pageUrl);
+  for (const t of meta.rawTitles) {
+    const cleaned = cleanTitle(t, meta.siteName, host);
+    if (cleaned.length > 0) return cleaned;
+  }
+  return '';
+}
+
+/**
+ * A <title> that only names the site or document ("HTML Standard") over a
+ * page that opens with its own top-level heading sharing a word with it
+ * ("13.2 Parsing HTML documents"): that heading is this page's title.
+ */
+function sectionTitle(blocks: Block[], title: string): string {
+  const first = blocks[0];
+  if (first === undefined || first.type !== 'heading') return title;
+  for (const b of blocks) if (b.type === 'heading' && b.level < first.level) return title;
+  const words = comparable(title).split(' ');
+  if (words.length > 3) return title;
+  const heading = collapse(inlineText(first.content));
+  const hw = comparable(heading).split(' ');
+  return words.some((w) => w.length > 2 && hw.indexOf(w) >= 0) ? heading : title;
 }
 
 function chooseTitle(meta: Metadata, body: VElement, pageUrl: string): string {
