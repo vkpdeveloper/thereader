@@ -16,6 +16,20 @@ Also exported: `extractHtml(html, url)` (URL string as given), `extractTree(VDoc
 `cleanTitle`, `canonicalUrl`, `detectLanguage`, `normalizeLanguage`, `languageFromClass`,
 `articleText`, `blocksText`, `inlineText`, `countWords`, and the model.
 
+## Using it in this repo
+
+`truffle` is a member of the root pub workspace (`pubspec.yaml` at the repository root, with
+`resolution: workspace` in each member). A consumer declares it by version, and pub resolves
+it to this directory:
+
+```yaml
+dependencies:
+  truffle: ^0.1.0
+```
+
+`flutter pub get` or `dart pub get` anywhere in the workspace resolves every member together
+into the root `pubspec.lock` and `.dart_tool/package_config.json`.
+
 ## Layout
 
 One file per TypeScript file in `lib/src/` (`tree`, `url`, `metadata`, `content`, `blocks`,

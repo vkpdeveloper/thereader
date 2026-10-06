@@ -43,7 +43,7 @@ score is re-derived from the stored outputs, so annotation fixes need no re-run 
 | Trafilatura | 2.3.0 | CPython 3.12 + lxml | `extract(tree, url=url, include_comments=False)`, txt output (comments off as in the Zyte runner) |
 | Postlight | `@postlight/parser` 2.2.3 | Node | `Parser.parse(url, { html, fetchAllPages: false })` |
 
-Versions are pinned in `package.json`, `bun.lock`, `python/pyproject.toml` and `python/uv.lock`.
+Versions are pinned in `package.json`, the root `bun.lock`, `python/pyproject.toml` and `python/uv.lock`.
 
 ### Runtime and timing
 

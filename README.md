@@ -9,8 +9,21 @@ readable from their local copy. No login or accounts.
 ## Workspace
 
 - `apps/mobile`: Flutter application.
+- `apps/web`: browser reader (Vite + React), served by the API.
 - `apps/api`: Cloudflare Worker, local R2 fixtures, and Bun development tooling.
+- `packages/truffle`: Truffle, the article extraction engine (TypeScript, npm name `truffle`).
+- `packages/truffle_dart`: its Dart port, the engine the mobile app runs (pub name `truffle`).
+- `eval`: extraction quality and speed against other engines.
 - `docs/api-contract.md`: shared HTTP contract and application scope.
+
+Apps use Truffle as an installed package, through two workspaces at the repository root:
+
+- Bun: `package.json` lists `apps/web`, `packages/truffle` and `eval`; consumers declare
+  `"truffle": "workspace:*"` and `import … from 'truffle'`. One `bun.lock` at the root.
+- Dart: `pubspec.yaml` lists `apps/mobile` and `packages/truffle_dart`; consumers declare
+  `truffle: ^0.1.0` and `import 'package:truffle/truffle.dart'`. One `pubspec.lock` at the root.
+
+`apps/api` does not use Truffle and stays outside the Bun workspace with its own lockfile.
 
 ## Runtime boundary
 
@@ -20,7 +33,7 @@ APIs. Bun server and filesystem APIs are not available in that deployed handler.
 
 ## Local development
 
-Each application has its own setup instructions and dependency lockfile. The local
+Each application has its own setup instructions; lockfiles are per workspace (above). The local
 API normally listens on port 8787. Connect the Flutter app to
 `http://127.0.0.1:8787`; Android emulators use `http://10.0.2.2:8787` instead.
 Physical devices need a reachable development-machine address.
