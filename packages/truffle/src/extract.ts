@@ -1,7 +1,8 @@
 import { Converter, normalizeInlines } from './blocks';
 import { findContent } from './content';
 import { normalizeDate, readMetadata, type Metadata } from './metadata';
-import { ARTICLE_SCHEMA, type Article, type Block, type ExtractOptions, type Image, type Inline } from './model';
+import { articleMarkdown } from './markdown';
+import { ARTICLE_SCHEMA, type Article, type Block, type ExtractOptions, type Image, type Inline, type MarkdownArticle } from './model';
 import { blocksText, countWords, inlineText } from './text';
 import { collapse, fromDom, splitAtRuns, textOf, walk, type VDocument, type VElement } from './tree';
 import { hostOf, resolveHttp } from './url';
@@ -10,17 +11,25 @@ import { hostOf, resolveHttp } from './url';
  * Extracts the readable article from a parsed page. Mutates `doc` nowhere:
  * the page is copied into a compact tree first.
  */
+export function extract(doc: Document, options: ExtractOptions & { markdown: true }): MarkdownArticle | null;
+export function extract(doc: Document, options: ExtractOptions): Article | null;
 export function extract(doc: Document, options: ExtractOptions): Article | null {
   return extractTree(fromDom(doc), options);
 }
 
+type HtmlOptions = ExtractOptions & { parse?: (html: string) => Document };
+
 /** Parses with the platform `DOMParser` (browser) unless `parse` is given, then extracts. */
-export function extractHtml(html: string, options: ExtractOptions & { parse?: (html: string) => Document }): Article | null {
+export function extractHtml(html: string, options: HtmlOptions & { markdown: true }): MarkdownArticle | null;
+export function extractHtml(html: string, options: HtmlOptions): Article | null;
+export function extractHtml(html: string, options: HtmlOptions): Article | null {
   const parse = options.parse ?? ((source: string) => new DOMParser().parseFromString(source, 'text/html'));
   return extract(parse(html), options);
 }
 
 /** Platform-independent part of the pipeline (the Dart port mirrors everything from here on). */
+export function extractTree(doc: VDocument, options: ExtractOptions & { markdown: true }): MarkdownArticle | null;
+export function extractTree(doc: VDocument, options: ExtractOptions): Article | null;
 export function extractTree(doc: VDocument, options: ExtractOptions): Article | null {
   const pageUrl = options.url;
   const base = doc.baseHref !== null ? resolveHttp(doc.baseHref, pageUrl) ?? pageUrl : pageUrl;
@@ -45,7 +54,7 @@ export function extractTree(doc: VDocument, options: ExtractOptions): Article | 
 
   const text = blocksText(blocks);
   const wordCount = countWords(text);
-  return {
+  const article: Article = {
     schema: ARTICLE_SCHEMA,
     url: meta.url,
     title,
@@ -64,6 +73,8 @@ export function extractTree(doc: VDocument, options: ExtractOptions): Article | 
     readingMinutes: Math.max(1, Math.ceil(wordCount / 230)),
     blocks,
   };
+  if (options.markdown === true) article.markdown = articleMarkdown(article);
+  return article;
 }
 
 // ------------------------------------------------------------------ title
