@@ -57,7 +57,7 @@ double-counting. Sessions from different devices sum; simultaneous reading count
 both devices' foreground time. API address, reader engine and all reader settings
 stay local.
 
-Highlights and saved articles sync too (below and in the API README). Sync responses
+Highlights, saved articles and categories sync too (below and in the API README). Sync responses
 are bounded to 1,000 book editions and reject excess state explicitly; uploads and
 request payloads also have validation limits documented in the API README.
 
@@ -188,6 +188,17 @@ The web reader paints them with the CSS Custom Highlight API (`::highlight()`,
 Chrome 105+, Safari 17.2+, Firefox 140+) over React's own text nodes, so the
 article DOM is never changed. The Flutter app stores pulled article
 highlights but has no article highlight UI yet.
+
+## Categories
+
+Categories group books and saved articles in the Library; each item is in at
+most one. Categories and assignments travel as `category` and `categoryItem`
+changes on the `_categories` sentinel edition in the same durable outbox, and
+are pulled with one `categoriesSince` rev cursor shared by both, 500 rows per
+response. Deleting a category is final. They add no request to the sync
+schedule; D1 work per cycle is the upserts in the batch plus one indexed range
+read of changed rows when a client asks. The colours, wire format and client
+behaviour are in [categories](categories.md).
 
 ## Deployment and credentials
 

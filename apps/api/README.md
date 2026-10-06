@@ -170,6 +170,25 @@ document any more, the same request deletes `articles/<sha256>` (one indexed
 D1 read, one R2 delete); clients upload a document only after its save is
 accepted, so saving again simply uploads it again.
 
+Library categories ride on the same request with the sentinel edition
+`bookId:"_categories"`, `sha256` of 64 zeros (see
+[categories](../../docs/categories.md)). A `category` change carries
+`{categoryId,name,color,createdAt,deleted:false}` or a tombstone
+`{categoryId,deleted:true}`; `categoryId` is a lowercase UUID, `name` is
+stored trimmed (1–60 characters, no control characters) and `color` matches
+`^[a-z]{1,20}$` without being checked against the known palette. Renames and
+recolours are last-write-wins by `(updatedAt,id)`. Tombstones are final: a
+tombstone wins over a live row whatever its clock, and later live writes for
+that id are acknowledged but ignored. A `categoryItem` change carries
+`{itemType,itemId,categoryId}`, where `itemType` is `book` (a book id, at most
+128 characters) or `article` (32 lowercase hex characters) and a null
+`categoryId` makes the item uncategorized; it is last-write-wins per
+`(itemType,itemId)` and the category need not exist. Categories and
+assignments share one server `rev` sequence. To pull, add `categoriesSince`
+(`null` or the last `cursor`); the response then includes
+`categories:{items,assignments,cursor,more}`, each row with its `rev`, at most
+500 rows in total per response in rev order, tombstones included.
+
 Sync changes are keyed by the supplied `(bookId,sha256)` and do not require the
 edition to be present in the catalog. This keeps a cancelled or still-pending
 upload from rejecting unrelated changes in the same atomic batch. Clients skip
