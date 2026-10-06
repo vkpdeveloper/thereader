@@ -390,10 +390,13 @@ bool isFootnotes(VElement el) {
 }
 
 bool _isFootnoteList(VElement el) {
-  if (el.attrs['role'] == 'doc-endnotes' || el.attrs['data-footnotes'] != null) return true;
+  // No attributes: no role, no data-footnotes, no class or id.
+  final attrs = el.attrs;
+  if (attrs.isEmpty) return false;
+  if (attrs['role'] == 'doc-endnotes' || attrs['data-footnotes'] != null) return true;
   // Every container word has "note", "ref" or "fn" in it: skip the pattern for everything else.
   final m = el.matchString;
-  if (!m.contains('note') && !m.contains('ref') && !m.contains('fn')) return false;
+  if (!_mentionsNotes(m)) return false;
   if (footnoteContainer.hasMatch(m)) return true;
   // Python-Markdown: <div class="footnote"><hr><ol><li id="fn:1">.
   if (!el.hasClass('footnote')) return false;
@@ -404,6 +407,22 @@ bool _isFootnoteList(VElement el) {
 }
 
 final _footnoteClass = ClassPattern(r'(?:^|\s)footnote(?:\s|$)');
+
+/// `m.indexOf('note') >= 0 || m.indexOf('ref') >= 0 || m.indexOf('fn') >= 0`, in one pass.
+bool _mentionsNotes(String m) {
+  final last = m.length - 1;
+  for (var i = 0; i < last; i++) {
+    switch (m.codeUnitAt(i)) {
+      case 0x6e: // n
+        if (m.startsWith('ote', i + 1)) return true;
+      case 0x72: // r
+        if (m.startsWith('ef', i + 1)) return true;
+      case 0x66: // f
+        if (m.codeUnitAt(i + 1) == 0x6e) return true;
+    }
+  }
+  return false;
+}
 
 /// A footnote list or one of its notes: kept even when marked up as <aside>.
 bool _isNoteMarkup(VElement el) =>

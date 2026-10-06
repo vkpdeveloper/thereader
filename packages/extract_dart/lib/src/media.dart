@@ -522,7 +522,10 @@ Block? frameBlock(VElement el, String base) {
 const _noBase = 'https://invalid.invalid/';
 
 /// A frame the converter will keep (see [frameBlock]); usable before the page base is known.
-bool isContentFrame(VElement el) => frameBlock(el, _noBase) != null;
+bool isContentFrame(VElement el) {
+  if (el.frameState < 0) el.frameState = frameBlock(el, _noBase) != null ? 1 : 0;
+  return el.frameState == 1;
+}
 
 /// `<video>`/`<audio>` elements with their own files.
 Block? mediaFromElement(VElement el, String base) {

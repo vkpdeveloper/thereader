@@ -36,23 +36,26 @@ class _Literal {
 }
 
 class ClassPattern {
-  ClassPattern(String source, {bool caseSensitive = true})
+  /// [memoize]: remember results by subject (class and id strings repeat; running text does not).
+  ClassPattern(String source, {bool caseSensitive = true, this.memoize = true})
     : regex = RegExp(source, caseSensitive: caseSensitive),
       _plan = caseSensitive ? _Plan.parse(source) : null;
 
   final RegExp regex;
   final _Plan? _plan;
+  final bool memoize;
 
   /// Whether the pattern reduced to literal-word matching (no `RegExp` at run time).
   bool get isLiteral => _plan != null;
   final Map<String, bool> _memo = {};
 
   bool hasMatch(String subject) {
-    final cached = _memo[subject];
+    final cached = memoize ? _memo[subject] : null;
     if (cached != null) return cached;
     final plan = _plan;
     final result = plan != null ? plan.matches(subject) : regex.hasMatch(subject);
     assert(result == regex.hasMatch(subject), 'ClassPattern ${regex.pattern} disagrees with RegExp on "$subject"');
+    if (!memoize) return result;
     if (_memo.length >= 4096) _memo.clear();
     return _memo[subject] = result;
   }

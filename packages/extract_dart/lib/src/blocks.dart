@@ -580,8 +580,8 @@ class Converter {
       for (final child in el.children) {
         if (child is VElement) {
           visit(child);
-        } else {
-          final text = (child as VText).text;
+        } else if ((child as VText).texMarks) {
+          final text = child.text;
           if (text.contains(r'$$') || text.contains(r'\(') || text.contains(r'\[')) {
             if (_texDelimited.test(text)) tex = true;
             _texDelimited.lastIndex = 0;

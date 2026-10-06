@@ -18,18 +18,40 @@ final class VText extends VNode {
   /// Cached [visibleLength] of [text]; -1 until first asked.
   int _len = -1;
   int _commaCount = 0;
+  bool _texMarks = false;
 
   int get length {
-    if (_len < 0) {
-      _len = visibleLength(text);
-      _commaCount = _len > 0 ? countCommas(text) : 0;
-    }
+    if (_len < 0) _scan();
     return _len;
   }
 
   int get commas {
-    if (_len < 0) length;
+    if (_len < 0) _scan();
     return _commaCount;
+  }
+
+  /// Whether [text] holds a `$` or a `\` (every TeX delimiter starts with
+  /// one), found in the pass that counts commas.
+  bool get texMarks {
+    if (_len < 0) _scan();
+    return _texMarks;
+  }
+
+  void _scan() {
+    _len = visibleLength(text);
+    if (_len == 0) return;
+    var n = 0;
+    var tex = false;
+    for (var i = 0; i < text.length; i++) {
+      final c = text.codeUnitAt(i);
+      if (c == 0x24 || c == 0x5c) {
+        tex = true;
+      } else if (_isComma(c)) {
+        n++;
+      }
+    }
+    _commaCount = n;
+    _texMarks = tex;
   }
 }
 
@@ -72,6 +94,9 @@ final class VElement extends VNode {
 
   /// Cached: footnote list container (-1 unknown, 0 no, 1 yes).
   int notesState = -1;
+
+  /// Cached `isContentFrame` (-1 unknown, 0 no, 1 yes); the TypeScript engine recomputes it.
+  int frameState = -1;
 
   /// Set by content normalization: has a block-level descendant.
   bool containsBlock = false;
@@ -245,32 +270,32 @@ int visibleLength(String text) {
 int countCommas(String text) {
   var n = 0;
   for (var i = 0; i < text.length; i++) {
-    final c = text.codeUnitAt(i);
-    // , ، 、 ， ﹐ ﹑ ､ ⸲ ⸴ ⹁ ⹌ ⹎ ߸ ᠂ ᠈ ꓾ ꘍ ꛵ ︑
-    if (c == 0x2c ||
-        c == 0x60c ||
-        c == 0x3001 ||
-        c == 0xff0c ||
-        c == 0xfe50 ||
-        c == 0xfe51 ||
-        c == 0xff64 ||
-        c == 0x2e32 ||
-        c == 0x2e34 ||
-        c == 0x2e41 ||
-        c == 0x2e4c ||
-        c == 0x2e4e ||
-        c == 0x7f8 ||
-        c == 0x1802 ||
-        c == 0x1808 ||
-        c == 0xa4fe ||
-        c == 0xa60d ||
-        c == 0xa6f5 ||
-        c == 0xfe11) {
-      n++;
-    }
+    if (_isComma(text.codeUnitAt(i))) n++;
   }
   return n;
 }
+
+bool _isComma(int c) =>
+    // , ، 、 ， ﹐ ﹑ ､ ⸲ ⸴ ⹁ ⹌ ⹎ ߸ ᠂ ᠈ ꓾ ꘍ ꛵ ︑
+    c == 0x2c ||
+    c == 0x60c ||
+    c == 0x3001 ||
+    c == 0xff0c ||
+    c == 0xfe50 ||
+    c == 0xfe51 ||
+    c == 0xff64 ||
+    c == 0x2e32 ||
+    c == 0x2e34 ||
+    c == 0x2e41 ||
+    c == 0x2e4c ||
+    c == 0x2e4e ||
+    c == 0x7f8 ||
+    c == 0x1802 ||
+    c == 0x1808 ||
+    c == 0xa4fe ||
+    c == 0xa60d ||
+    c == 0xa6f5 ||
+    c == 0xfe11;
 
 /// Depth-first pre-order walk over elements. Return false from [visit] to
 /// skip children.

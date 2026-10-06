@@ -10,6 +10,7 @@ import 'blocks.dart';
 import 'content.dart';
 import 'dom.dart';
 import 'js.dart';
+import 'match.dart';
 import 'metadata.dart';
 import 'model.dart';
 import 'text.dart';
@@ -299,8 +300,21 @@ final _bylineLine = RegExp(
 
 final _numberish = RegExp(r'^[\d\s.,/#|·•]{1,6}$');
 final _ruleLine = RegExp(r'^[\s_*~=\-–—•·]{3,}$');
-final _sentenceOpen = RegExp(r'''[.!?:;。！？"'”’)\]]\s*$''');
-final _sentenceClosed = RegExp(r'''[.!?:;。！？"'”’)\]]$''');
+
+/// `/[.!?:;。！？"'”’)\]]\s*$/.test(text)`: the text ends a sentence (or a quote, or a bracket).
+bool _endsSentence(String text) {
+  var end = text.length;
+  while (end > 0 && isJsSpace(text.codeUnitAt(end - 1))) {
+    end--;
+  }
+  if (end == 0) return false;
+  return switch (text.codeUnitAt(end - 1)) {
+    0x2e || 0x21 || 0x3f || 0x3a || 0x3b || 0x3002 || 0xff01 || 0xff1f => true,
+    0x22 || 0x27 || 0x201d || 0x2019 || 0x29 || 0x5d => true,
+    _ => false,
+  };
+}
+
 final _lowercaseStart = RegExp(r'^\s*\p{Ll}', unicode: true);
 final _closingLinkLine = RegExp(r'''[.!?]["'”’)]?$''');
 final _updatedLabel = RegExp(r'^(?:last updated|updated|published|posted)(?: on)?:?$', caseSensitive: false);
@@ -380,9 +394,9 @@ List<Block> _tidy(List<Block> input, String title, Metadata meta) {
     if (first is! ParagraphBlock) continue;
     // Cheap first: only the paragraph's last run decides whether the sentence is unfinished.
     final tail = first.content.isEmpty ? null : first.content.last;
-    if (tail is! TextRun || _sentenceOpen.hasMatch(tail.text)) continue;
+    if (tail is! TextRun || _endsSentence(tail.text)) continue;
     final head = jsTrimEnd(inlineText(first.content));
-    if (head.isEmpty || _sentenceClosed.hasMatch(head)) continue;
+    if (head.isEmpty || _endsSentence(head)) continue;
     var j = i + 1;
     while (j < blocks.length && j - i <= 3) {
       final next = blocks[j];
@@ -536,6 +550,11 @@ final _bioOrphan = RegExp(r'^(?:is|was)\s+(?:a|an|the)\s');
 /// Bios: a short paragraph naming one of the authors (or orphaned from its
 /// name, "is a senior reporter...") with a job title, plus bios right next to one.
 List<Block> _dropBios(List<Block> blocks, List<String> authors) {
+  // Nothing goes without a certain bio (orphaned, or naming an author), and only those need checking first.
+  if (!blocks.any((b) => b is ParagraphBlock && _bioKind(b, authors, certainOnly: true) == 2)) {
+    assert(!blocks.any((b) => b is ParagraphBlock && _bioKind(b, authors) == 2), 'certain-bio prefilter missed one');
+    return blocks;
+  }
   final bio = [
     for (final b in blocks)
       if (b is! ParagraphBlock) 0 else _bioKind(b, authors),
@@ -562,13 +581,34 @@ List<Block> _dropBios(List<Block> blocks, List<String> authors) {
   ];
 }
 
-/// 0: not a bio, 1: a bio of someone, 2: a bio of an author (or orphaned from its name).
-int _bioKind(ParagraphBlock b, List<String> authors) {
-  final raw = inlineText(b.content);
-  if (raw.length > 900) return 0;
+/// 0: not a bio, 1: a bio of someone, 2: a bio of an author (or orphaned from its name). With
+/// [certainOnly], 1 may come out as 0.
+int _bioKind(ParagraphBlock b, List<String> authors, {bool certainOnly = false}) {
+  if (certainOnly && !_mayOpenCertainBio(b.content, authors)) return 0;
+  // `raw.slice(0, 200)` of `raw = inlineText(content)`, without building the rest of it.
+  var length = 0;
+  final prefix = StringBuffer();
+  for (final node in b.content) {
+    final part = switch (node) {
+      TextRun(:final text) => text,
+      LineBreak() => '\n',
+      InlineImage() => '',
+      InlineMath(:final text) => text,
+      FootnoteRef(:final label) => label,
+    };
+    length += part.length;
+    if (prefix.length < 200) prefix.write(part);
+  }
+  if (length > 900) return 0;
   // The anchored shape tests are cheap and fail fast on ordinary paragraphs; the job title is checked last.
+  final raw = prefix.toString();
   final head = collapse(raw.length > 200 ? raw.substring(0, 200) : raw);
-  final orphan = _bioOrphan.hasMatch(head);
+  final orphan = (head.startsWith('is') || head.startsWith('was')) && _bioOrphan.hasMatch(head);
+  if (!orphan && certainOnly) {
+    // A named bio is certain only when the name is an author's, and the name opens the paragraph.
+    final lower = authors.isEmpty ? '' : jsLower(head);
+    if (!authors.any(lower.startsWith)) return 0;
+  }
   // Every named bio has "is", "was" or "has been" in it.
   final m = orphan || !head.contains('is') && !head.contains('was') && !head.contains('has been')
       ? null
@@ -576,6 +616,28 @@ int _bioKind(ParagraphBlock b, List<String> authors) {
   if (!orphan && m == null || !_bioRole.hasMatch(jsSlice(head, 0, 160))) return 0;
   if (orphan) return 2;
   return authors.contains(jsLower(m![1]!)) ? 2 : 1;
+}
+
+/// False when the paragraph's first visible character rules out a certain bio: an orphan opens with
+/// "is" or "was", a named one with an author's name (lowercase in [authors]). Only ASCII is judged.
+bool _mayOpenCertainBio(List<Inline> content, List<String> authors) {
+  for (final node in content) {
+    final part = switch (node) {
+      TextRun(:final text) => text,
+      LineBreak() => '\n',
+      InlineImage() => '',
+      InlineMath(:final text) => text,
+      FootnoteRef(:final label) => label,
+    };
+    for (var i = 0; i < part.length; i++) {
+      final c = part.codeUnitAt(i);
+      if (isJsSpace(c)) continue;
+      if (c >= 0x80 || c == 0x69 || c == 0x77) return true;
+      final lower = c >= 0x41 && c <= 0x5a ? c + 0x20 : c;
+      return authors.any((a) => a.isEmpty || a.codeUnitAt(0) == lower);
+    }
+  }
+  return false;
 }
 
 bool _sameFirstText(List<Inline> a, List<Inline> b) {
@@ -632,6 +694,16 @@ final _callToAction = RegExp(
 final _quoted = RegExp(r'''^["“„«'‘]''');
 
 /// A short pitch to sign up, subscribe, download, follow or support (a paragraph, a list of them, or a box).
+/// Lowercase words, one of which every match of [_callToAction] contains: a text holding none cannot
+/// match. One pass over the text, by first character.
+final _callToActionWords = ClassPattern(
+  'sign up |signing up |subscribe |newsletter|email list|mailing list|register |account|download the|download our|'
+  'get the |get our |follow us|follow topics|follow authors|follow the authors|support us|support our|patreon|'
+  'donate |become a |buy it here|commission|affiliate |purchase through links|suscr|descarga la|boletín|'
+  'abonnez-vous|inscrivez-vous|téléchargez|abonnieren sie|jetzt herunterladen|assine|inscreva-se',
+  memoize: false,
+);
+
 bool _isCallToAction(Block b) {
   String text;
   if (b is ParagraphBlock) {
@@ -643,7 +715,13 @@ bool _isCallToAction(Block b) {
   }
   text = collapse(text);
   // Quoted speech that mentions subscriptions is reporting, not a pitch.
-  return text.isNotEmpty && text.length < 300 && !_quoted.hasMatch(text) && _callToAction.hasMatch(text);
+  if (text.isEmpty || text.length >= 300 || _quoted.hasMatch(text)) return false;
+  final lower = jsLower(text);
+  if (!_callToActionWords.hasMatch(lower)) {
+    assert(!_callToAction.hasMatch(text), 'call-to-action prefilter missed "$text"');
+    return false;
+  }
+  return _callToAction.hasMatch(text);
 }
 
 final _email = RegExp(r'^[\w.+-]+@[\w-]+\.[\w.-]+$');
