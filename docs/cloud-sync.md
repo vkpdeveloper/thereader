@@ -80,21 +80,28 @@ opened, verified against its SHA-256, and keep it for offline reading.
   (see the [API README](../apps/api/README.md)). Saves and deletions are
   last-write-wins by their time; a deletion is a tombstone, and saving the URL
   again later brings the article back with a fresh position. A deletion is
-  only sent for an article that already synced. Positions are
-  `{block, offset, percent}`: the top-level block at the reading line, how far
-  into it, and the share read. They use their own timestamp ordering like book
+  only sent for an article that already synced. Positions are `{block, offset,
+  percent}`: the index in `article.blocks` of the top-level block at the
+  reading line, how far into it, and the share read. Both readers find blocks
+  by that index (mobile builds one list item per block; the web reader marks
+  each block's element with `data-block-index`), never by how many elements a
+  block happens to render. They use their own timestamp ordering like book
   positions; an open article does not jump, and the reader's own position is
   saved when it closes. Pulls use an `articlesSince` rev cursor, 200 rows per
   response.
 - **Documents** are content-addressed R2 objects, `articles/<sha256>`, stored
   as the exact bytes the saving device hashed (gzip-compressed by both apps).
   `PUT /v1/article-bodies/<sha256>` is idempotent and checks size (8 MB
-  uncompressed), hash and schema; `GET` serves them with immutable caching.
-  The saving device queues the upload in its outbox state; uploads run at the
-  start of a foreground sync cycle, at most five per cycle, and survive
-  restart. A network or server failure retries next cycle; a document the
-  server refuses stays local only. A document over 8 MB keeps the whole
-  article on its device.
+  uncompressed), hash and the document's leading `{"schema":1,` without
+  parsing it; `GET` serves them with immutable caching. When a deletion is
+  accepted and no live article still references the document, the Worker
+  removes it from R2; saving the article again uploads it again. The saving
+  device queues the upload in its outbox state; uploads run in a foreground
+  sync cycle right after the server accepts the save (never before, so a
+  concurrent deletion cannot remove a document a newer save still points at),
+  at most five per cycle, and survive restart. A network or server failure
+  retries next cycle; a document the server refuses stays local only. A
+  document over 8 MB keeps the whole article on its device.
 - **Receiving.** A pulled article appears in the Library as "Not downloaded".
   After each successful cycle, up to five documents of at most 1 MB download
   so recent articles open offline; larger ones download when opened. An

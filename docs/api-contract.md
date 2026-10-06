@@ -89,10 +89,14 @@ parses the page; clients decode, extract and store the article themselves.
 Saved articles sync without the server ever fetching or extracting a page.
 The saving device extracts the article and uploads its `Article` JSON
 (schema 1) to `PUT /v1/article-bodies/<sha256>` as `application/gzip` (or
-`application/json`); the Worker checks the uncompressed size (8 MB), the
-SHA-256 of the uncompressed bytes and that the JSON has `schema: 1`, a string
-`url` and `title` and a `blocks` array, then stores the bytes as sent. Other
-devices `GET` the same path (immutable caching, ETag) and verify the hash.
+`application/json`); the Worker checks the uncompressed size (8 MB, counted
+while inflating), the SHA-256 of the uncompressed bytes and, without parsing,
+that the document starts with `{"schema":1,` and ends with `}` (clients must
+serialize `schema` as the first key, without whitespace), then stores the
+bytes as sent. Deleting an article removes its document once no live article
+references it; clients upload a document only after its save is accepted.
+Other devices `GET` the same path (immutable caching, ETag) and verify the
+hash.
 Metadata (`url`, `title`, `siteName`, `byline`, `excerpt`, `leadImage`,
 `favicon`, `language`, `dir`, `wordCount`, `readingMinutes`, `blockCount`,
 `publishedAt`, `savedAt`, `bodySha256`, `bodySize`, `schema`), reading
