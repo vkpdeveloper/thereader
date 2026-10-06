@@ -210,6 +210,9 @@ export class Converter {
   /** Text of every footnote item (label stripped), to recognise inline copies of the same notes. */
   private readonly noteTexts = new Set<string>();
   private pendingCodeTitle: string | null = null;
+  /** Notes written inline at their reference (LaTeXML, sidenotes), listed after the text. */
+  private readonly inlineNotes: Footnote[] = [];
+  private inNote = false;
   lastDisplayMath: Inline | null = null;
 
   constructor(private readonly base: string) {}
@@ -222,6 +225,7 @@ export class Converter {
       if (isInline(root) || root.tag === 'p') this.children(root, out);
       else this.block(root, out);
     }
+    if (this.inlineNotes.length > 0) out.push({ type: 'footnotes', items: this.inlineNotes });
     return out;
   }
 
@@ -516,6 +520,7 @@ export class Converter {
     if (el.skip) return;
     if (this.caption(el, out, b)) return;
     const tag = el.tag;
+    if (tag !== 'a' && !this.inNote && INLINE_NOTE.test(el.matchString) && this.inlineNote(el, b)) return;
     if (this.notes.size > 0 && tag !== 'a') {
       // Script-driven references: <span class="foot-ref" data-footnote="footnote-esb">5</span>.
       const target = el.attrs['data-footnote'] ?? el.attrs['data-footnote-id'] ?? el.attrs['data-fn'] ?? el.attrs['data-note'];
@@ -624,6 +629,36 @@ export class Converter {
       return;
     }
     this.inlineChildren(el, b, ctx, out);
+  }
+
+  /**
+   * A note written where it is referenced: <span class="ltx_note ltx_role_footnote"><sup>1</sup>
+   * <span class="ltx_note_content">...</span></span>. Becomes a ref, and the note goes to the end.
+   */
+  private inlineNote(el: VElement, b: InlineBuilder): boolean {
+    const text = collapse(rawText(el));
+    const mark = firstElement(el, (e) => e.tag === 'sup' || /(?:^|[\s_-])(?:note-?mark|sidenote-number|footnote-number)(?:$|[\s_-])/.test(e.matchString));
+    const label = mark !== null ? collapse(rawText(mark)).replace(/^\[|\]$/g, '') : '';
+    // A bare marker ("1", "[2]") is a reference, not a note.
+    if (text.length <= label.length + 3 || label.length > 4) return false;
+    const content = firstElement(el, (e) => /(?:^|[\s_-])(?:note-?content|note-?text|note-?body|footnote-?content|sidenote-?content)(?:$|[\s_-])/.test(e.matchString)) ?? el;
+    if (mark !== null && !isAncestorOf(mark, content)) mark.skip = true;
+    const blocks: Block[] = [];
+    this.inNote = true;
+    const inline = this.inlineOnly(content);
+    this.inNote = false;
+    if (mark !== null) mark.skip = false;
+    if (inline.length === 0) return false;
+    blocks.push({ type: 'paragraph', content: inline });
+    const n = this.inlineNotes.length + 1;
+    const noteLabel = label.length > 0 ? label : String(n);
+    stripNoteLabel(blocks, noteLabel);
+    if (blocks.length === 0) return false;
+    let id = el.id.length > 0 ? el.id : 'note-' + n;
+    if (this.notes.has(id)) id = 'inline-' + id;
+    this.inlineNotes.push({ id, label: noteLabel, blocks });
+    b.push({ type: 'ref', id, label: noteLabel });
+    return true;
   }
 
   private inlineChildren(el: VElement, b: InlineBuilder, ctx: Ctx, out: Block[]): void {
@@ -1147,6 +1182,13 @@ export class Converter {
   }
 }
 
+const INLINE_NOTE = /(?:^|[\s_-])(?:footnote|sidenote|marginnote|ltx_note)(?:$|[\s_-])/;
+
+function isAncestorOf(ancestor: VElement, node: VElement): boolean {
+  for (let p = node.parent; p !== null; p = p.parent) if (p === ancestor) return true;
+  return false;
+}
+
 const NOTE_ITEM = /(?:^|[\s_-])(?:footnote|endnote)(?:$|[\s_-])/;
 
 function isNoteItem(el: VElement): boolean {
@@ -1159,17 +1201,21 @@ function noteKey(text: string): string {
   return collapse(text).replace(/^\[?\d{1,3}\]?[:.)]?\s*/, '');
 }
 
-/** A note that repeats its own number as text ("5: We can't resist...") loses it; the label is drawn. */
+/** A note that repeats its own number ("5: We can't resist...", "<sup>1</sup> 1 https://...") loses it; the label is drawn. */
 function stripNoteLabel(blocks: Block[], label: string): void {
   const first = blocks[0];
   if (first === undefined || first.type !== 'paragraph') return;
-  const run = first.content[0];
-  if (run === undefined || run.type !== 'text') return;
-  const m = /^\[?(\d{1,3})\]?[:.)]?\s+/.exec(run.text);
-  if (m === null || m[1] !== label) return;
-  run.text = run.text.slice(m[0].length);
-  if (run.text.length === 0) first.content.shift();
-  if (first.content.length === 0) blocks.shift();
+  const content = first.content;
+  while (content.length > 0) {
+    const run = content[0]!;
+    if (run.type !== 'text') break;
+    const m = /^\s*\[?(\d{1,3})\]?[:.)]?(?:\s+|$)/.exec(run.text);
+    if (m === null || m[1] !== label) break;
+    run.text = run.text.slice(m[0].length);
+    if (run.text.length > 0) break;
+    content.shift();
+  }
+  if (content.length === 0) blocks.shift();
 }
 
 function inlineTextOf(content: Inline[]): string {
