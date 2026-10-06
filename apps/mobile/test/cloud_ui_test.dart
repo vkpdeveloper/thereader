@@ -285,6 +285,9 @@ void main() {
       find.byWidgetPredicate((w) => w is Text && w.data == 'Imported Book' && w.maxLines == 2),
     );
     await tester.pumpAndSettle();
+    // Long press opens the item's actions; the book page is one of them.
+    await tester.tap(find.text('Book details'));
+    await tester.pumpAndSettle();
     expect(find.byType(BookDetailScreen), findsOneWidget);
 
     expect(find.text('CLOUD'), findsNothing);
