@@ -96,7 +96,7 @@ export function cleanTitle(raw: string, siteName: string | null, host: string): 
   return cleaned.length >= 3 ? cleaned : title;
 }
 
-const PERMALINK_TEXT = /^[#¶§🔗]$/;
+const PERMALINK_TEXT = /^[#¶§🔗]$/u;
 
 /** Heading text without permalink anchors (`¶`, `#`). */
 function headingText(el: VElement): string {

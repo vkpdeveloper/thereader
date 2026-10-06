@@ -743,7 +743,7 @@ export class Converter {
           const linkText = collapse(rawText(el));
           if (BACKLINK.test(el.matchString) || /^[↩↑^]/.test(linkText)) return;
           // Permalink glyphs go; a permalink wrapping the heading's own words keeps them.
-          if (/^[#¶§🔗]?$/.test(linkText)) return;
+          if (/^[#¶§🔗]?$/u.test(linkText)) return;
           // "[1]" pointing at a plain anchor: a note reference until proven otherwise (see `resolveRefs`).
           const number = /^\[?(\d{1,3})\]?$/.exec(linkText);
           if (number !== null && id.length > 0 && !this.inNote) {
@@ -761,7 +761,7 @@ export class Converter {
           const anchor = el.attrs['name'] ?? el.id;
           if (anchor.length > 0 && this.pendingRefs.has(anchor)) b.anchor = anchor;
         }
-        if (PERMALINK.test(el.matchString) && /^[#¶§🔗]?$/.test(collapse(rawText(el)))) return;
+        if (PERMALINK.test(el.matchString) && /^[#¶§🔗]?$/u.test(collapse(rawText(el)))) return;
         const resolved = href === undefined ? null : resolveUrl(href, this.base);
         const linkCtx: Ctx = resolved !== null && /^(?:https?|mailto|tel):/i.test(resolved) ? { marks: ctx.marks, href: resolved } : ctx;
         this.inlineChildren(el, b, linkCtx, out);
