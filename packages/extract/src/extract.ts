@@ -305,6 +305,13 @@ function tidy(input: Block[], title: string, meta: Metadata): Block[] {
     }
   }
 
+  // Labels drawn over a diagram (f(t), ω, "Fig. a") come out as a run of tiny paragraphs after it.
+  for (let i = 0; i < blocks.length; i++) {
+    if (blocks[i]!.type !== 'figure') continue;
+    let j = i + 1;
+    while (j < blocks.length && isLegendLabel(blocks[j]!)) j++;
+    if (j - i - 1 >= 3) blocks.splice(i + 1, j - i - 1);
+  }
   // Author bios ("Jane Doe is a reporter covering...") describe the writer, not the story.
   blocks = dropBios(blocks, authors);
 
@@ -393,6 +400,12 @@ function dropBios(blocks: Block[], authors: string[]): Block[] {
     for (let i = 0; i < bio.length; i++) if (bio[i] === 1 && (near(i, -1) || near(i, 1))) bio[i] = 2;
   }
   return blocks.filter((_, i) => bio[i] !== 2);
+}
+
+function isLegendLabel(b: Block): boolean {
+  if (b.type !== 'paragraph') return false;
+  if (b.content.length === 1 && b.content[0]!.type === 'math') return b.content[0]!.text.length < 40;
+  return inlineText(b.content).trim().length <= 12;
 }
 
 function linkShare(content: Inline[]): number {
