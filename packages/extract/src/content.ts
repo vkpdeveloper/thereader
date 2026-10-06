@@ -985,7 +985,7 @@ function shouldRemove(el: VElement, c: Counts, flags: Flags): boolean {
   const weight = classWeight(el, flags);
   if (weight < 0) return true;
   // An author's note box (admonition, callout) with prose in it stays, however many links it cites.
-  if (c.p > 0 && c.link <= c.text * 0.6 && c.input === 0 && isCallout(el)) return false;
+  if (c.p > 0 && el.matchString.length > 1 && c.link <= c.text * 0.6 && c.input === 0 && isCallout(el)) return false;
   // A boxed "Recommended stories" / "Read more": a heading over a list of links elsewhere, and nothing else.
   if (tag !== 'ul' && tag !== 'ol' && c.headingText > 0 && c.li >= 2 && c.text - c.listText <= c.headingText + 30 && c.link >= (c.text - c.headingText) * 0.7) return true;
   if (c.commas >= 10) return false;

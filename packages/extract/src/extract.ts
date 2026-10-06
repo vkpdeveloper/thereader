@@ -259,7 +259,7 @@ function isDateLine(lower: string): boolean {
 function tidy(input: Block[], title: string, meta: Metadata): Block[] {
   let blocks = input.filter((b) => !(b.type === 'paragraph' && (b.content.length === 0 || /^[\d\s.,/#|·•]{1,6}$/.test(inlineText(b.content)))));
   // A line of underscores, dashes or asterisks is a section break.
-  blocks = blocks.map((b) => (b.type === 'paragraph' && /^[\s_*~=\-–—•·]{3,}$/.test(inlineText(b.content)) ? { type: 'rule' } : b));
+  blocks = blocks.map((b) => (b.type === 'paragraph' && b.content.length === 1 && b.content[0]!.type === 'text' && b.content[0]!.text.length < 100 && /^[\s_*~=\-–—•·]{3,}$/.test(b.content[0]!.text) ? { type: 'rule' } : b));
 
   // The title (and a repeated subtitle) are drawn by the renderer, not the body.
   const t = comparable(title);
@@ -315,16 +315,19 @@ function tidy(input: Block[], title: string, meta: Metadata): Block[] {
   for (let i = 0; i + 2 < blocks.length; i++) {
     const first = blocks[i]!;
     if (first.type !== 'paragraph') continue;
-    const head = collapse(inlineText(first.content));
+    // Cheap first: only the paragraph's last run decides whether the sentence is unfinished.
+    const tail = first.content[first.content.length - 1];
+    if (tail === undefined || tail.type !== 'text' || /[.!?:;。！？"'”’)\]]\s*$/.test(tail.text)) continue;
+    const head = inlineText(first.content).trimEnd();
     if (head.length === 0 || /[.!?:;。！？"'”’)\]]$/.test(head)) continue;
     let j = i + 1;
     while (j < blocks.length && j - i <= 3 && (blocks[j]!.type === 'heading' || blocks[j]!.type === 'paragraph' && inlineText((blocks[j] as { content: Inline[] }).content).length < 200)) {
       const next = blocks[j]!;
-      if (next.type === 'paragraph' && /^\p{Ll}/u.test(collapse(inlineText(next.content))) && j > i + 1) break;
+      if (next.type === 'paragraph' && /^\s*\p{Ll}/u.test(inlineText(next.content)) && j > i + 1) break;
       j++;
     }
     const last = blocks[j];
-    if (j === i + 1 || j - i > 3 || last === undefined || last.type !== 'paragraph' || !/^\p{Ll}/u.test(collapse(inlineText(last.content)))) continue;
+    if (j === i + 1 || j - i > 3 || last === undefined || last.type !== 'paragraph' || !/^\s*\p{Ll}/u.test(inlineText(last.content))) continue;
     if (!blocks.slice(i + 1, j).some((b) => b.type === 'heading')) continue;
     first.content = normalizeInlines([...first.content, { type: 'text', text: ' ' }, ...last.content]);
     blocks.splice(i + 1, j - i);
@@ -396,7 +399,7 @@ function tidy(input: Block[], title: string, meta: Metadata): Block[] {
     }
     if (b.type === 'heading' && prev !== undefined && prev.type === 'heading' && prev.level === b.level && inlineText(prev.content) === inlineText(b.content)) continue;
     // The same paragraph or picture twice in a row is a rendering artifact (responsive copies, dek repeated).
-    if (b.type === 'paragraph' && prev !== undefined && prev.type === 'paragraph' && inlineText(b.content).length > 20 && inlineText(prev.content) === inlineText(b.content)) continue;
+    if (b.type === 'paragraph' && prev !== undefined && prev.type === 'paragraph' && prev.content.length === b.content.length && sameFirstText(prev.content, b.content) && inlineText(b.content).length > 20 && inlineText(prev.content) === inlineText(b.content)) continue;
     if (b.type === 'figure' && prev !== undefined && prev.type === 'figure' && prev.images.length === b.images.length && prev.images.every((image, k) => image.src === b.images[k]!.src)) continue;
     out.push(b);
   }
@@ -415,12 +418,15 @@ const BIO_NAME = /^(\p{Lu}[\p{L}'’.-]*(?:\s+\p{Lu}[\p{L}'’.-]*){0,3})\s+(?:i
 function dropBios(blocks: Block[], authors: string[]): Block[] {
   const bio = blocks.map((b) => {
     if (b.type !== 'paragraph') return 0;
-    const text = collapse(inlineText(b.content));
-    if (text.length > 700 || !BIO_ROLE.test(text.slice(0, 160))) return 0;
-    if (/^(?:is|was)\s+(?:a|an|the)\s/.test(text)) return 2;
-    const m = BIO_NAME.exec(text);
-    if (m === null) return 0;
-    return authors.indexOf(m[1]!.toLowerCase()) >= 0 ? 2 : 1;
+    const raw = inlineText(b.content);
+    if (raw.length > 900) return 0;
+    // The anchored shape tests are cheap and fail fast on ordinary paragraphs; the job title is checked last.
+    const head = collapse(raw.length > 200 ? raw.slice(0, 200) : raw);
+    const orphan = /^(?:is|was)\s+(?:a|an|the)\s/.test(head);
+    const m = orphan ? null : BIO_NAME.exec(head);
+    if (!orphan && m === null || !BIO_ROLE.test(head.slice(0, 160))) return 0;
+    if (orphan) return 2;
+    return authors.indexOf(m![1]!.toLowerCase()) >= 0 ? 2 : 1;
   });
   if (bio.indexOf(2) < 0) return blocks;
   // Unnamed bios count only next to a certain one (co-author boxes), across name lines and photos.
@@ -436,6 +442,12 @@ function dropBios(blocks: Block[], authors: string[]): Block[] {
     for (let i = 0; i < bio.length; i++) if (bio[i] === 1 && (near(i, -1) || near(i, 1))) bio[i] = 2;
   }
   return blocks.filter((_, i) => bio[i] !== 2);
+}
+
+function sameFirstText(a: Inline[], b: Inline[]): boolean {
+  const x = a[0];
+  const y = b[0];
+  return x !== undefined && y !== undefined && x.type === y.type && (x.type !== 'text' || x.text === (y as typeof x).text);
 }
 
 function isLegendLabel(b: Block): boolean {

@@ -447,10 +447,11 @@ function findDek(body: VElement, description: string | null): string | null {
     }
     if (!seenH1) return true;
     after++;
-    if (el.tag === 'p' || el.tag === 'h2' || el.tag === 'div' || el.tag === 'span') {
+    const dek = DEK.test(el.matchString);
+    // A plain paragraph equal to the description is the article's own first paragraph, not a dek.
+    if ((el.tag === 'p' || el.tag === 'h2' || el.tag === 'div' || el.tag === 'span') && (dek || el.tag !== 'p' && want.length > 0 && isLeafText(el))) {
       const text = collapse(textOf(el));
-      // A plain paragraph equal to the description is the article's own first paragraph, not a dek.
-      if (text.length >= 10 && text.length <= 300 && (DEK.test(el.matchString) || el.tag !== 'p' && want.length > 0 && text.toLowerCase() === want)) {
+      if (text.length >= 10 && text.length <= 300 && (dek || text.toLowerCase() === want)) {
         found = text;
         return false;
       }
@@ -458,6 +459,14 @@ function findDek(body: VElement, description: string | null): string | null {
     return true;
   });
   return found;
+}
+
+/** No block-level element inside (a dek is one run of text; wrappers of the whole article are skipped cheaply). */
+function isLeafText(el: VElement): boolean {
+  for (const child of el.children) {
+    if (child.kind === 1 && (child.tag === 'div' || child.tag === 'p' || child.tag === 'section' || child.tag === 'article' || child.tag === 'ul' || child.tag === 'ol' || child.tag === 'figure' || child.tag === 'table')) return false;
+  }
+  return true;
 }
 
 function findTime(body: VElement): string | null {

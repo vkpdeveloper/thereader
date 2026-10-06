@@ -389,7 +389,7 @@ export class Converter {
       if (this.tex || el.skip || el.tag === 'pre' || el.tag === 'code' || el.tag === 'math' || el.tag === 'math-tex') return;
       for (const child of el.children) {
         if (child.kind === 1) visit(child);
-        else if (child.text.indexOf('$$') >= 0 || /\\[([]/.test(child.text)) {
+        else if (child.text.indexOf('$$') >= 0 || child.text.indexOf('\\(') >= 0 || child.text.indexOf('\\[') >= 0) {
           if (TEX_DELIMITED.test(child.text)) this.tex = true;
           TEX_DELIMITED.lastIndex = 0;
         }
@@ -698,7 +698,7 @@ export class Converter {
     if (el.skip) return;
     if (this.caption(el, out, b)) return;
     const tag = el.tag;
-    if (tag !== 'a' && !this.inNote && INLINE_NOTE.test(el.matchString) && this.inlineNote(el, b)) return;
+    if (tag !== 'a' && !this.inNote && el.matchString.indexOf('note') >= 0 && INLINE_NOTE.test(el.matchString) && this.inlineNote(el, b)) return;
     if (this.notes.size > 0 && tag !== 'a') {
       // Script-driven references: <span class="foot-ref" data-footnote="footnote-esb">5</span>.
       const target = el.attrs['data-footnote'] ?? el.attrs['data-footnote-id'] ?? el.attrs['data-fn'] ?? el.attrs['data-note'];
@@ -1524,6 +1524,14 @@ function closestHeading(el: VElement): VElement | null {
 }
 
 function loneCode(el: VElement): VElement | null {
+  let any = false;
+  for (const child of el.children) {
+    if (child.kind === 1 && child.tag === 'code') {
+      any = true;
+      break;
+    }
+  }
+  if (!any) return null;
   let code: VElement | null = null;
   for (const child of el.children) {
     if (child.kind === 0) {
