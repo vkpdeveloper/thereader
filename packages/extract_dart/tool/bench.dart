@@ -65,8 +65,10 @@ void main(List<String> args) {
   }
 
   final mode = const bool.fromEnvironment('dart.vm.product') ? 'AOT' : 'JIT';
-  stdout.writeln('Dart $mode (${Platform.version.split(' ').first}), ${rows.length} pages, $runs timed runs per page, '
-      'load ${_loadAverage()}');
+  stdout.writeln(
+    'Dart $mode (${Platform.version.split(' ').first}), ${rows.length} pages, $runs timed runs per page, '
+    'load ${_loadAverage()}',
+  );
   stdout.writeln();
   stdout.writeln('| ms per page | median | p95 | mean |');
   stdout.writeln('| --- | ---: | ---: | ---: |');
@@ -96,23 +98,31 @@ void main(List<String> args) {
   ratio('total vs Chromium total', withChromium.map((r) => r.total / (r.chromium!.parse + r.chromium!.extract)));
   ratio('extractTree vs Bun extractTree', rows.map((r) => r.engine / r.tsBun));
   stdout.writeln();
-  stdout.writeln('| total ms by HTML size (median / p95) | ${_buckets.map((b) => '${b.$1} (${rows.where((r) => _bucket(r.bytes) == b.$1).length})').join(' | ')} |');
+  stdout.writeln(
+    '| total ms by HTML size (median / p95) | ${_buckets.map((b) => '${b.$1} (${rows.where((r) => _bucket(r.bytes) == b.$1).length})').join(' | ')} |',
+  );
   stdout.writeln('| --- |${' ---: |' * _buckets.length}');
-  String bucketCells(double Function(_Row) value, [Iterable<_Row>? source]) => _buckets.map((b) {
-    final v = (source ?? rows).where((r) => _bucket(r.bytes) == b.$1).map(value).toList();
-    return v.isEmpty ? '–' : '${_ms(_median(v))} / ${_ms(_p95(v))}';
-  }).join(' | ');
+  String bucketCells(double Function(_Row) value, [Iterable<_Row>? source]) => _buckets
+      .map((b) {
+        final v = (source ?? rows).where((r) => _bucket(r.bytes) == b.$1).map(value).toList();
+        return v.isEmpty ? '–' : '${_ms(_median(v))} / ${_ms(_p95(v))}';
+      })
+      .join(' | ');
   stdout.writeln('| Dart parse | ${bucketCells((r) => r.parse)} |');
   stdout.writeln('| Dart extract | ${bucketCells((r) => r.convert + r.engine)} |');
   stdout.writeln('| Dart total | ${bucketCells((r) => r.total)} |');
-  stdout.writeln('| TS Chromium total | ${bucketCells((r) => r.chromium!.parse + r.chromium!.extract, withChromium)} |');
+  stdout.writeln(
+    '| TS Chromium total | ${bucketCells((r) => r.chromium!.parse + r.chromium!.extract, withChromium)} |',
+  );
   stdout.writeln('| TS Bun extractTree | ${bucketCells((r) => r.tsBun)} |');
   final slowest = [...rows]..sort((a, b) => b.total.compareTo(a.total));
   stdout.writeln();
   stdout.writeln('Slowest pages (Dart total ms: parse + fromDocument + extractTree):');
   for (final r in slowest.take(8)) {
-    stdout.writeln('  ${_ms(r.total)}  (${_ms(r.parse)} + ${_ms(r.convert)} + ${_ms(r.engine)})  '
-        '${(r.bytes / 1000).round()} KB  ${r.key}');
+    stdout.writeln(
+      '  ${_ms(r.total)}  (${_ms(r.parse)} + ${_ms(r.convert)} + ${_ms(r.engine)})  '
+      '${(r.bytes / 1000).round()} KB  ${r.key}',
+    );
   }
 }
 
