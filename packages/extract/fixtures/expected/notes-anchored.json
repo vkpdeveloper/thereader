@@ -1,0 +1,137 @@
+{
+  "schema": 1,
+  "url": "http://essays.example.com/start.html",
+  "title": "How to Start Slowly",
+  "subtitle": null,
+  "byline": null,
+  "authors": [],
+  "siteName": null,
+  "publishedAt": null,
+  "modifiedAt": null,
+  "language": null,
+  "dir": "ltr",
+  "excerpt": "The best projects rarely look important at the start. They look like toys, and the people working on them look like they are wasting their time. That is not a coincidence: anything that looks important attracts competition, and competition pushes everyone toward the same safe ideas.",
+  "leadImage": null,
+  "favicon": "http://essays.example.com/favicon.ico",
+  "wordCount": 194,
+  "readingMinutes": 1,
+  "blocks": [
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "The best projects rarely look important at the start. They look like toys, and the people working on them look like they are wasting their time. "
+        },
+        {
+          "type": "ref",
+          "id": "f1n",
+          "label": "1"
+        },
+        {
+          "type": "text",
+          "text": " That is not a coincidence: anything that looks important attracts competition, and competition pushes everyone toward the same safe ideas."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "So the way to find something new is to work on what interests you, even when you cannot explain why it matters, and to keep at it long after other people would have moved on. "
+        },
+        {
+          "type": "ref",
+          "id": "f2n",
+          "label": "2"
+        },
+        {
+          "type": "text",
+          "text": " Most of the time it will lead nowhere. But the times it does are the ones that count, and you cannot tell them apart in advance."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "This is uncomfortable, which is exactly why it works. Most people are not willing to look foolish for that long, so the field stays open for those who are."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Notes",
+          "marks": [
+            "bold"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "footnotes",
+      "items": [
+        {
+          "id": "f1n",
+          "label": "1",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Toys are also easier to start, because nobody expects anything from them, including the people making them."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f2n",
+          "label": "2",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Interest is a better guide than importance because it is harder to fake. You can talk yourself into thinking something matters."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "You cannot talk yourself into finding it interesting."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Thanks",
+          "marks": [
+            "bold"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " to Ann Lee for reading drafts of this."
+        }
+      ]
+    }
+  ]
+}

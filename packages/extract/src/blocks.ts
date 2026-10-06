@@ -49,6 +49,8 @@ class InlineBuilder {
   nodes: Inline[] = [];
   /** Consecutive line breaks with nothing visible between them. */
   breaks = 0;
+  /** Id of an anchor that opens the current paragraph ("[<a name="f1n">1</a>] ..."). */
+  anchor: string | null = null;
 
   constructor(
     private readonly converter: Converter,
@@ -87,9 +89,12 @@ class InlineBuilder {
   flush(): void {
     if (this.out === null) return;
     const content = normalizeInlines(this.nodes);
+    const anchor = this.anchor;
     this.nodes = [];
     this.breaks = 0;
+    this.anchor = null;
     if (content.length === 0) return;
+    if (anchor !== null && this.converter.anchoredNote(anchor, content, this.out)) return;
     if (content.length === 1 && content[0]!.type === 'math' && this.converter.lastDisplayMath === content[0]) {
       const math = content[0];
       const block: Block = { type: 'math', text: math.text };
@@ -213,6 +218,11 @@ export class Converter {
   /** Notes written inline at their reference (LaTeXML, sidenotes), listed after the text. */
   private readonly inlineNotes: Footnote[] = [];
   private inNote = false;
+  /** In-page "[n]" links not yet matched to a note: target id -> label. */
+  private readonly pendingRefs = new Map<string, string>();
+  /** Provisional refs with the link text they replace if no note turns up. */
+  private readonly provisional = new Map<Inline, string>();
+  private readonly resolved = new Set<string>();
   lastDisplayMath: Inline | null = null;
 
   constructor(private readonly base: string) {}
@@ -226,7 +236,81 @@ export class Converter {
       else this.block(root, out);
     }
     if (this.inlineNotes.length > 0) out.push({ type: 'footnotes', items: this.inlineNotes });
+    if (this.provisional.size > 0) this.resolveRefs(out);
     return out;
+  }
+
+  /** A paragraph opened by the anchor a "[n]" link points at is that note (Paul Graham style "Notes"). */
+  anchoredNote(id: string, content: Inline[], out: Block[] | null): boolean {
+    const label = this.pendingRefs.get(id);
+    if (out === null || label === undefined || this.resolved.has(id)) return false;
+    const blocks: Block[] = [{ type: 'paragraph', content }];
+    stripNoteLabel(blocks, label);
+    if (blocks.length === 0) return false;
+    this.resolved.add(id);
+    const note: Footnote = { id, label, blocks };
+    const last = out[out.length - 1];
+    if (last !== undefined && last.type === 'footnotes') last.items.push(note);
+    else out.push({ type: 'footnotes', items: [note] });
+    return true;
+  }
+
+  /**
+   * Settles provisional refs: an id-less ordered list closing the article with
+   * one item per unresolved label 1..n is their notes; any ref still without a
+   * note reverts to its link text.
+   */
+  private resolveRefs(out: Block[]): void {
+    const open: string[] = [];
+    for (const [id, label] of this.pendingRefs) if (!this.resolved.has(id) && open.indexOf(label) < 0) open.push(label);
+    const tail = Math.max(0, out.length - 3);
+    for (let i = out.length - 1; i >= tail && open.length > 0; i--) {
+      const list = out[i]!;
+      if (list.type !== 'list' || !list.ordered || (list.start ?? 1) !== 1 || list.items.length !== open.length) continue;
+      if (!open.every((label) => Number(label) >= 1 && Number(label) <= open.length)) break;
+      const items: Footnote[] = [];
+      for (const [id, label] of this.pendingRefs) {
+        if (this.resolved.has(id)) continue;
+        this.resolved.add(id);
+        items.push({ id, label, blocks: list.items[Number(label) - 1]!.blocks });
+      }
+      out[i] = { type: 'footnotes', items };
+      break;
+    }
+    // Paragraphs between two runs of anchored notes continue the note before them.
+    for (let i = 0; i < out.length; i++) {
+      const notes = out[i]!;
+      if (notes.type !== 'footnotes') continue;
+      let j = i + 1;
+      while (j < out.length && j - i <= 4 && out[j]!.type === 'paragraph') j++;
+      const next = out[j];
+      if (j === i + 1 || next === undefined || next.type !== 'footnotes') continue;
+      notes.items[notes.items.length - 1]!.blocks.push(...out.slice(i + 1, j));
+      notes.items.push(...next.items);
+      out.splice(i + 1, j - i);
+      i--;
+    }
+    eachInlines(out, (content) => {
+      for (let k = 0; k < content.length; k++) {
+        const node = content[k]!;
+        if (node.type !== 'ref') continue;
+        const text = this.provisional.get(node);
+        if (text !== undefined && !this.resolved.has(node.id)) {
+          content[k] = { type: 'text', text };
+          continue;
+        }
+        // "[" ref "]": the brackets are the reference's own decoration.
+        const prev = content[k - 1];
+        const next = content[k + 1];
+        if (prev !== undefined && next !== undefined && prev.type === 'text' && next.type === 'text' && prev.text.endsWith('[') && next.text.startsWith(']')) {
+          prev.text = prev.text.slice(0, -1);
+          next.text = next.text.slice(1);
+        }
+      }
+      const normalized = normalizeInlines(content);
+      content.length = 0;
+      content.push(...normalized);
+    });
   }
 
   // ---------------------------------------------------------------- footnotes
@@ -584,9 +668,22 @@ export class Converter {
           if (BACKLINK.test(el.matchString) || /^[↩↑^]/.test(linkText)) return;
           // Permalink glyphs go; a permalink wrapping the heading's own words keeps them.
           if (/^[#¶§🔗]?$/.test(linkText)) return;
+          // "[1]" pointing at a plain anchor: a note reference until proven otherwise (see `resolveRefs`).
+          const number = /^\[?(\d{1,3})\]?$/.exec(linkText);
+          if (number !== null && id.length > 0 && !this.inNote) {
+            const ref: Inline = { type: 'ref', id, label: number[1]! };
+            this.provisional.set(ref, linkText);
+            if (!this.pendingRefs.has(id)) this.pendingRefs.set(id, number[1]!);
+            b.push(ref);
+            return;
+          }
           // Other in-page links read as plain text.
           this.inlineChildren(el, b, ctx, out);
           return;
+        }
+        if (href === undefined && b.nodes.length <= 1 && inlineTextOf(b.nodes).trim().replace(/^[[(]$/, '').length === 0) {
+          const anchor = el.attrs['name'] ?? el.id;
+          if (anchor.length > 0 && this.pendingRefs.has(anchor)) b.anchor = anchor;
         }
         if (PERMALINK.test(el.matchString) && /^[#¶§🔗]?$/.test(collapse(rawText(el)))) return;
         const resolved = href === undefined ? null : resolveUrl(href, this.base);
@@ -1179,6 +1276,53 @@ export class Converter {
     if (headerRows > 0 && headerRows < rows.length) block.headerRows = headerRows;
     else if (headerRows > 0 && headerRows === rows.length && rows.length > 1) block.headerRows = 1;
     out.push(block);
+  }
+}
+
+/** Calls `visit` with every inline array in `blocks`, nested blocks included. */
+function eachInlines(blocks: Block[], visit: (content: Inline[]) => void): void {
+  for (const b of blocks) {
+    switch (b.type) {
+      case 'paragraph':
+      case 'heading':
+        visit(b.content);
+        break;
+      case 'list':
+        for (const item of b.items) eachInlines(item.blocks, visit);
+        break;
+      case 'quote':
+        eachInlines(b.blocks, visit);
+        if (b.cite !== undefined) visit(b.cite);
+        break;
+      case 'callout':
+        eachInlines(b.blocks, visit);
+        if (b.title !== undefined) visit(b.title);
+        break;
+      case 'details':
+        visit(b.summary);
+        eachInlines(b.blocks, visit);
+        break;
+      case 'definitions':
+        for (const item of b.items) {
+          visit(item.term);
+          eachInlines(item.details, visit);
+        }
+        break;
+      case 'table':
+        for (const row of b.rows) for (const cell of row.cells) visit(cell.content);
+        if (b.caption !== undefined) visit(b.caption);
+        break;
+      case 'figure':
+        if (b.caption !== undefined) visit(b.caption);
+        if (b.credit !== undefined) visit(b.credit);
+        break;
+      case 'footnotes':
+        for (const item of b.items) eachInlines(item.blocks, visit);
+        break;
+      case 'embed':
+        if (b.blocks !== undefined) eachInlines(b.blocks, visit);
+        break;
+    }
   }
 }
 
