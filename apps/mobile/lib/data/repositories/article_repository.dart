@@ -68,7 +68,7 @@ class ArticleRepository extends ChangeNotifier {
   static const _key = 'articles.v1';
 
   /// The API's cap on a synced document, measured on its JSON.
-  static const maxBodyBytes = 8 * 1024 * 1024;
+  static const maxBodyBytes = 4 * 1024 * 1024;
 
   /// Documents up to this size download during sync, so they open offline.
   static const prefetchMaxBytes = 1024 * 1024;

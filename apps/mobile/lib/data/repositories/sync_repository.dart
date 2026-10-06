@@ -77,6 +77,7 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
   /// Article changes use a sentinel edition; the article is `articleId`.
   static const _articlesBookId = '_articles';
   static final _articleImage = RegExp(r'^(?:https?://|data:image/)\S+$', caseSensitive: false);
+  static final _articleUrl = RegExp(r'^https?://\S+$', caseSensitive: false);
 
   final KeyValueStore _store;
   final LibraryRepository library;
@@ -306,16 +307,15 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
     if (store == null || !store.loaded) return false;
     var changed = false;
     for (final s in store.all) {
-      if (s.bodySha256 == null) continue;
+      // One the API cannot take stays on this device: its save, positions and
+      // deletion are never sent, so it cannot fail a batch.
+      if (!articleSyncable(s)) continue;
       final key = 'article:${s.id}';
       final stamp = 'saved:${s.addedAt.toUtc().toIso8601String()}';
       if (state.seen[key] != stamp) {
         state.seen[key] = stamp;
-        final payload = articlePayload(s);
-        if (payload != null) {
-          state.pending[key] = _articleChange('article', s.addedAt, payload);
-          if (s.stored) state.articleUploads[s.id] = s.bodySha256!;
-        }
+        state.pending[key] = _articleChange('article', s.addedAt, articlePayload(s)!);
+        if (s.stored) state.articleUploads[s.id] = s.bodySha256!;
         changed = true;
       }
       final progress = s.progress;
@@ -361,14 +361,19 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
 
   static bool _isArticleKind(Object? kind) => kind == 'article' || kind == 'articleProgress';
 
-  /// A saved article's metadata as the API validates it. Long text is
-  /// clipped and unusable image URLs dropped; an article whose document
-  /// exceeds the upload limit, or whose URL the API cannot take, stays on
-  /// this device.
-  static Map<String, dynamic>? articlePayload(ArticleSummary s) {
+  /// Whether an article syncs: one whose document exceeds the upload limit,
+  /// or whose URL the API cannot take, stays on this device.
+  static bool articleSyncable(ArticleSummary s) {
     final size = s.bodySize;
-    if (s.bodySha256 == null || size == null || size <= 0 || size > ArticleRepository.maxBodyBytes) return null;
-    if (s.url.length > 2048 || !RegExp(r'^https?://\S+$', caseSensitive: false).hasMatch(s.url)) return null;
+    if (s.bodySha256 == null || size == null || size <= 0 || size > ArticleRepository.maxBodyBytes) return false;
+    return s.url.length <= 2048 && _articleUrl.hasMatch(s.url);
+  }
+
+  /// A saved article's metadata as the API validates it. Long text is
+  /// clipped and unusable image URLs dropped. Null for an article that stays
+  /// on this device.
+  static Map<String, dynamic>? articlePayload(ArticleSummary s) {
+    if (!articleSyncable(s)) return null;
     String? text(String? v, int maxLength) =>
         v == null || v.trim().isEmpty ? null : (v.length > maxLength ? v.substring(0, maxLength) : v);
     String? image(String? v) => v != null && v.length <= 2048 && _articleImage.hasMatch(v) ? v : null;
@@ -389,7 +394,7 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
       'publishedAt': text(s.publishedAt, 64),
       'savedAt': s.addedAt.toUtc().toIso8601String(),
       'bodySha256': s.bodySha256,
-      'bodySize': size,
+      'bodySize': s.bodySize,
       'schema': 1,
       'deleted': false,
     };

@@ -350,6 +350,57 @@ void main() {
     await b.dispose();
   });
 
+  test('an article too large to sync stays readable on this device and never blocks sync', () async {
+    final kv = MemoryKeyValueStore();
+    final files = MemoryArticleStore();
+    final cloud = ArticleCloud();
+    final clock = Clock();
+    final first = await Device.create(cloud, clock, kv: kv, files: files);
+    final big = await first.articles.add('https://example.com/huge');
+    await first.dispose();
+    // Record its document as just over the cap, rather than extracting 4 MB,
+    // and start from an empty sync queue.
+    final index = (jsonDecode(kv.values['articles.v1']!) as Map).cast<String, dynamic>();
+    for (final item in (index['items'] as List).cast<Map>()) {
+      if (item['id'] == big.id) item['bodySize'] = ArticleRepository.maxBodyBytes + 1;
+    }
+    kv.values['articles.v1'] = jsonEncode(index);
+    kv.values.remove('cloud_sync.v1');
+    List<Object?> sent() => [
+      for (final r in cloud.requests)
+        for (final c in (r['changes'] as List).cast<Map>()) (c['payload'] as Map)['articleId'],
+    ];
+
+    final a = await Device.create(cloud, clock, kv: kv, files: files);
+    final b = await Device.create(cloud, clock);
+    expect(a.articles.byId(big.id)!.bodySize, ArticleRepository.maxBodyBytes + 1);
+    final small = await a.articles.add('https://example.com/story');
+    await a.cycle();
+    expect(sent(), [small.id]);
+    expect(cloud.requests, hasLength(1)); // not rejected and retried without articles
+    expect(cloud.puts, 1);
+    expect(a.sync.error, isNull);
+    expect(a.sync.pendingCount, 0);
+    expect((await a.articles.loadArticle(big.id)).title, big.title);
+
+    // Its reading position and deletion stay here too.
+    clock.advance(const Duration(seconds: 1));
+    await a.articles.saveProgress(big.id, const ArticleProgress(block: 1, offset: 0, percent: 0.5));
+    await a.cycle();
+    clock.advance(const Duration(seconds: 1));
+    await a.articles.remove(big.id);
+    await a.cycle();
+    expect(sent(), [small.id]);
+    expect(cloud.requests, hasLength(3));
+    expect(a.sync.pendingCount, 0);
+    expect(a.articles.byId(big.id), isNull);
+
+    await b.cycle();
+    expect(b.articles.articles.map((s) => s.id), [small.id]);
+    await a.dispose();
+    await b.dispose();
+  });
+
   test('a server without article sync keeps everything else syncing', () async {
     final cloud = ArticleCloud()..legacy = true;
     final a = await Device.create(cloud, Clock());
@@ -419,5 +470,8 @@ void main() {
     expect(payload['leadImage'], isNull);
     expect(payload['readingMinutes'], 1);
     expect(payload['savedAt'], '2026-09-01T00:00:00.000Z');
+    ArticleSummary sized(int bytes) => ArticleSummary.fromJson(base.toJson()..['bodySize'] = bytes);
+    expect(SyncRepository.articlePayload(sized(ArticleRepository.maxBodyBytes)), isNotNull);
+    expect(SyncRepository.articlePayload(sized(ArticleRepository.maxBodyBytes + 1)), isNull);
   });
 }
