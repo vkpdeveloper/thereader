@@ -966,6 +966,8 @@ function shouldRemove(el: VElement, c: Counts, flags: Flags): boolean {
 
   const weight = classWeight(el, flags);
   if (weight < 0) return true;
+  // A boxed "Recommended stories" / "Read more": a heading over a list of links elsewhere, and nothing else.
+  if (tag !== 'ul' && tag !== 'ol' && c.headingText > 0 && c.p === 0 && c.li >= 2 && c.listText >= (c.text - c.headingText) * 0.9 && c.link >= (c.text - c.headingText) * 0.7) return true;
   if (c.commas >= 10) return false;
   // Heading wrappers (`div.mw-heading` with an edit link) are structure, not clutter.
   if (c.headingText > 0 && c.text - c.link <= c.headingText * 1.2) return false;
