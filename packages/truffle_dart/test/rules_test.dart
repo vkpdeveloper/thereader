@@ -188,4 +188,45 @@ void main() {
       'The play opens on Friday.',
     ]);
   });
+
+  test('a video file and its still image are one video carrying the figure caption', () {
+    String video(String poster) =>
+        '<video src="/media/clip.mp4" $poster aria-label="The sidebar loading" width="1320" height="900"></video>';
+    const still = '<img class="still" src="/media/clip.png" alt="The sidebar loading" width="1320" height="900">';
+    const caption = '<figcaption><b>FIG A</b> Sidebar jank</figcaption>';
+    final bare = {
+      'type': 'video',
+      'provider': 'file',
+      'url': 'https://example.com/media/clip.mp4',
+      'poster': 'https://example.com/media/clip.png',
+    };
+    final one = {
+      ...bare,
+      'caption': [
+        {
+          'type': 'text',
+          'text': 'FIG A',
+          'marks': ['bold'],
+        },
+        {'type': 'text', 'text': ' Sidebar jank'},
+      ],
+    };
+    List<Object?> inner(String body) {
+      final blocks = _blocks(body);
+      return blocks.sublist(1, blocks.length - 1);
+    }
+
+    // The still repeats the poster, after or before the video; without a poster the still becomes it.
+    expect(inner('<figure><div>${video('poster="/media/clip.png"')}$still</div>$caption</figure>'), [one]);
+    expect(inner('<figure>$still${video('poster="/media/clip.png"')}$caption</figure>'), [one]);
+    expect(inner('<figure>${video('')}$still$caption</figure>'), [one]);
+    // Outside a figure, a still right after the video (or in its <noscript>) is dropped.
+    expect(inner('<div>${video('poster="/media/clip.png"')}<noscript>$still</noscript></div>'), [bare]);
+    expect(inner('<div>${video('poster="/media/clip.png"')}$still</div>'), [bare]);
+    // A different image in the figure stays a figure.
+    final other = inner(
+      '<figure>${video('poster="/media/clip.png"')}<img src="/media/chart.png" alt="Chart" width="1320" height="900">$caption</figure>',
+    );
+    expect([for (final b in other) (b as Map)['type']], ['figure', 'video']);
+  });
 }

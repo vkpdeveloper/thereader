@@ -1,0 +1,89 @@
+/*
+ * "Back to top" in the article reader (BackToTop.tsx). It sits in the right
+ * margin beside the text column, in the middle of the margin but never more
+ * than 120px from the column; where the margin is too narrow it falls back to
+ * the bottom corner. The column's width comes from the same typography
+ * variables as `.article`, resolved at the article's font size.
+ */
+
+.article-backtop {
+  --article-gutter: max(16px, min(6vw, var(--article-pad)));
+  --backtop-margin: calc((100% - min(100%, calc(var(--article-measure) + 2 * var(--article-gutter)))) / 2);
+  --backtop-right: max(calc(16px + env(safe-area-inset-right, 0px)), calc(var(--backtop-margin) / 2 - 22px), calc(var(--backtop-margin) - 164px));
+  position: fixed;
+  z-index: 29;
+  right: var(--backtop-right);
+  bottom: calc(var(--safe-bottom) + 16px);
+  font-size: var(--article-size);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px);
+  transition:
+    opacity var(--motion-base) var(--ease),
+    transform var(--motion-base) var(--ease),
+    visibility 0s linear var(--motion-base);
+}
+.article-backtop.is-shown {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition:
+    opacity var(--motion-base) var(--ease),
+    transform var(--motion-base) var(--ease);
+}
+/* The return offer is wider: keep it off the column when the margin has room. */
+.article-backtop.is-return {
+  right: max(calc(16px + env(safe-area-inset-right, 0px)), min(var(--backtop-right), calc(var(--backtop-margin) - 24px - 210px)));
+}
+@media (min-width: 900px) {
+  .article-backtop {
+    bottom: calc(var(--safe-bottom) + 24px);
+  }
+}
+
+.article-backtop .icon-button {
+  border-radius: 999px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+@media (hover: hover) {
+  .article-backtop .icon-button:hover {
+    background: var(--element);
+    border-color: var(--border-active);
+    color: var(--fg);
+  }
+}
+.article-backtop .quiet-button {
+  min-height: 40px;
+  padding: 0 14px 0 12px;
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-size: 13px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+.article-backtop .quiet-button svg {
+  color: var(--muted);
+}
+
+/* The tooltip opens above, right-aligned, so it never leaves the screen. */
+@media (hover: hover) and (pointer: fine) {
+  .article-backtop [data-tooltip]::after {
+    left: auto;
+    right: 0;
+    transform: translateY(2px);
+  }
+  .article-backtop [data-tooltip]:hover::after {
+    transform: none;
+  }
+}
+
+/* On narrow screens the corner button would sit on the end-of-article actions. */
+@media (max-width: 899px) {
+  .article:has(~ .article-backtop) {
+    padding-bottom: calc(var(--safe-bottom) + 84px);
+  }
+}

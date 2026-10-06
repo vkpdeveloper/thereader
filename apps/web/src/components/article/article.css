@@ -958,6 +958,11 @@ h6.article-heading {
   max-width: 100%;
   height: auto;
 }
+
+/* The link preview card (shared with the book reader), above the article bar like the footnote preview. */
+.reader-link-hover-card.article-link-card {
+  z-index: 40;
+}
 @keyframes article-peek-in {
   from {
     opacity: 0;

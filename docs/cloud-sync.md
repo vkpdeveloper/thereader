@@ -124,6 +124,67 @@ upserts in the batch plus one indexed range read of changed rows. Documents
 are kept after deletion, so a resurrected article needs no upload, and
 identical documents saved twice share one object.
 
+## Article highlights
+
+Passages highlighted in saved web articles (web reader only so far) are
+ordinary highlights: the same local store, the same `highlight` change in the
+scheduled `/v1/sync` batch, the same `highlightsSince` pull, tombstones and
+last-write-wins. Creating, recolouring, annotating or deleting one never sends
+a request of its own. What differs is what they are pinned to:
+
+- **Edition.** `bookId` is `article-<articleId>` (the article's 32-hex id,
+  which every device derives from its URL) and `sha256` is 64 zeros. The id is
+  shared across devices; the document's `bodySha256` is not used because saving
+  the URL again re-extracts the page into a new document, and a highlight can
+  never move to another edition. No book has that id or hash, so book views
+  (web `forEdition`, Flutter `HighlightRepository.forEdition`) never show
+  them, and neither app re-sends a pulled one as a book highlight. `origin`
+  is the API the device was using; like articles themselves, article
+  highlights show under any origin and sync to whichever one is current.
+- **Locator.** The index of the top-level block in `article.blocks` (the same
+  index reading positions use) and UTF-16 offsets into that block's text, plus
+  the quote in Readium's `text` shape:
+
+  ```json
+  {
+    "type": "article",
+    "href": "https://example.org/post",
+    "articleId": "76faff49e6928df24de0670458eb6518",
+    "block": 3, "start": 0, "endBlock": 3, "end": 61,
+    "title": "The brief",
+    "locations": { "progression": 0.042, "totalProgression": 0.042 },
+    "text": { "before": "…in every thread.\n", "highlight": "We focused on four journeys…", "after": ". At the 75th" }
+  }
+  ```
+
+  `href` is the article URL (the API requires a non-empty `href`). A passage
+  may cross blocks: `end` is then an offset into `endBlock`, and the quote
+  joins the blocks' texts with a line break, skipping blocks without text.
+  `title` is the nearest heading above, for lists; `totalProgression` (block
+  plus share of it, over the block count) orders them. A block's text is its
+  rendered text minus reader chrome: buttons, the code bar, heading links,
+  footnote return arrows, image alt-text fallbacks and math (TeX or MathML
+  depending on the device) do not count. The quote is at most 4,000
+  characters; a longer selection is cut to that. The API may drop
+  `text.before`/`after` (or `text`) to fit its 16 KB locator cap.
+- **Re-anchoring.** A client trusts the offsets when the text there still
+  equals the quote; otherwise it searches for the quote in the six blocks
+  around the recorded ones, then the whole article, preferring the occurrence
+  whose surrounding text matches `before`/`after`, then the nearest. A passage
+  that cannot be found is kept (and still listed and synced) but not drawn.
+  Clients that compute block text differently (Flutter, later) should treat
+  the offsets as a hint and rely on the quote. The web implementation is
+  `apps/web/src/lib/articleAnchors.ts`, with tests.
+- **Removing an article** keeps its highlights, as removing a book keeps its
+  own: they come back if the URL is saved again (same id), re-anchored by
+  quote if the page changed. Highlights on an article that stays on its
+  device (a document over 4 MB) stay local too.
+
+The web reader paints them with the CSS Custom Highlight API (`::highlight()`,
+Chrome 105+, Safari 17.2+, Firefox 140+) over React's own text nodes, so the
+article DOM is never changed. The Flutter app stores pulled article
+highlights but has no article highlight UI yet.
+
 ## Deployment and credentials
 
 The user requested no login. Consequently these upload, download and sync endpoints
