@@ -51,6 +51,21 @@ describe('highlight store', () => {
     expect(again.getSnapshot().all).toEqual([h]);
   });
 
+  test('forArticle lists one article in reading order, apart from book editions', async () => {
+    const store = new HighlightStoreImpl(new MemoryKv());
+    await store.load();
+    const article = { ...base, bookId: `article-${'a'.repeat(32)}`, sha256: '0'.repeat(64) };
+    const late = await store.create({ ...article, locator: at(0.8) });
+    const early = await store.create({ ...article, locator: at(0.1) });
+    await store.create({ ...article, bookId: `article-${'b'.repeat(32)}`, locator: at(0.5) });
+    await store.create({ ...base, sha256: '0'.repeat(64), locator: at(0.3) }); // not an article id
+    const gone = await store.create({ ...article, locator: at(0.4) });
+    await store.delete(gone.id);
+    const list = store.forArticle('a'.repeat(32));
+    expect(list.map((h) => h.id)).toEqual([early.id, late.id]);
+    expect(store.forArticle('a'.repeat(32))).toBe(list);
+  });
+
   test('forEdition filters by edition, orders by position then creation, and is stable until a change', async () => {
     const clock = new Clock();
     const store = new HighlightStoreImpl(new MemoryKv(), undefined, clock.now);

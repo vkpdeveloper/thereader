@@ -3,7 +3,7 @@ import { useServices } from '../lib/services/react';
 import type { ArticleSummary } from '../lib/types';
 import { ConfirmDialog } from './overlay';
 
-/** The confirmation before deleting a saved article and its reading position. */
+/** The confirmation before deleting a saved article and its reading position; its highlights stay, as a removed book's do. */
 export function useRemoveArticle(): { ask: (article: ArticleSummary) => void; dialog: ReactNode } {
   const services = useServices();
   const [open, setOpen] = useState(false);
@@ -14,7 +14,7 @@ export function useRemoveArticle(): { ask: (article: ArticleSummary) => void; di
     <ConfirmDialog
       open={open}
       title="Remove article?"
-      body="The saved copy and your reading position will be deleted from this device. You can add it again from its link."
+      body="The saved copy and your reading position will be deleted from this device. Your highlights are kept and come back if you add it again from its link."
       cancelLabel="Keep"
       confirmLabel="Remove"
       danger

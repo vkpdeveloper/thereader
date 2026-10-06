@@ -188,6 +188,8 @@ export interface HighlightStore extends Observable<HighlightsSnapshot> {
    * until the store changes.
    */
   forEdition(origin: string, sha256: string): Highlight[];
+  /** Live highlights of one saved article in reading order; the same array until the store changes. */
+  forArticle(articleId: string): Highlight[];
   byId(id: string): Highlight | undefined;
   create(input: {
     bookId: string;

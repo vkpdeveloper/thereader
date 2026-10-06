@@ -5,6 +5,7 @@ import { SiteIcon } from '../components/ArticleRow';
 import { BackToTop, quietBackToTop } from '../components/article/BackToTop';
 import { renderArticleBlocks } from '../components/article/Blocks';
 import { FootnotePreview, footnotePeekHtml, type FootnotePeek } from '../components/article/FootnotePreview';
+import { useArticleHighlights } from '../components/article/highlights/useArticleHighlights';
 import { blockElements, readPosition, scrollToPosition } from '../components/article/position';
 import { Lightbox, type ZoomedImage } from '../components/article/Lightbox';
 import { safeHref } from '../components/article/media';
@@ -230,6 +231,7 @@ export function ArticleScreen() {
   const keys = useRef<(e: KeyboardEvent) => void>(() => undefined);
   keys.current = (e) => {
     if (hasOpenOverlay() || isTypingTarget(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (highlights.onKey(e)) return;
     if (e.key === 'Escape') {
       e.preventDefault();
       if (peek) setPeek(null);
@@ -299,6 +301,8 @@ export function ArticleScreen() {
     },
     [reducedMotion],
   );
+
+  const highlights = useArticleHighlights({ id, ready, bodyRef, prefs, reveal: (el) => flash(el, null) });
 
   const onArticleClick = (e: ReactMouseEvent) => {
     const target = e.target as Element;
@@ -391,6 +395,7 @@ export function ArticleScreen() {
             <OpenInNewIcon size={20} />
           </a>
         )}
+        {highlights.button}
         <IconButton
           icon={TextFieldsIcon}
           label="Typography"
@@ -460,7 +465,7 @@ export function ArticleScreen() {
           </div>
         </footer>
       </article>
-      <BackToTop key={id} body={bodyRef} count={article.blocks.length} blocked={panel != null || zoom != null || peek != null} reducedMotion={reducedMotion} />
+      <BackToTop key={id} body={bodyRef} count={article.blocks.length} blocked={panel != null || zoom != null || peek != null || highlights.busy} reducedMotion={reducedMotion} />
 
       <Sheet open={panel != null} onClose={() => setPanel(null)} title="Typography">
         <div className="reader-panel-body">
@@ -470,6 +475,7 @@ export function ArticleScreen() {
       <Lightbox image={zoom} onClose={() => setZoom(null)} />
       {peek && <FootnotePreview key={peek.id} peek={peek} onEnter={keepPeek} onLeave={() => hidePeek()} />}
       {linkPreview}
+      {highlights.layer}
     </div>
   );
 }
