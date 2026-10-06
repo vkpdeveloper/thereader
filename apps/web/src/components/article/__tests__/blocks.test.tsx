@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { grammarFor, languageLabel } from '../../../lib/codeLanguages';
 import { highlightCode } from '../../../lib/highlight';
+import { texToMathml } from '../../../lib/tex';
 import { renderBlocks } from '../Blocks';
 import { everyBlock, rtlArticle } from './fixture';
 
@@ -115,5 +116,24 @@ describe('code languages', () => {
     expect(await highlightCode('hello there', null)).toBeNull();
     expect(await highlightCode('plain words', 'plaintext')).toBeNull();
     expect(await highlightCode('x', 'cobol')).toBeNull();
+  });
+
+  test('highlights JSX inside JavaScript and CSS inside HTML', async () => {
+    const jsx = await highlightCode('function App() {\n  return <main className="app">Hi</main>;\n}', 'jsx');
+    expect(jsx?.html).toContain('<span class="hljs-name">main</span>');
+    const html = await highlightCode('<style>\n  body { color: red; }\n</style>', 'html');
+    expect(html?.html).toContain('hljs-attribute');
+  });
+});
+
+describe('TeX', () => {
+  test('converts TeX-only formulas to MathML and gives up on broken TeX', () => {
+    const block = texToMathml(String.raw`$$ \frac{1}{\sqrt{1 - \beta_t}} $$`, true);
+    expect(block?.startsWith('<math display="block"')).toBe(true);
+    expect(block).toContain('<mfrac>');
+    expect(block).toContain('<msqrt>');
+    expect(texToMathml(String.raw`\alpha_t`, false)?.startsWith('<math>')).toBe(true);
+    expect(texToMathml(String.raw`\frac{1}{2`, true)).toBeNull();
+    expect(texToMathml('$$', true)).toBeNull();
   });
 });

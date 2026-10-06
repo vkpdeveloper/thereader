@@ -788,6 +788,7 @@ h6.article-heading {
 /* ------------------------------------------------------------ math */
 
 .article-math.is-block {
+  display: block;
   margin: 1.2em 0;
   overflow-x: auto;
   overflow-y: hidden;
@@ -797,6 +798,23 @@ h6.article-heading {
 .article-math math {
   font-family: 'STIX Two Math', 'Latin Modern Math', 'Cambria Math', 'Noto Sans Math', math;
   font-size: 1.05em;
+}
+/* Array layout from converted TeX (temml); Chromium aligns cells only with the -webkit- values. */
+.article-math .tml-right {
+  text-align: right;
+  text-align: -webkit-right;
+}
+.article-math .tml-left {
+  text-align: left;
+  text-align: -webkit-left;
+}
+.article-math mtable.tml-jot > mtr > mtd {
+  padding-top: 0.7ex;
+  padding-bottom: 0.7ex;
+}
+.article-math mtable.tml-small mtd {
+  padding-top: 0.35ex;
+  padding-bottom: 0.35ex;
 }
 .article-math.is-tex code {
   padding: 0.1em 0.35em;
