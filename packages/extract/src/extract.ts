@@ -294,6 +294,9 @@ function tidy(input: Block[], title: string, meta: Metadata): Block[] {
       continue;
     }
     if (b.type === 'heading' && prev !== undefined && prev.type === 'heading' && prev.level === b.level && inlineText(prev.content) === inlineText(b.content)) continue;
+    // The same paragraph or picture twice in a row is a rendering artifact (responsive copies, dek repeated).
+    if (b.type === 'paragraph' && prev !== undefined && prev.type === 'paragraph' && inlineText(b.content).length > 20 && inlineText(prev.content) === inlineText(b.content)) continue;
+    if (b.type === 'figure' && prev !== undefined && prev.type === 'figure' && prev.images.length === b.images.length && prev.images.every((image, k) => image.src === b.images[k]!.src)) continue;
     out.push(b);
   }
   while (out.length > 0 && (out[out.length - 1]!.type === 'rule' || out[out.length - 1]!.type === 'heading')) out.pop();
