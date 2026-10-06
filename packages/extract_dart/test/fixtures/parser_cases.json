@@ -908,6 +908,63 @@
   }
  },
  {
+  "name": "object images",
+  "html": "<html><head><object data=\"/head.svg\"></object></head><body><p>a</p><object type=\"image/svg+xml\" data=\"/chart.svg\" width=\"300\" height=\"200\" title=\"Chart\">fallback</object><object data=\"/x.PNG?v=2\"></object><object type=\"application/pdf\" data=\"/a.pdf\">pdf</object><object type=\"IMAGE/png\" data=\"\"></object></body></html>",
+  "vdoc": {
+   "root": {
+    "t": "html",
+    "c": [
+     {
+      "t": "head"
+     },
+     {
+      "t": "body",
+      "c": [
+       {
+        "t": "img",
+        "a": {
+         "src": "/head.svg",
+         "alt": ""
+        }
+       },
+       {
+        "t": "p",
+        "c": [
+         "a"
+        ]
+       },
+       {
+        "t": "img",
+        "a": {
+         "src": "/chart.svg",
+         "alt": "Chart",
+         "width": "300",
+         "height": "200"
+        }
+       },
+       {
+        "t": "img",
+        "a": {
+         "src": "/x.PNG?v=2",
+         "alt": ""
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "head": [
+    0
+   ],
+   "body": [
+    1
+   ],
+   "jsonLd": [],
+   "nextData": null,
+   "baseHref": null
+  }
+ },
+ {
   "name": "template",
   "html": "<body><div><template><div>t</template>\n<p>after</p></div></body>",
   "known": "package:html has no <template> support: its content is parsed as ordinary children",
