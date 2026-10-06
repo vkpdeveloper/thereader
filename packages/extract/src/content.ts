@@ -309,7 +309,11 @@ function isByline(el: VElement, match: string): boolean {
 export const FOOTNOTE_CONTAINER = /(?:^|[\s_-])(?:footnotes|footnote-list|footnotes-list|endnotes|references|reflist|refs|footnote-definitions|notes-list|fn-list)(?:$|[\s_-])/;
 
 export function isFootnotes(el: VElement): boolean {
-  return FOOTNOTE_CONTAINER.test(el.matchString) || el.attrs['role'] === 'doc-endnotes' || el.attrs['data-footnotes'] !== undefined;
+  if (FOOTNOTE_CONTAINER.test(el.matchString) || el.attrs['role'] === 'doc-endnotes' || el.attrs['data-footnotes'] !== undefined) return true;
+  // Python-Markdown: <div class="footnote"><hr><ol><li id="fn:1">.
+  if (!el.hasClass('footnote')) return false;
+  for (const child of el.children) if (child.kind === 1 && child.tag === 'ol') return true;
+  return false;
 }
 
 /** A footnote list or one of its notes: kept even when marked up as <aside>. */
@@ -850,7 +854,9 @@ function cleanConditionally(root: VElement, flags: Flags): void {
     const c = new Counts();
     const tag = el.tag;
     const isDataTable = tag === 'table' && isDataTableCached(el);
-    const protectedHere = inProtected || CODE_LIKE.has(tag) || isDataTable;
+    // Footnote lists are link-heavy by nature; they are never clutter.
+    const notes = isFootnotes(el);
+    const protectedHere = inProtected || CODE_LIKE.has(tag) || isDataTable || notes;
     for (const child of el.children) {
       if (child.kind === 0) {
         c.text += child.length;
@@ -877,7 +883,7 @@ function cleanConditionally(root: VElement, flags: Flags): void {
     el.textLen = c.text;
     el.linkLen = c.link;
     el.commas = c.commas;
-    if (el !== root && CONDITIONAL.has(tag) && !inProtected && shouldRemove(el, c, flags)) el.skip = true;
+    if (el !== root && CONDITIONAL.has(tag) && !inProtected && !notes && shouldRemove(el, c, flags)) el.skip = true;
     return c;
   };
   visit(root, false);

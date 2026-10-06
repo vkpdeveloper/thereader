@@ -207,6 +207,8 @@ function texFrom(value: string | undefined): string | undefined {
 export class Converter {
   /** Footnote item ids found in the article, with their labels. */
   private readonly notes = new Map<string, string>();
+  /** Text of every footnote item (label stripped), to recognise inline copies of the same notes. */
+  private readonly noteTexts = new Set<string>();
   private pendingCodeTitle: string | null = null;
   lastDisplayMath: Inline | null = null;
 
@@ -236,6 +238,7 @@ export class Converter {
           if (item !== el && isNoteItem(item)) {
             counter++;
             this.notes.set(item.id, String(counter));
+            this.noteTexts.add(noteKey(rawText(item)));
             return false;
           }
           return true;
@@ -275,6 +278,7 @@ export class Converter {
         if (label !== null) label.skip = true;
         const blocks: Block[] = [];
         this.children(item, blocks);
+        stripNoteLabel(blocks, this.notes.get(item.id)!);
         if (blocks.length > 0) items.push({ id: item.id, label: this.notes.get(item.id)!, blocks });
         return false;
       }
@@ -479,6 +483,8 @@ export class Converter {
       return;
     }
     if (this.substackFootnote(el, out)) return;
+    // Margin or hover copies of notes that the footnote list also has.
+    if (this.noteTexts.size > 0 && /footnote|sidenote|marginnote/.test(el.matchString) && el.textLen < 3000 && this.noteTexts.has(noteKey(rawText(el)))) return;
     const video = lazyVideo(el);
     if (video !== null) {
       out.push(video);
@@ -510,6 +516,15 @@ export class Converter {
     if (el.skip) return;
     if (this.caption(el, out, b)) return;
     const tag = el.tag;
+    if (this.notes.size > 0 && tag !== 'a') {
+      // Script-driven references: <span class="foot-ref" data-footnote="footnote-esb">5</span>.
+      const target = el.attrs['data-footnote'] ?? el.attrs['data-footnote-id'] ?? el.attrs['data-fn'] ?? el.attrs['data-note'];
+      if (target !== undefined && this.notes.has(target)) {
+        const label = collapse(rawText(el)).replace(/^\[|\]$/g, '').trim() || this.notes.get(target)!;
+        b.push({ type: 'ref', id: target, label });
+        return;
+      }
+    }
     switch (tag) {
       case 'br':
         b.lineBreak();
@@ -1132,9 +1147,29 @@ export class Converter {
   }
 }
 
+const NOTE_ITEM = /(?:^|[\s_-])(?:footnote|endnote)(?:$|[\s_-])/;
+
 function isNoteItem(el: VElement): boolean {
   if (el.id.length === 0) return false;
-  return el.tag === 'li' || el.attrs['role'] === 'doc-footnote' || el.attrs['role'] === 'doc-endnote' || (el.tag !== 'a' && (el.hasClass('footnote') || el.hasClass('footnote-item')));
+  return el.tag === 'li' || el.attrs['role'] === 'doc-footnote' || el.attrs['role'] === 'doc-endnote' || (el.tag !== 'a' && NOTE_ITEM.test(el.className.toLowerCase()));
+}
+
+/** Note text compared across copies: whitespace collapsed, a leading "5:" / "[5]" label dropped. */
+function noteKey(text: string): string {
+  return collapse(text).replace(/^\[?\d{1,3}\]?[:.)]?\s*/, '');
+}
+
+/** A note that repeats its own number as text ("5: We can't resist...") loses it; the label is drawn. */
+function stripNoteLabel(blocks: Block[], label: string): void {
+  const first = blocks[0];
+  if (first === undefined || first.type !== 'paragraph') return;
+  const run = first.content[0];
+  if (run === undefined || run.type !== 'text') return;
+  const m = /^\[?(\d{1,3})\]?[:.)]?\s+/.exec(run.text);
+  if (m === null || m[1] !== label) return;
+  run.text = run.text.slice(m[0].length);
+  if (run.text.length === 0) first.content.shift();
+  if (first.content.length === 0) blocks.shift();
 }
 
 function inlineTextOf(content: Inline[]): string {
