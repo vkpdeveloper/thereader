@@ -156,6 +156,17 @@ a.article-site:hover {
 
 /* ------------------------------------------------------------ text */
 
+/* CJK: strict line breaking (no small kana or closing marks at line starts), space between CJK and Latin runs, emphasis without synthetic italics. */
+.article:is(:lang(ja), :lang(zh), :lang(ko)) {
+  line-break: strict;
+  text-autospace: normal;
+  text-spacing-trim: normal;
+}
+.article:is(:lang(ja), :lang(zh)) .article-body em {
+  font-style: normal;
+  font-weight: 600;
+}
+
 /* Long articles lay out only the blocks near the viewport. */
 .article-body.is-long > * {
   content-visibility: auto;
