@@ -247,6 +247,9 @@ const DATE_LINE = /^(?:(?:published|updated|posted|last updated|modified)\s*:?\s
 
 const DATE_WORDS = /\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?|mon(?:day)?|tue(?:s(?:day)?)?|wed(?:nesday)?|thu(?:rs(?:day)?)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?|updated|published|posted|last|modified|on|at|am|pm|a\.m|p\.m|[a-z]?[ecmp][sd]t|gmt|utc|bst|cet|cest|ist|aest|jst|hours?|minutes?|days?|ago|original|of)\b/g;
 
+/** "By Jane Doe", "By JANE DOE and Li Wei | Reuters": names after "By", not a sentence ("By seven the light had gone."). */
+const BYLINE_LINE = /^(?:[Bb]y|BY)\s+(?:(?:\p{Lu}[\p{L}'’.-]*|de|da|van|von|der|le|la|bin|al)\s*){1,5}(?:(?:,|and|&)\s*(?:(?:\p{Lu}[\p{L}'’.-]*|de|da|van|von|der|le|la|bin|al)\s*){1,5})*(?:[|·•—–-].*)?$/u;
+
 /** A line made only of dates, times and words like "Updated". */
 function isDateLine(lower: string): boolean {
   if (lower.length > 100 || !/\d/.test(lower)) return false;
@@ -298,7 +301,7 @@ function tidy(input: Block[], title: string, meta: Metadata): Block[] {
     const text = collapse(blockPlain(b));
     if (text.length === 0 || text.length > 120) continue;
     const lower = text.toLowerCase();
-    const isByline = /^by\s+\S/i.test(text) && text.length < 100 || authors.length > 0 && authors.some((a) => lower === a || lower === 'by ' + a);
+    const isByline = BYLINE_LINE.test(text) && text.length < 100 || authors.length > 0 && authors.some((a) => lower === a || lower === 'by ' + a);
     if (isByline || DATE_LINE.test(text) || isDateLine(lower)) {
       blocks.splice(i, 1);
       i--;
