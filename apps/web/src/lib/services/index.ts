@@ -2,7 +2,7 @@ import type { AppServices } from './contract';
 import { createApiClient, type HttpApiClient } from './api';
 import { ArticleStoreImpl } from './articles';
 import { CatalogStoreImpl } from './catalog';
-import { createCategoryStore } from './categories';
+import { CategoryStoreImpl } from './categories';
 import { CoverStoreImpl } from './covers';
 import { HighlightStoreImpl } from './highlights';
 import { createIdbKv } from './idb';
@@ -56,9 +56,8 @@ function build(): AppServices {
   const covers = new CoverStoreImpl(coverKv, (origin, path) => clientFor(origin).resolve(path));
   const highlights = new HighlightStoreImpl(kv, bus);
   const articles = new ArticleStoreImpl({ kv, currentOrigin, bus, bodies: clientFor });
+  const categories = new CategoryStoreImpl(kv, bus);
   const ink = new InkStoreImpl(kv, bus);
-  // Temporary, replaced by the data layer's synced store.
-  const categories = createCategoryStore();
   // The import pipeline (zip parsing, MOBI conversion) loads on first use.
   const imports = new ImportStoreImpl({
     kv,
@@ -77,6 +76,7 @@ function build(): AppServices {
     settings,
     highlights,
     articles,
+    categories,
     clientFor,
     isUploadPending: (id) => imports.isPending(id),
     retryUploads: () => void imports.retryPending(),
@@ -98,6 +98,7 @@ function build(): AppServices {
     await step('articles', () => articles.load());
     await step('imports', () => imports.load());
     await step('highlights', () => highlights.load());
+    await step('categories', () => categories.load());
     await step('sync', () => sync.load());
   })();
 
