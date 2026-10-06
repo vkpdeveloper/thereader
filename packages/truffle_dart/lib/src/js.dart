@@ -119,8 +119,10 @@ bool _finalSigma(String s, int i) {
 /// `String.prototype.toUpperCase` for the ASCII values the engine uppercases.
 String jsUpper(String s) => s.toUpperCase();
 
-final _decimal = RegExp(r'^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$');
+// `\d+(?:\.\d*)?`, not `\d+\.?\d*`: the same numbers without trying every split of a long digit run.
+final _decimal = RegExp(r'^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$');
 final _radix = RegExp(r'^0([xXoObB])([0-9a-fA-F]+)$');
+final _leadingZeros = RegExp(r'^0+');
 
 /// `Number(value)` for a string (`null` is `Number(null)`, i.e. 0): strict,
 /// `''` is 0, `'12px'` is NaN.
@@ -136,7 +138,16 @@ double jsNumber(String? value) {
       'o' => 8,
       _ => 2,
     };
-    final n = BigInt.tryParse(radix.group(2)!, radix: base);
+    var digits = radix.group(2)!;
+    // BigInt parses long octal and binary numbers in quadratic time: past 1100 significant digits
+    // the value is at least 2^1099, so Infinity (or NaN for a stray digit) without parsing.
+    if (digits.length > 1100) {
+      digits = digits.replaceFirst(_leadingZeros, '0');
+      if (digits.length > 1100) {
+        return digits.codeUnits.every((c) => _hexValue(c) < base) ? double.infinity : double.nan;
+      }
+    }
+    final n = BigInt.tryParse(digits, radix: base);
     return n == null ? double.nan : n.toDouble();
   }
   return switch (s) {

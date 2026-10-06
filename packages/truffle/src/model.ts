@@ -5,9 +5,12 @@
  * `packages/truffle/fixtures` holds the shared conformance cases.
  *
  * Rules every producer follows:
- * - URLs are absolute (`http:`/`https:`; `data:` only for inline images that
- *   carry real content). `#fragment` links inside the article become `ref`
- *   inlines or plain text; links to other pages stay absolute.
+ * - URLs are absolute (`http:`/`https:`; `mailto:`/`tel:` also for text links;
+ *   `data:image/…` only for inline images that carry real content).
+ *   `#fragment` links inside the article become `ref` inlines or plain text;
+ *   links to other pages stay absolute.
+ * - `mathml` holds MathML elements and attributes only: no links, event
+ *   handlers or embedded HTML.
  * - Text outside `code` blocks has whitespace collapsed to single spaces and no
  *   leading or trailing space in a block. `code.code` is verbatim.
  * - Optional fields are omitted, never `undefined` or `null`, unless the type

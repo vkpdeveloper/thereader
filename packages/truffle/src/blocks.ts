@@ -3,12 +3,70 @@ import { detectLanguage, languageFromClass, normalizeLanguage } from './language
 import { frameBlock, imageFrom, isDecorativeImage, isSmallImage, lazyVideo, mediaFromElement, socialProvider, TWEET } from './media';
 import type { Block, Callout, Definition, Figure, Footnote, Image, Inline, ListItem, Mark, Table, TableCell, TableRow, TextRun } from './model';
 import { collapse, firstElement, rawText, walk, type VElement, type VNode } from './tree';
-import { resolveUrl } from './url';
+import { resolveHttp, resolveUrl } from './url';
 
-/** TeX left for MathJax/KaTeX: $$…$$ and \[…\] display, \(…\) inline. */
-const TEX_DELIMITED = /\$\$([^$]+?)\$\$|\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)/g;
+/** $$…$$ display TeX: the delimiters of `texMatches` that start with a dollar. */
+const TEX_DOLLARS = /\$\$([^$]+?)\$\$/g;
 /** The same plus $…$ inline, for pages that show they use TeX (never "$5 and $10"). */
-const TEX_ANY = /\$\$([^$]+?)\$\$|\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)|\$([^\s$\d](?:[^$\n]{0,300}?[^\s$\\])?)\$(?![\d\w])/g;
+const TEX_DOLLARS_ANY = /\$\$([^$]+?)\$\$|\$([^\s$\d](?:[^$\n]{0,300}?[^\s$\\])?)\$(?![\d\w])/g;
+
+interface TexMatch {
+  index: number;
+  end: number;
+  /** Where the formula between the delimiters starts and ends. */
+  texStart: number;
+  texEnd: number;
+  display: boolean;
+}
+
+/** `text.indexOf(needle, from)` for a `from` that never decreases: each part of the text is searched once. */
+function seeker(text: string, needle: string): (from: number) => number {
+  let at = -2;
+  return (from) => {
+    if (at === -2 || (at >= 0 && at < from)) at = text.indexOf(needle, from);
+    return at;
+  };
+}
+
+/**
+ * TeX left for MathJax/KaTeX, in order: $$…$$ and \[…\] display, \(…\) inline, and with `dollars`
+ * also $…$ inline. What `/\$\$([^$]+?)\$\$|\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)|…/g` finds, in
+ * linear time: that regex scans to the end of the text from every unclosed `\[`, so the backslash
+ * pairs are found with `indexOf` instead. Each call searches its own copy of the dollar pattern.
+ */
+function* texMatches(text: string, dollars: boolean): Generator<TexMatch> {
+  const pattern = new RegExp(dollars ? TEX_DOLLARS_ANY : TEX_DOLLARS);
+  const pairs = [
+    { open: seeker(text, '\\['), close: seeker(text, '\\]'), display: true },
+    { open: seeker(text, '\\('), close: seeker(text, '\\)'), display: false },
+  ];
+  // The first dollar match at or after `from` (null: none; undefined: not searched yet).
+  let dollar: RegExpExecArray | null | undefined;
+  let from = 0;
+  for (;;) {
+    if (dollar === undefined || (dollar !== null && dollar.index < from)) {
+      pattern.lastIndex = from;
+      dollar = pattern.exec(text);
+    }
+    let first: TexMatch | null = null;
+    if (dollar !== null) {
+      const end = dollar.index + dollar[0].length;
+      const display = text.startsWith('$$', dollar.index);
+      const delimiter = display ? 2 : 1;
+      first = { index: dollar.index, end, texStart: dollar.index + delimiter, texEnd: end - delimiter, display };
+    }
+    for (const pair of pairs) {
+      const open = pair.open(from);
+      if (open < 0 || (first !== null && open > first.index)) continue;
+      // `[\s\S]+?`: the first closing delimiter after at least one character. None means none for later openers either.
+      const close = pair.close(open + 3);
+      if (close >= 0) first = { index: open, end: close + 2, texStart: open + 2, texEnd: close, display: pair.display };
+    }
+    if (first === null) return;
+    yield first;
+    from = first.end;
+  }
+}
 
 const MARK_ORDER: Mark[] = ['bold', 'italic', 'underline', 'strike', 'code', 'sub', 'sup', 'highlight', 'small', 'kbd'];
 
@@ -96,20 +154,20 @@ class InlineBuilder {
 
   /**
    * Splits TeX written for a client-side renderer out of `text` as math; false when there is none.
-   * `matchAll` searches a copy of the shared pattern, and the text around the formulas (which holds
-   * no formula) is added as is, so no call can move another's search.
+   * `texMatches` searches its own copy of the shared pattern, and the text around the formulas
+   * (which holds no formula) is added as is, so no call can move another's search.
    */
   private texRuns(text: string, ctx: Ctx): boolean {
     let at = 0;
-    for (const m of text.matchAll(this.converter.dollars ? TEX_ANY : TEX_DELIMITED)) {
+    for (const m of texMatches(text, this.converter.dollars)) {
       if (m.index > at) this.plain(text.slice(at, m.index), ctx);
-      const tex = (m[1] ?? m[2] ?? m[3] ?? m[4] ?? '').trim();
+      const tex = text.slice(m.texStart, m.texEnd).trim();
       if (tex.length > 0) {
         const node: Inline = { type: 'math', tex, text: tex };
-        if (m[1] !== undefined || m[2] !== undefined) this.converter.displayMath.add(node);
+        if (m.display) this.converter.displayMath.add(node);
         this.push(node);
       }
-      at = m.index + m[0].length;
+      at = m.end;
     }
     if (at === 0) return false;
     if (at < text.length) this.plain(text.slice(at), ctx);
@@ -430,8 +488,7 @@ export class Converter {
       for (const child of el.children) {
         if (child.kind === 1) visit(child);
         else if (child.text.indexOf('$$') >= 0 || child.text.indexOf('\\(') >= 0 || child.text.indexOf('\\[') >= 0) {
-          // search() leaves lastIndex at 0, where matchAll in texRuns starts its copies.
-          if (child.text.search(TEX_DELIMITED) >= 0) this.tex = true;
+          if (!texMatches(child.text, false).next().done) this.tex = true;
         }
         if (this.tex) return;
       }
@@ -783,7 +840,8 @@ export class Converter {
         }
         b.flush();
         if (isStillOf(out[out.length - 1], image)) return;
-        if (ctx.href !== null && image.href === undefined && ctx.href !== image.src && /\.(?:jpe?g|png|webp|gif|avif)(?:$|[?#])/i.test(ctx.href)) image.href = ctx.href;
+        // A linked full-size file; `mailto:`/`tel:` stay on text.
+        if (ctx.href !== null && image.href === undefined && ctx.href !== image.src && /^https?:/i.test(ctx.href) && /\.(?:jpe?g|png|webp|gif|avif)(?:$|[?#])/i.test(ctx.href)) image.href = ctx.href;
         out.push({ type: 'figure', images: [image] });
         return;
       }
@@ -1090,20 +1148,26 @@ export class Converter {
     const links: string[] = [];
     walk(el, (e) => {
       if (e.tag === 'a' && e.attrs['href'] !== undefined) {
-        const abs = resolveUrl(e.attrs['href'], this.base);
+        const abs = resolveHttp(e.attrs['href'], this.base);
         if (abs !== null) links.push(abs);
       }
       return true;
     });
     if (provider === 'twitter') url = links.filter((l) => TWEET.test(l)).pop() ?? null;
-    url ??= el.attrs['data-instgrm-permalink'] ?? el.attrs['cite'] ?? el.attrs['data-bluesky-uri'] ?? el.attrs['data-href'] ?? links[links.length - 1] ?? null;
+    for (const key of ['data-instgrm-permalink', 'cite', 'data-bluesky-uri', 'data-href']) {
+      const value = el.attrs[key];
+      url ??= value !== undefined ? resolveHttp(value, this.base) : null;
+    }
+    url ??= links[links.length - 1] ?? null;
     const blocks: Block[] = [];
     this.children(el, blocks);
     let author: string | undefined;
     const last = blocks[blocks.length - 1];
     if (last !== undefined && last.type === 'paragraph') {
       const text = last.content.map((n) => (n.type === 'text' ? n.text : '')).join('');
-      const m = /^[—–-]\s*(.+?)(?:\s*\((@\w+)\))?\s+[A-Z][a-z]+ \d{1,2}, \d{4}$/.exec(text) ?? /^[—–-]\s*(.+)$/.exec(text);
+      // The name starts and ends on a non-space: a long run of spaces is not retried at every split between dash,
+      // name, handle and date.
+      const m = /^[—–-]\s*(\S(?:.*?\S)?)(?:\s*\((@\w+)\))?\s+[A-Z][a-z]+ \d{1,2}, \d{4}$/.exec(text) ?? /^[—–-]\s*(?!\s)(.+)$/.exec(text);
       if (m !== null) {
         author = m[2] !== undefined ? m[1] + ' (' + m[2] + ')' : m[1]!;
         blocks.pop();
@@ -1244,7 +1308,7 @@ export class Converter {
       this.code(preCode, out);
       return;
     }
-    const code = lines.join('\n').replace(/^\n+|\s+$/g, '');
+    const code = lines.join('\n').replace(/^\n+/, '').trimEnd();
     if (code.length === 0) {
       this.children(el, out);
       return;
@@ -1806,7 +1870,8 @@ export function codeText(el: VElement): string {
     .replace(/\u00a0/g, ' ')
     .replace(ZERO_WIDTH, '')
     .replace(/^(?:[ \t]*\n)+/, '')
-    .replace(/\s+$/, '');
+    // `trimEnd` strips what `\s` matches; `/\s+$/` would rescan a long run of spaces from each of them.
+    .trimEnd();
 }
 
 /** Language from markup on the block, its <code> child, or wrappers up to three levels. */

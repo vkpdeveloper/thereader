@@ -512,7 +512,7 @@
         "t": "math",
         "a": {
          "definitionURL": "u",
-         "data-xml": "<math definitionURL=\"u\"><mi>x</mi></math>"
+         "data-xml": "<math><mi>x</mi></math>"
         },
         "c": [
          "x"

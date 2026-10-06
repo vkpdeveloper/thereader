@@ -1,6 +1,6 @@
 import type { Image } from './model';
 import { canonicalUrl, resolveUrl } from './url';
-import { collapse, textOf, walk, type VDocument, type VElement } from './tree';
+import { collapse, splitAtRuns, textOf, walk, type VDocument, type VElement } from './tree';
 
 export interface Metadata {
   url: string;
@@ -172,14 +172,20 @@ function cleanAuthor(value: string): string | null {
   let s = collapse(value).replace(BYLINE_PREFIX, '');
   if (/^https?:\/\//i.test(s) || s.indexOf('@') >= 0 || /\d{2,}/.test(s) || /affiliation|email|e-mail|profile|follow|subscribe|message/i.test(s)) return null;
   if (s.split(' ').length > 8) return null;
-  s = s.replace(/\s*[|·•,]\s*$/, '').trim();
+  // `.replace(/\s*[|·•,]\s*$/, '')`, without retrying `\s*` from every space of a long run.
+  const end = s.trimEnd();
+  if (/[|·•,]$/.test(end)) s = end.slice(0, -1);
+  s = s.trim();
   if (s.length < 2 || s.length > 100) return null;
   return s;
 }
 
+/** Between names, split with `splitAtRuns` (sticky). */
+const AUTHOR_SEPARATOR = /\s*(?:,|;|\band\b|&|\bund\b|\bet\b|\by\b|،)\s*/y;
+
 function addAuthors(raw: string[], out: string[]): void {
   for (const value of raw) {
-    for (const part of value.split(/\s*(?:,|;|\band\b|&|\bund\b|\bet\b|\by\b|،)\s*/)) {
+    for (const part of splitAtRuns(value, AUTHOR_SEPARATOR)) {
       const name = cleanAuthor(part);
       if (name !== null && !out.some((n) => n.toLowerCase() === name.toLowerCase())) out.push(name);
     }
@@ -190,9 +196,14 @@ function isAbsoluteHttp(url: string | null): url is string {
   return url !== null && /^https?:\/\//i.test(url);
 }
 
+/** Userinfo (`https://user:pass@host/`) can dress any host up as another. */
+function hasUserinfo(url: string): boolean {
+  return /^https?:\/\/[^/?#]*@/i.test(url);
+}
+
 function sameSite(a: string, b: string): boolean {
   const host = (u: string) => {
-    const m = /^https?:\/\/([^/:?#]+)/i.exec(u);
+    const m = /^https?:\/\/(?:[^/?#]*@)?([^/:?#]+)/i.exec(u);
     if (m === null) return '';
     const parts = m[1]!.toLowerCase().split('.');
     return parts.slice(Math.max(0, parts.length - 2)).join('.');
@@ -313,7 +324,7 @@ export function readMetadata(doc: VDocument, pageUrl: string): Metadata {
   for (const candidate of [canonicalLink?.attrs['href'] ?? null, m('og:url')]) {
     if (candidate === null) continue;
     const abs = resolveUrl(candidate, pageUrl);
-    if (isAbsoluteHttp(abs) && sameSite(abs, pageUrl) && !(pathOf(abs) === '/' && pathOf(pageUrl) !== '/')) {
+    if (isAbsoluteHttp(abs) && !hasUserinfo(abs) && sameSite(abs, pageUrl) && !(pathOf(abs) === '/' && pathOf(pageUrl) !== '/')) {
       url = keepHttps(canonicalUrl(abs), pageUrl);
       break;
     }
@@ -345,7 +356,8 @@ export function readMetadata(doc: VDocument, pageUrl: string): Metadata {
     const rel = (l.attrs['rel'] ?? '').toLowerCase();
     const href = l.attrs['href'];
     if (!href || !/(?:^|\s)(?:icon|apple-touch-icon|apple-touch-icon-precomposed)(?:\s|$)/.test(rel)) continue;
-    const sizes = /(\d+)x\d+/.exec(l.attrs['sizes'] ?? '');
+    // From the start of a number only: from every digit, a long one is rescanned to its end.
+    const sizes = /(?:^|\D)(\d+)x\d+/.exec(l.attrs['sizes'] ?? '');
     let size = sizes !== null ? Number(sizes[1]) : rel.indexOf('apple-touch-icon') >= 0 ? 180 : 16;
     if (/\.svg(?:$|\?)/i.test(href) || l.attrs['type'] === 'image/svg+xml') size = 120;
     if (size > 256) size = 64;
@@ -384,7 +396,7 @@ export function readMetadata(doc: VDocument, pageUrl: string): Metadata {
 /** "Story - Wikipedia" on en.wikipedia.org: the last title segment, when it names the host. */
 function titleSite(title: string | null, pageUrl: string): string | null {
   if (title === null) return null;
-  const parts = collapse(decodeEntities(title)).split(/\s+[|\-–—·•»]\s+/);
+  const parts = splitAtRuns(collapse(decodeEntities(title)), /\s+[|\-–—·•»]\s+/y);
   if (parts.length < 2) return null;
   const last = parts[parts.length - 1]!;
   const key = last.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
