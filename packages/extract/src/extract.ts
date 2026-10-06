@@ -236,6 +236,9 @@ function tidy(input: Block[], title: string, meta: Metadata): Block[] {
     }
   }
 
+  // Author bios ("Jane Doe is a reporter covering...") describe the writer, not the story.
+  blocks = dropBios(blocks, authors);
+
   // "Read more:" promos and link-only lines are navigation, not text.
   blocks = blocks.filter((b) => !(b.type === 'paragraph' && isPromo(b.content)));
   // Contact lines, link lists and promo headings trailing the story.
@@ -271,6 +274,39 @@ function tidy(input: Block[], title: string, meta: Metadata): Block[] {
   while (out.length > 0 && (out[out.length - 1]!.type === 'rule' || out[out.length - 1]!.type === 'heading')) out.pop();
   blocks = out;
   return blocks;
+}
+
+const BIO_ROLE = /\b(?:reporter|writer|editor|journalist|correspondent|columnist|contributor|author|producer|critic|fellow|researcher|consultant|engineer|developer|designer|professor|director|founder|photographer|analyst|scientist|lecturer|host|freelancer?|economist|historian|novelist|blogger|speaker|principal)\b/i;
+const BIO_NAME = /^(\p{Lu}[\p{L}'’.-]*(?:\s+\p{Lu}[\p{L}'’.-]*){0,3})\s+(?:is|was|has been)\s+(?:a|an|the)\s/u;
+
+/**
+ * Bios: a short paragraph naming one of the authors (or orphaned from its
+ * name, "is a senior reporter...") with a job title, plus bios right next to one.
+ */
+function dropBios(blocks: Block[], authors: string[]): Block[] {
+  const bio = blocks.map((b) => {
+    if (b.type !== 'paragraph') return 0;
+    const text = collapse(inlineText(b.content));
+    if (text.length > 700 || !BIO_ROLE.test(text.slice(0, 160))) return 0;
+    if (/^(?:is|was)\s+(?:a|an|the)\s/.test(text)) return 2;
+    const m = BIO_NAME.exec(text);
+    if (m === null) return 0;
+    return authors.indexOf(m[1]!.toLowerCase()) >= 0 ? 2 : 1;
+  });
+  if (bio.indexOf(2) < 0) return blocks;
+  // Unnamed bios count only next to a certain one (co-author boxes), across name lines and photos.
+  const near = (i: number, step: number): boolean => {
+    for (let j = i + step; j >= 0 && j < blocks.length; j += step) {
+      if (bio[j] === 2) return true;
+      const b = blocks[j]!;
+      if (!(b.type === 'figure' || b.type === 'paragraph' && inlineText(b.content).length < 60)) return false;
+    }
+    return false;
+  };
+  for (let pass = 0; pass < 2; pass++) {
+    for (let i = 0; i < bio.length; i++) if (bio[i] === 1 && (near(i, -1) || near(i, 1))) bio[i] = 2;
+  }
+  return blocks.filter((_, i) => bio[i] !== 2);
 }
 
 function linkShare(content: Inline[]): number {
