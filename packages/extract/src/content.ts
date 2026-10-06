@@ -322,7 +322,16 @@ function isByline(el: VElement, match: string): boolean {
 export const FOOTNOTE_CONTAINER = /(?:^|[\s_-])(?:footnotes|footnote-list|footnotes-list|endnotes|references|reflist|refs|footnote-definitions|notes-list|fn-list)(?:$|[\s_-])/;
 
 export function isFootnotes(el: VElement): boolean {
-  if (FOOTNOTE_CONTAINER.test(el.matchString) || el.attrs['role'] === 'doc-endnotes' || el.attrs['data-footnotes'] !== undefined) return true;
+  if (el.notesState < 0) el.notesState = isFootnoteList(el) ? 1 : 0;
+  return el.notesState === 1;
+}
+
+function isFootnoteList(el: VElement): boolean {
+  if (el.attrs['role'] === 'doc-endnotes' || el.attrs['data-footnotes'] !== undefined) return true;
+  // Every container word has "note", "ref" or "fn" in it: skip the regex for everything else.
+  const m = el.matchString;
+  if (m.indexOf('note') < 0 && m.indexOf('ref') < 0 && m.indexOf('fn') < 0) return false;
+  if (FOOTNOTE_CONTAINER.test(m)) return true;
   // Python-Markdown: <div class="footnote"><hr><ol><li id="fn:1">.
   if (!el.hasClass('footnote')) return false;
   for (const child of el.children) if (child.kind === 1 && child.tag === 'ol') return true;

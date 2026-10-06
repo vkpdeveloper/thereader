@@ -212,8 +212,9 @@ function texFrom(value: string | undefined): string | undefined {
 export class Converter {
   /** Footnote item ids found in the article, with their labels. */
   private readonly notes = new Map<string, string>();
-  /** Text of every footnote item (label stripped), to recognise inline copies of the same notes. */
-  private readonly noteTexts = new Set<string>();
+  /** Footnote items, and (built on first use) their text with the label stripped, to recognise inline copies. */
+  private readonly noteItems: VElement[] = [];
+  private noteTexts: Set<string> | null = null;
   private pendingCodeTitle: string | null = null;
   /** Notes written inline at their reference (LaTeXML, sidenotes), listed after the text. */
   private readonly inlineNotes: Footnote[] = [];
@@ -240,6 +241,14 @@ export class Converter {
     if (this.inlineNotes.length > 0) out.push({ type: 'footnotes', items: this.inlineNotes });
     if (this.provisional.size > 0) this.resolveRefs(out);
     return out;
+  }
+
+  private isNoteCopy(el: VElement): boolean {
+    if (this.noteTexts === null) {
+      this.noteTexts = new Set<string>();
+      for (const item of this.noteItems) this.noteTexts.add(noteKey(rawText(item)));
+    }
+    return this.noteTexts.has(noteKey(rawText(el)));
   }
 
   /** A paragraph opened by the anchor a "[n]" link points at is that note (Paul Graham style "Notes"). */
@@ -293,12 +302,14 @@ export class Converter {
       i--;
     }
     eachInlines(out, (content) => {
+      let changed = false;
       for (let k = 0; k < content.length; k++) {
         const node = content[k]!;
         if (node.type !== 'ref') continue;
         const text = this.provisional.get(node);
         if (text !== undefined && !this.resolved.has(node.id)) {
           content[k] = { type: 'text', text };
+          changed = true;
           continue;
         }
         // "[" ref "]": the brackets are the reference's own decoration.
@@ -307,8 +318,10 @@ export class Converter {
         if (prev !== undefined && next !== undefined && prev.type === 'text' && next.type === 'text' && prev.text.endsWith('[') && next.text.startsWith(']')) {
           prev.text = prev.text.slice(0, -1);
           next.text = next.text.slice(1);
+          changed = true;
         }
       }
+      if (!changed) return;
       const normalized = normalizeInlines(content);
       content.length = 0;
       content.push(...normalized);
@@ -328,7 +341,7 @@ export class Converter {
           if (item !== el && isNoteItem(item)) {
             counter++;
             this.notes.set(item.id, String(counter));
-            this.noteTexts.add(noteKey(rawText(item)));
+            this.noteItems.push(item);
             return false;
           }
           return true;
@@ -576,7 +589,7 @@ export class Converter {
     }
     if (this.substackFootnote(el, out)) return;
     // Margin or hover copies of notes that the footnote list also has.
-    if (this.noteTexts.size > 0 && /footnote|sidenote|marginnote/.test(el.matchString) && el.textLen < 3000 && this.noteTexts.has(noteKey(rawText(el)))) return;
+    if (this.noteItems.length > 0 && /footnote|sidenote|marginnote/.test(el.matchString) && el.textLen < 3000 && this.isNoteCopy(el)) return;
     const video = lazyVideo(el);
     if (video !== null) {
       out.push(video);

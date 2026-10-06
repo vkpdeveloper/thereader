@@ -51,6 +51,8 @@ export class VElement {
   blockState = -1;
   /** Cached: data table (-1 unknown, 0 layout, 1 data). */
   tableState = -1;
+  /** Cached: footnote list container (-1 unknown, 0 no, 1 yes). */
+  notesState = -1;
   /** Set by content normalization: has a block-level descendant. */
   containsBlock = false;
 
@@ -69,7 +71,7 @@ export class VElement {
   }
 
   hasClass(name: string): boolean {
-    if (this.className.length === 0) return false;
+    if (this.className.length === 0 || this.className.indexOf(name) < 0) return false;
     return (' ' + this.className.replace(/\s+/g, ' ') + ' ').indexOf(' ' + name + ' ') >= 0;
   }
 

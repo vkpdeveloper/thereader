@@ -99,11 +99,15 @@ function isGallery(blocks: readonly Block[]): boolean {
     }
   }
   if (figures < 3) return false;
-  const rest: string[] = [];
-  for (const block of blocks) blockText(block, rest);
   let restLength = 0;
-  for (const part of rest) restLength += part.length;
-  return captionLength > restLength;
+  const rest: string[] = [];
+  for (const block of blocks) {
+    blockText(block, rest);
+    for (const part of rest) restLength += part.length;
+    if (restLength >= captionLength) return false;
+    rest.length = 0;
+  }
+  return true;
 }
 
 export function articleText(article: Article): string {
