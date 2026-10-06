@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { useParams } from '@tanstack/react-router';
-import type { Article } from '@thereader/extract';
+import type { Article } from 'truffle';
 import { SiteIcon } from '../components/ArticleRow';
 import { renderArticleBlocks } from '../components/article/Blocks';
 import { FootnotePreview, footnotePeekHtml, type FootnotePeek } from '../components/article/FootnotePreview';

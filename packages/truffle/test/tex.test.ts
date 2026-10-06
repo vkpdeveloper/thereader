@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test';
 import { JSDOM, VirtualConsole } from 'jsdom';
 import { extract } from '../src/index';
 
-// The same pages as packages/extract_dart/test/tex_test.dart.
+// The same pages as packages/truffle_dart/test/tex_test.dart.
 
 /** A page that uses TeX (`\(...\)`), with `paragraph` as its second block. */
 function page(paragraph: string): string {

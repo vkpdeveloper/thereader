@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef, useState } from 'react';
-import type { Code } from '@thereader/extract';
+import type { Code } from 'truffle';
 import { languageLabel } from '../../lib/codeLanguages';
 import { useInView } from '../../lib/hooks';
 import type { Highlighted } from '../../lib/highlight';

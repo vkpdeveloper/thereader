@@ -6,7 +6,7 @@ import { extract } from '../src/index';
 // Saved-article sync uploads `JSON.stringify(article)`, and the API checks only
 // the document's ends without parsing it (apps/api/src/article-bodies.ts):
 // compact JSON that starts with `{"schema":1,` and ends with `}`. The Dart
-// model writes the same order (packages/extract_dart/test/serialization_test.dart).
+// model writes the same order (packages/truffle_dart/test/serialization_test.dart).
 test('articles serialize with schema first, compactly', () => {
   const root = new URL('../fixtures/', import.meta.url).pathname;
   const manifest = JSON.parse(readFileSync(root + 'manifest.json', 'utf8')) as Record<string, string>;

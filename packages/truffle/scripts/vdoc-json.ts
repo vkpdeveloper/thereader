@@ -1,6 +1,6 @@
 /**
  * The JSON form of a `VDocument` the Dart port reads (`VDocument.fromJson` in
- * `packages/extract_dart/lib/src/tree.dart`): a text node is a string, an
+ * `packages/truffle_dart/lib/src/tree.dart`): a text node is a string, an
  * element `{ t, a?, c? }` with attributes in iteration order; `head` and `body`
  * are child-index paths from the root.
  */

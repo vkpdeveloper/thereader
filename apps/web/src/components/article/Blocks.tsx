@@ -1,5 +1,5 @@
 import { Fragment, cloneElement, isValidElement, useState, type ReactElement, type ReactNode } from 'react';
-import { inlineText, type Block, type Figure, type Image, type Inline, type InlineImage, type Mark, type Table, type TextRun } from '@thereader/extract';
+import { inlineText, type Block, type Figure, type Image, type Inline, type InlineImage, type Mark, type Table, type TextRun } from 'truffle';
 import { CodeBlock } from './CodeBlock';
 import { MathView } from './math';
 import { AudioBlock, VideoBlock, providerName, safeHref, safeSrc } from './media';

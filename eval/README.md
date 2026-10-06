@@ -1,7 +1,7 @@
 # Article extraction eval
 
-Quality and speed of `@thereader/extract` (`packages/extract`) and its Dart port
-(`packages/extract_dart`, the engine the mobile app runs) against Mozilla Readability,
+Quality and speed of `truffle` (`packages/truffle`) and its Dart port
+(`packages/truffle_dart`, the engine the mobile app runs) against Mozilla Readability,
 Defuddle, Trafilatura and Postlight Parser, on the Zyte article-extraction benchmark and on a
 hand-annotated live corpus. Results: [RESULTS.md](RESULTS.md) and `results/latest.json`.
 
@@ -28,7 +28,7 @@ first use; Python 3.12). Postlight runs under `node` (22+).
 | `bun run dump <id>` | Annotation aid: a snapshot's text blocks with DOM paths. |
 
 The engine import is live: every `eval` run re-bundles `src/page.ts` together with
-`packages/extract/src` (about 50 ms), so after editing the engine just run
+`packages/truffle/src` (about 50 ms), so after editing the engine just run
 `bun run eval --engines ours`. Competitor outputs are kept from their last run, and every
 score is re-derived from the stored outputs, so annotation fixes need no re-run either.
 
@@ -36,8 +36,8 @@ score is re-derived from the stored outputs, so annotation fixes need no re-run 
 
 | engine | version | how it runs | settings |
 | --- | --- | --- | --- |
-| ours | git HEAD of `packages/extract` (`+dirty` if modified) | Chromium, `DOMParser` | `extract(doc, { url })`, text = `articleText(article)` |
-| ours-dart | git HEAD of `packages/extract_dart` (`+dirty` if modified) | Dart AOT (`dart compile exe`), package:html | `extractTree(fromDocument(parse(html)), url)`, summarized in Chromium exactly like ours |
+| ours | git HEAD of `packages/truffle` (`+dirty` if modified) | Chromium, `DOMParser` | `extract(doc, { url })`, text = `articleText(article)` |
+| ours-dart | git HEAD of `packages/truffle_dart` (`+dirty` if modified) | Dart AOT (`dart compile exe`), package:html | `extractTree(fromDocument(parse(html)), url)`, summarized in Chromium exactly like ours |
 | Readability | `@mozilla/readability` 0.6.0 | Chromium, `DOMParser` | `new Readability(doc).parse()` defaults |
 | Defuddle | `defuddle` 0.19.4 (core bundle) | Chromium, `DOMParser` | `new Defuddle(doc, { url }).parse()` defaults |
 | Trafilatura | 2.3.0 | CPython 3.12 + lxml | `extract(tree, url=url, include_comments=False)`, txt output (comments off as in the Zyte runner) |
@@ -54,12 +54,12 @@ Versions are pinned in `package.json`, `bun.lock`, `python/pyproject.toml` and `
   for 5 µs timer resolution. Per page and engine: one warm-up run (its output is the one
   scored) and `--runs` timed runs, reported as the median. A warm-up slower than 5 s becomes the
   only timing sample, and a run exceeding `--timeout` is recorded as a failure.
-- ours-dart: `packages/extract_dart/tool/eval_cli.dart`, compiled with `dart compile exe` on
+- ours-dart: `packages/truffle_dart/tool/eval_cli.dart`, compiled with `dart compile exe` on
   every run (needs the Dart SDK), runs all pages in one process without workers. It times the
   package:html parse and the extraction separately with a `Stopwatch` (warm-up + `--runs`,
   median), adds the same `<base href>` the Chromium engines get, and returns the articles, which
   are summarized in Chromium with the `ours` code path. On identical page trees the port's
-  output equals the TypeScript engine's byte for byte (`packages/extract_dart/README.md`); here
+  output equals the TypeScript engine's byte for byte (`packages/truffle_dart/README.md`); here
   the parsers differ (Chromium vs package:html), so small differences are parser differences.
 - Trafilatura: `load_html` (lxml parse) and `extract` timed separately with
   `time.perf_counter`, warm-up + `--runs`, median. Postlight parses with cheerio internally, so

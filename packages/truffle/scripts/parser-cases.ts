@@ -1,5 +1,5 @@
 /**
- * Writes `packages/extract_dart/test/fixtures/parser_cases.json`: small pages
+ * Writes `packages/truffle_dart/test/fixtures/parser_cases.json`: small pages
  * and the `VDocument` jsdom produces for each (`fromDom`, as in the
  * conformance test), so the Dart port's `fromDocument` (package:html) can be
  * checked against the reference parser on the cases where the two differ by
@@ -43,6 +43,6 @@ const out = cases.map((c) => {
   const doc = new JSDOM(c.html, { virtualConsole: new VirtualConsole() }).window.document;
   return { ...c, vdoc: vdocJson(fromDom(doc)) };
 });
-const path = new URL('../../extract_dart/test/fixtures/parser_cases.json', import.meta.url).pathname;
+const path = new URL('../../truffle_dart/test/fixtures/parser_cases.json', import.meta.url).pathname;
 writeFileSync(path, JSON.stringify(out, null, 1) + '\n');
 console.log(`wrote ${out.length} cases to ${path}`);

@@ -1,6 +1,6 @@
 /**
  * Dumps the eval corpus for the Dart port's parity checks
- * (`packages/extract_dart/tool/parity.dart`). For every page it writes, under
+ * (`packages/truffle_dart/tool/parity.dart`). For every page it writes, under
  * `test-corpus/parity/`:
  *
  * - `html/<key>.html`: the decoded HTML (UTF-8), exactly what jsdom parsed;

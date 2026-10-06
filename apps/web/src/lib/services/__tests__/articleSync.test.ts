@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import type { Article, ExtractOptions } from '@thereader/extract';
+import type { Article, ExtractOptions } from 'truffle';
 import type { SyncResponse } from '../api';
 import {
   ArticleStoreImpl,

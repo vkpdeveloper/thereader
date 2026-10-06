@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test';
 import { JSDOM, VirtualConsole } from 'jsdom';
 import { extract, inlineText, type Article, type Inline } from '../src/index';
 
-// Single rules on small pages; the same cases as packages/extract_dart/test/rules_test.dart.
+// Single rules on small pages; the same cases as packages/truffle_dart/test/rules_test.dart.
 
 const PROSE = 'Some long prose sentence here to pass thresholds. '.repeat(15);
 

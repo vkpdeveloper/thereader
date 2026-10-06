@@ -1,9 +1,9 @@
 {
-  "name": "@thereader/extract",
+  "name": "truffle",
   "private": true,
   "type": "module",
   "version": "0.1.0",
-  "description": "Article extraction for The Reader: HTML in, a structured, renderable article out.",
+  "description": "Truffle: article extraction. HTML in, a structured, renderable article out.",
   "main": "src/index.ts",
   "types": "src/index.ts",
   "exports": {

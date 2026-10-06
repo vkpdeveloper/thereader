@@ -1,4 +1,4 @@
-import type { Article } from '@thereader/extract';
+import type { Article } from 'truffle';
 import type { AppSettings, ArticleSummary, Book, Highlight, LibraryEntry, ReaderPreferences, ReadingLocator } from '../types';
 
 /**

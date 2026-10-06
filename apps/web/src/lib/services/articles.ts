@@ -1,4 +1,4 @@
-import type { Article, Block, ExtractOptions } from '@thereader/extract';
+import type { Article, Block, ExtractOptions } from 'truffle';
 import type { ArticleSummary } from '../types';
 import { errorFrom, type ArticleBodyApi, type FetchLike } from './api';
 import { ApiError, type ArticlePhase, type ArticleStore, type ArticlesSnapshot } from './contract';
@@ -364,7 +364,7 @@ type Extractor = (doc: Document, options: ExtractOptions) => Article | null | Pr
 /** The extraction engine chunk (kept out of the entry bundle), fetched once. */
 let extractModule: Promise<Extractor> | null = null;
 function loadExtractor(): Promise<Extractor> {
-  extractModule ??= import('@thereader/extract').then(
+  extractModule ??= import('truffle').then(
     (m) => m.extract,
     (error: unknown) => {
       extractModule = null;
@@ -384,7 +384,7 @@ export interface ArticleDeps {
   fetch?: FetchLike;
   /** Defaults to the browser's `DOMParser`. */
   parse?: (html: string) => Document;
-  /** Defaults to `extract` from `@thereader/extract`, loaded on first use. */
+  /** Defaults to `extract` from `truffle`, loaded on first use. */
   extract?: Extractor;
   bus?: TabBus;
   now?: () => number;

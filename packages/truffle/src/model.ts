@@ -1,8 +1,8 @@
 /**
  * The article document model: what the extractor produces, what the app
  * stores, and what both renderers draw. The Dart implementation
- * (`packages/extract_dart`) produces byte-identical JSON for the same input;
- * `packages/extract/fixtures` holds the shared conformance cases.
+ * (`packages/truffle_dart`) produces byte-identical JSON for the same input;
+ * `packages/truffle/fixtures` holds the shared conformance cases.
  *
  * Rules every producer follows:
  * - URLs are absolute (`http:`/`https:`; `data:` only for inline images that

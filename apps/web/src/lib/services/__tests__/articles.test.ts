@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import type { Article, ExtractOptions } from '@thereader/extract';
+import type { Article, ExtractOptions } from 'truffle';
 import { ArticleStoreImpl, articleKey, decodeHtml, findArticleUrl, normalizeArticleUrl, sniffEncoding } from '../articles';
 import { ApiError, type ArticlesSnapshot } from '../contract';
 import { MemoryKv } from '../kv';
