@@ -1,6 +1,6 @@
 import { Converter } from './blocks';
 import { findContent } from './content';
-import { readMetadata, type Metadata } from './metadata';
+import { normalizeDate, readMetadata, type Metadata } from './metadata';
 import { ARTICLE_SCHEMA, type Article, type Block, type ExtractOptions, type Image, type Inline } from './model';
 import { blocksText, countWords, inlineText } from './text';
 import { collapse, fromDom, textOf, walk, type VDocument, type VElement } from './tree';
@@ -303,6 +303,8 @@ function tidy(input: Block[], title: string, meta: Metadata): Block[] {
     const lower = text.toLowerCase();
     const isByline = BYLINE_LINE.test(text) && text.length < 100 || authors.length > 0 && authors.some((a) => lower === a || lower === 'by ' + a);
     if (isByline || DATE_LINE.test(text) || isDateLine(lower)) {
+      // The header's date line is the publication date when the page declares none.
+      if (!isByline && meta.publishedAt === null) meta.publishedAt = normalizeDate(text);
       blocks.splice(i, 1);
       i--;
     }
