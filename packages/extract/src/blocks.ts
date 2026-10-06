@@ -42,6 +42,7 @@ const GUTTER = /(?:^|[\s_-])(?:line-?numbers?(?:-rows)?|linenos?|lineno|linenodi
 /** Toolbars and labels that code highlighters put inside <pre> (language name, copy button). */
 const CODE_CHROME = /(?:^|[\s_-])(?:code-toolbar|toolbar|code-language|code-lang|lang-label|language-label|language-tag|copy-button|copy-code|clipboard)(?:$|[\s_-])/;
 const LINE_ELEMENT = /(?:^|[\s_-])(?:line|code-line|cm-line|ec-line|token-line|highlight-line|view-line|line-content)(?:$|[\s_-])/;
+const ABSOLUTE = /position\s*:\s*absolute/i;
 const PULL_QUOTE = /(?:^|[\s_-])(?:pullquote|pull-quote|wp-block-pullquote|pull_quote|blockquote--pull)(?:$|[\s_-])/;
 /** Zero-width characters, and private-use code points (icon-font glyphs that show as boxes without their font). */
 const ZERO_WIDTH = /[\u200b\ufeff\u2060\ue000-\uf8ff]/g;
@@ -1297,8 +1298,11 @@ export class Converter {
     const images: Image[] = [];
     const media: Block[] = [];
     let other = false;
+    // Short texts positioned over a figure with nothing else to show: the labels of a graphic drawn by script.
+    const overlays: VElement[] = [];
     walk(el, (e) => {
       if (e.skip || e === captionEl) return false;
+      if (e !== el && e.textLen > 0 && e.textLen < 100 && ABSOLUTE.test(e.attrs['style'] ?? '')) overlays.push(e);
       switch (e.tag) {
         case 'img': {
           if (/mwe-math-fallback-image/.test(e.className)) return false;
@@ -1354,9 +1358,11 @@ export class Converter {
     if (images.length === 0 && media.length === 0 || other) {
       // Code listings, tables and quotes in a <figure>: convert the content, keep the caption as text.
       if (captionEl !== null) (captionEl as VElement).skip = true;
+      if (!other) for (const overlay of overlays) overlay.skip = true;
       const before = out.length;
       this.children(el, out);
       if (captionEl !== null) (captionEl as VElement).skip = false;
+      if (!other) for (const overlay of overlays) overlay.skip = false;
       const first = out[before];
       if (caption.length > 0) {
         if (first !== undefined && out.length === before + 1 && first.type === 'table' && first.caption === undefined) first.caption = caption;

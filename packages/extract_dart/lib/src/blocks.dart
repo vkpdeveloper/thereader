@@ -91,6 +91,7 @@ final _codeChrome = ClassPattern(
 final _lineElement = ClassPattern(
   r'(?:^|[\s_-])(?:line|code-line|cm-line|ec-line|token-line|highlight-line|view-line|line-content)(?:$|[\s_-])',
 );
+final _absolute = RegExp(r'position\s*:\s*absolute', caseSensitive: false);
 final _pullQuote = ClassPattern(
   r'(?:^|[\s_-])(?:pullquote|pull-quote|wp-block-pullquote|pull_quote|blockquote--pull)(?:$|[\s_-])',
 );
@@ -1547,8 +1548,13 @@ class Converter {
     final images = <ArticleImage>[];
     final media = <Block>[];
     var other = false;
+    // Short texts positioned over a figure with nothing else to show: the labels of a graphic drawn by script.
+    final overlays = <VElement>[];
     walk(el, (e) {
       if (e.skip || identical(e, captionEl)) return false;
+      if (!identical(e, el) && e.textLen > 0 && e.textLen < 100 && _absolute.hasMatch(e.attrs['style'] ?? '')) {
+        overlays.add(e);
+      }
       switch (e.tag) {
         case 'img':
           if (_mathFallback.hasMatch(e.className)) return false;
@@ -1603,9 +1609,19 @@ class Converter {
     if (images.isEmpty && media.isEmpty || other) {
       // Code listings, tables and quotes in a <figure>: convert the content, keep the caption as text.
       if (cap != null) cap.skip = true;
+      if (!other) {
+        for (final overlay in overlays) {
+          overlay.skip = true;
+        }
+      }
       final before = out.length;
       children(el, out);
       if (cap != null) cap.skip = false;
+      if (!other) {
+        for (final overlay in overlays) {
+          overlay.skip = false;
+        }
+      }
       final first = before < out.length ? out[before] : null;
       if (caption.isNotEmpty) {
         final single = out.length == before + 1;

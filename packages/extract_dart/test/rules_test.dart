@@ -56,4 +56,32 @@ void main() {
       ['paragraph', 'paragraph', 'paragraph'],
     );
   });
+
+  test('short texts positioned over a figure drawn by script are not paragraphs', () {
+    const caption = 'Momentum lets a larger range of step-sizes be used, and creates its own oscillations.';
+    const body =
+        '<figure style="position:relative"><div id="chart"></div><div id="slider" style="position: absolute; left: 20px">'
+        '<text class="figtext">Step-size α = 0.02</text></div><figcaption style="position:absolute">$caption</figcaption></figure>';
+    final blocks = _blocks(body);
+    expect(blocks.sublist(1, blocks.length - 1), [
+      {
+        'type': 'paragraph',
+        'content': [
+          {'type': 'text', 'text': caption},
+        ],
+      },
+    ]);
+    // Positioned text that is no label (a quote set in a figure) stays.
+    expect(_blocks('<figure><blockquote style="position:absolute">Quoted words.</blockquote></figure>')[1], {
+      'type': 'quote',
+      'blocks': [
+        {
+          'type': 'paragraph',
+          'content': [
+            {'type': 'text', 'text': 'Quoted words.'},
+          ],
+        },
+      ],
+    });
+  });
 }
