@@ -186,6 +186,8 @@ export function isSmallImage(img: VElement, image: Image): boolean {
 
 /** Avatars, logos and badges are chrome, not article images. */
 export function isDecorativeImage(img: VElement, image: Image, base: string): boolean {
+  // An image map is a navigation bar drawn as a picture.
+  if (img.attrs['usemap'] !== undefined || img.attrs['ismap'] !== undefined) return true;
   // An image linking to the site's home page is its logo.
   const link = img.parent !== null && img.parent.tag === 'a' ? img.parent : img.parent?.parent?.tag === 'a' ? img.parent.parent : null;
   if (link !== null) {
