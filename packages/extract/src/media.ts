@@ -156,7 +156,10 @@ export function imageFrom(img: VElement, base: string): Image | null {
   if ((width !== undefined && width <= 2) || (height !== undefined && height <= 2)) return null;
   if (/[/.](?:pixel|beacon|tracking|tracker|spacer)[/.]|\/(?:ads?|pagead)\//i.test(src)) return null;
 
-  const image: Image = { src, alt: collapse(a['alt'] ?? a['title'] ?? '') };
+  let alt = collapse(a['alt'] ?? a['title'] ?? '');
+  // Generator placeholders ("[Uncaptioned image]", "Refer to caption") and file names describe nothing.
+  if (PLACEHOLDER_ALT.test(alt)) alt = '';
+  const image: Image = { src, alt };
   if (width !== undefined && height !== undefined) {
     image.width = width;
     image.height = height;
@@ -170,6 +173,8 @@ export function imageFrom(img: VElement, base: string): Image | null {
   }
   return image;
 }
+
+const PLACEHOLDER_ALT = /^\[?(?:uncaptioned image|refer to caption|image|img|photo|picture|untitled|placeholder|alt text|null|undefined)\]?$|^[\w%~+-]+\.(?:jpe?g|png|gif|webp|svg|avif)$/i;
 
 /** Icons, emoji and avatars are small: kept inline, never as figures. */
 export function isSmallImage(img: VElement, image: Image): boolean {
