@@ -1,4 +1,4 @@
-import { Converter } from './blocks';
+import { Converter, normalizeInlines } from './blocks';
 import { findContent } from './content';
 import { normalizeDate, readMetadata, type Metadata } from './metadata';
 import { ARTICLE_SCHEMA, type Article, type Block, type ExtractOptions, type Image, type Inline } from './model';
@@ -308,6 +308,26 @@ function tidy(input: Block[], title: string, meta: Metadata): Block[] {
       blocks.splice(i, 1);
       i--;
     }
+  }
+
+  // A sentence split by a block the parser pulled out of it (a link's hover card: "started [card] in Figma four
+  // years ago"): the card goes, the sentence is joined again.
+  for (let i = 0; i + 2 < blocks.length; i++) {
+    const first = blocks[i]!;
+    if (first.type !== 'paragraph') continue;
+    const head = collapse(inlineText(first.content));
+    if (head.length === 0 || /[.!?:;。！？"'”’)\]]$/.test(head)) continue;
+    let j = i + 1;
+    while (j < blocks.length && j - i <= 3 && (blocks[j]!.type === 'heading' || blocks[j]!.type === 'paragraph' && inlineText((blocks[j] as { content: Inline[] }).content).length < 200)) {
+      const next = blocks[j]!;
+      if (next.type === 'paragraph' && /^\p{Ll}/u.test(collapse(inlineText(next.content))) && j > i + 1) break;
+      j++;
+    }
+    const last = blocks[j];
+    if (j === i + 1 || j - i > 3 || last === undefined || last.type !== 'paragraph' || !/^\p{Ll}/u.test(collapse(inlineText(last.content)))) continue;
+    if (!blocks.slice(i + 1, j).some((b) => b.type === 'heading')) continue;
+    first.content = normalizeInlines([...first.content, { type: 'text', text: ' ' }, ...last.content]);
+    blocks.splice(i + 1, j - i);
   }
 
   // Labels drawn over a diagram (f(t), ω, "Fig. a") come out as a run of tiny paragraphs after it.
