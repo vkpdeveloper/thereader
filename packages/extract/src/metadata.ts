@@ -104,7 +104,7 @@ function imageUrl(value: Json | undefined): string | null {
   return null;
 }
 
-const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: '\u00a0', '#39': "'" };
+const ENTITIES = new Map<string, string>([['amp', '&'], ['lt', '<'], ['gt', '>'], ['quot', '"'], ['apos', "'"], ['nbsp', '\u00a0']]);
 
 /** Decodes the handful of entities publishers double-encode into metadata strings. */
 export function decodeEntities(value: string): string {
@@ -115,7 +115,7 @@ export function decodeEntities(value: string): string {
       const code = key.charCodeAt(1) === 120 ? parseInt(key.slice(2), 16) : parseInt(key.slice(1), 10);
       return code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : match;
     }
-    return ENTITIES[key] ?? match;
+    return ENTITIES.get(key) ?? match;
   });
 }
 
