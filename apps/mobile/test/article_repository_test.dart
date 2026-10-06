@@ -13,7 +13,7 @@ import 'package:thereader_extract/thereader_extract.dart';
 const _page = '''<!doctype html><html lang="en"><head><meta charset="windows-1252"><title>A Quiet Morning</title></head>
 <body><nav><p>Home</p></nav><article>
 <p>The kettle was the first thing to wake, long before the house and its caf\xe9 radio.</p>
-<p>By seven the light had found the table, the books, and the unfinished letter.</p>
+<p>At seven the light had found the table, the books, and the unfinished letter.</p>
 </article></body></html>''';
 
 void main() {
