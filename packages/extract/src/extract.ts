@@ -137,11 +137,20 @@ function chooseTitle(meta: Metadata, body: VElement, pageUrl: string): string {
       if (hc === c) return h;
     }
   }
+  // Headings that are the site part of "Story - Site" (a docs menu-bar h1) never stand for the story.
+  const siteParts = new Set<string>();
+  for (const raw of meta.rawTitles) {
+    const segments = collapse(raw).split(SEPARATORS).map(comparable);
+    if (segments.length < 2) continue;
+    siteParts.add(segments[segments.length - 1]!);
+    siteParts.add(segments[0]!);
+  }
   for (const candidate of cleaned) {
     const c = comparable(candidate);
     if (c.length < 10) continue;
     for (const h of headings) {
       const hc = comparable(h);
+      if (siteParts.has(hc) && hc !== c) continue;
       if (hc.length >= 10 && (c.indexOf(hc) >= 0 && hc.length > c.length * 0.6 || hc.indexOf(c) >= 0 && c.length > hc.length * 0.6)) return h;
     }
   }
