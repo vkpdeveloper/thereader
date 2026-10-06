@@ -1,39 +1,40 @@
-import { memo, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { memo, useRef, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { Link } from '@tanstack/react-router';
 import { articleLink } from '../lib/hooks';
 import type { ArticleSummary } from '../lib/types';
 import { IconButton } from './buttons';
+import { useRelayedSrc } from './article/media';
 import { MoreHorizIcon } from './icons';
 import { menuPoint, type MenuPoint } from './overlay';
 import { ProgressLine } from './states';
 
-/** A publisher's favicon at text size; hidden when it fails to load. */
+/** A publisher's favicon at text size, through the relay if its host refuses; hidden when it fails to load. */
 export function SiteIcon({ src, size = 14 }: { src: string | null; size?: number }) {
-  const [failed, setFailed] = useState(false);
-  if (!src || failed) return null;
+  const icon = useRelayedSrc(src ?? undefined);
+  if (icon.failed) return null;
   return (
     <img
       className="site-icon"
-      src={src}
+      src={icon.src}
       alt=""
       width={size}
       height={size}
       loading="lazy"
       decoding="async"
       referrerPolicy="no-referrer"
-      onError={() => setFailed(true)}
+      onError={icon.onError}
     />
   );
 }
 
-/** Lead image, or a quiet plate with the favicon (or the site's initial) when there is none. */
+/** Lead image (through the relay if its host refuses), or a quiet plate with the favicon (or the site's initial) when there is none. */
 export function ArticleThumb({ article, shape = 'wide' }: { article: ArticleSummary; shape?: 'wide' | 'cover' }) {
-  const [failed, setFailed] = useState(false);
+  const lead = useRelayedSrc(article.image ?? undefined);
   const cls = shape === 'cover' ? 'article-thumb is-cover' : 'article-thumb';
-  if (article.image && !failed) {
+  if (!lead.failed) {
     return (
       <div className={cls}>
-        <img src={article.image} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setFailed(true)} />
+        <img src={lead.src} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={lead.onError} />
       </div>
     );
   }

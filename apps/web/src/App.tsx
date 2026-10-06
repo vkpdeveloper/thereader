@@ -1,11 +1,16 @@
 import { useLayoutEffect } from 'react';
 import { Outlet } from '@tanstack/react-router';
+import { MediaRelayOrigin } from './components/article/media';
 import { FileLaunchHandler } from './components/FileLaunch';
 import { ToastProvider } from './components/toast';
 import { applyTheme } from './lib/themes';
 import { useServices, useStore } from './lib/services/react';
 
-/** Root: follows the synced theme preset, hosts the snackbar and takes books opened from the OS. */
+/**
+ * Root: follows the synced theme preset, hosts the snackbar, takes books
+ * opened from the OS and names the API whose relay shows media that other
+ * hosts refuse to serve here.
+ */
 export function Root() {
   const services = useServices();
   const settings = useStore(services.settings);
@@ -14,9 +19,11 @@ export function Root() {
     if (settings.loaded) applyTheme(themeId);
   }, [settings.loaded, themeId]);
   return (
-    <ToastProvider>
-      <Outlet />
-      <FileLaunchHandler />
-    </ToastProvider>
+    <MediaRelayOrigin.Provider value={services.settings.currentOrigin()}>
+      <ToastProvider>
+        <Outlet />
+        <FileLaunchHandler />
+      </ToastProvider>
+    </MediaRelayOrigin.Provider>
   );
 }
