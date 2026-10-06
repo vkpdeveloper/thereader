@@ -164,6 +164,10 @@ export function imageFrom(img: VElement, base: string): Image | null {
     image.width = width;
     image.height = height;
   }
+  // A density srcset ("a@2x.png 2x") leaves the 1x image in src.
+  if (candidates.length > 0 && candidates.every((c) => c.width === 0) && !candidates.some((c) => c.density === 1) && candidates.every((c) => c.url !== src)) {
+    candidates = [{ url: src, width: 0, density: 1 }, ...candidates];
+  }
   const srcset = normalizeSrcset(candidates);
   if (srcset !== undefined) image.srcset = srcset;
   const link = img.parent !== null && img.parent.tag === 'a' ? img.parent : img.parent?.parent?.tag === 'a' ? img.parent.parent : null;

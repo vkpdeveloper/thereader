@@ -925,6 +925,7 @@
           "alt": "",
           "width": 250,
           "height": 224,
+          "srcset": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0e/ExpIPi.gif/250px-ExpIPi.gif?utm_source=en.wikipedia.org&utm_campaign=parser&utm_content=thumbnail 1x, https://upload.wikimedia.org/wikipedia/commons/0/0e/ExpIPi.gif?utm_source=en.wikipedia.org&utm_campaign=parser&utm_content=thumbnail_unscaled 2x",
           "href": "https://en.wikipedia.org/wiki/File:ExpIPi.gif"
         }
       ],
@@ -1179,6 +1180,7 @@
           "alt": "",
           "width": 250,
           "height": 257,
+          "srcset": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/71/Euler%27s_formula.svg/250px-Euler%27s_formula.svg.png?utm_source=en.wikipedia.org&utm_campaign=parser&utm_content=thumbnail 1x, https://thumb.wikimedia.org/wikipedia/commons/thumb/7/71/Euler%27s_formula.svg/500px-Euler%27s_formula.svg.png?utm_source=en.wikipedia.org&utm_campaign=parser&utm_content=thumbnail 2x",
           "href": "https://en.wikipedia.org/wiki/File:Euler's_formula.svg"
         }
       ],
