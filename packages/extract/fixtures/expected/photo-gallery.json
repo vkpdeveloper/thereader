@@ -1,0 +1,104 @@
+{
+  "schema": 1,
+  "url": "https://harbourdaily.example.com/coast/gallery/2025/jan/12/old-lighthouses-north-coast-in-pictures",
+  "title": "Old lighthouses of the north coast – in pictures",
+  "subtitle": null,
+  "byline": null,
+  "authors": [],
+  "siteName": "Harbour Daily",
+  "publishedAt": null,
+  "modifiedAt": null,
+  "language": "en",
+  "dir": "ltr",
+  "excerpt": "Photographer Ines Marlow spent two winters on the north coast documenting the last lighthouses still kept by hand, from granite towers to wooden beacons.",
+  "leadImage": null,
+  "favicon": "https://harbourdaily.example.com/favicon.ico",
+  "wordCount": 24,
+  "readingMinutes": 1,
+  "blocks": [
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Photographer Ines Marlow spent two winters on the north coast documenting the last lighthouses still kept by hand, from granite towers to wooden beacons."
+        }
+      ]
+    },
+    {
+      "type": "figure",
+      "images": [
+        {
+          "src": "https://img.example.com/lighthouses/cape-dorn.jpg",
+          "alt": "Cape Dorn lighthouse",
+          "width": 1200,
+          "height": 800
+        }
+      ],
+      "caption": [
+        {
+          "type": "text",
+          "text": "The granite tower at Cape Dorn, lit every night since 1871."
+        },
+        {
+          "type": "text",
+          "text": "Photograph: Ines Marlow",
+          "marks": [
+            "small"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "figure",
+      "images": [
+        {
+          "src": "https://img.example.com/lighthouses/keepers-room.jpg",
+          "alt": "Keeper's room",
+          "width": 1200,
+          "height": 800
+        }
+      ],
+      "caption": [
+        {
+          "type": "text",
+          "text": "The keeper's room at Hallow Point, with the log books going back to the war."
+        }
+      ]
+    },
+    {
+      "type": "figure",
+      "images": [
+        {
+          "src": "https://img.example.com/lighthouses/lens.jpg",
+          "alt": "Fresnel lens",
+          "width": 1200,
+          "height": 800
+        }
+      ],
+      "caption": [
+        {
+          "type": "text",
+          "text": "A first-order Fresnel lens, polished each morning by the last full-time keeper."
+        }
+      ]
+    },
+    {
+      "type": "figure",
+      "images": [
+        {
+          "src": "https://img.example.com/lighthouses/storm.jpg",
+          "alt": "Storm",
+          "width": 1200,
+          "height": 800
+        }
+      ],
+      "caption": [
+        {
+          "type": "text",
+          "text": "Waves breaking over the breakwater below the Skerry Rock light in a January storm."
+        }
+      ]
+    }
+  ]
+}

@@ -427,6 +427,9 @@ function grab(body: VElement, flags: Flags, articleBody: string | null): Attempt
   for (let p = topCandidate.parent; p !== null && p.tag !== 'body' && liveChildren(p) === 1; p = p.parent) topCandidate = p;
   if (!topCandidate.scored) initialize(topCandidate, flags);
 
+  topCandidate = galleryContainer(topCandidate);
+  if (!topCandidate.scored) initialize(topCandidate, flags);
+
   // Join siblings that look like more of the same.
   const roots: VElement[] = [];
   const parent = topCandidate.parent;
@@ -484,6 +487,37 @@ function trimTrailingChrome(body: VElement): void {
     if (child.tag === 'p' && child.textLen < 100 && linkDensity(child) > 0.3) child.skip = true;
     return;
   }
+}
+
+/**
+ * Photo galleries: the text is a short standfirst plus the photo captions. A
+ * short body next to three or more captioned figures widens to the container
+ * they share, when the captions are most of that container's text.
+ */
+function galleryContainer(top: VElement): VElement {
+  if (top.textLen >= 1000) return top;
+  let p = top.parent;
+  for (let level = 0; level < 3 && p !== null && p.tag !== 'body'; level++, p = p.parent) {
+    let figures = 0;
+    let captions = 0;
+    walk(p, (e) => {
+      if (e.skip) return false;
+      if (e.tag !== 'figure') return true;
+      const caption = firstChild(e, 'figcaption');
+      if (caption !== null && caption.textLen > 0 && hasMedia(e)) {
+        figures++;
+        captions += caption.textLen - caption.linkLen;
+      }
+      return false;
+    });
+    if (figures >= 3 && top.textLen + captions >= (p.textLen - p.linkLen) * 0.6) return p;
+  }
+  return top;
+}
+
+function firstChild(el: VElement, tag: string): VElement | null {
+  for (const child of el.children) if (child.kind === 1 && !child.skip && child.tag === tag) return child;
+  return null;
 }
 
 function isInside(node: VElement, ancestor: VElement): boolean {

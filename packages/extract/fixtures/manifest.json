@@ -11,5 +11,6 @@
   "python-docs-classes": "https://docs.python.org/3/tutorial/classes.html",
   "rust-book-strings": "https://doc.rust-lang.org/book/ch08-02-strings.html",
   "mdn-array-map": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map",
-  "flat-spec": "https://notes.example.org/part-2.html"
+  "flat-spec": "https://notes.example.org/part-2.html",
+  "photo-gallery": "https://harbourdaily.example.com/coast/gallery/2025/jan/12/old-lighthouses-north-coast-in-pictures"
 }
