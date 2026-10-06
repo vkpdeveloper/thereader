@@ -14,7 +14,7 @@ const TAG_MARK: Record<string, Mark> = {
 
 const INLINE_TAGS = new Set([
   'a', 'abbr', 'acronym', 'b', 'bdi', 'bdo', 'big', 'br', 'cite', 'code', 'data', 'del', 'dfn', 'em', 'font', 'i', 'img', 'ins', 'kbd', 'label',
-  'mark', 'math', 'math-tex', 'nobr', 'noscript', 'picture', 'q', 'rp', 'rt', 'ruby', 's', 'samp', 'small', 'span', 'strike', 'strong', 'sub',
+  'mark', 'math', 'math-tex', 'nobr', 'noscript', 'picture', 'q', 'rb', 'rp', 'rt', 'rtc', 'ruby', 's', 'samp', 'small', 'span', 'strike', 'strong', 'sub',
   'sup', 'svg', 'time', 'tt', 'u', 'var', 'wbr', 'input', 'meta', 'link', 'source', 'track',
 ]);
 

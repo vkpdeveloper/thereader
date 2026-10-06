@@ -31,7 +31,7 @@ const CONTENT_HINT = /(?:^|\s)(?:entry-content|post-content|article-content|arti
 const PHRASING = new Set([
   'abbr', 'audio', 'b', 'bdo', 'bdi', 'br', 'button', 'canvas', 'cite', 'code', 'data', 'datalist', 'dfn', 'em', 'embed', 'i',
   'img', 'input', 'kbd', 'label', 'mark', 'math', 'math-tex', 'meter', 'noscript', 'object', 'output', 'progress', 'q', 'ruby',
-  'rt', 'rp', 'samp', 'select', 'small', 'span', 'strong', 'sub', 'sup', 'textarea', 'time', 'var', 'wbr', 'u', 's', 'strike',
+  'rb', 'rt', 'rtc', 'rp', 'samp', 'select', 'small', 'span', 'strong', 'sub', 'sup', 'textarea', 'time', 'var', 'wbr', 'u', 's', 'strike',
   'tt', 'font', 'big', 'svg', 'picture', 'nobr', 'acronym',
 ]);
 
