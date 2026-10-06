@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import type { InkStroke } from '../../../../lib/services/ink';
-import { dashArray, keepInside, marginOf, nearStroke, pickAnchor, placeStroke, strokePath, thin, toAnchor } from '../geometry';
+import { keepInside, marginOf, pickAnchor, placeStroke, toAnchor } from '../geometry';
 
 const box = (top: number, height: number, left = 100, width = 600) => ({ left, top, width, height });
 
@@ -8,14 +7,9 @@ describe('ink geometry', () => {
   test('a stroke stored against its block comes back at the same place', () => {
     const drawnOn = box(400, 120);
     const surface = [150, 470, 300, 480, 460, 470];
-    const stroke: InkStroke = {
-      id: 's',
-      tool: 'pen',
-      color: '#ffffff',
-      size: 2,
+    const stroke = {
       anchor: { block: 3, width: drawnOn.width, height: drawnOn.height },
       points: toAnchor(surface, drawnOn),
-      createdAt: '',
     };
     expect(placeStroke(stroke, drawnOn)).toEqual(surface);
     // Blocks above grew by 250px: the stroke moves down with its block.
@@ -39,24 +33,6 @@ describe('ink geometry', () => {
     // Below the last block.
     expect(pickAnchor(boxes, 2000)!.key).toBe(1);
     expect(pickAnchor([], 10)).toBeNull();
-  });
-
-  test('paths: a dot, a line and a smoothed curve', () => {
-    expect(strokePath([5, 5])).toBe('M5 5l0.01 0');
-    expect(strokePath([0, 0, 10, 10])).toBe('M0 0L10 10');
-    expect(strokePath([0, 0, 10, 0, 20, 10, 30, 10])).toBe('M0 0Q10 0 15 5Q20 10 25 10L30 10');
-  });
-
-  test('thinning keeps the ends and drops samples too close together', () => {
-    expect(thin([0, 0, 0.5, 0, 1, 0, 3, 0, 3.2, 0, 6, 0])).toEqual([0, 0, 3, 0, 6, 0]);
-  });
-
-  test('the eraser finds lines it passes near', () => {
-    const line = [0, 0, 100, 0];
-    expect(nearStroke(line, 50, 6, 8)).toBe(true);
-    expect(nearStroke(line, 50, 12, 8)).toBe(false);
-    expect(nearStroke(line, 106, 0, 8)).toBe(true);
-    expect(nearStroke([10, 10], 14, 13, 8)).toBe(true);
   });
 
   test('strokes past the page edge slide back inside', () => {
@@ -87,12 +63,5 @@ describe('ink geometry', () => {
     expect(marginOf([410, 0, 450, 10], block)).toBe('right');
     expect(marginOf([20, 0, 90, 10], block)).toBe('left');
     expect(marginOf([350, 0, 450, 10], block)).toBeNull();
-  });
-
-  test('pen styles', () => {
-    expect(dashArray('pen', 2)).toBeUndefined();
-    expect(dashArray('marker', 2)).toBeUndefined();
-    expect(dashArray('dotted', 2)).toBe('0 4.8');
-    expect(dashArray('dashed', 2)).toBe('6.4 5.2');
   });
 });

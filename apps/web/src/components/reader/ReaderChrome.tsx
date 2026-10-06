@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { inertProps } from '../../lib/hooks';
 import type { ReadingLocator } from '../../lib/types';
 import type { PageInfo } from '../../reader/engine';
@@ -21,7 +22,7 @@ export type ReaderPanel = 'contents' | 'highlights' | 'search' | 'typography';
 
 const percentOf = (loc: ReadingLocator | null) => Math.round(Math.min(1, Math.max(0, loc?.totalProgression ?? 0)) * 100);
 
-/** Opaque top bar: close, title, then the four reading tools. */
+/** Opaque top bar: close, title, then the pen and the four reading tools. */
 export function TopChrome({
   visible,
   title,
@@ -32,6 +33,7 @@ export function TopChrome({
   onFullscreen,
   onShortcuts,
   onMouseLeave,
+  draw,
 }: {
   visible: boolean;
   title: string;
@@ -42,6 +44,8 @@ export function TopChrome({
   onFullscreen: () => void;
   onShortcuts: () => void;
   onMouseLeave?: () => void;
+  /** The pen's Draw button. */
+  draw?: ReactNode;
 }) {
   const tool = (p: ReaderPanel) => ({ 'aria-pressed': panel === p, className: panel === p ? 'is-active' : undefined });
   return (
@@ -49,6 +53,7 @@ export function TopChrome({
       <IconButton icon={CloseIcon} label="Close book" shortcut="Esc" onClick={onClose} />
       <div className="reader-top-title t-title-sm clamp-1">{title}</div>
       <IconButton icon={FormatListIcon} label="Contents" shortcut="T" onClick={() => onPanel('contents')} {...tool('contents')} />
+      {draw}
       <IconButton icon={BorderColorIcon} label="Highlights" shortcut="H" onClick={() => onPanel('highlights')} {...tool('highlights')} />
       <IconButton icon={SearchIcon} label="Search book" shortcut="/" onClick={() => onPanel('search')} {...tool('search')} />
       <IconButton icon={TextFieldsIcon} label="Typography" shortcut="A" onClick={() => onPanel('typography')} {...tool('typography')} />

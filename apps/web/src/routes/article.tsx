@@ -234,8 +234,8 @@ export function ArticleScreen() {
   const keys = useRef<(e: KeyboardEvent) => void>(() => undefined);
   keys.current = (e) => {
     if (hasOpenOverlay() || isTypingTarget(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
-    // While drawing, Escape belongs to the pen (its shortcuts run through TanStack Hotkeys).
-    if (ink.active && e.key === 'Escape') return;
+    // Keys the pen owns right now (its shortcuts run through TanStack Hotkeys).
+    if (ink.claims(e)) return;
     if (highlights.onKey(e)) return;
     if (e.key === 'Escape') {
       e.preventDefault();
@@ -308,7 +308,7 @@ export function ArticleScreen() {
   );
 
   const highlights = useArticleHighlights({ id, ready, bodyRef, prefs, reveal: (el) => flash(el, null) });
-  const ink = useArticleInk({ id, ready: ready != null, pageRef, bodyRef, headerRef });
+  const { ink, surface: inkSurface } = useArticleInk({ id, ready: ready != null, pageRef, bodyRef, headerRef });
 
   const onArticleClick = (e: ReactMouseEvent) => {
     const target = e.target as Element;
@@ -456,7 +456,7 @@ export function ArticleScreen() {
           </div>
         </footer>
       </article>
-      {ink.surface}
+      {inkSurface}
       <BackToTop key={id} body={bodyRef} count={article.blocks.length} blocked={panel != null || zoom != null || peek != null || highlights.busy || ink.active} reducedMotion={reducedMotion} />
 
       <Sheet open={panel != null} onClose={() => setPanel(null)} title="Typography">

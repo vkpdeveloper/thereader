@@ -317,3 +317,14 @@
     transition: none;
   }
 }
+
+/* The pen's input layer over the page while drawing (the strokes are drawn
+   inside the book's frame). Under the hover strip and the controls. */
+.reader-ink-input {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}

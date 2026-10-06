@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { InkStoreImpl, inkKey, type InkStroke } from '../ink';
+import { InkStoreImpl, bookInkId, inkKey, isTextAnchor, type InkStroke } from '../ink';
 import { MemoryKv } from '../kv';
 
 const stroke = (id: string, createdAt: string, extra: Partial<InkStroke> = {}): InkStroke => ({
@@ -76,5 +76,33 @@ describe('ink store', () => {
     expect(store.strokes('d')).toBe(first);
     await store.add('d', [stroke('b', '2026-10-06T10:00:01.000Z')]);
     expect(store.strokes('d')).not.toBe(first);
+  });
+
+  test('book strokes keep their text anchors through a save', async () => {
+    const kv = new MemoryKv();
+    const store = new InkStoreImpl(kv);
+    const doc = bookInkId('abc123');
+    await store.open(doc);
+    const anchor = { href: 'OEBPS/ch1.xhtml', offset: 42, text: { before: 'It is a ', highlight: 'truth univer' }, height: 20 };
+    await store.add(doc, [stroke('t', '2026-10-06T10:00:00.000Z', { anchor })]);
+    const reopened = new InkStoreImpl(kv);
+    await reopened.open(doc);
+    const [saved] = reopened.strokes(doc);
+    expect(saved!.anchor).toEqual(anchor);
+    expect(isTextAnchor(saved!.anchor)).toBe(true);
+  });
+
+  test('a text anchor without an offset is dropped; one without its text still loads', async () => {
+    const kv = new MemoryKv();
+    await kv.set(inkKey('d'), {
+      strokes: [
+        { ...stroke('no-offset', '2026-10-06T10:00:00.000Z'), anchor: { href: 'ch.xhtml', height: 20 } },
+        { ...stroke('bare', '2026-10-06T10:00:01.000Z'), anchor: { href: 'ch.xhtml', offset: 3, height: 20 } },
+      ],
+    });
+    const store = new InkStoreImpl(kv);
+    await store.open('d');
+    expect(store.strokes('d').map((s) => s.id)).toEqual(['bare']);
+    expect(store.strokes('d')[0]!.anchor).toEqual({ href: 'ch.xhtml', offset: 3, text: { before: '', highlight: '' }, height: 20 });
   });
 });

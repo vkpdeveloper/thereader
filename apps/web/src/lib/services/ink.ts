@@ -8,12 +8,36 @@ import { noopBus, type TabBus } from './tabs';
 export type InkTool = 'pen' | 'dotted' | 'dashed' | 'marker';
 export const inkTools: InkTool[] = ['pen', 'dotted', 'dashed', 'marker'];
 
+/** An article block: its index (`data-block-index`; -1 is the article header) and its size when drawn. */
+export interface BlockAnchor {
+  block: number;
+  width: number;
+  height: number;
+}
+
 /**
- * One freehand stroke drawn over a page. Points are kept relative to the box
- * of the element the stroke was drawn on (`anchor`), not to the page, so the
- * drawing follows its passage when blocks above it change height (images
- * loading, skipped blocks rendering) and stretches with it when the column
- * or the type size changes.
+ * A character of a book chapter: the chapter (`href`, as in highlight
+ * locators), the character's offset in the chapter's text, the text there
+ * (to find it again should the offset drift) and the height of its line box
+ * when drawn, which scales the stroke when the type size changes.
+ */
+export interface TextAnchor {
+  href: string;
+  offset: number;
+  text: { before: string; highlight: string };
+  height: number;
+}
+
+export type InkAnchor = BlockAnchor | TextAnchor;
+
+export const isTextAnchor = (anchor: InkAnchor): anchor is TextAnchor => 'href' in anchor;
+
+/**
+ * One freehand stroke drawn over a page. Points are kept relative to what
+ * the stroke was drawn on (`anchor`), not to the page: an article block's
+ * box, or the box of one character in a book. So the drawing follows its
+ * passage when the layout moves it (images loading, other pages, another
+ * window size) and scales with it when the type size changes.
  */
 export interface InkStroke {
   id: string;
@@ -22,8 +46,7 @@ export interface InkStroke {
   color: string;
   /** Line width in CSS pixels. */
   size: number;
-  /** The anchor's index (`data-block-index`; -1 is the article header) and its size when drawn. */
-  anchor: { block: number; width: number; height: number };
+  anchor: InkAnchor;
   /** Flat `x, y` pairs in pixels from the anchor's top-left corner. */
   points: number[];
   createdAt: string;
@@ -33,16 +56,34 @@ export interface InkStroke {
 export const inkKey = (docId: string): string => `ink:${docId}`;
 /** The drawing of a saved article. */
 export const articleInkId = (articleId: string): string => `article:${articleId}`;
+/** The drawing of a book edition (every chapter in one record). */
+export const bookInkId = (sha256: string): string => `book:${sha256}`;
 
 const EMPTY: InkStroke[] = [];
+
+function parseAnchor(raw: Record<string, unknown>): InkAnchor | null {
+  const num = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+  if (typeof raw.href === 'string') {
+    const text = isRecord(raw.text) ? raw.text : {};
+    if (!num(raw.offset) || !num(raw.height)) return null;
+    return {
+      href: raw.href,
+      offset: raw.offset,
+      text: { before: typeof text.before === 'string' ? text.before : '', highlight: typeof text.highlight === 'string' ? text.highlight : '' },
+      height: raw.height,
+    };
+  }
+  if (!num(raw.block) || !num(raw.width) || !num(raw.height)) return null;
+  return { block: raw.block, width: raw.width, height: raw.height };
+}
 
 function parseStroke(raw: unknown): InkStroke | null {
   if (!isRecord(raw) || typeof raw.id !== 'string' || !isRecord(raw.anchor) || !Array.isArray(raw.points)) return null;
   const tool = inkTools.includes(raw.tool as InkTool) ? (raw.tool as InkTool) : 'pen';
   const color = typeof raw.color === 'string' && /^#[0-9a-f]{6}$/i.test(raw.color) ? raw.color : '#ededed';
   const size = typeof raw.size === 'number' && raw.size > 0 && raw.size <= 64 ? raw.size : 3;
-  const { block, width, height } = raw.anchor;
-  if (typeof block !== 'number' || typeof width !== 'number' || typeof height !== 'number') return null;
+  const anchor = parseAnchor(raw.anchor);
+  if (!anchor) return null;
   const points = raw.points.filter((n): n is number => typeof n === 'number' && Number.isFinite(n));
   if (points.length < 2 || points.length % 2 !== 0) return null;
   return {
@@ -50,7 +91,7 @@ function parseStroke(raw: unknown): InkStroke | null {
     tool,
     color,
     size,
-    anchor: { block, width, height },
+    anchor,
     points,
     createdAt: typeof raw.createdAt === 'string' ? raw.createdAt : new Date(0).toISOString(),
   };
