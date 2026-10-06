@@ -2,6 +2,7 @@ import type { AppServices } from './contract';
 import { createApiClient, type HttpApiClient } from './api';
 import { ArticleStoreImpl } from './articles';
 import { CatalogStoreImpl } from './catalog';
+import { createCategoryStore } from './categories';
 import { CoverStoreImpl } from './covers';
 import { HighlightStoreImpl } from './highlights';
 import { createIdbKv } from './idb';
@@ -56,6 +57,8 @@ function build(): AppServices {
   const highlights = new HighlightStoreImpl(kv, bus);
   const articles = new ArticleStoreImpl({ kv, currentOrigin, bus, bodies: clientFor });
   const ink = new InkStoreImpl(kv, bus);
+  // Temporary, replaced by the data layer's synced store.
+  const categories = createCategoryStore();
   // The import pipeline (zip parsing, MOBI conversion) loads on first use.
   const imports = new ImportStoreImpl({
     kv,
@@ -98,5 +101,5 @@ function build(): AppServices {
     await step('sync', () => sync.load());
   })();
 
-  return { settings, catalog, library, highlights, sync, imports, covers, storage, articles, ink, ready };
+  return { settings, catalog, library, highlights, sync, imports, covers, storage, articles, categories, ink, ready };
 }
