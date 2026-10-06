@@ -1,7 +1,8 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-const api = 'http://127.0.0.1:8787';
+/** The local API the dev and preview servers proxy to; override to run several checkouts side by side. */
+const api = process.env.THEREADER_API ?? 'http://127.0.0.1:8787';
 
 export default defineConfig({
   plugins: [react()],
