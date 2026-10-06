@@ -13,13 +13,70 @@ import 'model.dart';
 import 'tree.dart';
 import 'url.dart';
 
-/// TeX left for MathJax/KaTeX: $$…$$ and \[…\] display, \(…\) inline.
-final _texDelimited = RegExp(r'\$\$([^$]+?)\$\$|\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)');
+/// $$…$$ display TeX: the delimiters of [_texMatches] that start with a dollar.
+final _texDollars = RegExp(r'\$\$([^$]+?)\$\$');
 
 /// The same plus $…$ inline, for pages that show they use TeX (never "$5 and $10").
-final _texAny = RegExp(
-  r'\$\$([^$]+?)\$\$|\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)|\$([^\s$\d](?:[^$\n]{0,300}?[^\s$\\])?)\$(?![\d\w])',
-);
+final _texDollarsAny = RegExp(r'\$\$([^$]+?)\$\$|\$([^\s$\d](?:[^$\n]{0,300}?[^\s$\\])?)\$(?![\d\w])');
+
+class _TexMatch {
+  _TexMatch(this.start, this.end, this.texStart, this.texEnd, this.display);
+  final int start;
+  final int end;
+
+  /// Where the formula between the delimiters starts and ends.
+  final int texStart;
+  final int texEnd;
+  final bool display;
+}
+
+/// `text.indexOf(needle, from)` for a `from` that never decreases: each part of the text is searched once.
+int Function(int from) _seeker(String text, String needle) {
+  var at = -2;
+  return (from) {
+    if (at == -2 || (at >= 0 && at < from)) at = from > text.length ? -1 : text.indexOf(needle, from);
+    return at;
+  };
+}
+
+/// TeX left for MathJax/KaTeX, in order: $$…$$ and \[…\] display, \(…\) inline, and with [dollars]
+/// also $…$ inline. What `\$\$([^$]+?)\$\$|\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)|…` finds, in
+/// linear time: that regex scans to the end of the text from every unclosed `\[`, so the backslash
+/// pairs are found with `indexOf` instead.
+Iterable<_TexMatch> _texMatches(String text, bool dollars) sync* {
+  final pattern = dollars ? _texDollarsAny : _texDollars;
+  final pairs = [
+    (open: _seeker(text, r'\['), close: _seeker(text, r'\]'), display: true),
+    (open: _seeker(text, r'\('), close: _seeker(text, r'\)'), display: false),
+  ];
+  // The first dollar match at or after `from` (null: none), once searched.
+  var searched = false;
+  RegExpMatch? dollar;
+  var from = 0;
+  for (;;) {
+    if (!searched || (dollar != null && dollar.start < from)) {
+      final matches = pattern.allMatches(text, from).iterator;
+      dollar = matches.moveNext() ? matches.current : null;
+      searched = true;
+    }
+    _TexMatch? first;
+    if (dollar != null) {
+      final display = text.startsWith(r'$$', dollar.start);
+      final delimiter = display ? 2 : 1;
+      first = _TexMatch(dollar.start, dollar.end, dollar.start + delimiter, dollar.end - delimiter, display);
+    }
+    for (final pair in pairs) {
+      final open = pair.open(from);
+      if (open < 0 || (first != null && open > first.start)) continue;
+      // `[\s\S]+?`: the first closing delimiter after at least one character. None means none for later openers either.
+      final close = pair.close(open + 3);
+      if (close >= 0) first = _TexMatch(open, close + 2, open + 2, close, pair.display);
+    }
+    if (first == null) return;
+    yield first;
+    from = first.end;
+  }
+}
 
 const _tagMark = {
   'b': Mark.bold, 'strong': Mark.bold, 'i': Mark.italic, 'em': Mark.italic, 'cite': Mark.italic, 'dfn': Mark.italic, //
@@ -201,12 +258,12 @@ class _InlineBuilder {
   /// The text around the formulas (which holds no formula) is added as is.
   bool _texRuns(String text, _Ctx ctx) {
     var at = 0;
-    for (final m in (converter.dollars ? _texAny : _texDelimited).allMatches(text)) {
+    for (final m in _texMatches(text, converter.dollars)) {
       if (m.start > at) _plain(text.substring(at, m.start), ctx);
-      final tex = jsTrim(m[1] ?? m[2] ?? m[3] ?? m[4] ?? '');
+      final tex = jsTrim(text.substring(m.texStart, m.texEnd));
       if (tex.isNotEmpty) {
         final node = InlineMath(tex: tex, text: tex);
-        if (m[1] != null || m[2] != null) converter.displayMath.add(node);
+        if (m.display) converter.displayMath.add(node);
         push(node);
       }
       at = m.end;
@@ -585,7 +642,7 @@ class Converter {
         } else if ((child as VText).texMarks) {
           final text = child.text;
           if (text.contains(r'$$') || text.contains(r'\(') || text.contains(r'\[')) {
-            if (_texDelimited.hasMatch(text)) tex = true;
+            if (_texMatches(text, false).isNotEmpty) tex = true;
           }
         }
         if (tex) return;
