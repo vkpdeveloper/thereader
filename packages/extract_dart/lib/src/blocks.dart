@@ -1329,14 +1329,16 @@ class Converter {
       }
       return e.tag == 'div' || e.tag == 'p';
     });
-    // A short heading opening the box ("Note") is its title.
+    // A short heading opening the box ("Note") is its title (whitespace and skipped elements before it don't count).
     if (titleEl == null) {
       for (final child in el.children) {
-        if (child is VText ? !isBlank(child.text) : (child as VElement).skip) {
-          if (child is VText) break;
+        if (child is VText) {
+          if (!isBlank(child.text)) break;
           continue;
         }
-        if (child is VElement && _subheading.hasMatch(child.tag) && child.textLen < 60) titleEl = child;
+        child as VElement;
+        if (child.skip) continue;
+        if (_subheading.hasMatch(child.tag) && child.textLen < 60) titleEl = child;
         break;
       }
     }

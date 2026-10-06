@@ -18,5 +18,6 @@
   "notes-markup": "https://fieldnotes.example.com/2024/sliding-windows",
   "embeds": "https://chipweekly.example.com/2025/10/phone-prices",
   "math-tex": "https://numbers.example.net/posts/floating-point-sums",
-  "math-tex-prices": "https://numbers.example.net/posts/pricing-a-ride"
+  "math-tex-prices": "https://numbers.example.net/posts/pricing-a-ride",
+  "callout-headings": "https://ops.example.com/handbook/rotating-credentials"
 }

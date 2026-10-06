@@ -1,0 +1,113 @@
+{
+  "schema": 1,
+  "url": "https://ops.example.com/handbook/rotating-credentials",
+  "title": "Rotating credentials without downtime",
+  "subtitle": null,
+  "byline": null,
+  "authors": [],
+  "siteName": null,
+  "publishedAt": null,
+  "modifiedAt": null,
+  "language": "en",
+  "dir": "ltr",
+  "excerpt": "Credentials age, leak and get revoked, so every service that holds one needs a way to swap it for a new one while requests keep flowing. This page walks through the two-key pattern our services use.",
+  "leadImage": null,
+  "favicon": "https://ops.example.com/favicon.ico",
+  "wordCount": 172,
+  "readingMinutes": 1,
+  "blocks": [
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Credentials age, leak and get revoked, so every service that holds one needs a way to swap it for a new one while requests keep flowing. This page walks through the two-key pattern our services use."
+        }
+      ]
+    },
+    {
+      "type": "callout",
+      "variant": "warning",
+      "title": [
+        {
+          "type": "text",
+          "text": "Revoke last"
+        }
+      ],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Never revoke the old key before every instance reports the new one in its health check."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Each service reads two keys from its secret store, the current one and the next one, and accepts tokens signed with either. Rotation is then a matter of promoting the next key and generating a fresh one behind it."
+        }
+      ]
+    },
+    {
+      "type": "callout",
+      "variant": "tip",
+      "title": [
+        {
+          "type": "text",
+          "text": "Dry run first"
+        }
+      ],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Run the rotation against the staging store with the dry-run flag; it prints every service it would touch."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "The promotion step is idempotent, so a rotation interrupted halfway can simply be started again from the beginning."
+        }
+      ]
+    },
+    {
+      "type": "callout",
+      "variant": "note",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Services that cache keys in memory pick up the new key on their next refresh, at most five minutes later."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Once the dashboards show no traffic signed with the old key for a full day, it can be revoked safely."
+        }
+      ]
+    }
+  ]
+}
