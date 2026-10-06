@@ -328,20 +328,49 @@ String _xmlEscape(Match m) => switch (m[0]) {
   _ => '&quot;',
 };
 
+/// MathML presentation elements kept in `mathml`.
+const _mathmlElements = {
+  'math', 'semantics', 'mi', 'mn', 'mo', 'ms', 'mtext', 'mspace', 'mrow', 'mfrac', 'msqrt', 'mroot', 'mstyle', //
+  'merror', 'mpadded', 'mphantom', 'mfenced', 'menclose', 'msub', 'msup', 'msubsup', 'munder', 'mover', 'munderover',
+  'mmultiscripts', 'mprescripts', 'none', 'mtable', 'mtr', 'mtd', 'mlabeledtr', 'maligngroup', 'malignmark', 'maction',
+};
+
+/// Dropped from `mathml` with their content: alternative encodings, and code.
+const _mathmlDrop = {'annotation', 'annotation-xml', 'script', 'style', 'template'};
+
+/// MathML presentation and global attributes kept in `mathml` (plus
+/// `data-*`): no links, sources, handlers or styling.
+const _mathmlAttributes = {
+  'accent', 'accentunder', 'actiontype', 'align', 'alttext', 'arg', 'bevelled', 'close', 'columnalign', //
+  'columnlines', 'columnspacing', 'columnspan', 'denomalign', 'depth', 'dir', 'display', 'displaystyle', 'encoding',
+  'equalcolumns', 'equalrows', 'fence', 'form', 'frame', 'height', 'intent', 'largeop', 'linethickness', 'lspace',
+  'mathbackground', 'mathcolor', 'mathsize', 'mathvariant', 'maxsize', 'minsize', 'movablelimits', 'notation',
+  'numalign', 'open', 'rowalign', 'rowlines', 'rowspacing', 'rowspan', 'rspace', 'scriptlevel', 'scriptminsize',
+  'scriptsizemultiplier', 'selection', 'separator', 'separators', 'stretchy', 'subscriptshift', 'superscriptshift',
+  'symmetric', 'voffset', 'width',
+};
+
+final _dataAttr = RegExp(r'^data-[a-z0-9-]+$');
+
 /// Deterministic serialization of a MathML subtree (attributes in source
-/// order, no namespaces).
+/// order, no namespaces). Only MathML elements and attributes are written;
+/// anything else inside a formula (HTML in `<mtext>`, unknown tags) keeps
+/// only its text, so the output is inert markup.
 String _serializeXml(dom.Element el) {
   final out = StringBuffer();
   void visit(dom.Element el) {
     final tag = el.localName ?? '';
-    if (tag == 'annotation' || tag == 'annotation-xml') return;
-    out.write('<$tag');
-    el.attributes.forEach((key, value) {
-      final name = _attrName(key);
-      if (name == 'xmlns' || name.startsWith('xmlns:') || name == 'class' || name == 'id' || name == 'style') return;
-      out.write(' $name="${value.replaceAllMapped(_xmlAttr, _xmlEscape)}"');
-    });
-    out.write('>');
+    if (_mathmlDrop.contains(tag)) return;
+    final kept = _mathmlElements.contains(tag);
+    if (kept) {
+      out.write('<$tag');
+      el.attributes.forEach((key, value) {
+        final name = _attrName(key);
+        if (!_mathmlAttributes.contains(name) && !_dataAttr.hasMatch(name)) return;
+        out.write(' $name="${value.replaceAllMapped(_xmlAttr, _xmlEscape)}"');
+      });
+      out.write('>');
+    }
     for (final child in el.nodes) {
       if (child is dom.Text) {
         out.write(child.data.replaceAllMapped(_xmlText, _xmlEscape));
@@ -349,7 +378,7 @@ String _serializeXml(dom.Element el) {
         visit(child);
       }
     }
-    out.write('</$tag>');
+    if (kept) out.write('</$tag>');
   }
 
   visit(el);

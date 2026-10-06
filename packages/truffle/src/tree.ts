@@ -223,23 +223,52 @@ function isImageObject(el: Element): boolean {
 
 const XML_ESCAPE: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
 
-/** Deterministic serialization of a MathML subtree (attributes in source order, no namespaces). */
+/** MathML presentation elements kept in `mathml`. */
+const MATHML_ELEMENTS = new Set([
+  'math', 'semantics', 'mi', 'mn', 'mo', 'ms', 'mtext', 'mspace', 'mrow', 'mfrac', 'msqrt', 'mroot', 'mstyle', 'merror',
+  'mpadded', 'mphantom', 'mfenced', 'menclose', 'msub', 'msup', 'msubsup', 'munder', 'mover', 'munderover', 'mmultiscripts',
+  'mprescripts', 'none', 'mtable', 'mtr', 'mtd', 'mlabeledtr', 'maligngroup', 'malignmark', 'maction',
+]);
+
+/** Dropped from `mathml` with their content: alternative encodings, and code. */
+const MATHML_DROP = new Set(['annotation', 'annotation-xml', 'script', 'style', 'template']);
+
+/** MathML presentation and global attributes kept in `mathml` (plus `data-*`): no links, sources, handlers or styling. */
+const MATHML_ATTRIBUTES = new Set([
+  'accent', 'accentunder', 'actiontype', 'align', 'alttext', 'arg', 'bevelled', 'close', 'columnalign', 'columnlines',
+  'columnspacing', 'columnspan', 'denomalign', 'depth', 'dir', 'display', 'displaystyle', 'encoding', 'equalcolumns',
+  'equalrows', 'fence', 'form', 'frame', 'height', 'intent', 'largeop', 'linethickness', 'lspace', 'mathbackground',
+  'mathcolor', 'mathsize', 'mathvariant', 'maxsize', 'minsize', 'movablelimits', 'notation', 'numalign', 'open', 'rowalign',
+  'rowlines', 'rowspacing', 'rowspan', 'rspace', 'scriptlevel', 'scriptminsize', 'scriptsizemultiplier', 'selection',
+  'separator', 'separators', 'stretchy', 'subscriptshift', 'superscriptshift', 'symmetric', 'voffset', 'width',
+]);
+
+/**
+ * Deterministic serialization of a MathML subtree (attributes in source
+ * order, no namespaces). Only MathML elements and attributes are written;
+ * anything else inside a formula (HTML in `<mtext>`, unknown tags) keeps only
+ * its text, so the output is inert markup.
+ */
 function serializeXml(el: Element): string {
   const tag = el.localName;
-  if (tag === 'annotation' || tag === 'annotation-xml') return '';
-  let out = '<' + tag;
-  const list = el.attributes;
-  for (let i = 0; i < list.length; i++) {
-    const a = list[i]!;
-    if (a.name === 'xmlns' || a.name.startsWith('xmlns:') || a.name === 'class' || a.name === 'id' || a.name === 'style') continue;
-    out += ' ' + a.name + '="' + a.value.replace(/[&<>"]/g, (c) => XML_ESCAPE[c]!) + '"';
+  if (MATHML_DROP.has(tag)) return '';
+  const kept = MATHML_ELEMENTS.has(tag);
+  let out = '';
+  if (kept) {
+    out += '<' + tag;
+    const list = el.attributes;
+    for (let i = 0; i < list.length; i++) {
+      const a = list[i]!;
+      if (!MATHML_ATTRIBUTES.has(a.name) && !/^data-[a-z0-9-]+$/.test(a.name)) continue;
+      out += ' ' + a.name + '="' + a.value.replace(/[&<>"]/g, (c) => XML_ESCAPE[c]!) + '"';
+    }
+    out += '>';
   }
-  out += '>';
   for (let child = el.firstChild; child !== null; child = child.nextSibling) {
     if (child.nodeType === 3) out += (child as Text).data.replace(/[&<>]/g, (c) => XML_ESCAPE[c]!);
     else if (child.nodeType === 1) out += serializeXml(child as Element);
   }
-  return out + '</' + tag + '>';
+  return kept ? out + '</' + tag + '>' : out;
 }
 
 // ------------------------------------------------------------------ helpers
