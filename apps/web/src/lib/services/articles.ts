@@ -15,7 +15,7 @@ export const articleKey = (id: string): string => `article:${id}`;
 export const ARTICLE_TIMEOUT_MS = 30_000;
 const CACHE_SIZE = 3;
 /** The API's cap on a synced document, measured on its JSON. */
-export const MAX_ARTICLE_BODY_BYTES = 8 * 1024 * 1024;
+export const MAX_ARTICLE_BODY_BYTES = 4 * 1024 * 1024;
 /** Documents up to this size download during sync, so they open offline. */
 export const PREFETCH_MAX_BYTES = 1024 * 1024;
 const RETRY_MIN_MS = 2 * 60_000;

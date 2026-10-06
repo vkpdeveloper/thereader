@@ -3,6 +3,7 @@ import type { Article, ExtractOptions } from '@thereader/extract';
 import type { SyncResponse } from '../api';
 import {
   ArticleStoreImpl,
+  MAX_ARTICLE_BODY_BYTES,
   articleBody,
   articleIdFor,
   articleKey,
@@ -150,7 +151,8 @@ function fakeArticle(url: string, overrides: Partial<Article> = {}): Article {
   };
 }
 
-async function device(server: FakeServer, clock: Clock, kv = new MemoryKv()) {
+/** `pages` overrides what extraction returns for a URL. */
+async function device(server: FakeServer, clock: Clock, kv = new MemoryKv(), pages: Record<string, Partial<Article>> = {}) {
   let pageFetches = 0;
   let extractions = 0;
   const settings = new SettingsStoreImpl(kv, ORIGIN, undefined, clock.now);
@@ -184,7 +186,7 @@ async function device(server: FakeServer, clock: Clock, kv = new MemoryKv()) {
     parse: (html: string) => ({ html }) as unknown as Document,
     extract: (_doc: Document, o: ExtractOptions) => {
       extractions++;
-      return fakeArticle(o.url);
+      return fakeArticle(o.url, pages[o.url]);
     },
   });
   await articles.load();
@@ -448,6 +450,42 @@ describe('article sync between devices', () => {
     expect(b.pending()).toEqual({});
   });
 
+  test('an article too large to sync stays readable on this device and never blocks sync', async () => {
+    const server = new FakeServer();
+    const clock = new Clock();
+    const huge = 'https://example.com/huge';
+    const blocks = [{ type: 'paragraph' as const, content: [{ type: 'text' as const, text: 'x'.repeat(MAX_ARTICLE_BODY_BYTES) }] }];
+    const a = await device(server, clock, new MemoryKv(), { [huge]: { blocks } });
+    const b = await device(server, clock);
+    const sent = () => server.calls.flatMap((c) => (c.changes as Array<{ payload: Record<string, unknown> }>).map((x) => x.payload.articleId));
+
+    const big = await a.articles.add(huge);
+    const small = await a.articles.add('https://example.com/story');
+    expect(big.bodySize).toBeGreaterThan(MAX_ARTICLE_BODY_BYTES);
+    await a.cycle();
+    expect(sent()).toEqual([small.id]);
+    expect(server.puts).toBe(1);
+    expect(a.sync.getSnapshot().error).toBeNull();
+    expect(a.sync.stored.origins[ORIGIN]!.articlesUnsupportedUntil).toBeUndefined();
+    expect(a.pending()).toEqual({});
+    expect(a.uploads()).toEqual({});
+    expect((await a.articles.get(big.id))?.blocks).toEqual(blocks);
+
+    // Its reading position and deletion stay here too.
+    clock.advance(1000);
+    await a.articles.saveProgress(big.id, 0.5);
+    await a.cycle();
+    clock.advance(1000);
+    await a.articles.remove(big.id);
+    await a.cycle();
+    expect(sent()).toEqual([small.id]);
+    expect(a.pending()).toEqual({});
+    expect(a.articles.summary(big.id)).toBeUndefined();
+
+    await b.cycle();
+    expect([...b.articles.all].map((s) => s.id)).toEqual([small.id]);
+  });
+
   test('a server without article sync keeps everything else syncing', async () => {
     const server = new FakeServer();
     server.rejectArticles = true;
@@ -486,7 +524,8 @@ describe('article sync between devices', () => {
     expect(payload.favicon).toBeNull();
     expect(payload.leadImage).toBeNull();
     expect(payload.readingMinutes).toBe(1);
-    expect(articlePayload({ ...base, bodySha256: 'b'.repeat(64), bodySize: 9 * 1024 * 1024 })).toBeNull();
+    expect(articlePayload({ ...base, bodySha256: 'b'.repeat(64), bodySize: MAX_ARTICLE_BODY_BYTES })).not.toBeNull();
+    expect(articlePayload({ ...base, bodySha256: 'b'.repeat(64), bodySize: MAX_ARTICLE_BODY_BYTES + 1 })).toBeNull();
     expect(articlePayload({ ...base, url: 'ftp://x.example/y', bodySha256: 'b'.repeat(64), bodySize: 1 })).toBeNull();
   });
 });

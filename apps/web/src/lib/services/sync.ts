@@ -511,13 +511,12 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
     const store = this.deps.articles;
     if (!store?.loaded) return;
     for (const s of store.all) {
-      if (!s.bodySha256) continue;
+      // One the API cannot take stays on this device: its save, positions and
+      // deletion are never sent, so it cannot fail a batch.
+      if (!articleSyncable(s)) continue;
       const key = `article:${s.id}`;
       const stamp = `saved:${s.addedAt}`;
-      if (state.seen[key] !== stamp) {
-        const payload = articlePayload(s);
-        out.push([key, stamp, payload ? articleChange('article', s.addedAt, payload) : null]);
-      }
+      if (state.seen[key] !== stamp) out.push([key, stamp, articleChange('article', s.addedAt, articlePayload(s)!)]);
       if (s.progress != null && s.progressUpdatedAt && state.seen[`articleProgress:${s.id}`] !== s.progressUpdatedAt) {
         const position = positionFromFraction(s.progress, s.blockCount);
         out.push([`articleProgress:${s.id}`, s.progressUpdatedAt, articleChange('articleProgress', s.progressUpdatedAt, { articleId: s.id, position })]);
@@ -1294,13 +1293,21 @@ const clampInt = (v: unknown, min: number, max: number): number =>
   typeof v === 'number' && Number.isFinite(v) ? Math.min(max, Math.max(min, Math.round(v))) : min;
 
 /**
+ * Whether an article syncs: one whose document exceeds the upload limit, or
+ * whose URL the API cannot take, stays on this device.
+ */
+export function articleSyncable(s: ArticleSummary): boolean {
+  if (!s.bodySha256 || !s.bodySize || s.bodySize > MAX_ARTICLE_BODY_BYTES) return false;
+  return s.url.length <= 2048 && /^https?:\/\/\S+$/i.test(s.url);
+}
+
+/**
  * A saved article's metadata as the API validates it. Long text is clipped
- * and unusable image URLs dropped; an article whose document exceeds the
- * upload limit, or whose URL the API cannot take, stays on this device.
+ * and unusable image URLs dropped. Null for an article that stays on this
+ * device.
  */
 export function articlePayload(s: ArticleSummary): Record<string, unknown> | null {
-  if (!s.bodySha256 || !s.bodySize || s.bodySize > MAX_ARTICLE_BODY_BYTES) return null;
-  if (s.url.length > 2048 || !/^https?:\/\/\S+$/i.test(s.url)) return null;
+  if (!articleSyncable(s)) return null;
   const text = (v: string | null | undefined, max: number) => (typeof v === 'string' && v.trim() ? v.slice(0, max) : null);
   const image = (v: string | null | undefined) => (typeof v === 'string' && v.length <= 2048 && ARTICLE_IMAGE.test(v) ? v : null);
   return {
