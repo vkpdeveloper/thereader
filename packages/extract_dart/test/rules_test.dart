@@ -94,4 +94,23 @@ void main() {
     )!;
     expect(article.byline, 'Ann Lee');
   });
+
+  test('an author block above the text is not a paragraph; author names further down stay', () {
+    const authors =
+        '<div class="ltx_authors"><span class="ltx_creator ltx_role_author"><span class="ltx_personname">Ann Lee</span></span> '
+        '<span class="ltx_creator ltx_role_author"><span class="ltx_personname">Bo Chen</span><span class="ltx_author_notes">'
+        '<span class="ltx_contact ltx_role_affiliation"><span class="ltx_contact_name">Affiliation: </span>Carla Diaz, Dev Patel, Eve Martin, University of Somewhere, Department of Examples</span>'
+        '<span class="ltx_contact ltx_role_email">bo@example.org</span></span></span></div>';
+    const later = '<p>Cited: <span class="authors">Ann Lee and Bo Chen</span>, An example, 2020.</p>';
+    final article = extractHtml(
+      '<html><head><title>Rule test page</title></head><body><article><h1>Rule test page</h1>$authors<p>$_prose</p>$later'
+          '</article></body></html>',
+      'https://example.com/a',
+    )!;
+    expect(article.byline, 'Ann Lee');
+    expect(
+      [for (final b in article.blocks) b is ParagraphBlock ? inlineText(b.content) : b.toJson()['type']],
+      [_prose.trim(), 'Cited: Ann Lee and Bo Chen, An example, 2020.'],
+    );
+  });
 }

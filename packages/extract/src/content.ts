@@ -793,6 +793,34 @@ const BOILERPLATE = /(?:^|[\s_-])(?:mw-editsection|editsection|edit-section|mw-j
 /** Short stand-alone text that is UI, not prose. */
 const UI_TEXT = /^(?:text size|caption|image \d+ of \/? ?\d+|\d+ of \d+|photos?|gallery|enlarge( this image)?|view (full )?gallery|advertisement|ad|sponsored|share( this)?( article| story| post)?|tweet|email|print|copy link|copy|copied!?|loading\.*|read more|continue reading|subscribe|sign up|follow|listen( to this article)?|save|bookmark|comments?|reply|related|related articles|you may also like|recommended|more from .*|skip (to )?(main )?content|back to top|top|close|menu|toggle navigation|show more|load more|see more|×)$/i;
 
+/**
+ * Names, affiliations and emails above the article's text (LaTeXML's `ltx_authors`, author lists too long for a
+ * byline): the byline's job, not a paragraph. No headings or prose inside, under 200 characters of text before it.
+ */
+function isAuthorBlock(el: VElement, root: VElement): boolean {
+  if (el.textLen === 0 || el.textLen >= 2000 || proseLength(el) >= 200 || hasHeading(el)) return false;
+  let before = 0;
+  for (let e = el; e !== root && e.parent !== null; e = e.parent) {
+    for (const sibling of e.parent.children) {
+      if (sibling === e) break;
+      if (sibling.kind === 0) before += sibling.length;
+      else if (!sibling.skip) before += sibling.textLen;
+    }
+    if (before >= 200) return false;
+  }
+  return true;
+}
+
+function hasHeading(el: VElement): boolean {
+  let found = false;
+  walk(el, (e) => {
+    if (found || e.skip) return false;
+    if (HEADINGS.has(e.tag)) found = true;
+    return !found;
+  });
+  return found;
+}
+
 /** Statistics from the attempt's `measure(body)` are still valid here. */
 function prepare(root: VElement, flags: Flags): void {
   const rootLen = Math.max(1, root.textLen);
@@ -817,6 +845,10 @@ function prepare(root: VElement, flags: Flags): void {
         el.skip = true;
         return false;
       }
+    }
+    if (match.indexOf('author') >= 0 && isAuthorBlock(el, root)) {
+      el.skip = true;
+      return false;
     }
     if (tag === 'article' && el.textLen < rootLen * 0.4 && el.textLen < 1500 && hasLinkedHeading(el)) {
       el.skip = true;

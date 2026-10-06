@@ -934,6 +934,35 @@ final _uiText = RegExp(
   caseSensitive: false,
 );
 
+/// Names, affiliations and emails above the article's text (LaTeXML's `ltx_authors`, author lists too long for a
+/// byline): the byline's job, not a paragraph. No headings or prose inside, under 200 characters of text before it.
+bool _isAuthorBlock(VElement el, VElement root) {
+  if (el.textLen == 0 || el.textLen >= 2000 || _proseLength(el) >= 200 || _hasHeading(el)) return false;
+  var before = 0;
+  for (var e = el; !identical(e, root) && e.parent != null; e = e.parent!) {
+    for (final sibling in e.parent!.children) {
+      if (identical(sibling, e)) break;
+      if (sibling is VText) {
+        before += sibling.length;
+      } else if (!(sibling as VElement).skip) {
+        before += sibling.textLen;
+      }
+    }
+    if (before >= 200) return false;
+  }
+  return true;
+}
+
+bool _hasHeading(VElement el) {
+  var found = false;
+  walk(el, (e) {
+    if (found || e.skip) return false;
+    if (_headings.contains(e.tag)) found = true;
+    return !found;
+  });
+  return found;
+}
+
 /// Statistics from the attempt's `measure(body)` are still valid here.
 void _prepare(VElement root, Flags flags) {
   final rootLen = math.max(1, root.textLen);
@@ -971,6 +1000,10 @@ void _prepare(VElement root, Flags flags) {
         el.skip = true;
         return false;
       }
+    }
+    if (match.contains('author') && _isAuthorBlock(el, root)) {
+      el.skip = true;
+      return false;
     }
     if (tag == 'article' && el.textLen < rootLen * 0.4 && el.textLen < 1500 && _hasLinkedHeading(el)) {
       el.skip = true;
