@@ -918,7 +918,18 @@ export class Converter {
   // ---------------------------------------------------------------- headings, lists, quotes
 
   private heading(el: VElement, out: Block[]): void {
+    // Wordless links to a fragment (the heading's permalink icon) are not part of the heading.
+    const icons: VElement[] = [];
+    walk(el, (e) => {
+      if (e.tag === 'a' && !e.skip && (e.attrs['href'] ?? '').indexOf('#') >= 0 && rawText(e).replace(ZERO_WIDTH, '').trim().length === 0) {
+        icons.push(e);
+        e.skip = true;
+        return false;
+      }
+      return true;
+    });
     const content = this.inlineOnly(el);
+    for (const icon of icons) icon.skip = false;
     if (content.length === 0) return;
     const level = Number(el.tag.charAt(1)) as 2 | 3 | 4 | 5 | 6;
     const block: Block = { type: 'heading', level, content };
