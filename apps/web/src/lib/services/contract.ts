@@ -370,17 +370,33 @@ export interface CategoriesSnapshot {
   assignments: Record<string, { categoryId: string; assignedAt: string }>;
 }
 
-/** Categories of books and articles (docs/categories.md). Synced. */
+/**
+ * Categories of books and articles (docs/categories.md). Synced: edits are
+ * saved at once and ride the next scheduled sync, never a request of their own.
+ */
 export interface CategoryStore extends Observable<CategoriesSnapshot> {
+  /**
+   * Saves the trimmed name. Rejects with an Error whose message is for people
+   * when the name is blank, over 60 characters or has control characters.
+   * Duplicate names are allowed (warn in the UI).
+   */
   create(name: string, color: CategoryColor): Promise<Category>;
+  /** Rejects like `create` for an invalid name; a deleted or unknown id is ignored. */
   update(id: string, change: { name?: string; color?: CategoryColor }): Promise<void>;
   /** Deletes the category; its items return to the Library home. */
   remove(id: string): Promise<void>;
-  /** Moves `item` into `categoryId`, or out of any category with null. */
+  /**
+   * Moves `item` into `categoryId`, or out of any category with null.
+   * Rejects when `categoryId` is not a live category.
+   */
   assign(item: CategoryItemRef, categoryId: string | null): Promise<void>;
   /** The item's live category, or null when uncategorized. */
   categoryOf(item: CategoryItemRef): Category | null;
-  /** Items in the category, newest assignment first. */
+  /**
+   * Items in the category, newest assignment first; the same array until the
+   * store changes. May name items not on this device (yet), such as a book
+   * filed elsewhere: filter against the library and articles.
+   */
   itemsIn(categoryId: string): CategoryItemRef[];
 }
 
