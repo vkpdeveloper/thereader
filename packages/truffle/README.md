@@ -42,7 +42,8 @@ There is no raw HTML. Text is escaped where it would read as syntax (`*`, `_` ou
 `[`, a `1.` or `#` starting a line, `$`, `<tag`, `&entity;`), bare URLs are left as written (GFM
 links them), and emphasis no parser would see (a delimiter between a letter and punctuation, as in
 `x**(y)**`) is written as plain text. Subscript, superscript, underline and highlight have no
-Markdown form and are plain text; keyboard keys are code spans.
+Markdown form and are plain text; keyboard keys are code spans. A formula the page gave only as
+MathML (no TeX) is written as its text, since Markdown has no MathML form.
 
 Also exported: `extractHtml(html, { url, parse? })` (parses with `DOMParser` unless `parse` is
 given), `extractTree(VDocument, options)` and `fromDom(Document)` (the two halves of the
