@@ -988,7 +988,8 @@ function shouldRemove(el: VElement, c: Counts, flags: Flags): boolean {
   if (!isList && li > p) remove = true;
   if (c.input > Math.floor(p / 3)) remove = true;
   if (!isList && !inFigure && headingDensity < 0.9 && contentLength < 25 && (img === 0 || img > 2) && density > 0) remove = true;
-  if (!isList && weight < 25 && density > 0.2) remove = true;
+  // Link-rich sections (encyclopedias, docs): a heading over whole sentences tolerates more links.
+  if (!isList && weight < 25 && density > 0.2 && !(density <= 0.3 && c.p > 0 && c.headingText > 0 && c.text - c.headingText >= 150 && sentences(textOf(el)) >= 2)) remove = true;
   if (weight >= 25 && density > 0.5) remove = true;
   if ((c.embeds === 1 && contentLength < 75) || c.embeds > 1) remove = true;
   if (img === 0 && textDensity === 0 && contentLength === 0) remove = true;
@@ -1002,6 +1003,12 @@ function shouldRemove(el: VElement, c: Counts, flags: Flags): boolean {
 }
 
 const FIGURE = new Set(['figure']);
+
+/** Sentence ends (any script) in `text`. */
+function sentences(text: string): number {
+  const m = text.match(/[.!?。！？](?:["'”’)\]]|\[\d+\])*(?:\s|$)/g);
+  return m === null ? 0 : m.length;
+}
 
 /**
  * Runs the attempts and returns the article's root elements in document
