@@ -26,5 +26,5 @@ test('a list of bare href="#" links is not a table of contents', () => {
     items: items.map((text) => ({ blocks: [{ type: 'paragraph', content: [{ type: 'text', text }] }] })),
   });
   // Links to places on the page are one.
-  expect(article(body.replaceAll('href="#"', 'href="#plans"')).blocks.map((b) => b.type)).toEqual(['paragraph', 'paragraph', 'paragraph']);
+  expect(article(body.replace(/href="#"/g, 'href="#plans"')).blocks.map((b) => b.type)).toEqual(['paragraph', 'paragraph', 'paragraph']);
 });

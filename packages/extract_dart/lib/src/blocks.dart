@@ -415,6 +415,9 @@ class Converter {
   final Map<Inline, String> _provisional = Map.identity();
   final Set<String> _resolved = {};
 
+  /// The <li> each item of an ordered list after a provisional ref came from, to find a ref's anchor in.
+  final Map<ListItem, VElement> _itemSources = Map.identity();
+
   /// Label of the first reference to each listed note.
   final Map<String, String> _refLabels = {};
 
@@ -473,21 +476,38 @@ class Converter {
   /// one item per unresolved label 1..n is their notes; any ref still without a
   /// note reverts to its link text.
   void _resolveRefs(List<Block> out) {
+    final pending = <(String, String)>[];
     final open = <String>[];
     _pendingRefs.forEach((id, label) {
-      if (!_resolved.contains(id) && !open.contains(label)) open.add(label);
+      if (_resolved.contains(id)) return;
+      pending.add((id, label));
+      if (!open.contains(label)) open.add(label);
     });
     final tail = math.max(0, out.length - 3);
     for (var i = out.length - 1; i >= tail && open.isNotEmpty; i--) {
       final list = out[i];
       if (list is! ListBlock || !list.ordered || (list.start ?? 1) != 1 || list.items.length != open.length) continue;
       if (!open.every((label) => jsNumber(label) >= 1 && jsNumber(label) <= open.length)) break;
+      // Each ref takes the item holding its own anchor, else the item its number names, unless another ref uses that
+      // number too (two anchors, one item: which one it belongs to is unknown).
+      int itemOf(String id, String label) {
+        final k = list.items.indexWhere((item) {
+          final li = _itemSources[item];
+          return li != null && (li.id == id || firstElement(li, (e) => e.id == id || e.attrs['name'] == id) != null);
+        });
+        if (k >= 0) return k;
+        return pending.any((p) => p.$2 == label && p.$1 != id) ? -1 : jsNumber(label).toInt() - 1;
+      }
+
+      final index = [for (final (id, label) in pending) itemOf(id, label)];
+      if (!List.generate(list.items.length, (k) => k).every(index.contains)) break;
       final items = <Footnote>[];
-      _pendingRefs.forEach((id, label) {
-        if (_resolved.contains(id)) return;
+      for (var j = 0; j < pending.length; j++) {
+        if (index[j] < 0) continue;
+        final (id, label) = pending[j];
         _resolved.add(id);
-        items.add(Footnote(id: id, label: label, blocks: list.items[jsNumber(label).toInt() - 1].blocks));
-      });
+        items.add(Footnote(id: id, label: label, blocks: list.items[index[j]].blocks));
+      }
       out[i] = FootnotesBlock(items);
       break;
     }
@@ -1164,6 +1184,7 @@ class Converter {
         final item = ListItem(blocks: blocks);
         final box = firstElement(e, (x) => x.tag == 'input' && jsLower(x.attrs['type'] ?? '') == 'checkbox');
         if (box != null) item.checked = box.attrs['checked'] != null;
+        if (_pendingRefs.isNotEmpty && el.tag == 'ol') _itemSources[item] = e;
         items.add(item);
       } else {
         block(e, blocks);

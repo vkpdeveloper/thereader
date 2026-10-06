@@ -276,6 +276,8 @@ export class Converter {
   /** Provisional refs with the link text they replace if no note turns up. */
   private readonly provisional = new Map<Inline, string>();
   private readonly resolved = new Set<string>();
+  /** The <li> each item of an ordered list after a provisional ref came from, to find a ref's anchor in. */
+  private readonly itemSources = new Map<ListItem, VElement>();
   /** Label of the first reference to each listed note. */
   private readonly refLabels = new Map<string, string>();
   /** Math nodes typeset as display (block) formulas. */
@@ -329,19 +331,35 @@ export class Converter {
    * note reverts to its link text.
    */
   private resolveRefs(out: Block[]): void {
+    const pending: [string, string][] = [];
     const open: string[] = [];
-    for (const [id, label] of this.pendingRefs) if (!this.resolved.has(id) && open.indexOf(label) < 0) open.push(label);
+    for (const [id, label] of this.pendingRefs) {
+      if (this.resolved.has(id)) continue;
+      pending.push([id, label]);
+      if (open.indexOf(label) < 0) open.push(label);
+    }
     const tail = Math.max(0, out.length - 3);
     for (let i = out.length - 1; i >= tail && open.length > 0; i--) {
       const list = out[i]!;
       if (list.type !== 'list' || !list.ordered || (list.start ?? 1) !== 1 || list.items.length !== open.length) continue;
       if (!open.every((label) => Number(label) >= 1 && Number(label) <= open.length)) break;
+      // Each ref takes the item holding its own anchor, else the item its number names, unless another ref uses that
+      // number too (two anchors, one item: which one it belongs to is unknown).
+      const index = pending.map(([id, label]) => {
+        const k = list.items.findIndex((item) => {
+          const li = this.itemSources.get(item);
+          return li !== undefined && (li.id === id || firstElement(li, (e) => e.id === id || e.attrs['name'] === id) !== null);
+        });
+        if (k >= 0) return k;
+        return pending.some(([other, l]) => l === label && other !== id) ? -1 : Number(label) - 1;
+      });
+      if (!list.items.every((_, k) => index.indexOf(k) >= 0)) break;
       const items: Footnote[] = [];
-      for (const [id, label] of this.pendingRefs) {
-        if (this.resolved.has(id)) continue;
+      pending.forEach(([id, label], j) => {
+        if (index[j]! < 0) return;
         this.resolved.add(id);
-        items.push({ id, label, blocks: list.items[Number(label) - 1]!.blocks });
-      }
+        items.push({ id, label, blocks: list.items[index[j]!]!.blocks });
+      });
       out[i] = { type: 'footnotes', items };
       break;
     }
@@ -965,6 +983,7 @@ export class Converter {
         const item: ListItem = { blocks };
         const box = firstElement(child, (e) => e.tag === 'input' && (e.attrs['type'] ?? '').toLowerCase() === 'checkbox');
         if (box !== null) item.checked = box.attrs['checked'] !== undefined;
+        if (this.pendingRefs.size > 0 && el.tag === 'ol') this.itemSources.set(item, child);
         items.push(item);
       } else {
         this.block(child, blocks);
