@@ -1,6 +1,11 @@
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:http/http.dart' as http;
 import 'package:thereader_extract/thereader_extract.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/tokens.dart';
@@ -8,6 +13,7 @@ import '../shared/states.dart';
 import 'article_blocks.dart';
 import 'article_style.dart';
 import 'article_text.dart';
+import 'svg_prepare.dart';
 
 /// The `srcset` candidate closest above [targetWidth] device pixels, else the
 /// largest; falls back to `src`. Keeps phones from downloading desktop-sized
@@ -48,9 +54,12 @@ String largestSource(ArticleImage image) => pickSource(image, double.infinity);
 /// and shows a quiet placeholder on failure. Raster images decode at the
 /// displayed size to keep memory flat in long, image-heavy articles.
 class NetworkPicture extends StatelessWidget {
-  const NetworkPicture({super.key, required this.src, this.width, this.height, this.fit = BoxFit.cover, this.decodeWidth});
+  const NetworkPicture({super.key, required this.src, this.alt = '', this.width, this.height, this.fit = BoxFit.cover, this.decodeWidth});
 
   final String src;
+
+  /// Shown when an SVG can't be drawn.
+  final String alt;
   final double? width;
   final double? height;
   final BoxFit fit;
@@ -75,19 +84,7 @@ class NetworkPicture extends StatelessWidget {
       child: (height ?? 48) >= 32 ? Icon(Icons.broken_image_outlined, size: 20, color: colors.subtle) : null,
     );
     if (_isSvg(src)) {
-      if (src.startsWith('data:')) {
-        final data = _uriData(src);
-        if (data == null) return broken;
-        return SvgPicture.memory(data.contentAsBytes(), width: width, height: height, fit: fit);
-      }
-      return SvgPicture.network(
-        src,
-        width: width,
-        height: height,
-        fit: fit,
-        placeholderBuilder: (_) => placeholder,
-        errorBuilder: (_, _, _) => broken,
-      );
+      return ArticleSvg(src: src, alt: alt, width: width, height: height, fit: fit, placeholder: placeholder, broken: broken);
     }
     final dpr = MediaQuery.devicePixelRatioOf(context);
     final cacheWidth = decodeWidth == null ? null : (decodeWidth! * dpr).round();
@@ -133,6 +130,190 @@ class NetworkPicture extends StatelessWidget {
   }
 }
 
+/// An article SVG, rewritten by [prepareSvg] so stylesheet-driven diagrams
+/// draw, and shown on a light panel when it draws dark ink on transparency.
+/// One that can't be drawn becomes a compact card that opens the image.
+class ArticleSvg extends StatefulWidget {
+  const ArticleSvg({
+    super.key,
+    required this.src,
+    this.alt = '',
+    this.width,
+    this.height,
+    this.fit = BoxFit.contain,
+    required this.placeholder,
+    required this.broken,
+  });
+
+  final String src;
+  final String alt;
+  final double? width;
+  final double? height;
+  final BoxFit fit;
+  final Widget placeholder;
+
+  /// Stands in for cropped tiles, too small for the card.
+  final Widget broken;
+
+  /// Prepared SVGs by source and colours; failures aren't kept so a later
+  /// visit can retry the network.
+  static final _cache = <String, Future<PreparedSvg?>>{};
+
+  @visibleForTesting
+  static void clearCache() => _cache.clear();
+
+  @override
+  State<ArticleSvg> createState() => _ArticleSvgState();
+}
+
+class _ArticleSvgState extends State<ArticleSvg> {
+  Future<PreparedSvg?>? _prepared;
+  String? _key;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _load();
+  }
+
+  @override
+  void didUpdateWidget(ArticleSvg old) {
+    super.didUpdateWidget(old);
+    if (old.src != widget.src) _load();
+  }
+
+  void _load() {
+    final colors = context.colors;
+    final ink = colors.ink;
+    final paper = colors.paper;
+    final key = '${ink.toARGB32()}:${paper.toARGB32()}:${widget.src}';
+    if (key == _key) return;
+    _key = key;
+    final cache = ArticleSvg._cache;
+    final cached = cache.remove(key);
+    final future = cached ?? _fetch(widget.src).then((source) => source == null ? null : _prepare(source, ink, paper));
+    cache[key] = future;
+    while (cache.length > 32) {
+      cache.remove(cache.keys.first);
+    }
+    future.then((prepared) {
+      if (prepared == null && identical(cache[key], future)) cache.remove(key);
+    });
+    _prepared = future;
+  }
+
+  static Future<String?> _fetch(String src) async {
+    try {
+      if (src.startsWith('data:')) return utf8.decode(UriData.parse(src).contentAsBytes(), allowMalformed: true);
+      final response = await http.get(Uri.parse(src)).timeout(const Duration(seconds: 20));
+      if (response.statusCode != 200) return null;
+      return utf8.decode(response.bodyBytes, allowMalformed: true);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<PreparedSvg?> _prepare(String source, Color ink, Color paper) async {
+    try {
+      // Large drawings parse off the UI thread.
+      if (source.length < 200000) return prepareSvg(source, ink: ink, paper: paper);
+      final result = await compute(_prepareRaw, (source, ink.toARGB32(), paper.toARGB32()));
+      return result == null ? null : PreparedSvg(source: result.$1, ink: Color(result.$2), onLight: result.$3);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<PreparedSvg?>(
+      future: _prepared,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) return widget.placeholder;
+        final prepared = snapshot.data;
+        if (prepared == null) return _fallback();
+        final onLight = prepared.onLight;
+        final picture = SvgPicture.string(
+          prepared.source,
+          width: onLight ? null : widget.width,
+          height: onLight ? null : widget.height,
+          fit: widget.fit,
+          theme: SvgTheme(currentColor: prepared.ink),
+          placeholderBuilder: (_) => widget.placeholder,
+          errorBuilder: (_, _, _) => _fallback(),
+        );
+        if (!onLight) return picture;
+        return Container(
+          key: const ValueKey('svg-light-panel'),
+          width: widget.width,
+          height: widget.height,
+          color: context.colors.ink,
+          padding: const EdgeInsets.all(Space.sm),
+          child: picture,
+        );
+      },
+    );
+  }
+
+  Widget _fallback() => widget.fit == BoxFit.cover ? widget.broken : SvgUnavailable(src: widget.src, alt: widget.alt, width: widget.width);
+}
+
+(String, int, bool)? _prepareRaw((String, int, int) args) {
+  final prepared = prepareSvg(args.$1, ink: Color(args.$2), paper: Color(args.$3));
+  return prepared == null ? null : (prepared.source, prepared.ink.toARGB32(), prepared.onLight);
+}
+
+/// A compact card for an image that can't be drawn: its alt text and a way
+/// to open it where it lives.
+class SvgUnavailable extends StatelessWidget {
+  const SvgUnavailable({super.key, required this.src, required this.alt, this.width});
+
+  final String src;
+  final String alt;
+  final double? width;
+
+  bool get _openable => src.startsWith('http://') || src.startsWith('https://');
+
+  void _open(BuildContext context) {
+    final scope = context.getInheritedWidgetOfExactType<ArticleScope>();
+    if (scope != null) return scope.onLink(src);
+    launchUrl(Uri.parse(src), mode: LaunchMode.inAppBrowserView).ignore();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final caption = Theme.of(context).textTheme.bodySmall;
+    final label = alt.trim().isNotEmpty ? alt.trim() : "This image can't be shown here.";
+    return SizedBox(
+      width: width,
+      child: _Card(
+        onTap: _openable ? () => _open(context) : null,
+        semantics: _openable ? 'Open image: $label' : label,
+        child: Row(
+          children: [
+            Icon(Icons.image_outlined, size: 20, color: colors.subtle),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, maxLines: 3, overflow: TextOverflow.ellipsis, style: caption?.copyWith(color: colors.fg)),
+                  if (_openable) ...[
+                    const SizedBox(height: 4),
+                    Text('Open image', style: caption?.copyWith(color: colors.primary)),
+                  ],
+                ],
+              ),
+            ),
+            if (_openable) Icon(Icons.north_east, size: 16, color: colors.subtle),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// One image or a gallery, with caption and credit. Images keep the aspect
 /// ratio the page declared so the text below never jumps as they load.
 class FigureView extends StatelessWidget {
@@ -169,6 +350,7 @@ class FigureView extends StatelessWidget {
                       borderRadius: const BorderRadius.all(Radii.sm),
                       child: NetworkPicture(
                         src: pickSource(images[i], tile * MediaQuery.devicePixelRatioOf(context)),
+                        alt: images[i].alt,
                         width: tile,
                         height: tile,
                         decodeWidth: tile,
@@ -214,6 +396,7 @@ class ArticleImageView extends StatelessWidget {
     final dpr = MediaQuery.devicePixelRatioOf(context);
     Widget picture = NetworkPicture(
       src: pickSource(image, shown * dpr),
+      alt: image.alt,
       width: shown,
       height: known ? shown * h / w : null,
       fit: BoxFit.contain,
@@ -281,7 +464,7 @@ class _ArticleImageViewerState extends State<ArticleImageViewer> {
             itemBuilder: (context, i) => InteractiveViewer(
               maxScale: 5,
               child: Center(
-                child: NetworkPicture(src: largestSource(widget.images[i]), fit: BoxFit.contain),
+                child: NetworkPicture(src: largestSource(widget.images[i]), alt: widget.images[i].alt, fit: BoxFit.contain),
               ),
             ),
           ),
@@ -518,14 +701,14 @@ class _Card extends StatelessWidget {
   const _Card({required this.child, required this.onTap, required this.semantics});
 
   final Widget child;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final String? semantics;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
     return Semantics(
-      button: true,
+      button: onTap != null,
       label: semantics,
       child: Material(
         color: colors.panel,
