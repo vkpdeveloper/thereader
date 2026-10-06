@@ -9,7 +9,6 @@ import '../models/article_summary.dart';
 import '../models/book.dart';
 import '../models/highlight.dart';
 import '../models/library.dart';
-import '../models/settings.dart';
 import '../storage/key_value_store.dart';
 import 'article_repository.dart';
 import 'highlight_repository.dart';
@@ -18,6 +17,8 @@ import 'settings_repository.dart';
 
 /// One personal cloud profile, with an origin-scoped durable outbox. Device
 /// identifiers deduplicate reading sessions; they are not authentication.
+/// Books, reading progress and sessions, highlights and articles sync; reader
+/// settings (theme, typeface, sizes) stay on the device that set them.
 ///
 /// The API runs on a metered free tier, so traffic follows one schedule: a
 /// single pull+push request every [syncInterval] while foregrounded, nothing
@@ -193,6 +194,7 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
     await articles?.migrateLegacy();
     _loaded = true;
     library.addListener(_capture);
+    // Settings hold the API address, which picks the origin captured into.
     settings.addListener(_capture);
     highlights?.addListener(_capture);
     articles?.addListener(_capture);
@@ -244,20 +246,6 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
     }
     if (_captureHighlights(origin, state)) changed = true;
     if (_captureArticles(state)) changed = true;
-    final updatedAt = settings.readerUpdatedAt;
-    if (updatedAt != null &&
-        state.seen['preferences'] != updatedAt.toUtc().toIso8601String()) {
-      state.seen['preferences'] = updatedAt.toUtc().toIso8601String();
-      state.pending['preferences'] = {
-        'id': _uuid(),
-        'kind': 'preferences',
-        'bookId': '_preferences',
-        'sha256': '0' * 64,
-        'updatedAt': updatedAt.toUtc().toIso8601String(),
-        'payload': {'value': settings.reader.toJson()},
-      };
-      changed = true;
-    }
     if (changed) {
       unawaited(_persist());
       requestSync();
@@ -675,7 +663,7 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
         if (value['kind'] == 'highlight' && !withHighlights) continue;
         if (_isArticleKind(value['kind'])) {
           if (!withArticles) continue;
-        } else if (value['kind'] != 'preferences') {
+        } else {
           final entry = library.entries
               .where(
                 (e) => e.origin == origin && e.book.sha256 == value['sha256'],
@@ -838,17 +826,6 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
         final pulledArticles = response['articles'];
         if (withArticles && pulledArticles is Map) {
           await _applyArticles(state, pulledArticles);
-        }
-        final prefs = response['preferences'];
-        if (prefs is Map && origin == _origin) {
-          final updatedAt = DateTime.parse(prefs['updatedAt'] as String);
-          await settings.applyCloudReader(
-            ReaderPreferences.fromJson((prefs['value'] as Map).cast()),
-            updatedAt,
-          );
-          if (settings.readerUpdatedAt == updatedAt) {
-            state.seen['preferences'] = updatedAt.toUtc().toIso8601String();
-          }
         }
       } finally {
         _applying = false;
@@ -1220,6 +1197,9 @@ class _OriginState {
       state.pending[item.key as String] = (item.value as Map).cast();
     }
     state.seen.addAll(((json['seen'] as Map?) ?? {}).cast());
+    // Reader preferences stay on each device; older builds queued them.
+    state.pending.remove('preferences');
+    state.seen.remove('preferences');
     state.totals.addAll(
       ((json['totals'] as Map?) ?? {}).map(
         (k, v) => MapEntry(k as String, (v as num).toInt()),

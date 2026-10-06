@@ -8,6 +8,7 @@ import 'package:http/testing.dart';
 import 'package:thereader/data/api/api_client.dart';
 import 'package:thereader/data/models/book.dart';
 import 'package:thereader/data/models/library.dart';
+import 'package:thereader/data/models/settings.dart';
 import 'package:thereader/data/repositories/library_repository.dart';
 import 'package:thereader/data/repositories/settings_repository.dart';
 import 'package:thereader/data/repositories/sync_repository.dart';
@@ -40,7 +41,6 @@ class Cloud {
     'readingMilliseconds': 0,
   };
   final Map<String, int> sessions = {};
-  Map<String, dynamic>? preferences;
   bool offline = false;
   bool loseResponse = false;
   Future<void> Function()? duringRequest;
@@ -77,17 +77,11 @@ class Cloud {
             payload['readingMilliseconds'] as int,
           );
           row['readingMilliseconds'] = sessions.values.fold(0, (a, b) => a + b);
-        case 'preferences':
-          if (preferences == null ||
-              stamp.compareTo(preferences!['updatedAt'] as String) > 0) {
-            preferences = {'value': payload['value'], 'updatedAt': stamp};
-          }
       }
     }
     final encoded = jsonEncode({
       'serverTime': DateTime.now().toUtc().toIso8601String(),
       'books': [row],
-      'preferences': preferences,
     });
     await duringRequest?.call();
     if (loseResponse) {
@@ -207,7 +201,7 @@ void main() {
   });
 
   test(
-    'slow existing-book metadata refresh does not block preferences or sync completion',
+    'slow existing-book metadata refresh does not block pushed changes or sync completion',
     () async {
       final cloud = Cloud();
       final metadataStarted = Completer<void>();
@@ -218,15 +212,18 @@ void main() {
       };
       final a = await Device.create(cloud);
       addTearDown(a.dispose);
-      await a.settings.updateReader((p) => p.copyWith(fontSize: 22));
+      await a.library.saveProgress(
+        a.entry.id,
+        const ReadingLocator(href: 'pushed.xhtml', progression: .3),
+      );
 
       await a.sync.syncNow();
       await metadataStarted.future;
 
       expect(metadataStarted.isCompleted, isTrue);
       expect(releaseMetadata.isCompleted, isFalse);
-      expect(cloud.preferences?['value']['fontSize'], 22);
-      expect(a.settings.reader.fontSize, 22);
+      expect((cloud.row['progress'] as Map)['href'], 'pushed.xhtml');
+      expect(a.sync.pendingCount, 0);
       expect(a.sync.lastSyncedAt, isNotNull);
       expect(a.sync.isSyncing, isFalse);
       releaseMetadata.complete();
@@ -353,7 +350,7 @@ void main() {
   );
 
   test(
-    'two devices sync position, cumulative reading time and typography without marking bytes downloaded',
+    'two devices sync position and cumulative reading time, not typography, without marking bytes downloaded',
     () async {
       final cloud = Cloud();
       final a = await Device.create(cloud);
@@ -378,7 +375,8 @@ void main() {
       await b.sync.syncNow();
       expect(b.entry.progress!.locator.href, 'chapter3.xhtml');
       expect(b.entry.download.isReady, isFalse);
-      expect(b.settings.reader.fontSize, 24);
+      expect(a.settings.reader.fontSize, 24);
+      expect(b.settings.reader.fontSize, const ReaderPreferences().fontSize);
       expect(b.sync.totalReadingMilliseconds, 45000);
       expect(a.sync.pendingCount, 0);
       await b.sync.syncNow();
@@ -418,6 +416,73 @@ void main() {
       expect(cloud.row['readingMilliseconds'], 60000);
       expect(restarted.sync.totalReadingMilliseconds, 60000);
       expect(restarted.sync.pendingCount, 0);
+    },
+  );
+
+  test('reader settings stay on the device and queue no sync change', () async {
+    final cloud = Cloud();
+    final a = await Device.create(cloud);
+    addTearDown(a.dispose);
+    await a.sync.syncNow();
+    expect(a.sync.pendingCount, 0);
+
+    await a.settings.updateReader(
+      (p) => p.copyWith(fontSize: 26, lineHeight: 1.8, highlightColor: 'green'),
+    );
+    await a.settings.setThemeId('nord');
+    expect(a.sync.pendingCount, 0);
+
+    await a.sync.syncNow();
+    expect(cloud.batches.last, isEmpty);
+    expect(
+      cloud.batches.expand((b) => b).map((c) => c['kind']),
+      isNot(contains('preferences')),
+    );
+    expect(a.settings.reader.themeId, 'nord');
+  });
+
+  test(
+    'a preferences change queued by an older build is dropped on load',
+    () async {
+      final cloud = Cloud();
+      final store = MemoryKeyValueStore();
+      final legacy = {
+        'pending': {
+          'preferences': {
+            'id': 'legacy',
+            'kind': 'preferences',
+            'bookId': '_preferences',
+            'sha256': '0' * 64,
+            'updatedAt': '2026-01-01T00:00:00.000Z',
+            'payload': {
+              'value': {'fontSize': 20},
+            },
+          },
+        },
+        'seen': {'preferences': '2026-01-01T00:00:00.000Z'},
+      };
+      await store.writeJson('cloud_sync.v1', {
+        'deviceId': 'device',
+        'origins': {
+          ApiClient.normalizeBaseUrl(origin).toString(): legacy,
+          'https://other.example.com/': legacy,
+        },
+      });
+      final a = await Device.create(cloud, persisted: store);
+      addTearDown(a.dispose);
+
+      final saved = await store.readJson('cloud_sync.v1');
+      for (final state in (saved!['origins'] as Map).values) {
+        expect((state as Map)['pending'], isNot(contains('preferences')));
+        expect(state['seen'], isNot(contains('preferences')));
+      }
+      await a.sync.syncNow();
+      expect(
+        cloud.batches.expand((b) => b).map((c) => c['kind']),
+        isNot(contains('preferences')),
+      );
+      expect(a.sync.pendingCount, 0);
+      expect(a.settings.reader.fontSize, const ReaderPreferences().fontSize);
     },
   );
 

@@ -65,7 +65,7 @@ class Server {
           },
       ];
       return http.Response(
-        jsonEncode({'books': books, 'preferences': null}),
+        jsonEncode({'books': books}),
         200,
       );
     } finally {

@@ -6,24 +6,38 @@ import 'package:thereader/data/repositories/settings_repository.dart';
 import 'package:thereader/data/storage/key_value_store.dart';
 
 void main() {
+  test('a slow reader write cannot overwrite a newer edit', () async {
+    final store = _SlowReaderStore();
+    final repository = SettingsRepository(store);
+    await repository.load();
+    final first = repository.updateReader((p) => p.copyWith(fontSize: 16));
+    await store.started.future;
+    final second = repository.updateReader((p) => p.copyWith(fontSize: 26));
+    store.release.complete();
+    await Future.wait([first, second]);
+    final reloaded = SettingsRepository(store);
+    await reloaded.load();
+    expect(reloaded.reader.fontSize, 26);
+  });
+
   test(
-    'a slow cloud preference write cannot overwrite a newer local edit',
+    'reader preferences from a syncing build load, and drop the sync stamp on the next write',
     () async {
-      final store = _SlowReaderStore();
+      final store = MemoryKeyValueStore();
+      await store.writeJson('reader_prefs.v1', {
+        ...const ReaderPreferences(fontSize: 21, themeId: 'nord').toJson(),
+        '_updatedAt': '2026-01-01T00:00:00.000Z',
+      });
       final repository = SettingsRepository(store);
       await repository.load();
-      final remote = repository.applyCloudReader(
-        const ReaderPreferences(fontSize: 16),
-        DateTime.utc(2025),
-      );
-      await store.started.future;
-      final local = repository.updateReader((p) => p.copyWith(fontSize: 26));
-      store.release.complete();
-      await Future.wait([remote, local]);
-      final reloaded = SettingsRepository(store);
-      await reloaded.load();
-      expect(reloaded.reader.fontSize, 26);
-      expect(reloaded.readerUpdatedAt, repository.readerUpdatedAt);
+      expect(repository.reader.fontSize, 21);
+      expect(repository.reader.themeId, 'nord');
+
+      await repository.setThemeId('gruvbox');
+      final written = await store.readJson('reader_prefs.v1');
+      expect(written, isNot(contains('_updatedAt')));
+      expect(written!['themeId'], 'gruvbox');
+      expect(written['fontSize'], 21);
     },
   );
 

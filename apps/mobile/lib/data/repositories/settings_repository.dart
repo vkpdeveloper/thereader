@@ -4,7 +4,8 @@ import '../../core/typography/reader_fonts.dart';
 import '../models/settings.dart';
 import '../storage/key_value_store.dart';
 
-/// API URL, preferred engine and reader preferences. Persisted immediately on change.
+/// API URL, preferred engine and reader preferences. Persisted immediately on
+/// change, on this device only: none of it syncs.
 class SettingsRepository extends ChangeNotifier {
   SettingsRepository(this._store);
 
@@ -16,8 +17,6 @@ class SettingsRepository extends ChangeNotifier {
   ReaderPreferences _reader = const ReaderPreferences();
   bool _loaded = false;
   Future<void> _readerWrites = Future.value();
-  DateTime? _readerUpdatedAt;
-  DateTime? get readerUpdatedAt => _readerUpdatedAt;
 
   AppSettings get settings => _settings;
   ReaderPreferences get reader => _reader;
@@ -27,10 +26,8 @@ class SettingsRepository extends ChangeNotifier {
     final s = await _store.readJson(_settingsKey);
     if (s != null) _settings = AppSettings.fromJson(s);
     final r = await _store.readJson(_readerKey);
-    if (r != null) {
-      _reader = ReaderPreferences.fromJson(r);
-      _readerUpdatedAt = DateTime.tryParse(r['_updatedAt'] as String? ?? '');
-    }
+    // Older builds stored an `_updatedAt` for sync; it is ignored.
+    if (r != null) _reader = ReaderPreferences.fromJson(r);
     _loaded = true;
     notifyListeners();
   }
@@ -47,8 +44,8 @@ class SettingsRepository extends ChangeNotifier {
     await _store.writeJson(_settingsKey, next.toJson());
   }
 
-  /// Chooses a colour preset. Stored on the reader preferences so it syncs
-  /// with the rest of them.
+  /// Chooses a colour preset. Stored on the reader preferences, so like them
+  /// it applies to this device only.
   Future<void> setThemeId(String id) => updateReader((r) => r.copyWith(themeId: id));
 
   /// Writes the id plus its legacy serif/sans class; see [ReaderFonts.select].
@@ -58,29 +55,12 @@ class SettingsRepository extends ChangeNotifier {
     ReaderPreferences Function(ReaderPreferences) change,
   ) async {
     _reader = change(_reader);
-    _readerUpdatedAt = DateTime.now().toUtc();
-    notifyListeners();
-    await _persistReader();
-  }
-
-  Future<void> applyCloudReader(
-    ReaderPreferences value,
-    DateTime updatedAt,
-  ) async {
-    if (_readerUpdatedAt != null && !updatedAt.isAfter(_readerUpdatedAt!)) {
-      return;
-    }
-    _reader = value;
-    _readerUpdatedAt = updatedAt;
     notifyListeners();
     await _persistReader();
   }
 
   Future<void> _persistReader() {
-    final snapshot = {
-      ..._reader.toJson(),
-      '_updatedAt': _readerUpdatedAt?.toUtc().toIso8601String(),
-    };
+    final snapshot = _reader.toJson();
     final write = _readerWrites.then(
       (_) => _store.writeJson(_readerKey, snapshot),
     );

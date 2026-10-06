@@ -44,7 +44,7 @@ class AppSettings {
   }
 }
 
-/// Broad typeface class. Always synced as `font` so builds that predate
+/// Broad typeface class. Always stored as `font` so builds that predate
 /// [ReaderPreferences.fontFamilyId] still render a sensible fallback; it must
 /// never gain values, because older builds parse it strictly.
 enum ReaderFont { serif, sans }
@@ -78,8 +78,8 @@ class ReaderPreferences {
 
   /// Colour preset id (`default`, `dracula`, ...). Null means no choice has
   /// been made and the Default preset applies. Unknown ids are kept as
-  /// written so a newer device's choice survives a round trip through an
-  /// older build, which simply renders Default for them.
+  /// written so a newer build's choice survives a downgrade to an older
+  /// build, which simply renders Default for them.
   final String? themeId;
 
   /// Reading typeface id from `readerFontFamilies` (`literata`,

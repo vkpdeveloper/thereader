@@ -137,7 +137,6 @@ void main() {
       await settings.load();
       await settings.setThemeId('gruvbox');
       expect(settings.reader.themeId, 'gruvbox');
-      expect(settings.readerUpdatedAt, isNotNull);
 
       final again = SettingsRepository(kv);
       await again.load();
@@ -233,13 +232,10 @@ void main() {
     expect(scaffoldColor(), const Color(0xFF000000));
   });
 
-  testWidgets('a preset chosen elsewhere (cloud) applies without any tap', (tester) async {
+  testWidgets('a preset set outside the picker applies without any tap', (tester) async {
     final services = await makeServices(MemoryKeyValueStore());
     await pumpApp(tester, services);
-    await services.settings.applyCloudReader(
-      const ReaderPreferences(themeId: 'catppuccin-mocha'),
-      DateTime.now().toUtc().add(const Duration(seconds: 1)),
-    );
+    await services.settings.setThemeId('catppuccin-mocha');
     await tester.pumpAndSettle();
     expect(
       Theme.of(tester.element(find.byType(Scaffold).first)).scaffoldBackgroundColor,
