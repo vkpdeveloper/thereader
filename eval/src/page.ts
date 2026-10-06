@@ -231,6 +231,11 @@ const engines: Record<BrowserEngine, Engine> = {
   },
 };
 
+/** Summary of an article produced outside the browser (the Dart port), exactly as `ours` is summarized. */
+export function summarizeArticle(article: Article | null): Summary {
+  return engines.ours.summarize(article);
+}
+
 let current = { html: '', url: '' };
 
 /** Holds the page's HTML in the renderer so engine runs do not re-send it. */
@@ -337,4 +342,4 @@ export function meta(): Record<string, string> {
   };
 }
 
-Object.assign(globalThis, { evalPage: { load, runEngine, summarizeHtml, pageText, pageBlocks, meta } });
+Object.assign(globalThis, { evalPage: { load, runEngine, summarizeHtml, summarizeArticle, pageText, pageBlocks, meta } });

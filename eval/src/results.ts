@@ -306,7 +306,7 @@ export function renderMarkdown(latest: Latest): string {
       '',
       '## Performance (all scored pages, per-page median of the timed runs)',
       '',
-      'JS engines run in headless Chromium on a fresh `DOMParser` document per run; Trafilatura in CPython (lxml parse timed separately); Postlight in Node (cheerio parse is internal, so only the total is timed). Cross-runtime numbers are indicative; the three Chromium engines are directly comparable.',
+      'JS engines run in headless Chromium on a fresh `DOMParser` document per run; ours-dart (the Dart port, AOT-compiled, one process) parses with package:html, timed separately from extraction; Trafilatura in CPython (lxml parse timed separately); Postlight in Node (cheerio parse is internal, so only the total is timed). Cross-runtime numbers are indicative; the three Chromium engines are directly comparable.',
       '',
       table(
         ['engine', 'pages', 'parse median', 'extract median', 'extract p95', 'extract mean', 'total median', 'total p95', 'total mean'],

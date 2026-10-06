@@ -1,6 +1,6 @@
 // Runs the extraction engines over the datasets, stores raw outputs under
 // test-corpus/eval-out/ and re-derives eval/results/latest.json and eval/RESULTS.md.
-// bun run eval [--engines ours,readability,defuddle,trafilatura,postlight] [--dataset zyte|curated|all]
+// bun run eval [--engines ours,ours-dart,readability,defuddle,trafilatura,postlight] [--dataset zyte|curated|all]
 //              [--runs 5] [--workers 4] [--ids id,id] [--timeout 60]
 import { mkdir, rm } from 'node:fs/promises';
 import { cpus, loadavg, platform, release, tmpdir } from 'node:os';
@@ -68,7 +68,7 @@ function toOutput(doc: Doc, run: EngineRun & { summary?: { title: string; text: 
 }
 
 const browserEngines = engines.filter((e): e is BrowserEngine => e === 'ours' || e === 'readability' || e === 'defuddle');
-const external = engines.filter((e) => e === 'trafilatura' || e === 'postlight');
+const external = engines.filter((e) => e === 'ours-dart' || e === 'trafilatura' || e === 'postlight');
 const pool = await BrowserPool.open(workers);
 const environment: Record<string, string> = {
   os: `${platform()} ${release()}`,
@@ -99,6 +99,7 @@ if (browserEngines.length) {
 }
 
 const versions: Partial<Record<EngineName, string>> = {};
+let dartRuntime = 'Dart (AOT)';
 if (external.length) {
   const work = resolve(OUTPUT_DIR, 'work');
   await rm(work, { recursive: true, force: true });
@@ -131,6 +132,25 @@ if (external.length) {
       outputs.set(key(engine, doc), toOutput(doc, { ...result, summary: { title: result.title ?? '', text, stats: result.stats ?? summary?.stats ?? emptyStats } }));
     });
   };
+  if (external.includes('ours-dart')) {
+    // The Dart port, AOT-compiled, in one process (no workers): parse and extract timed inside Dart.
+    const t = performance.now();
+    const dartDir = resolve(ROOT, 'packages/extract_dart');
+    const exe = resolve(work, 'ours-dart');
+    if (!(await Bun.file(resolve(dartDir, '.dart_tool/package_config.json')).exists())) await spawn(['dart', 'pub', 'get'], dartDir);
+    await spawn(['dart', 'compile', 'exe', 'tool/eval_cli.dart', '-o', exe], dartDir);
+    const out = resolve(work, 'ours-dart.json');
+    await spawn([exe, manifestPath, out, '--runs', String(runs)], dartDir);
+    const data: { version: string; mode: string; results: Record<string, { ok: boolean; error?: string; article?: unknown; parseMs: number[]; extractMs: number[] }> } =
+      await Bun.file(out).json();
+    dartRuntime = `Dart ${data.version} ${data.mode}, package:html ${await dartPackageVersion('html')}, one process`;
+    const results = Object.entries(data.results).map(([id, result]) => [selected[Number(id)], result] as const);
+    await pool.map(results, async (worker, [doc, result]) => {
+      const summary = result.ok ? await pool.call(worker, 'summarizeArticle', [(result.article ?? null) as never]) : undefined;
+      outputs.set(key('ours-dart', doc), toOutput(doc, { ...result, summary }));
+    });
+    console.log(`ours-dart done in ${((performance.now() - t) / 1000).toFixed(1)}s`);
+  }
   if (external.includes('trafilatura')) {
     const t = performance.now();
     const out = resolve(work, 'trafilatura.json');
@@ -149,10 +169,17 @@ if (external.length) {
 await pool.close();
 environment['load avg at end'] = loadavg().map((l) => l.toFixed(1)).join(' ');
 
-async function oursVersion(): Promise<string> {
+async function oursVersion(path = 'packages/extract'): Promise<string> {
   const git = (...args: string[]) => Bun.spawnSync(['git', ...args], { cwd: ROOT }).stdout.toString().trim();
-  const dirty = git('status', '--porcelain', '--', 'packages/extract').length > 0;
+  const dirty = git('status', '--porcelain', '--', path).length > 0;
   return `${git('rev-parse', '--short', 'HEAD')}${dirty ? '+dirty' : ''}`;
+}
+
+/** Resolved version of a Dart dependency of `packages/extract_dart`. */
+async function dartPackageVersion(name: string): Promise<string> {
+  const config = resolve(ROOT, 'packages/extract_dart/.dart_tool/package_config.json');
+  const packages: { name: string; rootUri: string }[] = (await Bun.file(config).json()).packages;
+  return packages.find((p) => p.name === name)?.rootUri.match(/-(\d[\w.+-]*)\/?$/)?.[1] ?? '?';
 }
 
 async function packageVersion(name: string): Promise<string> {
@@ -161,6 +188,11 @@ async function packageVersion(name: string): Promise<string> {
 
 const info: Record<EngineName, () => Promise<EngineInfo>> = {
   ours: async () => ({ version: await oursVersion(), runtime: 'Chromium DOMParser', settings: 'extract(doc, { url }); text = articleText(article)' }),
+  'ours-dart': async () => ({
+    version: await oursVersion('packages/extract_dart'),
+    runtime: dartRuntime,
+    settings: 'package:html parse, then extractTree(fromDocument(doc), url) (base href added as for Chromium); text = articleText(article)',
+  }),
   readability: async () => ({ version: await packageVersion('@mozilla/readability'), runtime: 'Chromium DOMParser', settings: 'new Readability(doc).parse() defaults; text from content HTML' }),
   defuddle: async () => ({ version: await packageVersion('defuddle'), runtime: 'Chromium DOMParser', settings: 'new Defuddle(doc, { url }).parse(), core bundle defaults; text from content HTML' }),
   trafilatura: async () => ({ version: versions.trafilatura ?? '?', runtime: 'CPython 3.12 + lxml', settings: 'extract(tree, url, include_comments=False), txt output; stats from xml output' }),
