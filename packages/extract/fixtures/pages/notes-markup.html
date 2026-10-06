@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en"><head><title>Sliding Windows in Practice - Field Notes</title><meta property="og:site_name" content="Field Notes"></head>
+<body>
+<nav><a href="/">Home</a> <a href="/archive">Archive</a></nav>
+<main>
+<article class="post">
+<h1>Sliding Windows in Practice</h1>
+<p>Sliding window attention limits each token to a fixed span of earlier tokens, which keeps memory flat as sequences grow. The idea is old, but it only became popular once long contexts did.<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup></p>
+<p>A reference implementation is available<span id="footnote2" class="ltx_note ltx_role_footnote"><sup class="ltx_note_mark">2</sup><span class="ltx_note_outer"><span class="ltx_note_content"><sup class="ltx_note_mark">2</sup><span class="ltx_tag ltx_tag_note">2</span><a href="https://code.example.org/window">https://code.example.org/window</a></span></span></span> and runs on a single graphics card, which makes it easy to try the technique on your own data.</p>
+<p>Rolling buffers keep the cache at the window size, so a sequence ten times longer than the window costs no more memory than one that just fits. That property matters more than raw speed for most deployments.<span class="foot-ref" data-footnote="footnote-buffers">3</span></p>
+<div class="post-block-footnote footnote-buffers"><p><span class="num">3: </span>The buffer is indexed modulo the window size, so old entries are overwritten in place.</p></div>
+<p>Taken together, these choices make long inputs cheap without changing the model's quality on short ones, which is the trade most teams want when they first reach for a longer context.</p>
+<div class="footnote">
+<hr>
+<ol>
+<li id="fn:1"><p>Early versions appeared in work on sparse transformers.&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p></li>
+</ol>
+</div>
+<div class="footnote-list">
+<div class="footnote-list-item" id="footnote-buffers"><p><span class="num">3: </span>The buffer is indexed modulo the window size, so old entries are overwritten in place.</p></div>
+</div>
+</article>
+</main>
+<footer><p>Field Notes</p></footer>
+</body></html>

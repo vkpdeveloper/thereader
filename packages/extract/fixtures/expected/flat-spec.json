@@ -1,0 +1,196 @@
+{
+  "schema": 1,
+  "url": "https://notes.example.org/part-2.html",
+  "title": "2 The tokenizer",
+  "subtitle": null,
+  "byline": null,
+  "authors": [],
+  "siteName": null,
+  "publishedAt": null,
+  "modifiedAt": null,
+  "language": "en",
+  "dir": "ltr",
+  "excerpt": "The tokenizer turns a stream of characters into tokens. It is a state machine: each state consumes one character and either emits a token, switches to another state, or both.",
+  "leadImage": null,
+  "favicon": "https://notes.example.org/favicon.ico",
+  "wordCount": 218,
+  "readingMinutes": 1,
+  "blocks": [
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "The tokenizer turns a stream of characters into tokens. It is a state machine: each state consumes one character and either emits a token, switches to another state, or both."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Implementations must act as if they used the state machine described here, although they may use any algorithm that produces the same tokens, including ones that look ahead several characters at a time."
+        }
+      ]
+    },
+    {
+      "type": "callout",
+      "variant": "note",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Real tokenizers usually batch runs of plain text, because emitting one token per character is slow."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "2.1 Data state"
+        }
+      ],
+      "anchor": "data-state"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Consume the next input character. If it is a less-than sign, switch to the tag open state; if it is the end of the input, emit an end-of-file token; otherwise emit the character as a character token."
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "code": "for (const c of input) {\n  if (c === '<') state = tagOpen;\n  else emit(c);\n}",
+      "language": "javascript",
+      "languageSource": "markup"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "2.2 Tag open state"
+        }
+      ],
+      "anchor": "tag-open-state"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Consume the next input character. An ASCII letter starts a new start tag token, a solidus switches to the end tag open state, and anything else is a parse error that emits the less-than sign as text."
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "rows": [
+        {
+          "cells": [
+            {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Character"
+                }
+              ],
+              "header": true
+            },
+            {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Action"
+                }
+              ],
+              "header": true
+            }
+          ]
+        },
+        {
+          "cells": [
+            {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "ASCII letter"
+                }
+              ]
+            },
+            {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Create a start tag token"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "cells": [
+            {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Solidus"
+                }
+              ]
+            },
+            {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Switch to end tag open"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "cells": [
+            {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Anything else"
+                }
+              ]
+            },
+            {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Parse error"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "headerRows": 1
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "The remaining states follow the same pattern and are described in the next part, together with the rules for character references and comments."
+        }
+      ]
+    }
+  ]
+}

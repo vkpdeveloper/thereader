@@ -1,0 +1,153 @@
+{
+  "schema": 1,
+  "url": "https://quiet.example.com/posts/small-teams",
+  "title": "Why Small Teams Ship Faster",
+  "subtitle": null,
+  "byline": "Ada Lovelace",
+  "authors": [
+    "Ada Lovelace"
+  ],
+  "siteName": "The Quiet Blog",
+  "publishedAt": "2025-03-14T09:30:00+01:00",
+  "modifiedAt": null,
+  "language": "en",
+  "dir": "ltr",
+  "excerpt": "Coordination costs grow faster than headcount. A look at why small teams keep winning.",
+  "leadImage": {
+    "src": "https://quiet.example.com/images/teams-hero.jpg",
+    "alt": "",
+    "width": 1600,
+    "height": 900
+  },
+  "favicon": "https://quiet.example.com/apple-touch-icon.png",
+  "wordCount": 173,
+  "readingMinutes": 1,
+  "blocks": [
+    {
+      "type": "figure",
+      "images": [
+        {
+          "src": "https://quiet.example.com/images/teams-hero.jpg",
+          "alt": "",
+          "width": 1600,
+          "height": 900
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Every engineering leader eventually meets the same wall: adding people to a late project makes it later. Fred Brooks wrote that down in 1975, and we keep relearning it, one reorg at a time."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "The reason is not that people are slow. It is that "
+        },
+        {
+          "type": "text",
+          "text": "coordination",
+          "marks": [
+            "italic"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " grows faster than headcount. With five people there are ten possible conversations; with fifty there are more than a thousand."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "The arithmetic of meetings"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Communication paths grow as "
+        },
+        {
+          "type": "text",
+          "text": "n(n-1)/2",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": ". That one formula explains most of the calendar pain in a growing company, and it explains why "
+        },
+        {
+          "type": "text",
+          "text": "small teams with clear ownership",
+          "marks": [
+            "bold"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " keep outrunning large ones."
+        }
+      ]
+    },
+    {
+      "type": "quote",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "The bearing of a child takes nine months, no matter how many women are assigned."
+            }
+          ]
+        }
+      ],
+      "cite": [
+        {
+          "type": "text",
+          "text": "Fred Brooks, "
+        },
+        {
+          "type": "text",
+          "text": "The Mythical Man-Month",
+          "marks": [
+            "italic"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "None of this means large organisations are doomed. It means they work best as many small teams with narrow, stable interfaces between them, which is the same thing good software architecture looks like."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "If you remember one thing, make it this: protect the team boundary, and the team will protect the schedule."
+        }
+      ]
+    }
+  ]
+}

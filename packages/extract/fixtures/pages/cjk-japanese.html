@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ja">
+<head><meta charset="utf-8"><title>静かなインターネットの作り方｜技術ブログ</title><meta name="author" content="山田太郎"></head>
+<body>
+<header><nav><a href="/">ホーム</a></nav></header>
+<main>
+<article class="post-body">
+<h1>静かなインターネットの作り方</h1>
+<p>広告もランキングもない、静かな場所をインターネットの中に作りたいと考えて、小さなブログサービスを開発しました。この記事では、その技術構成と設計の考え方をまとめます。</p>
+<h2>技術構成</h2>
+<p>フロントエンドには軽量なフレームワークを使い、サーバーはエッジで動かしています。データベースは一つだけにして、運用の手間をできるだけ減らしました。</p>
+<pre><code class="language-ts">export async function handler(req: Request): Promise&lt;Response&gt; {
+  const url = new URL(req.url);
+  return new Response(`Hello from ${url.pathname}`);
+}</code></pre>
+<p>今後も少しずつ改良していきたいと思います。読んでいただき、ありがとうございました。</p>
+</article>
+</main>
+</body>
+</html>

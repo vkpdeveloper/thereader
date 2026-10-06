@@ -1,0 +1,517 @@
+{
+  "schema": 1,
+  "url": "https://guide.example.net/html-structure",
+  "title": "A Field Guide to HTML Structure",
+  "subtitle": null,
+  "byline": "Tim Berners-Lee",
+  "authors": [
+    "Tim Berners-Lee"
+  ],
+  "siteName": null,
+  "publishedAt": null,
+  "modifiedAt": null,
+  "language": "en",
+  "dir": "ltr",
+  "excerpt": "Readers care about structure even when they never think about it. Lists, tables and notes carry meaning that a wall of text cannot, so an extractor has to keep them intact.",
+  "leadImage": null,
+  "favicon": "https://guide.example.net/favicon.ico",
+  "wordCount": 211,
+  "readingMinutes": 1,
+  "blocks": [
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Readers care about structure even when they never think about it. Lists, tables and notes carry meaning that a wall of text cannot, so an extractor has to keep them intact."
+        },
+        {
+          "type": "ref",
+          "id": "fn1",
+          "label": "1"
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Lists"
+        }
+      ]
+    },
+    {
+      "type": "list",
+      "ordered": true,
+      "start": 3,
+      "items": [
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Third step: measure twice."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Fourth step: cut once."
+                }
+              ]
+            },
+            {
+              "type": "list",
+              "ordered": false,
+              "items": [
+                {
+                  "blocks": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Use a sharp blade."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "blocks": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "Mind your fingers."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "list",
+      "ordered": false,
+      "items": [
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Write the draft"
+                }
+              ]
+            }
+          ],
+          "checked": true
+        },
+        {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Edit the draft"
+                }
+              ]
+            }
+          ],
+          "checked": false
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Tables"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "caption": [
+        {
+          "type": "text",
+          "text": "Median page weight by year"
+        }
+      ],
+      "rows": [
+        {
+          "cells": [
+            {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Year"
+                }
+              ],
+              "header": true
+            },
+            {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Desktop (KB)"
+                }
+              ],
+              "header": true,
+              "align": "right"
+            },
+            {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Mobile (KB)"
+                }
+              ],
+              "header": true,
+              "align": "right"
+            }
+          ]
+        },
+        {
+          "cells": [
+            {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "2015"
+                }
+              ]
+            },
+            {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "2,099"
+                }
+              ],
+              "align": "right"
+            },
+            {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "1,060"
+                }
+              ],
+              "align": "right"
+            }
+          ]
+        },
+        {
+          "cells": [
+            {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "2020"
+                }
+              ]
+            },
+            {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "2,124"
+                }
+              ],
+              "align": "right"
+            },
+            {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "1,914"
+                }
+              ],
+              "align": "right"
+            }
+          ]
+        },
+        {
+          "cells": [
+            {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Source: HTTP Archive"
+                }
+              ],
+              "colspan": 3
+            }
+          ]
+        }
+      ],
+      "headerRows": 1
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Definitions"
+        }
+      ]
+    },
+    {
+      "type": "definitions",
+      "items": [
+        {
+          "term": [
+            {
+              "type": "text",
+              "text": "Boilerplate"
+            }
+          ],
+          "details": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Navigation, ads and footers that repeat on every page."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "term": [
+            {
+              "type": "text",
+              "text": "Main content"
+            }
+          ],
+          "details": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "The text the page exists to deliver."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "details",
+      "summary": [
+        {
+          "type": "text",
+          "text": "Why not just use the largest block of text?"
+        }
+      ],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Because comment sections and footers are often longer than the article itself, and because articles split across several containers."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "callout",
+      "variant": "warning",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Layout tables are not data tables. Treat them as containers, never as grids."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "This paragraph lives inside a layout table, the way many older sites were built, and it should read as plain prose."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Old pages also separate paragraphs with line breaks instead of paragraph tags."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "The extractor splits those into real paragraphs."
+        },
+        {
+          "type": "break"
+        },
+        {
+          "type": "text",
+          "text": "A single break stays a line break."
+        }
+      ]
+    },
+    {
+      "type": "rule"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "content": [
+        {
+          "type": "text",
+          "text": "Math"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Euler's identity "
+        },
+        {
+          "type": "math",
+          "tex": "e^{i\\pi}+1=0",
+          "mathml": "<math alttext=\"e^{i\\pi}+1=0\"><mrow><msup><mi>e</mi><mrow><mi>i</mi><mi>π</mi></mrow></msup><mo>+</mo><mn>1</mn><mo>=</mo><mn>0</mn></mrow></math>",
+          "text": "e^{i\\pi}+1=0"
+        },
+        {
+          "type": "text",
+          "text": " links five constants."
+        }
+      ]
+    },
+    {
+      "type": "math",
+      "tex": "a^2+b^2=c^2",
+      "mathml": "<math display=\"block\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow></semantics></math>",
+      "text": "a^2+b^2=c^2"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Words like HTML, “quoted speech”, H"
+        },
+        {
+          "type": "text",
+          "text": "2",
+          "marks": [
+            "sub"
+          ]
+        },
+        {
+          "type": "text",
+          "text": "O, x"
+        },
+        {
+          "type": "text",
+          "text": "2",
+          "marks": [
+            "sup"
+          ]
+        },
+        {
+          "type": "text",
+          "text": ", "
+        },
+        {
+          "type": "text",
+          "text": "highlights",
+          "marks": [
+            "highlight"
+          ]
+        },
+        {
+          "type": "text",
+          "text": ", "
+        },
+        {
+          "type": "text",
+          "text": "mistakes",
+          "marks": [
+            "strike"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " and "
+        },
+        {
+          "type": "text",
+          "text": "underlines",
+          "marks": [
+            "underline"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " keep their marks."
+        }
+      ]
+    },
+    {
+      "type": "footnotes",
+      "items": [
+        {
+          "id": "fn1",
+          "label": "1",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Structure is also what screen readers rely on."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

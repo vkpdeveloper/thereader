@@ -53,9 +53,76 @@ ID and cumulative elapsed counter; D1 takes its maximum, preventing retries from
 double-counting. Sessions from different devices sum; simultaneous reading counts
 both devices' foreground time. API address and reader-engine selection stay local.
 
-The current app has no bookmarks, highlights or annotations to sync. Sync responses
+Highlights and saved articles sync too (below and in the API README). Sync responses
 are bounded to 1,000 book editions and reject excess state explicitly; uploads and
 request payloads also have validation limits documented in the API README.
+
+## Saved articles
+
+Articles saved by link sync between devices, but each article is analyzed only
+once: the device that saves it fetches the page and extracts it on the client;
+the Worker never fetches or extracts pages for sync. That device uploads the
+extracted document (the `Article` JSON, schema 1) once; other devices list the
+article from its synced metadata and download the same document when it is
+opened, verified against its SHA-256, and keep it for offline reading.
+
+- **Identity.** An article's id is the first 128 bits (32 hex characters) of
+  the SHA-256 of its URL key: the article's canonical URL with scheme,
+  credentials, default port, `www.`, trailing slashes, fragment and tracking
+  parameters (`utm_*`, `fbclid`, `gclid`, …) removed and the host lowercased.
+  The web app (`articleUrlKey` in `articles.ts`) and the Flutter app
+  (`ArticleRepository.urlKey`) implement the same string rules and share test
+  vectors, so the same story saved on two devices converges on one article.
+  Articles saved before sync are moved to this id the first time the new
+  version starts.
+- **Metadata, positions, deletions** ride the scheduled `/v1/sync` request as
+  `article` and `articleProgress` changes in the same durable outbox as books
+  (see the [API README](../apps/api/README.md)). Saves and deletions are
+  last-write-wins by their time; a deletion is a tombstone, and saving the URL
+  again later brings the article back with a fresh position. A deletion is
+  only sent for an article that already synced. Positions are `{block, offset,
+  percent}`: the index in `article.blocks` of the top-level block at the
+  reading line, how far into it, and the share read. Both readers find blocks
+  by that index (mobile builds one list item per block; the web reader marks
+  each block's element with `data-block-index`), never by how many elements a
+  block happens to render. They use their own timestamp ordering like book
+  positions; an open article does not jump, and the reader's own position is
+  saved when it closes. Pulls use an `articlesSince` rev cursor, 200 rows per
+  response.
+- **Documents** are content-addressed R2 objects, `articles/<sha256>`, stored
+  as the exact bytes the saving device hashed (gzip-compressed by both apps).
+  `PUT /v1/article-bodies/<sha256>` is idempotent and checks size (4 MB
+  uncompressed), hash and the document's leading `{"schema":1,` without
+  parsing it; `GET` serves them with immutable caching. When a deletion is
+  accepted and no live article still references the document, the Worker
+  removes it from R2; saving the article again uploads it again. The saving
+  device queues the upload in its outbox state; uploads run in a foreground
+  sync cycle right after the server accepts the save (never before, so a
+  concurrent deletion cannot remove a document a newer save still points at),
+  at most five per cycle, and survive restart. A network or server failure
+  retries next cycle; a document the server refuses stays local only. A
+  document over 4 MB (real articles measure up to about 1.2 MB) keeps the
+  whole article on its device: it is saved and readable there, but no save
+  or position is ever queued for it (nor a deletion, unless an earlier save
+  of the same URL reached the server), so it cannot fail a batch or pause
+  article sync.
+- **Receiving.** A pulled article appears in the Library as "Not downloaded".
+  After each successful cycle, up to five documents of at most 1 MB download
+  so recent articles open offline; larger ones download when opened. An
+  article whose document has not been uploaded yet says so when opened and
+  opens once it arrives; failed downloads back off from two minutes to six
+  hours.
+- **Older servers.** A server without article sync rejects the batch; the
+  apps then resend it without articles and retry article sync six hours later,
+  as they do for highlights.
+
+Free plan cost: articles add no request to the sync schedule. Saving an
+article adds one `PUT` (one R2 Class B read to check for the object and one
+Class A write) the next time the app syncs, and each other device makes one
+`GET` (one Class B read) for its document, once. D1 work per cycle is the
+upserts in the batch plus one indexed range read of changed rows. Documents
+are kept after deletion, so a resurrected article needs no upload, and
+identical documents saved twice share one object.
 
 ## Deployment and credentials
 

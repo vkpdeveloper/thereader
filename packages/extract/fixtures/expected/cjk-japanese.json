@@ -1,0 +1,65 @@
+{
+  "schema": 1,
+  "url": "https://blog.example.jp/posts/quiet-internet",
+  "title": "静かなインターネットの作り方",
+  "subtitle": null,
+  "byline": "山田太郎",
+  "authors": [
+    "山田太郎"
+  ],
+  "siteName": null,
+  "publishedAt": null,
+  "modifiedAt": null,
+  "language": "ja",
+  "dir": "ltr",
+  "excerpt": "広告もランキングもない、静かな場所をインターネットの中に作りたいと考えて、小さなブログサービスを開発しました。この記事では、その技術構成と設計の考え方をまとめます。",
+  "leadImage": null,
+  "favicon": "https://blog.example.jp/favicon.ico",
+  "wordCount": 124,
+  "readingMinutes": 1,
+  "blocks": [
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "広告もランキングもない、静かな場所をインターネットの中に作りたいと考えて、小さなブログサービスを開発しました。この記事では、その技術構成と設計の考え方をまとめます。"
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "技術構成"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "フロントエンドには軽量なフレームワークを使い、サーバーはエッジで動かしています。データベースは一つだけにして、運用の手間をできるだけ減らしました。"
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "code": "export async function handler(req: Request): Promise<Response> {\n  const url = new URL(req.url);\n  return new Response(`Hello from ${url.pathname}`);\n}",
+      "language": "typescript",
+      "languageSource": "markup"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "今後も少しずつ改良していきたいと思います。読んでいただき、ありがとうございました。"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "schema": 1,
+  "url": "https://citynews.example.com/2025/09/30/bike-lanes",
+  "title": "City Council Approves New Bike Lanes",
+  "subtitle": null,
+  "byline": "Jane Jacobs",
+  "authors": [
+    "Jane Jacobs"
+  ],
+  "siteName": null,
+  "publishedAt": "2025-09-30T18:00:00-04:00",
+  "modifiedAt": null,
+  "language": "en",
+  "dir": "ltr",
+  "excerpt": "The city council voted 7 to 2 on Tuesday night to approve forty kilometres of protected bike lanes, the largest expansion in the city's history.",
+  "leadImage": null,
+  "favicon": "https://citynews.example.com/favicon.ico",
+  "wordCount": 145,
+  "readingMinutes": 1,
+  "blocks": [
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "The city council voted 7 to 2 on Tuesday night to approve forty kilometres of protected bike lanes, the largest expansion in the city's history."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Supporters packed the chamber for more than four hours of public comment. Many described close calls with cars on the routes they ride to work and school every day."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Opponents argued that removing parking would hurt small businesses along the commercial corridors, and asked the council to delay the vote until a traffic study is complete."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "The plan's first phase begins next spring on Main Street and Fifth Avenue. The transportation department says the full network will take three years to build and will be paid for with state grants."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Council member Ortiz, who proposed the plan, said the vote showed the city is ready to choose safety over speed. The mayor is expected to sign the measure this week."
+        }
+      ]
+    }
+  ]
+}

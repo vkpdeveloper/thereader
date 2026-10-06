@@ -29,6 +29,9 @@ Paths are versioned beneath `/v1`.
 - `GET /v1/books/:id/download` -> streamed `application/epub+zip` bytes, Content-Length,
   ETag, Content-Disposition. Support HEAD and valid single byte ranges if feasible.
 - `GET /v1/books/:id/cover` -> optional cover image; 404 if none.
+- `GET /v1/article-source?url=...` -> the raw HTML of a public article page (see below).
+- `PUT /v1/article-bodies/:sha256`, `GET`/`HEAD /v1/article-bodies/:sha256` -> a saved
+  article's extracted document, uploaded once by the device that saved it (see below).
 
 Book fields (all present unless explicitly nullable):
 
@@ -54,6 +57,55 @@ Book version + checksum identify a file edition. `fileSize` must describe real b
 
 Errors: `{ "error": { "code": "NOT_FOUND", "message": "Book not found." } }`.
 Use meaningful HTTP statuses and validate query values and path identifiers.
+
+### Article source relay
+
+`GET /v1/article-source?url=<encoded absolute URL>` lets a browser read an
+article page it cannot fetch cross-origin. It is a byte relay: the Worker never
+parses the page; clients decode, extract and store the article themselves.
+
+- Only public `http:`/`https:` URLs on default ports: no credentials, IP
+  literals, single-label hosts or reserved suffixes (`localhost`, `local`,
+  `internal`, `test`, `invalid`, `onion`, `arpa`, `home`, `lan`); at most 2048
+  characters. Otherwise `400 INVALID_URL`.
+- Up to 5 redirects are followed manually and every hop is re-validated
+  (`400 INVALID_URL` for an unsafe hop, `502 TOO_MANY_REDIRECTS` beyond five).
+- Upstream requests send a desktop Chrome `User-Agent`,
+  `Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8` and
+  `Accept-Language: en-US,en;q=0.9`, with a 15 s budget for the whole exchange
+  (`504 UPSTREAM_TIMEOUT`). Connection failures are `502 UPSTREAM_UNREACHABLE`;
+  a non-2xx final answer is `502 UPSTREAM_STATUS`.
+- Only `text/html` and `application/xhtml+xml` are relayed
+  (`415 UNSUPPORTED_MEDIA_TYPE` otherwise); bodies above 8 MB are
+  `413 TOO_LARGE`.
+- Success: `200` with the raw (decompressed) body, the upstream `Content-Type`
+  (charset included), `X-Final-Url` (the URL after redirects, exposed to CORS),
+  `Cache-Control: no-store`, `X-Content-Type-Options: nosniff` and
+  `Content-Security-Policy: default-src 'none'; sandbox`, so opening the relay
+  URL in a tab never runs the page's scripts on this origin.
+
+### Saved-article sync
+
+Saved articles sync without the server ever fetching or extracting a page.
+The saving device extracts the article and uploads its `Article` JSON
+(schema 1) to `PUT /v1/article-bodies/<sha256>` as `application/gzip` (or
+`application/json`); the Worker checks the uncompressed size (4 MB, counted
+while inflating), the SHA-256 of the uncompressed bytes and, without parsing,
+that the document starts with `{"schema":1,` and ends with `}` (clients must
+serialize `schema` as the first key, without whitespace), then stores the
+bytes as sent. Deleting an article removes its document once no live article
+references it; clients upload a document only after its save is accepted.
+Other devices `GET` the same path (immutable caching, ETag) and verify the
+hash.
+Metadata (`url`, `title`, `siteName`, `byline`, `excerpt`, `leadImage`,
+`favicon`, `language`, `dir`, `wordCount`, `readingMinutes`, `blockCount`,
+`publishedAt`, `savedAt`, `bodySha256`, `bodySize`, `schema`), reading
+positions and deletions ride `POST /v1/sync` as `article` and
+`articleProgress` changes, pulled with `articlesSince`; `bodySize` above
+4 MB is `400 INVALID_SYNC`. An article whose document exceeds 4 MB stays on
+the device that saved it: clients send no save or position for it. Ids, ordering and
+limits: [cloud sync](cloud-sync.md#saved-articles) and the
+[API README](../apps/api/README.md).
 
 ## Personal use: no authentication
 
@@ -102,7 +154,7 @@ The live protocol, validation limits and response examples are documented in
 - `PUT /v1/uploads/:sha/parts/:number`: resumable 8 MiB parts for larger EPUBs.
 - `POST /v1/uploads/:sha/complete`: whole-object SHA and EPUB validation.
 - `GET /v1/sync` and `POST /v1/sync`: library membership, locators, cumulative
-  reading sessions and typography preferences.
+  reading sessions, typography preferences, highlights and saved articles.
 
 Maximum EPUB size is 512 MiB. The mobile app first saves and verifies an imported
 file locally; it never downloads that same imported file to make it readable.

@@ -1,0 +1,1323 @@
+{
+  "schema": 1,
+  "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map",
+  "title": "Array.prototype.map()",
+  "subtitle": null,
+  "byline": null,
+  "authors": [],
+  "siteName": "MDN Web Docs",
+  "publishedAt": "2026-07-12T19:37:52Z",
+  "modifiedAt": null,
+  "language": "en-US",
+  "dir": "ltr",
+  "excerpt": "The map() method of Array instances creates a new array populated with the results of calling a provided function on every element in the calling array.",
+  "leadImage": {
+    "src": "https://developer.mozilla.org/mdn-social-image.46ac2375.png",
+    "alt": "The MDN logo",
+    "width": 1024,
+    "height": 1024
+  },
+  "favicon": "https://developer.mozilla.org/apple-touch-icon.png",
+  "wordCount": 1365,
+  "readingMinutes": 6,
+  "blocks": [
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "The "
+        },
+        {
+          "type": "text",
+          "text": "map()",
+          "marks": [
+            "bold",
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " method of "
+        },
+        {
+          "type": "text",
+          "text": "Array",
+          "marks": [
+            "code"
+          ],
+          "href": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array"
+        },
+        {
+          "type": "text",
+          "text": " instances creates a new array populated with the results of calling a provided function on every element in the calling array."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Try it"
+        }
+      ],
+      "anchor": "try_it"
+    },
+    {
+      "type": "code",
+      "code": "const array = [1, 4, 9, 16];\n\n// Pass a function to map\nconst mapped = array.map((x) => x * 2);\n\nconsole.log(mapped);\n// Expected output: Array [2, 8, 18, 32]",
+      "language": "javascript",
+      "languageSource": "markup"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Syntax"
+        }
+      ],
+      "anchor": "syntax"
+    },
+    {
+      "type": "code",
+      "code": "map(callbackFn)\nmap(callbackFn, thisArg)",
+      "language": "javascript",
+      "languageSource": "markup"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "content": [
+        {
+          "type": "text",
+          "text": "Parameters"
+        }
+      ],
+      "anchor": "parameters"
+    },
+    {
+      "type": "definitions",
+      "items": [
+        {
+          "term": [
+            {
+              "type": "text",
+              "text": "callbackFn",
+              "marks": [
+                "code"
+              ]
+            }
+          ],
+          "details": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "A function to execute for each element in the array. Its return value is added as a single element in the new array. The function is called with the following arguments:"
+                }
+              ]
+            },
+            {
+              "type": "definitions",
+              "items": [
+                {
+                  "term": [
+                    {
+                      "type": "text",
+                      "text": "element",
+                      "marks": [
+                        "code"
+                      ]
+                    }
+                  ],
+                  "details": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "The current element being processed in the array."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "term": [
+                    {
+                      "type": "text",
+                      "text": "index",
+                      "marks": [
+                        "code"
+                      ]
+                    }
+                  ],
+                  "details": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "The index of the current element being processed in the array."
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "term": [
+                    {
+                      "type": "text",
+                      "text": "array",
+                      "marks": [
+                        "code"
+                      ]
+                    }
+                  ],
+                  "details": [
+                    {
+                      "type": "paragraph",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "The array "
+                        },
+                        {
+                          "type": "text",
+                          "text": "map()",
+                          "marks": [
+                            "code"
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "text": " was called upon."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "term": [
+            {
+              "type": "text",
+              "text": "thisArg",
+              "marks": [
+                "code"
+              ]
+            },
+            {
+              "type": "text",
+              "text": " Optional"
+            }
+          ],
+          "details": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "A value to use as "
+                },
+                {
+                  "type": "text",
+                  "text": "this",
+                  "marks": [
+                    "code"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": " when executing "
+                },
+                {
+                  "type": "text",
+                  "text": "callbackFn",
+                  "marks": [
+                    "code"
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": ". See "
+                },
+                {
+                  "type": "text",
+                  "text": "iterative methods",
+                  "href": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array#iterative_methods"
+                },
+                {
+                  "type": "text",
+                  "text": "."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "content": [
+        {
+          "type": "text",
+          "text": "Return value"
+        }
+      ],
+      "anchor": "return_value"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "A new array with each element being the result of the callback function."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Description"
+        }
+      ],
+      "anchor": "description"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "The "
+        },
+        {
+          "type": "text",
+          "text": "map()",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " method is an "
+        },
+        {
+          "type": "text",
+          "text": "iterative method",
+          "href": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array#iterative_methods"
+        },
+        {
+          "type": "text",
+          "text": ". It calls a provided "
+        },
+        {
+          "type": "text",
+          "text": "callbackFn",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " function once for each element in an array and constructs a new array from the results. Read the "
+        },
+        {
+          "type": "text",
+          "text": "iterative methods",
+          "href": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array#iterative_methods"
+        },
+        {
+          "type": "text",
+          "text": " section for more information about how these methods work in general."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "callbackFn",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " is invoked only for array indexes which have assigned values. It is not invoked for empty slots in "
+        },
+        {
+          "type": "text",
+          "text": "sparse arrays",
+          "href": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Indexed_collections#sparse_arrays"
+        },
+        {
+          "type": "text",
+          "text": "."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "The "
+        },
+        {
+          "type": "text",
+          "text": "map()",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " method is "
+        },
+        {
+          "type": "text",
+          "text": "generic",
+          "href": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array#generic_array_methods"
+        },
+        {
+          "type": "text",
+          "text": ". It only expects the "
+        },
+        {
+          "type": "text",
+          "text": "this",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " value to have a "
+        },
+        {
+          "type": "text",
+          "text": "length",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " property and integer-keyed properties."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Since "
+        },
+        {
+          "type": "text",
+          "text": "map",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " builds a new array, calling it without using the returned array is an anti-pattern; use "
+        },
+        {
+          "type": "text",
+          "text": "forEach",
+          "marks": [
+            "code"
+          ],
+          "href": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach"
+        },
+        {
+          "type": "text",
+          "text": " or "
+        },
+        {
+          "type": "text",
+          "text": "for...of",
+          "marks": [
+            "code"
+          ],
+          "href": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/for...of"
+        },
+        {
+          "type": "text",
+          "text": " instead."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Examples"
+        }
+      ],
+      "anchor": "examples"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "content": [
+        {
+          "type": "text",
+          "text": "Mapping an array of numbers to an array of square roots"
+        }
+      ],
+      "anchor": "mapping_an_array_of_numbers_to_an_array_of_square_roots"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "The following code takes an array of numbers and creates a new array containing the square roots of the numbers in the first array."
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "code": "const numbers = [1, 4, 9];\nconst roots = numbers.map((num) => Math.sqrt(num));\n\n// roots is now     [1, 2, 3]\n// numbers is still [1, 4, 9]",
+      "language": "javascript",
+      "languageSource": "markup"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "content": [
+        {
+          "type": "text",
+          "text": "Using map to reformat objects in an array"
+        }
+      ],
+      "anchor": "using_map_to_reformat_objects_in_an_array"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "The following code takes an array of objects and creates a new array containing the newly reformatted objects."
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "code": "const kvArray = [\n  { key: 1, value: 10 },\n  { key: 2, value: 20 },\n  { key: 3, value: 30 },\n];\n\nconst reformattedArray = kvArray.map(({ key, value }) => ({ [key]: value }));\n\nconsole.log(reformattedArray); // [{ 1: 10 }, { 2: 20 }, { 3: 30 }]\nconsole.log(kvArray);\n// [\n//   { key: 1, value: 10 },\n//   { key: 2, value: 20 },\n//   { key: 3, value: 30 }\n// ]",
+      "language": "javascript",
+      "languageSource": "markup"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "content": [
+        {
+          "type": "text",
+          "text": "Using parseInt() with map()"
+        }
+      ],
+      "anchor": "using_parseint_with_map"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "It is common to use the callback with one argument (the element being traversed). Certain functions are also commonly used with one argument, even though they take additional optional arguments. These habits may lead to confusing behaviors. Consider:"
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "code": "[\"1\", \"2\", \"3\"].map(parseInt);",
+      "language": "javascript",
+      "languageSource": "markup"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "While one might expect "
+        },
+        {
+          "type": "text",
+          "text": "[1, 2, 3]",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": ", the actual result is "
+        },
+        {
+          "type": "text",
+          "text": "[1, NaN, NaN]",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": "."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "parseInt",
+          "marks": [
+            "code"
+          ],
+          "href": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/parseInt"
+        },
+        {
+          "type": "text",
+          "text": " is often used with one argument, but takes two. The first is an expression and the second is the radix to the callback function, "
+        },
+        {
+          "type": "text",
+          "text": "Array.prototype.map",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " passes 3 arguments: the element, the index, and the array. The third argument is ignored by "
+        },
+        {
+          "type": "text",
+          "text": "parseInt",
+          "marks": [
+            "code"
+          ],
+          "href": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/parseInt"
+        },
+        {
+          "type": "text",
+          "text": " — but "
+        },
+        {
+          "type": "text",
+          "text": "not",
+          "marks": [
+            "italic"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " the second one! This is the source of possible confusion."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Here is a concise example of the iteration steps:"
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "code": "/* first iteration  (index is 0): */ parseInt(\"1\", 0); // 1\n/* second iteration (index is 1): */ parseInt(\"2\", 1); // NaN\n/* third iteration  (index is 2): */ parseInt(\"3\", 2); // NaN",
+      "language": "javascript",
+      "languageSource": "markup"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "To solve this, define another function that only takes one argument:"
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "code": "[\"1\", \"2\", \"3\"].map((str) => parseInt(str, 10)); // [1, 2, 3]",
+      "language": "javascript",
+      "languageSource": "markup"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "You can also use the "
+        },
+        {
+          "type": "text",
+          "text": "Number",
+          "marks": [
+            "code"
+          ],
+          "href": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number"
+        },
+        {
+          "type": "text",
+          "text": " function, which only takes one argument:"
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "code": "[\"1\", \"2\", \"3\"].map(Number); // [1, 2, 3]\n\n// But unlike parseInt(), Number() will also return a float or (resolved) exponential notation:\n[\"1.1\", \"2.2e2\", \"3e300\"].map(Number); // [1.1, 220, 3e+300]\n\n// For comparison, if we use parseInt() on the array above:\n[\"1.1\", \"2.2e2\", \"3e300\"].map((str) => parseInt(str, 10)); // [1, 2, 3]",
+      "language": "javascript",
+      "languageSource": "markup"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "See "
+        },
+        {
+          "type": "text",
+          "text": "A JavaScript optional argument hazard",
+          "href": "https://wirfs-brock.com/allen/posts/166"
+        },
+        {
+          "type": "text",
+          "text": " by Allen Wirfs-Brock for more discussions."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "content": [
+        {
+          "type": "text",
+          "text": "Mapped array contains undefined"
+        }
+      ],
+      "anchor": "mapped_array_contains_undefined"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "When "
+        },
+        {
+          "type": "text",
+          "text": "undefined",
+          "marks": [
+            "code"
+          ],
+          "href": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/undefined"
+        },
+        {
+          "type": "text",
+          "text": " or nothing is returned, the resulting array contains "
+        },
+        {
+          "type": "text",
+          "text": "undefined",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": ". If you want to delete the element instead, chain a "
+        },
+        {
+          "type": "text",
+          "text": "filter()",
+          "marks": [
+            "code"
+          ],
+          "href": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/filter"
+        },
+        {
+          "type": "text",
+          "text": " method, or use the "
+        },
+        {
+          "type": "text",
+          "text": "flatMap()",
+          "marks": [
+            "code"
+          ],
+          "href": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/flatMap"
+        },
+        {
+          "type": "text",
+          "text": " method and return an empty array to signify deletion."
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "code": "const numbers = [1, 2, 3, 4];\nconst filteredNumbers = numbers.map((num, index) => {\n  if (index < 3) {\n    return num;\n  }\n});\n\n// index goes from 0, so the filteredNumbers are 1,2,3 and undefined.\n// filteredNumbers is [1, 2, 3, undefined]\n// numbers is still [1, 2, 3, 4]",
+      "language": "javascript",
+      "languageSource": "markup"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "content": [
+        {
+          "type": "text",
+          "text": "Side-effectful mapping"
+        }
+      ],
+      "anchor": "side-effectful_mapping"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "The callback can have side effects."
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "code": "const cart = [5, 15, 25];\nlet total = 0;\nconst withTax = cart.map((cost) => {\n  total += cost;\n  return cost * 1.2;\n});\nconsole.log(withTax); // [6, 18, 30]\nconsole.log(total); // 45",
+      "language": "javascript",
+      "languageSource": "markup"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "This is not recommended, because copying methods are best used with pure functions. In this case, we can choose to iterate the array twice."
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "code": "const cart = [5, 15, 25];\nconst total = cart.reduce((acc, cost) => acc + cost, 0);\nconst withTax = cart.map((cost) => cost * 1.2);",
+      "language": "javascript",
+      "languageSource": "markup"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Sometimes this pattern goes to its extreme and the "
+        },
+        {
+          "type": "text",
+          "text": "only",
+          "marks": [
+            "italic"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " useful thing that "
+        },
+        {
+          "type": "text",
+          "text": "map()",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " does is causing side effects."
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "code": "const products = [\n  { name: \"sports car\" },\n  { name: \"laptop\" },\n  { name: \"phone\" },\n];\n\nproducts.map((product) => {\n  product.price = 100;\n});",
+      "language": "javascript",
+      "languageSource": "markup"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "As mentioned previously, this is an anti-pattern. If you don't use the return value of "
+        },
+        {
+          "type": "text",
+          "text": "map()",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": ", use "
+        },
+        {
+          "type": "text",
+          "text": "forEach()",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " or a "
+        },
+        {
+          "type": "text",
+          "text": "for...of",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " loop instead."
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "code": "products.forEach((product) => {\n  product.price = 100;\n});",
+      "language": "javascript",
+      "languageSource": "markup"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Or, if you want to create a new array instead:"
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "code": "const productsWithPrice = products.map((product) => ({\n  ...product,\n  price: 100,\n}));",
+      "language": "javascript",
+      "languageSource": "markup"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "content": [
+        {
+          "type": "text",
+          "text": "Using the third argument of callbackFn"
+        }
+      ],
+      "anchor": "using_the_third_argument_of_callbackfn"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "The "
+        },
+        {
+          "type": "text",
+          "text": "array",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " argument is useful if you want to access another element in the array, especially when you don't have an existing variable that refers to the array. The following example first uses "
+        },
+        {
+          "type": "text",
+          "text": "filter()",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " to extract the positive values and then uses "
+        },
+        {
+          "type": "text",
+          "text": "map()",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " to create a new array where each element is the average of its neighbors and itself."
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "code": "const numbers = [3, -1, 1, 4, 1, 5, 9, 2, 6];\nconst averaged = numbers\n  .filter((num) => num > 0)\n  .map((num, idx, arr) => {\n    // Without the arr argument, there's no way to easily access the\n    // intermediate array without saving it to a variable.\n    const prev = arr[idx - 1];\n    const next = arr[idx + 1];\n    let count = 1;\n    let total = num;\n    if (prev !== undefined) {\n      count++;\n      total += prev;\n    }\n    if (next !== undefined) {\n      count++;\n      total += next;\n    }\n    const average = total / count;\n    // Keep two decimal places\n    return Math.round(average * 100) / 100;\n  });\nconsole.log(averaged); // [2, 2.67, 2, 3.33, 5, 5.33, 5.67, 4]",
+      "language": "javascript",
+      "languageSource": "markup"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "The "
+        },
+        {
+          "type": "text",
+          "text": "array",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " argument is "
+        },
+        {
+          "type": "text",
+          "text": "not",
+          "marks": [
+            "italic"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " the array that is being built — there is no way to access the array being built from the callback function."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "content": [
+        {
+          "type": "text",
+          "text": "Using map() on sparse arrays"
+        }
+      ],
+      "anchor": "using_map_on_sparse_arrays"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "A sparse array remains sparse after "
+        },
+        {
+          "type": "text",
+          "text": "map()",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": ". The indices of empty slots are still empty in the returned array, and the callback function won't be called on them."
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "code": "console.log(\n  [1, , 3].map((x, index) => {\n    console.log(`Visit ${index}`);\n    return x * 2;\n  }),\n);\n// Visit 0\n// Visit 2\n// [2, empty, 6]",
+      "language": "javascript",
+      "languageSource": "markup"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "content": [
+        {
+          "type": "text",
+          "text": "Calling map() on non-array objects"
+        }
+      ],
+      "anchor": "calling_map_on_non-array_objects"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "The "
+        },
+        {
+          "type": "text",
+          "text": "map()",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " method reads the "
+        },
+        {
+          "type": "text",
+          "text": "length",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " property of "
+        },
+        {
+          "type": "text",
+          "text": "this",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " and then accesses each property whose key is a nonnegative integer less than "
+        },
+        {
+          "type": "text",
+          "text": "length",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": "."
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "code": "const arrayLike = {\n  length: 3,\n  0: 2,\n  1: 3,\n  2: 4,\n  3: 5, // ignored by map() since length is 3\n};\nconsole.log(Array.prototype.map.call(arrayLike, (x) => x ** 2));\n// [ 4, 9, 16 ]",
+      "language": "javascript",
+      "languageSource": "markup"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "This example shows how to iterate through a collection of objects collected by "
+        },
+        {
+          "type": "text",
+          "text": "querySelectorAll()",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": ", returning an array containing the values of all the selected "
+        },
+        {
+          "type": "text",
+          "text": "option",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " elements. Because "
+        },
+        {
+          "type": "text",
+          "text": "querySelectorAll()",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " returns a "
+        },
+        {
+          "type": "text",
+          "text": "NodeList",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": ", which is an array-like object without the "
+        },
+        {
+          "type": "text",
+          "text": "map()",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " method, we use "
+        },
+        {
+          "type": "text",
+          "text": "Array.prototype.map.call()",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": ", passing "
+        },
+        {
+          "type": "text",
+          "text": "elems",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " as the "
+        },
+        {
+          "type": "text",
+          "text": "this",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " value and the callback as the second argument."
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "code": "const elems = document.querySelectorAll(\"select option:checked\");\nconst values = Array.prototype.map.call(elems, ({ value }) => value);",
+      "language": "javascript",
+      "languageSource": "markup"
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "You can also use "
+        },
+        {
+          "type": "text",
+          "text": "Array.from()",
+          "marks": [
+            "code"
+          ],
+          "href": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/from"
+        },
+        {
+          "type": "text",
+          "text": " to transform "
+        },
+        {
+          "type": "text",
+          "text": "elems",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " to an array, and then access the "
+        },
+        {
+          "type": "text",
+          "text": "map()",
+          "marks": [
+            "code"
+          ]
+        },
+        {
+          "type": "text",
+          "text": " method."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": [
+        {
+          "type": "text",
+          "text": "Specifications"
+        }
+      ],
+      "anchor": "specifications"
+    },
+    {
+      "type": "table",
+      "rows": [
+        {
+          "cells": [
+            {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Specification"
+                }
+              ],
+              "header": true
+            }
+          ]
+        },
+        {
+          "cells": [
+            {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "ECMAScript® 2027 Language Specification",
+                  "href": "https://tc39.es/ecma262/multipage/indexed-collections.html#sec-array.prototype.map"
+                },
+                {
+                  "type": "break"
+                },
+                {
+                  "type": "text",
+                  "text": "# sec-array.prototype.map",
+                  "href": "https://tc39.es/ecma262/multipage/indexed-collections.html#sec-array.prototype.map"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "headerRows": 1
+    }
+  ]
+}

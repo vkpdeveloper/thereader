@@ -1,5 +1,5 @@
 import { useNavigate, useRouter } from '@tanstack/react-router';
-import type { LibraryEntry } from '../types';
+import type { ArticleSummary, LibraryEntry } from '../types';
 
 /** Back to wherever the user came from, or Library for a fresh deep link. */
 export function useGoBack(fallback: '/library' | '/browse' = '/library') {
@@ -19,4 +19,9 @@ export function bookLink(entry: LibraryEntry) {
 /** Reader for a library entry. */
 export function readLink(entry: LibraryEntry) {
   return { to: '/read/$entryId' as const, params: { entryId: entry.id } };
+}
+
+/** Reader for a saved article. */
+export function articleLink(article: Pick<ArticleSummary, 'id'>) {
+  return { to: '/article/$id' as const, params: { id: article.id } };
 }

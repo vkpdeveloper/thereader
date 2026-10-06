@@ -8,7 +8,10 @@ import 'app_scope.dart';
 import 'core/theme/app_theme.dart';
 import 'data/api/catalog_source.dart';
 import 'data/api/api_client.dart';
+import 'data/articles/article_store.dart';
+import 'data/articles/page_fetcher.dart';
 import 'data/import/epub_import_service.dart';
+import 'data/repositories/article_repository.dart';
 import 'data/repositories/highlight_repository.dart';
 import 'data/repositories/sync_repository.dart';
 import 'data/repositories/library_repository.dart';
@@ -58,6 +61,15 @@ Future<void> main() async {
           },
         );
   final highlights = HighlightRepository(kv);
+  final articles = ArticleRepository(
+    store: kv,
+    files: await ArticleStore.create(),
+    // The browser preview cannot fetch other sites (CORS); it uses the API's
+    // relay at the configured origin.
+    fetcher: PageFetcher(relayBase: () => ApiClient.normalizeBaseUrl(settings.settings.apiBaseUrl)),
+    // Documents of articles saved on other devices download from the API.
+    cloud: bundledCatalog ? null : () => ApiClient(baseUrl: settings.settings.apiBaseUrl),
+  );
   final sync = bundledCatalog
       ? null
       : SyncRepository(
@@ -65,6 +77,7 @@ Future<void> main() async {
           library: library,
           settings: settings,
           highlights: highlights,
+          articles: articles,
           isUploadPending: (id) => imports?.isPending(id) ?? false,
           retryUploads: () => unawaited(imports?.retryPending()),
         );
@@ -75,6 +88,7 @@ Future<void> main() async {
     imports: imports,
     sync: sync,
     highlights: highlights,
+    articles: articles,
     readerService: ReaderService(
       engines: const [ReadiumReaderEngine(), DartReaderEngine()],
     ),
@@ -83,6 +97,7 @@ Future<void> main() async {
   // Library loads in the background; external files only wait for local state,
   // not for upload and sync setup, before opening the reader.
   final libraryReady = library.load();
+  unawaited(articles.load());
   Future<void> loadPersonalLibrary() async {
     await libraryReady;
     await imports?.load();

@@ -1,6 +1,7 @@
-import type { Book, Highlight, LibraryEntry, ReaderPreferences, ReadingLocator, ReadingProgress } from '../types';
+import type { ArticleSummary, Book, Highlight, LibraryEntry, ReaderPreferences, ReadingLocator, ReadingProgress } from '../types';
 import { ApiError, type SyncSnapshot, type SyncStore } from './contract';
 import type { SyncResponse } from './api';
+import { MAX_ARTICLE_BODY_BYTES, positionFromFraction, type ArticleStoreImpl, type RemoteArticle } from './articles';
 import { randomId } from './hash';
 import type { HighlightStoreImpl } from './highlights';
 import type { KeyValueStore } from './kv';
@@ -49,6 +50,12 @@ const FLUSH_SETTLE_MS = 1_000;
 const DRAIN_DELAY_MS = 5_000;
 /** How long to stop sending highlights after a server rejected them. */
 export const HIGHLIGHTS_RETRY_MS = 6 * 60 * 60_000;
+/** Same for articles, against a server without article sync. */
+export const ARTICLES_RETRY_MS = 6 * 60 * 60_000;
+/** Article documents uploaded per cycle; the rest wait for the next one. */
+export const ARTICLE_UPLOADS_PER_CYCLE = 5;
+/** Small synced documents downloaded per cycle, so they open offline. */
+export const ARTICLE_PREFETCH_PER_CYCLE = 5;
 const CHECKPOINT_MS = 15_000;
 /**
  * A visible tab has no screen lock to pause it the way a phone does, so a
@@ -74,12 +81,15 @@ const SERVER_THEME_IDS = new Set(['default', 'dracula', 'nord', 'tokyo-night', '
 const FONT_FAMILY_ID = /^[a-z0-9][a-z0-9-]{0,63}$/;
 const HIGHLIGHT_COLOR = /^[a-z]{1,16}$/;
 const PREFERENCES_SHA = '0'.repeat(64);
+/** Article changes use a sentinel edition; the article is `payload.articleId`. */
+const ARTICLES_BOOK_ID = '_articles';
+const ARTICLE_IMAGE = /^(?:https?:\/\/|data:image\/)\S+$/i;
 
 export interface SyncChange {
   id: string;
   bookId: string;
   sha256: string;
-  kind: 'library' | 'progress' | 'session' | 'preferences' | 'highlight';
+  kind: 'library' | 'progress' | 'session' | 'preferences' | 'highlight' | 'article' | 'articleProgress';
   updatedAt: string;
   payload: Record<string, unknown>;
 }
@@ -94,6 +104,12 @@ export interface OriginState {
   highlightCursor?: number;
   /** Set when the server rejected highlight sync (not yet deployed). */
   highlightsUnsupportedUntil?: string;
+  /** Server article rev already pulled; absent means never pulled. */
+  articleCursor?: number;
+  /** Set when the server rejected article sync (not yet deployed). */
+  articlesUnsupportedUntil?: string;
+  /** Article documents this device saved and still has to upload: id to SHA-256. */
+  articleUploads?: Record<string, string>;
 }
 
 export interface StoredSync {
@@ -108,9 +124,11 @@ export interface SyncApi {
     deviceId: string;
     changes: Record<string, unknown>[];
     highlightsSince?: number;
+    articlesSince?: number;
     keepalive?: boolean;
   }): Promise<SyncResponse>;
   getBook(id: string): Promise<Book>;
+  putArticleBody?(sha256: string, json: Uint8Array): Promise<void>;
 }
 
 export interface SyncEnvironment {
@@ -154,6 +172,7 @@ export interface SyncDeps {
   library: LibraryStoreImpl;
   settings: SettingsStoreImpl;
   highlights?: HighlightStoreImpl;
+  articles?: ArticleStoreImpl;
   clientFor(origin: string): SyncApi;
   isUploadPending?(entryId: string): boolean;
   retryUploads?(): void;
@@ -350,6 +369,7 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
         capture();
       }),
       ...(this.deps.highlights ? [this.deps.highlights.subscribe(capture)] : []),
+      ...(this.deps.articles ? [this.deps.articles.subscribe(capture)] : []),
       this.bus.listen((topic) => {
         if (topic === 'sync') void this.reloadFromOtherTab();
       }),
@@ -416,6 +436,7 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
         for (const [key, stamp, change] of captures) {
           st.seen[key] = stamp;
           if (change) st.pending[key] = change;
+          if (change?.kind === 'article') this.trackArticleUpload(st, change);
         }
         changed = captures.length > 0;
       });
@@ -446,6 +467,7 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
       }
     }
     this.captureHighlights(origin, state, entries, out);
+    this.captureArticles(state, out);
     const updatedAt = this.deps.settings.readerUpdatedAt;
     if (updatedAt !== null && state.seen.preferences !== updatedAt) {
       out.push([
@@ -478,6 +500,47 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
       if (!entry) continue;
       const payload = highlightPayload(h);
       out.push([key, h.updatedAt, payload ? this.change(entry, 'highlight', h.updatedAt, payload) : null]);
+    }
+  }
+
+  /**
+   * Saved articles: each save or deletion, then reading positions. A deletion
+   * is only sent for an article this origin has seen.
+   */
+  private captureArticles(state: OriginState, out: Capture[]): void {
+    const store = this.deps.articles;
+    if (!store?.loaded) return;
+    for (const s of store.all) {
+      // One the API cannot take stays on this device: its save, positions and
+      // deletion are never sent, so it cannot fail a batch.
+      if (!articleSyncable(s)) continue;
+      const key = `article:${s.id}`;
+      const stamp = `saved:${s.addedAt}`;
+      if (state.seen[key] !== stamp) out.push([key, stamp, articleChange('article', s.addedAt, articlePayload(s)!)]);
+      if (s.progress != null && s.progressUpdatedAt && state.seen[`articleProgress:${s.id}`] !== s.progressUpdatedAt) {
+        const position = positionFromFraction(s.progress, s.blockCount);
+        out.push([`articleProgress:${s.id}`, s.progressUpdatedAt, articleChange('articleProgress', s.progressUpdatedAt, { articleId: s.id, position })]);
+      }
+    }
+    for (const [id, at] of store.deleted) {
+      const key = `article:${id}`;
+      const stamp = `deleted:${at}`;
+      if (state.seen[key] === undefined || state.seen[key] === stamp) continue;
+      out.push([key, stamp, articleChange('article', at, { articleId: id, deleted: true })]);
+    }
+  }
+
+  /** A queued save uploads this device's document once; a deletion cancels both. */
+  private trackArticleUpload(st: OriginState, change: SyncChange): void {
+    const id = String(change.payload.articleId);
+    if (change.payload.deleted === true) {
+      if (st.articleUploads) delete st.articleUploads[id];
+      delete st.pending[`articleProgress:${id}`];
+      return;
+    }
+    const summary = this.deps.articles?.summary(id);
+    if (summary && summary.stored !== false && summary.bodySha256 && summary.bodySha256 === change.payload.bodySha256) {
+      (st.articleUploads ??= {})[id] = summary.bodySha256;
     }
   }
 
@@ -610,6 +673,9 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
       this.deps.highlights !== undefined &&
       !(state.highlightsUnsupportedUntil && isoOrder(state.highlightsUnsupportedUntil) / 1000 > now);
     let highlightsRejected = false;
+    let withArticles =
+      this.deps.articles !== undefined && !(state.articlesUnsupportedUntil && isoOrder(state.articlesUnsupportedUntil) / 1000 > now);
+    let articlesRejected = false;
     const submitted = new Map<string, SyncChange>();
     let bytes = 100;
     try {
@@ -619,7 +685,9 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
       for (const [key, pending] of Object.entries(state.pending)) {
         const value = { ...pending };
         if (value.kind === 'highlight' && !withHighlights) continue;
-        if (value.kind !== 'preferences') {
+        if (isArticleKind(value.kind)) {
+          if (!withArticles) continue;
+        } else if (value.kind !== 'preferences') {
           const entry = library.find((e) => e.origin === origin && e.book.sha256 === value.sha256);
           if (entry) {
             if (this.deps.isUploadPending?.(entry.id)) continue;
@@ -633,30 +701,38 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
       }
       const before = new Map([...submitted.keys()].map((key) => [key, JSON.stringify(state.pending[key])]));
       let response: SyncResponse;
-      try {
-        response = await client.syncState({
-          deviceId: snapshotState.deviceId,
-          changes: [...submitted.values()] as unknown as Record<string, unknown>[],
-          ...(withHighlights ? { highlightsSince: state.highlightCursor ?? 0 } : {}),
-          keepalive,
-        });
-      } catch (error) {
-        if (!withHighlights || !(error instanceof ApiError) || error.status !== 400 || error.code !== 'INVALID_SYNC') throw error;
-        // A server without highlight sync rejects the whole atomic batch.
-        // Keep everything else syncing and try highlights again later.
-        withHighlights = false;
-        highlightsRejected = true;
-        for (const [key, value] of [...submitted]) {
-          if (value.kind === 'highlight') {
-            submitted.delete(key);
-            before.delete(key);
+      for (;;) {
+        try {
+          response = await client.syncState({
+            deviceId: snapshotState.deviceId,
+            changes: [...submitted.values()] as unknown as Record<string, unknown>[],
+            ...(withHighlights ? { highlightsSince: state.highlightCursor ?? 0 } : {}),
+            ...(withArticles ? { articlesSince: state.articleCursor ?? 0 } : {}),
+            keepalive,
+          });
+          break;
+        } catch (error) {
+          if (!(withHighlights || withArticles) || !(error instanceof ApiError) || error.status !== 400 || error.code !== 'INVALID_SYNC') {
+            throw error;
+          }
+          // A server without article (or highlight) sync rejects the whole
+          // atomic batch. Keep everything else syncing and try that part
+          // again later: articles first, as the newer feature.
+          const dropArticles = withArticles;
+          if (dropArticles) {
+            withArticles = false;
+            articlesRejected = true;
+          } else {
+            withHighlights = false;
+            highlightsRejected = true;
+          }
+          for (const [key, value] of [...submitted]) {
+            if (dropArticles ? isArticleKind(value.kind) : value.kind === 'highlight') {
+              submitted.delete(key);
+              before.delete(key);
+            }
           }
         }
-        response = await client.syncState({
-          deviceId: snapshotState.deviceId,
-          changes: [...submitted.values()] as unknown as Record<string, unknown>[],
-          keepalive,
-        });
       }
       if (this.disposed) return;
       const rows = (Array.isArray(response.books) ? response.books : []).filter(isRecord);
@@ -680,16 +756,19 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
           st.totals[sha] = (st.totals[sha] ?? 0) + (Number(row.readingMilliseconds) || 0);
         }
         if (highlightsRejected) st.highlightsUnsupportedUntil = new Date(now + HIGHLIGHTS_RETRY_MS).toISOString();
+        if (articlesRejected) st.articlesUnsupportedUntil = new Date(now + ARTICLES_RETRY_MS).toISOString();
       });
 
       const seen: Record<string, string> = {};
       let cursor: number | undefined;
+      let articleCursor: number | undefined;
       const metadataRefresh: LibraryEntry[] = [];
       this.applying = true;
       try {
         await this.applyBooks(origin, client, rows, seen, metadataRefresh);
         const pulled = response.highlights;
         if (withHighlights && isRecord(pulled)) cursor = await this.applyHighlights(origin, pulled, seen);
+        if (withArticles && isRecord(response.articles)) articleCursor = await this.applyArticles(response.articles, seen);
         const prefs = response.preferences;
         if (isRecord(prefs) && origin === this.origin) {
           const updatedAt = toIso(prefs.updatedAt);
@@ -703,17 +782,24 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
           const st = (s.origins[origin] ??= emptyOrigin());
           Object.assign(st.seen, seen);
           if (cursor !== undefined) st.highlightCursor = cursor;
+          if (articleCursor !== undefined) st.articleCursor = articleCursor;
           st.lastSyncedAt = nowIso(this.now);
           s.lastAttemptAt = nowIso(this.now);
         });
       } finally {
         this.applying = false;
       }
+      // Documents go up once the server holds their saves: the server deletes
+      // a document no live article references, so uploading first could race
+      // a deletion and leave a save pointing at nothing.
+      if (withArticles && !keepalive) await this.uploadArticleBodies(origin, client);
       await this.captureNow();
       this.failures = 0;
       this.scheduleMetadataRefresh(origin, client, metadataRefresh);
       const more = isRecord(response.highlights) && response.highlights.more === true;
-      this.drainMore = submitted.size === MAX_CHANGES || bytes > 200 * 1024 || (withHighlights && more);
+      const moreArticles = isRecord(response.articles) && response.articles.more === true;
+      this.drainMore = submitted.size === MAX_CHANGES || bytes > 200 * 1024 || (withHighlights && more) || (withArticles && moreArticles);
+      if (withArticles && !keepalive && origin === this.origin) void this.deps.articles!.prefetch(ARTICLE_PREFETCH_PER_CYCLE).catch(() => undefined);
     } catch (error) {
       this.failures++;
       this.error =
@@ -825,6 +911,62 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
       const local = store.byId(h.id);
       // Matching copies need no upload; a newer local edit stays queued.
       if (local && isoOrder(local.updatedAt) === isoOrder(h.updatedAt)) seen[`highlight:${h.id}`] = local.updatedAt;
+    }
+    return typeof pulled.cursor === 'number' && Number.isSafeInteger(pulled.cursor) ? pulled.cursor : undefined;
+  }
+
+  /**
+   * Uploads documents this device saved, a few per cycle, once the server has
+   * accepted their saves. A network or server failure keeps the rest queued
+   * for the next cycle; a document the server refuses (too large, invalid) or
+   * that is gone locally is dropped, and its article stays readable here and
+   * pending elsewhere.
+   */
+  private async uploadArticleBodies(origin: string, client: SyncApi): Promise<void> {
+    const store = this.deps.articles;
+    if (!store || !client.putArticleBody) return;
+    const state = this.state.origins[origin] ?? emptyOrigin();
+    const ready = Object.entries(state.articleUploads ?? {}).filter(([id]) => !state.pending[`article:${id}`]);
+    for (const [id, sha] of ready.slice(0, ARTICLE_UPLOADS_PER_CYCLE)) {
+      const body = await store.bodyFor(id);
+      if (body && body.sha256 === sha) {
+        try {
+          await client.putArticleBody(sha, body.bytes);
+        } catch (error) {
+          if (!(error instanceof ApiError) || error.isNetwork || error.status === null) return;
+          // A server without article bodies answers its generic 404.
+          if (error.status >= 500 || error.status === 408 || error.status === 429 || error.status === 404) return;
+          console.warn(`Article ${id} could not be uploaded: ${error.message}`);
+        }
+      }
+      await this.mutate((s) => {
+        const uploads = s.origins[origin]?.articleUploads;
+        if (uploads?.[id] === sha) delete uploads[id];
+      });
+    }
+  }
+
+  /** Stores articles changed on other devices; returns the new pull cursor. */
+  private async applyArticles(pulled: Record<string, unknown>, seen: Record<string, string>): Promise<number | undefined> {
+    const store = this.deps.articles!;
+    const remote: RemoteArticle[] = [];
+    for (const row of Array.isArray(pulled.items) ? pulled.items : []) {
+      const parsed = parseRemoteArticle(row);
+      if (parsed) remote.push(parsed);
+    }
+    await store.applyRemote(remote);
+    for (const r of remote) {
+      const local = store.summary(r.id);
+      // Matching copies need no upload; a newer local edit stays queued.
+      if (r.deleted) {
+        const deletedAt = store.deleted.get(r.id);
+        if (!local && (!deletedAt || isoOrder(deletedAt) === isoOrder(r.updatedAt))) seen[`article:${r.id}`] = `deleted:${deletedAt ?? r.updatedAt}`;
+        continue;
+      }
+      if (local && isoOrder(local.addedAt) === isoOrder(r.updatedAt)) seen[`article:${r.id}`] = `saved:${local.addedAt}`;
+      if (local?.progressUpdatedAt && r.positionUpdatedAt && isoOrder(local.progressUpdatedAt) === isoOrder(r.positionUpdatedAt)) {
+        seen[`articleProgress:${r.id}`] = local.progressUpdatedAt;
+      }
     }
     return typeof pulled.cursor === 'number' && Number.isSafeInteger(pulled.cursor) ? pulled.cursor : undefined;
   }
@@ -1078,6 +1220,12 @@ function parseOriginState(value: unknown): OriginState {
   if (typeof value.highlightCursor === 'number') st.highlightCursor = Math.trunc(value.highlightCursor);
   const unsupported = toIso(value.highlightsUnsupportedUntil);
   if (unsupported) st.highlightsUnsupportedUntil = unsupported;
+  if (typeof value.articleCursor === 'number') st.articleCursor = Math.trunc(value.articleCursor);
+  const articlesUnsupported = toIso(value.articlesUnsupportedUntil);
+  if (articlesUnsupported) st.articlesUnsupportedUntil = articlesUnsupported;
+  if (isRecord(value.articleUploads)) {
+    for (const [id, sha] of Object.entries(value.articleUploads)) if (typeof sha === 'string') (st.articleUploads ??= {})[id] = sha;
+  }
   return st;
 }
 
@@ -1132,6 +1280,89 @@ function highlightPayload(h: Highlight): Record<string, unknown> | null {
     ...(typeof h.note === 'string' ? { note: h.note.slice(0, 4000) } : {}),
     createdAt: h.createdAt,
     deleted: h.deleted,
+  };
+}
+
+const isArticleKind = (kind: string): boolean => kind === 'article' || kind === 'articleProgress';
+
+function articleChange(kind: 'article' | 'articleProgress', updatedAt: string, payload: Record<string, unknown>): SyncChange {
+  return { id: randomId(), bookId: ARTICLES_BOOK_ID, sha256: PREFERENCES_SHA, kind, updatedAt, payload };
+}
+
+const clampInt = (v: unknown, min: number, max: number): number =>
+  typeof v === 'number' && Number.isFinite(v) ? Math.min(max, Math.max(min, Math.round(v))) : min;
+
+/**
+ * Whether an article syncs: one whose document exceeds the upload limit, or
+ * whose URL the API cannot take, stays on this device.
+ */
+export function articleSyncable(s: ArticleSummary): boolean {
+  if (!s.bodySha256 || !s.bodySize || s.bodySize > MAX_ARTICLE_BODY_BYTES) return false;
+  return s.url.length <= 2048 && /^https?:\/\/\S+$/i.test(s.url);
+}
+
+/**
+ * A saved article's metadata as the API validates it. Long text is clipped
+ * and unusable image URLs dropped. Null for an article that stays on this
+ * device.
+ */
+export function articlePayload(s: ArticleSummary): Record<string, unknown> | null {
+  if (!articleSyncable(s)) return null;
+  const text = (v: string | null | undefined, max: number) => (typeof v === 'string' && v.trim() ? v.slice(0, max) : null);
+  const image = (v: string | null | undefined) => (typeof v === 'string' && v.length <= 2048 && ARTICLE_IMAGE.test(v) ? v : null);
+  return {
+    articleId: s.id,
+    url: s.url,
+    title: s.title.slice(0, 1000),
+    siteName: text(s.siteName, 300),
+    byline: text(s.byline, 500),
+    excerpt: text(s.excerpt, 2000),
+    leadImage: image(s.image),
+    favicon: image(s.favicon),
+    language: text(s.language, 35),
+    dir: s.dir === 'rtl' ? 'rtl' : 'ltr',
+    wordCount: clampInt(s.wordCount, 0, 10_000_000),
+    readingMinutes: clampInt(s.readingMinutes, 1, 100_000),
+    blockCount: clampInt(s.blockCount, 0, 1_000_000),
+    publishedAt: text(s.publishedAt, 64),
+    savedAt: s.addedAt,
+    bodySha256: s.bodySha256,
+    bodySize: s.bodySize,
+    schema: 1,
+    deleted: false,
+  };
+}
+
+const textOrNull = (v: unknown): string | null => (typeof v === 'string' ? v : null);
+const finite = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
+
+function parseRemoteArticle(row: unknown): RemoteArticle | null {
+  if (!isRecord(row) || typeof row.id !== 'string' || !/^[a-f0-9]{32}$/.test(row.id)) return null;
+  const updatedAt = toIso(row.updatedAt);
+  if (!updatedAt) return null;
+  const p = row.position;
+  const position = isRecord(p) ? { block: Math.max(0, Math.trunc(finite(p.block))), offset: finite(p.offset), percent: finite(p.percent) } : null;
+  return {
+    id: row.id,
+    url: typeof row.url === 'string' ? row.url : '',
+    title: typeof row.title === 'string' ? row.title : '',
+    siteName: textOrNull(row.siteName),
+    byline: textOrNull(row.byline),
+    excerpt: textOrNull(row.excerpt),
+    leadImage: textOrNull(row.leadImage),
+    favicon: textOrNull(row.favicon),
+    language: textOrNull(row.language),
+    dir: row.dir === 'rtl' ? 'rtl' : 'ltr',
+    wordCount: Math.max(0, Math.trunc(finite(row.wordCount))),
+    readingMinutes: Math.max(1, Math.trunc(finite(row.readingMinutes))),
+    blockCount: Math.max(0, Math.trunc(finite(row.blockCount))),
+    publishedAt: textOrNull(row.publishedAt),
+    bodySha256: typeof row.bodySha256 === 'string' && /^[a-f0-9]{64}$/.test(row.bodySha256) ? row.bodySha256 : null,
+    bodySize: typeof row.bodySize === 'number' ? row.bodySize : null,
+    position,
+    positionUpdatedAt: toIso(row.positionUpdatedAt),
+    updatedAt,
+    deleted: row.deleted === true,
   };
 }
 

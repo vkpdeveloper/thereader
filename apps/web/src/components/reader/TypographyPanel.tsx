@@ -30,8 +30,9 @@ function nearest(value: number, options: { value: number }[]): number {
 /**
  * Typography controls (mobile `ReaderSettingsSheet`) plus the web's layout
  * and wake-lock switches. Every change applies to the page immediately.
+ * Articles always scroll and have no highlights, so `article` drops those rows.
  */
-export function TypographyPanel({ onFonts }: { onFonts: () => void }) {
+export function TypographyPanel({ onFonts, article }: { onFonts: () => void; article?: boolean }) {
   const services = useServices();
   const { reader: p } = useStore(services.settings);
   const update = (change: Parameters<typeof services.settings.updateReader>[0]) => void services.settings.updateReader(change);
@@ -71,23 +72,29 @@ export function TypographyPanel({ onFonts }: { onFonts: () => void }) {
       <FieldRow label="Margins">
         <Segmented label="Margins" value={nearest(p.marginScale, margins)} options={margins} onChange={(v) => update((r) => ({ ...r, marginScale: v }))} />
       </FieldRow>
-      <FieldRow label="Layout">
-        <Segmented label="Layout" value={p.flow} options={layouts} onChange={(v) => update((r) => ({ ...r, flow: v }))} />
-      </FieldRow>
+      {!article && (
+        <FieldRow label="Layout">
+          <Segmented label="Layout" value={p.flow} options={layouts} onChange={(v) => update((r) => ({ ...r, flow: v }))} />
+        </FieldRow>
+      )}
       <FieldRow label="Justify">
         <Switch label="Justify" checked={p.justify} onChange={(v) => update((r) => ({ ...r, justify: v }))} />
       </FieldRow>
       <FieldRow label="Keep awake">
         <Switch label="Keep screen awake" checked={p.keepAwake} onChange={(v) => update((r) => ({ ...r, keepAwake: v }))} />
       </FieldRow>
-      <hr className="divider" />
-      <FieldRow label="Highlight">
-        <HighlightSwatches
-          label="Default highlight colour"
-          selected={parseHighlightColor(p.highlightColor)}
-          onChange={(c) => update((r) => ({ ...r, highlightColor: c }))}
-        />
-      </FieldRow>
+      {!article && (
+        <>
+          <hr className="divider" />
+          <FieldRow label="Highlight">
+            <HighlightSwatches
+              label="Default highlight colour"
+              selected={parseHighlightColor(p.highlightColor)}
+              onChange={(c) => update((r) => ({ ...r, highlightColor: c }))}
+            />
+          </FieldRow>
+        </>
+      )}
     </div>
   );
 }

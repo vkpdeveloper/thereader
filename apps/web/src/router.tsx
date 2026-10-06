@@ -4,7 +4,7 @@ import { AppShell } from './components/AppShell';
 import { NotFound } from './routes/notFound';
 import { LibraryScreen } from './routes/library';
 import { BrowseScreen } from './routes/browse';
-import { loadBook, loadReader, loadSettings } from './routes/lazy';
+import { loadArticle, loadBook, loadReader, loadSettings } from './routes/lazy';
 import { LoadingLine } from './components/states';
 
 const rootRoute = createRootRoute({ component: Root, notFoundComponent: NotFound });
@@ -48,6 +48,13 @@ const readRoute = createRoute({
   component: lazyRouteComponent(loadReader, 'ReaderScreen'),
 });
 
+/** A web article saved by link; its document is read from IndexedDB. */
+const articleRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'article/$id',
+  component: lazyRouteComponent(loadArticle, 'ArticleScreen'),
+});
+
 /** Paths from the first web prototype keep working. */
 const legacyApp = createRoute({
   getParentRoute: () => rootRoute,
@@ -71,6 +78,7 @@ const routeTree = rootRoute.addChildren([
   shellRoute.addChildren([libraryRoute, browseRoute, settingsRoute]),
   bookRoute,
   readRoute,
+  articleRoute,
   legacyAppIndex,
   legacyApp,
 ]);

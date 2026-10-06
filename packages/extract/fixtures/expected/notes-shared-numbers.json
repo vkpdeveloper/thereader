@@ -1,0 +1,128 @@
+{
+  "schema": 1,
+  "url": "https://margins.example.org/2025/reading-old-field-guides",
+  "title": "Reading old field guides",
+  "subtitle": null,
+  "byline": null,
+  "authors": [],
+  "siteName": "Margins",
+  "publishedAt": null,
+  "modifiedAt": null,
+  "language": "en",
+  "dir": "ltr",
+  "excerpt": "Field guides from the last century were written for people who would carry them for weeks, and it shows in how much they trust the reader to look closely before naming anything. A modern app names the bird for you; the old guide teaches you which three marks to check first.",
+  "leadImage": null,
+  "favicon": "https://margins.example.org/favicon.ico",
+  "wordCount": 221,
+  "readingMinutes": 1,
+  "blocks": [
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "Field guides from the last century were written for people who would carry them for weeks, and it shows in how much they trust the reader to look closely before naming anything."
+        },
+        {
+          "type": "ref",
+          "id": "fn1",
+          "label": "1"
+        },
+        {
+          "type": "text",
+          "text": " A modern app names the bird for you; the old guide teaches you which three marks to check first."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "The 1934 edition opens its section on warblers with a warning that reads well even now:"
+        }
+      ]
+    },
+    {
+      "type": "quote",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "No bird in this family should be named from a single glimpse, and the beginner who does so will be wrong more often than right.[1]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "The guide's own footnote, which cites an earlier survey, was cut from the reprint and survives only in the first printing."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "That patience is the part worth keeping. The plates are beautiful but often wrong about colour, and the range maps are out of date by decades, yet the habit of looking for marks before guessing a name transfers to anything you are learning to identify."
+        },
+        {
+          "type": "ref",
+          "id": "fn2",
+          "label": "2"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "text": "I keep the old guide on the shelf next to the new one, and I still open it first when something unfamiliar lands on the feeder."
+        }
+      ]
+    },
+    {
+      "type": "footnotes",
+      "items": [
+        {
+          "id": "fn1",
+          "label": "1",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "The pocket edition was printed on thin paper so that it would fit in a coat pocket with a notebook."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "fn2",
+          "label": "2",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Mushroom guides make the same point more urgently, since a wrong name there can do real harm."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

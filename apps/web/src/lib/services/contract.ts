@@ -1,4 +1,5 @@
-import type { AppSettings, Book, Highlight, LibraryEntry, ReaderPreferences, ReadingLocator } from '../types';
+import type { Article } from '@thereader/extract';
+import type { AppSettings, ArticleSummary, Book, Highlight, LibraryEntry, ReaderPreferences, ReadingLocator } from '../types';
 
 /**
  * Contract between the data layer (`lib/services/*`, owned by one agent) and
@@ -298,6 +299,44 @@ export interface StorageStore {
   requestPersistence(): Promise<boolean>;
 }
 
+// ---------------------------------------------------------------- articles
+
+export type ArticlePhase = 'fetching' | 'extracting' | 'saving';
+
+export interface ArticlesSnapshot {
+  loaded: boolean;
+  /** Newest first. */
+  items: ArticleSummary[];
+  /** The save in flight: its normalized URL, phase and 0..1 progress (null while unknown). */
+  adding: { url: string; phase: ArticlePhase; progress: number | null } | null;
+}
+
+/**
+ * Web articles saved by link. The page is fetched through the API's byte
+ * relay, extracted on this device and stored once; opening an article reads
+ * IndexedDB only. Saved articles sync between devices without being fetched
+ * or extracted again (see `SyncStore`). Errors are `ApiError`s with a message
+ * for people.
+ */
+export interface ArticleStore extends Observable<ArticlesSnapshot> {
+  summary(id: string): ArticleSummary | undefined;
+  /**
+   * Saves the article at `url` (scheme optional). Re-adding a URL already
+   * saved (typed, redirected or canonical form) returns the existing entry.
+   */
+  add(url: string, options?: { signal?: AbortSignal }): Promise<ArticleSummary>;
+  /**
+   * The stored document, or null when it is gone. An article synced from
+   * another device (`stored: false`) downloads its document once here, and
+   * rejects with a message for people while that is not possible yet.
+   */
+  get(id: string): Promise<Article | null>;
+  remove(id: string): Promise<void>;
+  /** Reading position 0..1 (see `ArticleSummary.progress`); burst-safe (writes coalesce). */
+  saveProgress(id: string, fraction: number): Promise<void>;
+  markOpened(id: string): Promise<void>;
+}
+
 // ---------------------------------------------------------------- root
 
 export interface AppServices {
@@ -309,6 +348,7 @@ export interface AppServices {
   imports: ImportStore;
   covers: CoverStore;
   storage: StorageStore;
+  articles: ArticleStore;
   /** Resolves once every store has loaded from IndexedDB. */
   ready: Promise<void>;
 }

@@ -116,3 +116,48 @@ export interface Highlight {
 export interface AppSettings {
   apiBaseUrl: string;
 }
+
+/**
+ * A saved web article as the Library lists it. The full document (blocks)
+ * is stored separately and loaded only when the article opens.
+ */
+export interface ArticleSummary {
+  id: string;
+  /** Canonical article URL, for "Open original". */
+  url: string;
+  /** Normalized forms of every address that led here (typed, final, canonical); dedupe keys. */
+  urls: string[];
+  title: string;
+  /** Publisher name, or the host when the page has none. */
+  siteName: string;
+  byline: string | null;
+  excerpt: string | null;
+  favicon: string | null;
+  /** Lead image source, for the thumbnail. */
+  image: string | null;
+  readingMinutes: number;
+  addedAt: string;
+  lastOpenedAt: string | null;
+  /**
+   * Reading position 0..1: the fraction of the article's top-level blocks
+   * above the reading line (1 at the end), or null before the first read.
+   */
+  progress: number | null;
+  /** When `progress` last changed; orders positions between devices. */
+  progressUpdatedAt?: string | null;
+  /**
+   * False while only the cloud has the document (saved on another device and
+   * not opened here yet); it downloads on open. Absent means stored.
+   */
+  stored?: boolean;
+  // Synced metadata, recorded when the article is saved or pulled.
+  language?: string | null;
+  dir?: 'ltr' | 'rtl';
+  wordCount?: number;
+  publishedAt?: string | null;
+  /** Top-level blocks, to translate reading positions between devices. */
+  blockCount?: number;
+  /** SHA-256 and byte size of the document JSON every device shares. */
+  bodySha256?: string | null;
+  bodySize?: number | null;
+}

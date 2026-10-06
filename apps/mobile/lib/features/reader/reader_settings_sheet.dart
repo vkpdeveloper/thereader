@@ -13,11 +13,20 @@ import 'reader_font_picker.dart';
 /// Typography controls. Every control here does something; the flow toggle is
 /// only offered when the active engine supports pagination.
 class ReaderSettingsSheet extends StatelessWidget {
-  const ReaderSettingsSheet({super.key, required this.settings, required this.engineName, this.engineNote});
+  const ReaderSettingsSheet({
+    super.key,
+    required this.settings,
+    required this.engineName,
+    this.engineNote,
+    this.highlights = true,
+  });
 
   final SettingsRepository settings;
   final String engineName;
   final String? engineNote;
+
+  /// Offers the highlight colour; articles have no highlights.
+  final bool highlights;
 
   @override
   Widget build(BuildContext context) {
@@ -92,16 +101,18 @@ class ReaderSettingsSheet extends StatelessWidget {
                   label: 'Justify',
                   child: Switch(value: p.justify, onChanged: (v) => settings.updateReader((r) => r.copyWith(justify: v))),
                 ),
-                const SizedBox(height: Space.sm),
-                const Divider(),
-                const SizedBox(height: Space.sm),
-                _Row(
-                  label: 'Highlight',
-                  child: HighlightSwatches(
-                    selected: HighlightColor.parse(p.highlightColor),
-                    onChanged: (c) => settings.updateReader((r) => r.copyWith(highlightColor: c.name)),
+                if (highlights) ...[
+                  const SizedBox(height: Space.sm),
+                  const Divider(),
+                  const SizedBox(height: Space.sm),
+                  _Row(
+                    label: 'Highlight',
+                    child: HighlightSwatches(
+                      selected: HighlightColor.parse(p.highlightColor),
+                      onChanged: (c) => settings.updateReader((r) => r.copyWith(highlightColor: c.name)),
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),

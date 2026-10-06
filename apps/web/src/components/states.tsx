@@ -29,12 +29,16 @@ export function ScreenHeader({ title, size = 'lg', trailing }: { title: string; 
   );
 }
 
-/** A 2px progress line; `value` null is indeterminate. */
-export function ProgressLine({ value, label, className }: { value: number | null; label?: string; className?: string }) {
+/**
+ * A 2px progress line; `value` null is indeterminate. `working` sweeps a sheen
+ * across the fill, animated on the compositor so it keeps moving while the
+ * main thread is busy (parsing, extraction).
+ */
+export function ProgressLine({ value, label, className, working }: { value: number | null; label?: string; className?: string; working?: boolean }) {
   const pct = value == null ? undefined : Math.round(Math.min(1, Math.max(0, value)) * 100);
   return (
     <div
-      className={['progress-line', value == null && 'is-indeterminate', className].filter(Boolean).join(' ')}
+      className={['progress-line', value == null && 'is-indeterminate', working && 'is-working', className].filter(Boolean).join(' ')}
       role="progressbar"
       aria-label={label}
       aria-valuemin={0}
