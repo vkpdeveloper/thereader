@@ -111,6 +111,18 @@ function headingText(el: VElement): string {
   return collapse(out).replace(/\s*[#¶§]$/, '');
 }
 
+function countH1(body: VElement): number {
+  let n = 0;
+  walk(body, (el) => {
+    if (el.tag === 'h1') {
+      n++;
+      return false;
+    }
+    return true;
+  });
+  return n;
+}
+
 function chooseTitle(meta: Metadata, body: VElement, pageUrl: string): string {
   const host = hostOf(pageUrl);
   const cleaned = meta.rawTitles.map((t) => cleanTitle(t, meta.siteName, host)).filter((t) => t.length > 0);
@@ -185,6 +197,12 @@ function chooseTitle(meta: Metadata, body: VElement, pageUrl: string): string {
     }
   }
   if (best !== null) return best;
+  // An SEO <title> that shares nothing with the page: its one h1 is the headline as published.
+  if (h1s.length === 1 && cleaned.length > 0) {
+    const hc = comparable(h1s[0]!);
+    const site = meta.siteName !== null ? comparable(meta.siteName) : '';
+    if (!siteParts.has(hc) && hc !== site && (hc.indexOf(' ') > 0 || hc.length >= 8) && countH1(body) === 1) return h1s[0]!;
+  }
   if (cleaned.length > 0) return cleaned[0]!;
   if (headings.length > 0) return headings[0]!;
   return host;
