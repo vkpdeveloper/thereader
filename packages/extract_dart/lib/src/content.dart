@@ -1014,7 +1014,7 @@ bool _isTableOfContents(VElement list) {
   walk(list, (e) {
     if (e.skip) return false;
     if (e.tag == 'li') items++;
-    if (e.tag == 'a' && charCodeAt(e.attrs['href'] ?? '', 0) == 35) {
+    if (e.tag == 'a' && _isInPageLink(e)) {
       inPage += e.textLen;
       return false;
     }

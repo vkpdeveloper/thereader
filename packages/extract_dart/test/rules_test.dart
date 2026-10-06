@@ -25,4 +25,35 @@ void main() {
       ],
     });
   });
+
+  test('a list of bare href="#" links is not a table of contents', () {
+    const items = [
+      'Basic: 10 GB of storage and email support',
+      'Plus: 100 GB of storage and chat support',
+      'Pro: 1 TB of storage and phone support',
+    ];
+    final body = '<p>The plans:</p><ul>${items.map((t) => '<li><a href="#">$t</a></li>').join()}</ul>';
+    expect(_blocks(body)[2], {
+      'type': 'list',
+      'ordered': false,
+      'items': [
+        for (final text in items)
+          {
+            'blocks': [
+              {
+                'type': 'paragraph',
+                'content': [
+                  {'type': 'text', 'text': text},
+                ],
+              },
+            ],
+          },
+      ],
+    });
+    // Links to places on the page are one.
+    expect(
+      [for (final b in _article(body.replaceAll('href="#"', 'href="#plans"')).blocks) b.toJson()['type']],
+      ['paragraph', 'paragraph', 'paragraph'],
+    );
+  });
 }

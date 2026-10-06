@@ -855,7 +855,7 @@ function isTableOfContents(list: VElement): boolean {
   walk(list, (e) => {
     if (e.skip) return false;
     if (e.tag === 'li') items++;
-    if (e.tag === 'a' && (e.attrs['href'] ?? '').charCodeAt(0) === 35) {
+    if (e.tag === 'a' && isInPageLink(e)) {
       inPage += e.textLen;
       return false;
     }
