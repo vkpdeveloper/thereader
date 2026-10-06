@@ -18,26 +18,9 @@
     "height": 1024
   },
   "favicon": "https://developer.mozilla.org/apple-touch-icon.png",
-  "wordCount": 1368,
+  "wordCount": 1365,
   "readingMinutes": 6,
   "blocks": [
-    {
-      "type": "details",
-      "summary": [
-        {
-          "type": "text",
-          "text": "Baseline"
-        },
-        {
-          "type": "break"
-        },
-        {
-          "type": "text",
-          "text": "Widely available"
-        }
-      ],
-      "blocks": []
-    },
     {
       "type": "paragraph",
       "content": [

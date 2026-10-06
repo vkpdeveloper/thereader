@@ -1008,7 +1008,8 @@ export class Converter {
     const summary = summaryEl !== null ? this.inlineOnly(summaryEl) : [];
     const blocks: Block[] = [];
     this.children(el, blocks);
-    if (blocks.length === 0 && summary.length === 0) return;
+    // A disclosure whose body was all chrome (badges, widgets) is chrome too.
+    if (blocks.length === 0) return;
     out.push({ type: 'details', summary, blocks });
   }
 
