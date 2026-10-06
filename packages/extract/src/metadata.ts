@@ -403,6 +403,7 @@ function findByline(body: VElement): string | null {
     // Prefer the name inside a byline widget (avatar, karma and buttons are not the name).
     let target = el;
     walk(el, (child) => {
+      if (target !== el) return false;
       if (child !== el && (child.attrs['itemprop'] === 'name' || /(?:^|[\s_-])(?:name|username|user-name|author-name|authorname|fn|byline__name|ltx_personname|nickname)(?:$|[\s_-])/.test(child.matchString))) {
         target = child;
         return false;

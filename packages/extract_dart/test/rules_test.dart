@@ -84,4 +84,14 @@ void main() {
       ],
     });
   });
+
+  test('the byline is the first name in an author widget', () {
+    final article = extractHtml(
+      '<html><head><title>Rule test page</title></head><body><article><h1>Rule test page</h1>'
+          '<div class="author"><span itemprop="name">By Ann Lee</span> <span itemprop="name">MARCH 20, 2019 10:43</span></div>'
+          '<p>$_prose</p></article></body></html>',
+      'https://example.com/a',
+    )!;
+    expect(article.byline, 'Ann Lee');
+  });
 }

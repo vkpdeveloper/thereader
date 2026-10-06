@@ -598,6 +598,7 @@ String? _findByline(VElement body) {
     if (!isAuthor) return true;
     var target = el;
     walk(el, (child) {
+      if (!identical(target, el)) return false;
       if (!identical(child, el) && (child.attrs['itemprop'] == 'name' || _nameClass.hasMatch(child.matchString))) {
         target = child;
         return false;

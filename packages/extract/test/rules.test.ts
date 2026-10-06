@@ -37,3 +37,9 @@ test('short texts positioned over a figure drawn by script are not paragraphs', 
   const quote = '<figure><blockquote style="position:absolute">Quoted words.</blockquote></figure>';
   expect(article(quote).blocks[1]).toEqual({ type: 'quote', blocks: [{ type: 'paragraph', content: [{ type: 'text', text: 'Quoted words.' }] }] });
 });
+
+test('the byline is the first name in an author widget', () => {
+  const html = `<html><head><title>Rule test page</title></head><body><article><h1>Rule test page</h1><div class="author"><span itemprop="name">By Ann Lee</span> <span itemprop="name">MARCH 20, 2019 10:43</span></div><p>${PROSE}</p></article></body></html>`;
+  const a = extract(new JSDOM(html, { virtualConsole: new VirtualConsole() }).window.document, { url: 'https://example.com/a' })!;
+  expect(a.byline).toBe('Ann Lee');
+});
