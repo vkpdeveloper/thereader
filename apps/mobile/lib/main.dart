@@ -67,6 +67,8 @@ Future<void> main() async {
     // The browser preview cannot fetch other sites (CORS); it uses the API's
     // relay at the configured origin.
     fetcher: PageFetcher(relayBase: () => ApiClient.normalizeBaseUrl(settings.settings.apiBaseUrl)),
+    // Documents of articles saved on other devices download from the API.
+    cloud: bundledCatalog ? null : () => ApiClient(baseUrl: settings.settings.apiBaseUrl),
   );
   final sync = bundledCatalog
       ? null
@@ -75,6 +77,7 @@ Future<void> main() async {
           library: library,
           settings: settings,
           highlights: highlights,
+          articles: articles,
           isUploadPending: (id) => imports?.isPending(id) ?? false,
           retryUploads: () => unawaited(imports?.retryPending()),
         );

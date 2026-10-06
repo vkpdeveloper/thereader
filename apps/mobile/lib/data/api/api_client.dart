@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:archive/archive.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../models/book.dart';
@@ -108,12 +110,14 @@ class ApiClient {
   }
 
   /// One pull+push. With [highlightsSince] (a server cursor, 0 for all) the
-  /// response also carries highlight rows changed since then; without it the
-  /// request is byte-for-byte what older servers accept.
+  /// response also carries highlight rows changed since then, and with
+  /// [articlesSince] saved-article rows; without them the request is
+  /// byte-for-byte what older servers accept.
   Future<Map<String, dynamic>> syncState({
     required String deviceId,
     required List<Map<String, dynamic>> changes,
     int? highlightsSince,
+    int? articlesSince,
   }) async {
     final uri = resolve('/v1/sync');
     final http.Response response;
@@ -129,6 +133,7 @@ class ApiClient {
               'deviceId': deviceId,
               'changes': changes,
               'highlightsSince': ?highlightsSince,
+              'articlesSince': ?articlesSince,
             }),
           )
           .timeout(timeout);
@@ -155,6 +160,54 @@ class ApiClient {
         'The server returned an invalid sync response.',
         code: 'BAD_RESPONSE',
       );
+    }
+  }
+
+  /// Uploads a saved article's document: the exact JSON bytes its SHA-256
+  /// describes, gzip-compressed. Idempotent; the server keeps the first copy.
+  Future<void> putArticleBody(String sha256, Uint8List json) async {
+    final uri = resolve('/v1/article-bodies/$sha256');
+    final body = await compute(_gzip, json);
+    final http.Response response;
+    try {
+      response = await _client
+          .put(
+            uri,
+            headers: const {'content-type': 'application/gzip', 'accept': 'application/json'},
+            body: body,
+          )
+          .timeout(timeout);
+    } on TimeoutException {
+      throw ApiException('Timed out uploading to ${uri.host}.', code: 'TIMEOUT', isNetwork: true);
+    } on http.ClientException catch (e) {
+      throw ApiException(_friendlyNetwork(e.message, uri), code: 'NETWORK', isNetwork: true);
+    }
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw _errorFrom(response.statusCode, response.body);
+    }
+  }
+
+  /// A saved article's document JSON bytes, decompressed. Callers verify the
+  /// hash before trusting them.
+  Future<Uint8List> getArticleBody(String sha256) async {
+    final uri = resolve('/v1/article-bodies/$sha256');
+    final http.Response response;
+    try {
+      response = await _client
+          .get(uri, headers: const {'accept': 'application/gzip, application/json'})
+          .timeout(timeout);
+    } on TimeoutException {
+      throw ApiException('Timed out connecting to ${uri.host}.', code: 'TIMEOUT', isNetwork: true);
+    } on http.ClientException catch (e) {
+      throw ApiException(_friendlyNetwork(e.message, uri), code: 'NETWORK', isNetwork: true);
+    }
+    if (response.statusCode != 200) throw _errorFrom(response.statusCode, response.body);
+    final type = response.headers['content-type']?.split(';').first.trim().toLowerCase();
+    if (type != 'application/gzip') return response.bodyBytes;
+    try {
+      return await compute(_gunzip, response.bodyBytes);
+    } catch (_) {
+      throw ApiException('The server returned a damaged article.', code: 'BAD_RESPONSE', statusCode: 200);
     }
   }
 
@@ -438,3 +491,7 @@ class ApiClient {
 
   void close() => _client.close();
 }
+
+Uint8List _gzip(Uint8List bytes) => Uint8List.fromList(const GZipEncoder().encodeBytes(bytes));
+
+Uint8List _gunzip(Uint8List bytes) => Uint8List.fromList(const GZipDecoder().decodeBytes(bytes));

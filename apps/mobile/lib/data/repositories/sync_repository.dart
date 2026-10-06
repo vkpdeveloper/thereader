@@ -5,11 +5,13 @@ import 'dart:math';
 import 'package:flutter/widgets.dart';
 
 import '../api/api_client.dart';
+import '../models/article_summary.dart';
 import '../models/book.dart';
 import '../models/highlight.dart';
 import '../models/library.dart';
 import '../models/settings.dart';
 import '../storage/key_value_store.dart';
+import 'article_repository.dart';
 import 'highlight_repository.dart';
 import 'library_repository.dart';
 import 'settings_repository.dart';
@@ -29,6 +31,7 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
     required this.library,
     required this.settings,
     this.highlights,
+    this.articles,
     ApiClient Function(String)? clientFactory,
     bool Function(String)? isUploadPending,
     this.pollInterval = syncInterval,
@@ -62,10 +65,24 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
   /// predates highlight sync), so the rest of the state keeps syncing.
   static const highlightsRetry = Duration(hours: 6);
 
+  /// Same for articles, against a server without article sync.
+  static const articlesRetry = Duration(hours: 6);
+
+  /// Article documents uploaded per cycle; the rest wait for the next one.
+  static const articleUploadsPerCycle = 5;
+
+  /// Small synced documents downloaded per cycle, so they open offline.
+  static const articlePrefetchPerCycle = 5;
+
+  /// Article changes use a sentinel edition; the article is `articleId`.
+  static const _articlesBookId = '_articles';
+  static final _articleImage = RegExp(r'^(?:https?://|data:image/)\S+$', caseSensitive: false);
+
   final KeyValueStore _store;
   final LibraryRepository library;
   final SettingsRepository settings;
   final HighlightRepository? highlights;
+  final ArticleRepository? articles;
   final ApiClient Function(String) _clientFactory;
   final bool Function(String) _isUploadPending;
   final Duration pollInterval;
@@ -171,10 +188,13 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
       }
     }
     await _loadMetadataThrottle();
+    // Articles saved before sync get their shared ids before the first capture.
+    await articles?.migrateLegacy();
     _loaded = true;
     library.addListener(_capture);
     settings.addListener(_capture);
     highlights?.addListener(_capture);
+    articles?.addListener(_capture);
     WidgetsBinding.instance.addObserver(this);
     _capture();
     await _persist();
@@ -222,6 +242,7 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
       }
     }
     if (_captureHighlights(origin, state)) changed = true;
+    if (_captureArticles(state)) changed = true;
     final updatedAt = settings.readerUpdatedAt;
     if (updatedAt != null &&
         state.seen['preferences'] != updatedAt.toUtc().toIso8601String()) {
@@ -275,6 +296,103 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
       changed = true;
     }
     return changed;
+  }
+
+  /// Saved articles: each save or deletion, then reading positions. A
+  /// deletion is only sent for an article this origin has seen. A save also
+  /// queues this device's document for upload, once.
+  bool _captureArticles(_OriginState state) {
+    final store = articles;
+    if (store == null || !store.loaded) return false;
+    var changed = false;
+    for (final s in store.all) {
+      if (s.bodySha256 == null) continue;
+      final key = 'article:${s.id}';
+      final stamp = 'saved:${s.addedAt.toUtc().toIso8601String()}';
+      if (state.seen[key] != stamp) {
+        state.seen[key] = stamp;
+        final payload = articlePayload(s);
+        if (payload != null) {
+          state.pending[key] = _articleChange('article', s.addedAt, payload);
+          if (s.stored) state.articleUploads[s.id] = s.bodySha256!;
+        }
+        changed = true;
+      }
+      final progress = s.progress;
+      final at = s.progressUpdatedAt;
+      if (progress != null && at != null) {
+        final key = 'articleProgress:${s.id}';
+        final stamp = at.toUtc().toIso8601String();
+        if (state.seen[key] != stamp) {
+          state.seen[key] = stamp;
+          state.pending[key] = _articleChange('articleProgress', at, {
+            'articleId': s.id,
+            'position': {
+              'block': max(0, progress.block),
+              'offset': progress.offset.clamp(0.0, 1.0),
+              'percent': progress.percent.clamp(0.0, 1.0),
+            },
+          });
+          changed = true;
+        }
+      }
+    }
+    for (final item in store.deleted.entries) {
+      final key = 'article:${item.key}';
+      final stamp = 'deleted:${item.value.toUtc().toIso8601String()}';
+      if (state.seen[key] == null || state.seen[key] == stamp) continue;
+      state.seen[key] = stamp;
+      state.pending[key] = _articleChange('article', item.value, {'articleId': item.key, 'deleted': true});
+      state.pending.remove('articleProgress:${item.key}');
+      state.articleUploads.remove(item.key);
+      changed = true;
+    }
+    return changed;
+  }
+
+  Map<String, dynamic> _articleChange(String kind, DateTime updatedAt, Map<String, dynamic> payload) => {
+    'id': _uuid(),
+    'bookId': _articlesBookId,
+    'sha256': '0' * 64,
+    'kind': kind,
+    'updatedAt': updatedAt.toUtc().toIso8601String(),
+    'payload': payload,
+  };
+
+  static bool _isArticleKind(Object? kind) => kind == 'article' || kind == 'articleProgress';
+
+  /// A saved article's metadata as the API validates it. Long text is
+  /// clipped and unusable image URLs dropped; an article whose document
+  /// exceeds the upload limit, or whose URL the API cannot take, stays on
+  /// this device.
+  static Map<String, dynamic>? articlePayload(ArticleSummary s) {
+    final size = s.bodySize;
+    if (s.bodySha256 == null || size == null || size <= 0 || size > ArticleRepository.maxBodyBytes) return null;
+    if (s.url.length > 2048 || !RegExp(r'^https?://\S+$', caseSensitive: false).hasMatch(s.url)) return null;
+    String? text(String? v, int maxLength) =>
+        v == null || v.trim().isEmpty ? null : (v.length > maxLength ? v.substring(0, maxLength) : v);
+    String? image(String? v) => v != null && v.length <= 2048 && _articleImage.hasMatch(v) ? v : null;
+    return {
+      'articleId': s.id,
+      'url': s.url,
+      'title': s.title.length > 1000 ? s.title.substring(0, 1000) : s.title,
+      'siteName': text(s.siteName, 300),
+      'byline': text(s.byline, 500),
+      'excerpt': text(s.excerpt, 2000),
+      'leadImage': image(s.leadImage),
+      'favicon': image(s.favicon),
+      'language': text(s.language, 35),
+      'dir': s.rtl ? 'rtl' : 'ltr',
+      'wordCount': s.wordCount.clamp(0, 10000000),
+      'readingMinutes': s.readingMinutes.clamp(1, 100000),
+      'blockCount': s.blockCount.clamp(0, 1000000),
+      'publishedAt': text(s.publishedAt, 64),
+      'savedAt': s.addedAt.toUtc().toIso8601String(),
+      'bodySha256': s.bodySha256,
+      'bodySize': size,
+      'schema': 1,
+      'deleted': false,
+    };
   }
 
   /// The API caps a highlight locator at 16 KB; long before/after context is
@@ -539,7 +657,12 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
     var withHighlights =
         highlights != null &&
         state.highlightsUnsupportedUntil?.isAfter(_now()) != true;
+    var withArticles =
+        articles != null &&
+        state.articlesUnsupportedUntil?.isAfter(_now()) != true;
     try {
+      // Documents first, so other devices rarely see an article before its text.
+      if (withArticles) await _uploadArticleBodies(origin, client, state);
       // Bound both count and encoded body; huge locator payloads must not block
       // every other queued change behind the API's request-size limit.
       var bytes = 100;
@@ -547,7 +670,9 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
       for (final item in state.pending.entries) {
         final value = Map<String, dynamic>.from(item.value);
         if (value['kind'] == 'highlight' && !withHighlights) continue;
-        if (value['kind'] != 'preferences') {
+        if (_isArticleKind(value['kind'])) {
+          if (!withArticles) continue;
+        } else if (value['kind'] != 'preferences') {
           final entry = library.entries
               .where(
                 (e) => e.origin == origin && e.book.sha256 == value['sha256'],
@@ -567,28 +692,35 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
         for (final key in submitted.keys) key: jsonEncode(state.pending[key]),
       };
       Map<String, dynamic> response;
-      try {
-        response = await client.syncState(
-          deviceId: _deviceId,
-          changes: submitted.values.toList(),
-          highlightsSince: withHighlights ? state.highlightCursor ?? 0 : null,
-        );
-      } on ApiException catch (e) {
-        if (!withHighlights ||
-            e.statusCode != 400 ||
-            e.code != 'INVALID_SYNC') {
-          rethrow;
+      while (true) {
+        try {
+          response = await client.syncState(
+            deviceId: _deviceId,
+            changes: submitted.values.toList(),
+            highlightsSince: withHighlights ? state.highlightCursor ?? 0 : null,
+            articlesSince: withArticles ? state.articleCursor ?? 0 : null,
+          );
+          break;
+        } on ApiException catch (e) {
+          if (!(withHighlights || withArticles) ||
+              e.statusCode != 400 ||
+              e.code != 'INVALID_SYNC') {
+            rethrow;
+          }
+          // A server without article (or highlight) sync rejects the whole
+          // atomic batch. Keep everything else syncing and try that part
+          // again later: articles first, as the newer feature.
+          if (withArticles) {
+            withArticles = false;
+            state.articlesUnsupportedUntil = _now().add(articlesRetry);
+            submitted.removeWhere((_, v) => _isArticleKind(v['kind']));
+          } else {
+            withHighlights = false;
+            state.highlightsUnsupportedUntil = _now().add(highlightsRetry);
+            submitted.removeWhere((_, v) => v['kind'] == 'highlight');
+          }
+          before.removeWhere((k, _) => !submitted.containsKey(k));
         }
-        // A server without highlight sync rejects the whole atomic batch.
-        // Keep everything else syncing and try highlights again later.
-        withHighlights = false;
-        state.highlightsUnsupportedUntil = _now().add(highlightsRetry);
-        submitted.removeWhere((_, v) => v['kind'] == 'highlight');
-        before.removeWhere((k, _) => !submitted.containsKey(k));
-        response = await client.syncState(
-          deviceId: _deviceId,
-          changes: submitted.values.toList(),
-        );
       }
       if (_disposed) return;
       final rows = (response['books'] as List).cast<Map>();
@@ -700,6 +832,10 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
         if (withHighlights && pulled is Map) {
           await _applyHighlights(origin, state, pulled);
         }
+        final pulledArticles = response['articles'];
+        if (withArticles && pulledArticles is Map) {
+          await _applyArticles(state, pulledArticles);
+        }
         final prefs = response['preferences'];
         if (prefs is Map && origin == _origin) {
           final updatedAt = DateTime.parse(prefs['updatedAt'] as String);
@@ -723,7 +859,11 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
       _drainMore =
           submitted.length == 100 ||
           bytes > 200 * 1024 ||
-          (withHighlights && (response['highlights'] as Map?)?['more'] == true);
+          (withHighlights && (response['highlights'] as Map?)?['more'] == true) ||
+          (withArticles && (response['articles'] as Map?)?['more'] == true);
+      if (withArticles && origin == _origin) {
+        unawaited(articles!.prefetch(articlePrefetchPerCycle).catchError((Object _) {}));
+      }
     } on ApiException catch (e) {
       _failures++;
       _error = '${e.message} Changes remain saved on this device.';
@@ -781,6 +921,112 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
     }
     final cursor = pulled['cursor'];
     if (cursor is num) state.highlightCursor = cursor.toInt();
+  }
+
+  /// Uploads documents this device saved, a few per cycle. A network or
+  /// server failure keeps the rest queued for the next cycle; a document the
+  /// server refuses (too large, invalid) or that is gone locally is dropped,
+  /// and its article stays readable here and pending elsewhere.
+  Future<void> _uploadArticleBodies(String origin, ApiClient client, _OriginState state) async {
+    final store = articles!;
+    for (final item in state.articleUploads.entries.take(articleUploadsPerCycle).toList()) {
+      final body = await store.bodyFor(item.key);
+      if (body != null && body.$2 == item.value) {
+        try {
+          await client.putArticleBody(item.value, body.$1);
+        } on ApiException catch (e) {
+          final status = e.statusCode;
+          // A server without article bodies answers its generic 404.
+          if (e.isNetwork || status == null || status >= 500 || status == 408 || status == 429 || status == 404) return;
+          debugPrint('[sync] article ${item.key} could not be uploaded: ${e.message}');
+        } catch (_) {
+          return;
+        }
+      }
+      if (state.articleUploads[item.key] == item.value) state.articleUploads.remove(item.key);
+      await _persist();
+    }
+  }
+
+  /// Stores articles changed on other devices and advances the pull cursor.
+  /// Rows that fail to parse are skipped; the cursor still moves past them.
+  Future<void> _applyArticles(_OriginState state, Map pulled) async {
+    final store = articles!;
+    final remote = <RemoteArticle>[];
+    for (final raw in (pulled['items'] as List?) ?? const []) {
+      final parsed = _parseRemoteArticle(raw);
+      if (parsed != null) remote.add(parsed);
+    }
+    await store.applyRemote(remote);
+    for (final r in remote) {
+      final local = store.byId(r.id);
+      // Matching copies need no upload; a newer local edit stays queued.
+      if (r.deleted) {
+        final deletedAt = store.deleted[r.id];
+        if (local == null && (deletedAt == null || deletedAt.isAtSameMomentAs(r.updatedAt))) {
+          state.seen['article:${r.id}'] = 'deleted:${(deletedAt ?? r.updatedAt).toUtc().toIso8601String()}';
+        }
+        continue;
+      }
+      if (local != null && local.addedAt.isAtSameMomentAs(r.updatedAt)) {
+        state.seen['article:${r.id}'] = 'saved:${local.addedAt.toUtc().toIso8601String()}';
+      }
+      final at = r.summary.progressUpdatedAt;
+      if (local?.progressUpdatedAt != null && at != null && local!.progressUpdatedAt!.isAtSameMomentAs(at)) {
+        state.seen['articleProgress:${r.id}'] = local.progressUpdatedAt!.toUtc().toIso8601String();
+      }
+    }
+    final cursor = pulled['cursor'];
+    if (cursor is num) state.articleCursor = cursor.toInt();
+  }
+
+  static RemoteArticle? _parseRemoteArticle(Object? raw) {
+    try {
+      final row = (raw as Map).cast<String, dynamic>();
+      final id = row['id'] as String;
+      if (!RegExp(r'^[a-f0-9]{32}$').hasMatch(id)) return null;
+      final updatedAt = DateTime.parse(row['updatedAt'] as String);
+      final url = row['url'] as String? ?? '';
+      final position = row['position'];
+      final positionAt = DateTime.tryParse(row['positionUpdatedAt'] as String? ?? '');
+      final sha = row['bodySha256'] as String?;
+      int count(Object? v, int minimum) => v is num ? max(minimum, v.toInt()) : minimum;
+      return RemoteArticle(
+        updatedAt: updatedAt,
+        deleted: row['deleted'] == true,
+        summary: ArticleSummary(
+          id: id,
+          url: url,
+          sourceUrl: url,
+          title: (row['title'] as String?)?.trim().isNotEmpty == true ? row['title'] as String : (Uri.tryParse(url)?.host ?? url),
+          readingMinutes: count(row['readingMinutes'], 1),
+          addedAt: updatedAt,
+          siteName: row['siteName'] as String?,
+          leadImage: row['leadImage'] as String?,
+          rtl: row['dir'] == 'rtl',
+          progress: position is Map && positionAt != null
+              ? ArticleProgress(
+                  block: count(position['block'], 0),
+                  offset: ((position['offset'] as num?) ?? 0).toDouble().clamp(0.0, 1.0),
+                  percent: ((position['percent'] as num?) ?? 0).toDouble().clamp(0.0, 1.0),
+                )
+              : null,
+          progressUpdatedAt: position is Map ? positionAt : null,
+          stored: false,
+          byline: row['byline'] as String?,
+          excerpt: row['excerpt'] as String?,
+          favicon: row['favicon'] as String?,
+          language: row['language'] as String?,
+          wordCount: count(row['wordCount'], 0),
+          publishedAt: row['publishedAt'] as String?,
+          blockCount: count(row['blockCount'], 0),
+          bodySha256: sha != null && RegExp(r'^[a-f0-9]{64}$').hasMatch(sha) ? sha : null,
+          bodySize: (row['bodySize'] as num?)?.toInt(),
+        ),
+      );
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Time advances only while a successfully opened reader is foregrounded.
@@ -885,6 +1131,7 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
     library.removeListener(_capture);
     settings.removeListener(_capture);
     highlights?.removeListener(_capture);
+    articles?.removeListener(_capture);
     WidgetsBinding.instance.removeObserver(this);
     _next?.cancel();
     _flushTimer?.cancel();
@@ -929,6 +1176,16 @@ class _OriginState {
 
   /// Set when the server rejected highlight sync (not yet deployed).
   DateTime? highlightsUnsupportedUntil;
+
+  /// Server article rev already pulled; null means never pulled.
+  int? articleCursor;
+
+  /// Set when the server rejected article sync (not yet deployed).
+  DateTime? articlesUnsupportedUntil;
+
+  /// Article documents this device saved and still has to upload: id to
+  /// SHA-256.
+  final Map<String, String> articleUploads = {};
   Map<String, dynamic> toJson() => {
     'pending': pending,
     'seen': seen,
@@ -940,6 +1197,12 @@ class _OriginState {
       'highlightsUnsupportedUntil': highlightsUnsupportedUntil!
           .toUtc()
           .toIso8601String(),
+    if (articleCursor != null) 'articleCursor': articleCursor,
+    if (articlesUnsupportedUntil != null)
+      'articlesUnsupportedUntil': articlesUnsupportedUntil!
+          .toUtc()
+          .toIso8601String(),
+    if (articleUploads.isNotEmpty) 'articleUploads': articleUploads,
   };
   _OriginState();
   factory _OriginState.fromJson(Map<String, dynamic> json) {
@@ -964,6 +1227,13 @@ class _OriginState {
     state.highlightCursor = (json['highlightCursor'] as num?)?.toInt();
     state.highlightsUnsupportedUntil = DateTime.tryParse(
       json['highlightsUnsupportedUntil'] as String? ?? '',
+    );
+    state.articleCursor = (json['articleCursor'] as num?)?.toInt();
+    state.articlesUnsupportedUntil = DateTime.tryParse(
+      json['articlesUnsupportedUntil'] as String? ?? '',
+    );
+    state.articleUploads.addAll(
+      ((json['articleUploads'] as Map?) ?? const {}).cast<String, String>(),
     );
     return state;
   }
