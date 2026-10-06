@@ -6,6 +6,7 @@ import { CoverStoreImpl } from './covers';
 import { HighlightStoreImpl } from './highlights';
 import { createIdbKv } from './idb';
 import { ImportStoreImpl } from './imports';
+import { InkStoreImpl } from './ink';
 import { LibraryStoreImpl } from './library';
 import { SettingsStoreImpl } from './settings';
 import { StorageStoreImpl } from './storage';
@@ -54,6 +55,7 @@ function build(): AppServices {
   const covers = new CoverStoreImpl(coverKv, (origin, path) => clientFor(origin).resolve(path));
   const highlights = new HighlightStoreImpl(kv, bus);
   const articles = new ArticleStoreImpl({ kv, currentOrigin, bus, bodies: clientFor });
+  const ink = new InkStoreImpl(kv, bus);
   // The import pipeline (zip parsing, MOBI conversion) loads on first use.
   const imports = new ImportStoreImpl({
     kv,
@@ -96,5 +98,5 @@ function build(): AppServices {
     await step('sync', () => sync.load());
   })();
 
-  return { settings, catalog, library, highlights, sync, imports, covers, storage, articles, ready };
+  return { settings, catalog, library, highlights, sync, imports, covers, storage, articles, ink, ready };
 }

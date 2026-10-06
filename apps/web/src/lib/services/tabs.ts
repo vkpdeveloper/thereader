@@ -4,7 +4,7 @@
  * sync requests to one tab at a time.
  */
 
-export type Topic = 'settings' | 'library' | 'highlights' | 'sync' | 'imports' | 'articles';
+export type Topic = 'settings' | 'library' | 'highlights' | 'sync' | 'imports' | 'articles' | 'ink';
 
 export interface TabBus {
   post(topic: Topic): void;
