@@ -350,7 +350,8 @@ export function readMetadata(doc: VDocument, pageUrl: string): Metadata {
     const rel = (l.attrs['rel'] ?? '').toLowerCase();
     const href = l.attrs['href'];
     if (!href || !/(?:^|\s)(?:icon|apple-touch-icon|apple-touch-icon-precomposed)(?:\s|$)/.test(rel)) continue;
-    const sizes = /(\d+)x\d+/.exec(l.attrs['sizes'] ?? '');
+    // From the start of a number only: from every digit, a long one is rescanned to its end.
+    const sizes = /(?:^|\D)(\d+)x\d+/.exec(l.attrs['sizes'] ?? '');
     let size = sizes !== null ? Number(sizes[1]) : rel.indexOf('apple-touch-icon') >= 0 ? 180 : 16;
     if (/\.svg(?:$|\?)/i.test(href) || l.attrs['type'] === 'image/svg+xml') size = 120;
     if (size > 256) size = 64;

@@ -316,7 +316,8 @@ String _pathOf(String url) {
 
 final _canonicalRel = RegExp(r'(?:^|\s)canonical(?:\s|$)', caseSensitive: false);
 final _iconRel = RegExp(r'(?:^|\s)(?:icon|apple-touch-icon|apple-touch-icon-precomposed)(?:\s|$)');
-final _sizes = RegExp(r'(\d+)x\d+');
+// From the start of a number only: from every digit, a long one is rescanned to its end.
+final _sizes = RegExp(r'(?:^|\D)(\d+)x\d+');
 final _svgHref = RegExp(r'\.svg(?:$|\?)', caseSensitive: false);
 final _origin = RegExp(r'^(https?:\/\/[^/?#]+)', caseSensitive: false);
 

@@ -2,8 +2,12 @@ import type { Audio, Code, Embed, Image, Video } from './model';
 import { hostOf, resolveHttp, resolveUrl } from './url';
 import { collapse, firstElement, VElement } from './tree';
 
-/** Placeholder sources lazy loaders put in `src` until the real image scrolls into view. */
-const PLACEHOLDER = /(?:^data:image\/(?:gif|png|svg\+xml)[;,])|(?:placeholder|blank|spacer|transparent|pixel|lazy[-_]?load|1x1|grey|gray|loading|empty|dummy|lqip|blur)[\w-]*\.(?:gif|png|svg|jpe?g|webp)(?:$|\?)/i;
+/**
+ * Placeholder sources lazy loaders put in `src` until the real image scrolls into view: a file name
+ * holding one of the words. Each name is tried once, from its start: a search from every word would
+ * rescan the rest of a name repeating it.
+ */
+const PLACEHOLDER = /(?:^data:image\/(?:gif|png|svg\+xml)[;,])|(?:^|[^\w-])(?=[\w-]*\.(?:gif|png|svg|jpe?g|webp)(?:$|\?))[\w-]*?(?:placeholder|blank|spacer|transparent|pixel|lazy[-_]?load|1x1|grey|gray|loading|empty|dummy|lqip|blur)/i;
 
 /** Attributes lazy loaders use for the real source, most specific first. */
 const LAZY_SRC = [
@@ -34,7 +38,9 @@ export function parseSrcset(value: string, base: string): Candidate[] {
     let url = value.slice(start, i);
     let descriptor = '';
     if (url.endsWith(',')) {
-      url = url.replace(/,+$/, '');
+      let end = url.length - 1;
+      while (end > 0 && url.charCodeAt(end - 1) === 44) end--;
+      url = url.slice(0, end);
     } else {
       start = i;
       while (i < n && value[i] !== ',') i++;
@@ -44,8 +50,9 @@ export function parseSrcset(value: string, base: string): Candidate[] {
     if (abs === null || (!/^https?:/i.test(abs) && !/^data:image\/(?:jpe?g|png|webp|gif)[;,]/i.test(abs))) continue;
     let width = 0;
     let density = 1;
-    const w = /(\d+)w/.exec(descriptor);
-    const x = /([\d.]+)x/.exec(descriptor);
+    // From the start of a number only (from every digit, a long one is rescanned to its end); no lookbehind, which Safari before 16.4 cannot parse.
+    const w = /(?:^|\D)(\d+)w/.exec(descriptor);
+    const x = /(?:^|[^\d.])([\d.]+)x/.exec(descriptor);
     if (w !== null) width = Number(w[1]);
     else if (x !== null) density = Number(x[1]) || 1;
     out.push({ url: abs, width, density });
@@ -81,7 +88,7 @@ function normalizeSrcset(candidates: Candidate[]): string | undefined {
 
 function dimension(value: string | undefined): number | undefined {
   if (value === undefined) return undefined;
-  const m = /^\s*(\d+)(?:\.\d+)?\s*(?:px)?\s*$/.exec(value);
+  const m = /^\s*(\d+)(?:\.\d+)?\s*(?:px\s*)?$/.exec(value);
   if (m === null) return undefined;
   const n = Number(m[1]);
   return n > 0 && n < 20000 ? n : undefined;
@@ -208,15 +215,66 @@ export function isDecorativeImage(img: VElement, image: Image, base: string): bo
 
 // ------------------------------------------------------------------ embeds
 
-const YOUTUBE = /(?:youtube(?:-nocookie)?\.com\/(?:embed\/|v\/|watch\?(?:.*&)?v=|shorts\/|live\/)|youtu\.be\/)([\w-]{11})/i;
+/** Where the line holding `from` ends: the next line terminator (what `.` does not match), or the end. */
+function lineEnd(s: string, from: number): number {
+  for (let i = from; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    if (c === 10 || c === 13 || c === 0x2028 || c === 0x2029) return i;
+  }
+  return s.length;
+}
+
+/**
+ * `/head(?:.*&)?param/i`, a query parameter after a URL prefix, in linear time. The regex scans to
+ * the end of the line from every `head` for the last `&param`, so a URL repeating the head takes
+ * seconds; here the text is searched for `&param` once, and the regex runs only where it matches,
+ * with the same result. `others` are alternatives without the query part (the leftmost match wins).
+ */
+class QueryPattern {
+  private readonly head: RegExp;
+  private readonly amp: RegExp;
+  private readonly direct: RegExp;
+  private readonly whole: RegExp;
+
+  constructor(head: RegExp, param: RegExp, private readonly others: RegExp | null = null) {
+    this.head = new RegExp(head.source, 'gi');
+    this.amp = new RegExp('&' + param.source, 'gi');
+    this.direct = new RegExp(param.source, 'iy');
+    this.whole = new RegExp(head.source + '(?:.*&)?' + param.source, 'iy');
+  }
+
+  exec(s: string): RegExpExecArray | null {
+    const other = this.others?.exec(s) ?? null;
+    // The first `&param` at or after the head's end (-1: none, -2: not searched yet); where its line ends.
+    let amp = -2;
+    let end = -1;
+    this.head.lastIndex = 0;
+    for (let m = this.head.exec(s); m !== null && (other === null || m.index < other.index); m = this.head.exec(s)) {
+      const p = m.index + m[0].length;
+      if (amp === -2 || (amp >= 0 && amp < p)) {
+        this.amp.lastIndex = p;
+        amp = this.amp.exec(s)?.index ?? -1;
+      }
+      if (p > end) end = lineEnd(s, p);
+      this.direct.lastIndex = p;
+      if ((amp >= 0 && amp < end) || this.direct.test(s)) {
+        this.whole.lastIndex = m.index;
+        return this.whole.exec(s);
+      }
+    }
+    return other;
+  }
+}
+
+const YOUTUBE = new QueryPattern(/youtube(?:-nocookie)?\.com\/watch\?/, /v=([\w-]{11})/, /(?:youtube(?:-nocookie)?\.com\/(?:embed\/|v\/|shorts\/|live\/)|youtu\.be\/)([\w-]{11})/i);
 const VIMEO = /(?:player\.)?vimeo\.com\/(?:video\/)?(\d+)/i;
 const DAILYMOTION = /dailymotion\.com\/(?:embed\/)?video\/([\w]+)/i;
 const LOOM = /loom\.com\/(?:embed|share)\/([\w]+)/i;
 const WISTIA = /(?:fast\.)?wistia\.(?:net|com)\/embed\/(?:iframe|medias)\/([\w]+)/i;
 const TED = /embed\.ted\.com\/talks\/([\w-]+)/i;
-const TWITCH = /player\.twitch\.tv\/\?(?:.*&)?(video|channel)=([\w]+)/i;
+const TWITCH = new QueryPattern(/player\.twitch\.tv\/\?/, /(video|channel)=([\w]+)/);
 const SPOTIFY = /open\.spotify\.com\/(?:embed\/)?(track|episode|show|album|playlist)\/([\w]+)/i;
-const SOUNDCLOUD = /w\.soundcloud\.com\/player\/\?(?:.*&)?url=([^&]+)/i;
+const SOUNDCLOUD = new QueryPattern(/w\.soundcloud\.com\/player\/\?/, /url=([^&]+)/);
 const APPLE_PODCASTS = /embed\.podcasts\.apple\.com\/([^?#]+)/i;
 const CODEPEN = /codepen\.io\/([\w-]+)\/(?:embed|pen)\/(?:preview\/)?([\w]+)/i;
 const TWEET = /(?:twitter|x)\.com\/(\w+)\/status(?:es)?\/(\d+)/i;
@@ -294,9 +352,9 @@ export function mediaFromFrame(src: string, title: string | undefined): Video | 
 }
 
 const STREAMABLE = /streamable\.com\/(?:e|o|s)\/(\w+)/i;
-const BILIBILI = /player\.bilibili\.com\/player\.html\?(?:.*&)?bvid=(BV\w+)/i;
+const BILIBILI = new QueryPattern(/player\.bilibili\.com\/player\.html\?/, /bvid=(BV\w+)/);
 const NICONICO = /embed\.nicovideo\.jp\/watch\/((?:sm|nm|so)?\d+)/i;
-const TWEET_FRAME = /platform\.twitter\.com\/embed\/Tweet\.html\?(?:.*&)?id=(\d+)/i;
+const TWEET_FRAME = new QueryPattern(/platform\.twitter\.com\/embed\/Tweet\.html\?/, /id=(\d+)/);
 const INSTAGRAM = /instagram\.com\/(p|reel|tv)\/([\w-]+)\/embed/i;
 const TIKTOK = /tiktok\.com\/embed(?:\/v2)?\/(\d+)/i;
 

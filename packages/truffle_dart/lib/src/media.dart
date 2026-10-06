@@ -10,8 +10,11 @@ import 'model.dart';
 import 'tree.dart';
 import 'url.dart';
 
+/// Placeholder sources lazy loaders put in `src` until the real image scrolls into view: a file name
+/// holding one of the words. Each name is tried once, from its start: a search from every word would
+/// rescan the rest of a name repeating it.
 final _placeholder = RegExp(
-  r'(?:^data:image\/(?:gif|png|svg\+xml)[;,])|(?:placeholder|blank|spacer|transparent|pixel|lazy[-_]?load|1x1|grey|gray|loading|empty|dummy|lqip|blur)[\w-]*\.(?:gif|png|svg|jpe?g|webp)(?:$|\?)',
+  r'(?:^data:image\/(?:gif|png|svg\+xml)[;,])|(?:^|[^\w-])(?=[\w-]*\.(?:gif|png|svg|jpe?g|webp)(?:$|\?))[\w-]*?(?:placeholder|blank|spacer|transparent|pixel|lazy[-_]?load|1x1|grey|gray|loading|empty|dummy|lqip|blur)',
   caseSensitive: false,
 );
 
@@ -53,11 +56,11 @@ class _Candidate {
 }
 
 final _space = RegExp(r'\s');
-final _trailingCommas = RegExp(r',+$');
 final _httpScheme = RegExp(r'^https?:', caseSensitive: false);
 final _dataImage = RegExp(r'^data:image\/(?:jpe?g|png|webp|gif)[;,]', caseSensitive: false);
-final _wDesc = RegExp(r'(\d+)w');
-final _xDesc = RegExp(r'([\d.]+)x');
+// From the start of a number only (from every digit, a long one is rescanned to its end); no lookbehind, as in media.ts.
+final _wDesc = RegExp(r'(?:^|\D)(\d+)w');
+final _xDesc = RegExp(r'(?:^|[^\d.])([\d.]+)x');
 
 /// Parses a srcset the way browsers do: URLs may contain commas, descriptors follow whitespace.
 List<_Candidate> _parseSrcset(String value, String base) {
@@ -76,7 +79,11 @@ List<_Candidate> _parseSrcset(String value, String base) {
     var url = value.substring(start, i);
     var descriptor = '';
     if (url.endsWith(',')) {
-      url = url.replaceFirst(_trailingCommas, '');
+      var end = url.length - 1;
+      while (end > 0 && url.codeUnitAt(end - 1) == 0x2c) {
+        end--;
+      }
+      url = url.substring(0, end);
     } else {
       start = i;
       while (i < n && value.codeUnitAt(i) != 0x2c) {
@@ -133,7 +140,7 @@ String? _normalizeSrcset(List<_Candidate> candidates) {
   return parts.length >= 2 ? parts.join(', ') : null;
 }
 
-final _dimensionPattern = RegExp(r'^\s*(\d+)(?:\.\d+)?\s*(?:px)?\s*$');
+final _dimensionPattern = RegExp(r'^\s*(\d+)(?:\.\d+)?\s*(?:px\s*)?$');
 
 int? _dimension(String? value) {
   if (value == null) return null;
@@ -301,21 +308,72 @@ bool isDecorativeImage(VElement img, ArticleImage image, String base) {
 
 // ------------------------------------------------------------------ embeds
 
-final _youtube = RegExp(
-  r'(?:youtube(?:-nocookie)?\.com\/(?:embed\/|v\/|watch\?(?:.*&)?v=|shorts\/|live\/)|youtu\.be\/)([\w-]{11})',
-  caseSensitive: false,
+/// Where the line holding [from] ends: the next line terminator (what `.` does not match), or the end.
+int _lineEnd(String s, int from) {
+  for (var i = from; i < s.length; i++) {
+    final c = s.codeUnitAt(i);
+    if (c == 10 || c == 13 || c == 0x2028 || c == 0x2029) return i;
+  }
+  return s.length;
+}
+
+/// The first match of [pattern] in [s] at or after [start].
+RegExpMatch? _firstFrom(RegExp pattern, String s, int start) {
+  final matches = pattern.allMatches(s, start).iterator;
+  return matches.moveNext() ? matches.current : null;
+}
+
+/// `head(?:.*&)?param` (case-insensitive), a query parameter after a URL prefix, in linear time. The
+/// regex scans to the end of the line from every `head` for the last `&param`, so a URL repeating
+/// the head takes seconds; here the text is searched for `&param` once, and the regex runs only
+/// where it matches, with the same result. [others] are alternatives without the query part (the
+/// leftmost match wins).
+class _QueryPattern {
+  _QueryPattern(String head, String param, [String? others])
+    : _head = RegExp(head, caseSensitive: false),
+      _amp = RegExp('&$param', caseSensitive: false),
+      _direct = RegExp(param, caseSensitive: false),
+      _whole = RegExp('$head(?:.*&)?$param', caseSensitive: false),
+      _others = others == null ? null : RegExp(others, caseSensitive: false);
+
+  final RegExp _head;
+  final RegExp _amp;
+  final RegExp _direct;
+  final RegExp _whole;
+  final RegExp? _others;
+
+  Match? firstMatch(String s) {
+    final other = _others?.firstMatch(s);
+    // The first `&param` at or after the head's end (-1: none, -2: not searched yet); where its line ends.
+    var amp = -2;
+    var end = -1;
+    for (final m in _head.allMatches(s)) {
+      if (other != null && m.start >= other.start) break;
+      final p = m.end;
+      if (amp == -2 || (amp >= 0 && amp < p)) amp = _firstFrom(_amp, s, p)?.start ?? -1;
+      if (p > end) end = _lineEnd(s, p);
+      if ((amp >= 0 && amp < end) || _direct.matchAsPrefix(s, p) != null) return _whole.matchAsPrefix(s, m.start);
+    }
+    return other;
+  }
+}
+
+final _youtube = _QueryPattern(
+  r'youtube(?:-nocookie)?\.com\/watch\?',
+  r'v=([\w-]{11})',
+  r'(?:youtube(?:-nocookie)?\.com\/(?:embed\/|v\/|shorts\/|live\/)|youtu\.be\/)([\w-]{11})',
 );
 final _vimeo = RegExp(r'(?:player\.)?vimeo\.com\/(?:video\/)?(\d+)', caseSensitive: false);
 final _dailymotion = RegExp(r'dailymotion\.com\/(?:embed\/)?video\/([\w]+)', caseSensitive: false);
 final _loom = RegExp(r'loom\.com\/(?:embed|share)\/([\w]+)', caseSensitive: false);
 final _wistia = RegExp(r'(?:fast\.)?wistia\.(?:net|com)\/embed\/(?:iframe|medias)\/([\w]+)', caseSensitive: false);
 final _ted = RegExp(r'embed\.ted\.com\/talks\/([\w-]+)', caseSensitive: false);
-final _twitch = RegExp(r'player\.twitch\.tv\/\?(?:.*&)?(video|channel)=([\w]+)', caseSensitive: false);
+final _twitch = _QueryPattern(r'player\.twitch\.tv\/\?', r'(video|channel)=([\w]+)');
 final _spotify = RegExp(
   r'open\.spotify\.com\/(?:embed\/)?(track|episode|show|album|playlist)\/([\w]+)',
   caseSensitive: false,
 );
-final _soundcloud = RegExp(r'w\.soundcloud\.com\/player\/\?(?:.*&)?url=([^&]+)', caseSensitive: false);
+final _soundcloud = _QueryPattern(r'w\.soundcloud\.com\/player\/\?', r'url=([^&]+)');
 final _applePodcasts = RegExp(r'embed\.podcasts\.apple\.com\/([^?#]+)', caseSensitive: false);
 final _codepen = RegExp(r'codepen\.io\/([\w-]+)\/(?:embed|pen)\/(?:preview\/)?([\w]+)', caseSensitive: false);
 final tweet = RegExp(r'(?:twitter|x)\.com\/(\w+)\/status(?:es)?\/(\d+)', caseSensitive: false);
@@ -414,9 +472,9 @@ Block? mediaFromFrame(String src, String? title) {
 }
 
 final _streamable = RegExp(r'streamable\.com\/(?:e|o|s)\/(\w+)', caseSensitive: false);
-final _bilibili = RegExp(r'player\.bilibili\.com\/player\.html\?(?:.*&)?bvid=(BV\w+)', caseSensitive: false);
+final _bilibili = _QueryPattern(r'player\.bilibili\.com\/player\.html\?', r'bvid=(BV\w+)');
 final _niconico = RegExp(r'embed\.nicovideo\.jp\/watch\/((?:sm|nm|so)?\d+)', caseSensitive: false);
-final _tweetFrame = RegExp(r'platform\.twitter\.com\/embed\/Tweet\.html\?(?:.*&)?id=(\d+)', caseSensitive: false);
+final _tweetFrame = _QueryPattern(r'platform\.twitter\.com\/embed\/Tweet\.html\?', r'id=(\d+)');
 final _instagram = RegExp(r'instagram\.com\/(p|reel|tv)\/([\w-]+)\/embed', caseSensitive: false);
 final _tiktok = RegExp(r'tiktok\.com\/embed(?:\/v2)?\/(\d+)', caseSensitive: false);
 
