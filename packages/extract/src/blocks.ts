@@ -37,7 +37,7 @@ const CAPTION_LIKE = /caption|credit/i;
 
 const CREDIT_CLASS = /(?:^|[\s_-])(?:credit|credits|copyright|attribution|photographer|image-credit|photo-credit|source|byline)(?:$|[\s_-])/;
 const FIGURE_LIKE = /(?:^|[\s_-])(?:wp-caption|wp-block-image|image-block|figure|photo|media-image|article-image|inline-image|image-container|image-wrapper|img-wrapper|picture)(?:$|[\s_-])/;
-const CODE_TITLE = /(?:^|[\s_-])(?:code-?block-?title|code-?title|filename|file-name|codeblock-header|code-header|code-block-header|rehype-code-title|remark-code-title|highlight-title)(?:$|[\s_-])|codeBlockTitle/;
+const CODE_TITLE = /(?:^|[\s_-])(?:code-?block-?title|code-?title|filename|file-name|codeblock-header|code-header|code-block-header|rehype-code-title|remark-code-title|highlight-title)(?:$|[\s_-])|codeblocktitle/;
 const GUTTER = /(?:^|[\s_-])(?:line-?numbers?(?:-rows)?|linenos?|lineno|linenodiv|gutter|ln-num|hljs-ln-n|hljs-ln-numbers|rouge-gutter|blob-num|lnt|code-line-number|react-syntax-highlighter-line-number|line-num|linenumber|line-number-cell)(?:$|[\s_-])/;
 const LINE_ELEMENT = /(?:^|[\s_-])(?:line|code-line|cm-line|ec-line|token-line|highlight-line|view-line|line-content)(?:$|[\s_-])/;
 const PULL_QUOTE = /(?:^|[\s_-])(?:pullquote|pull-quote|wp-block-pullquote|pull_quote|blockquote--pull)(?:$|[\s_-])/;
@@ -1049,7 +1049,7 @@ export class Converter {
     let titleEl: VElement | null = null;
     walk(el, (e) => {
       if (titleEl !== null || e === el) return titleEl === null;
-      if (/(?:^|[\s_-])(?:admonition-title|callout-title|alert-title|markdown-alert-title|admonitionHeading|notecard-title|title|heading)(?:$|[\s_-])|admonitionHeading/.test(e.matchString) && e.textLen < 100) {
+      if (/(?:^|[\s_-])(?:admonition-title|callout-title|alert-title|markdown-alert-title|admonitionheading|notecard-title|title|heading)(?:$|[\s_-])|admonitionheading/.test(e.matchString) && e.textLen < 100) {
         titleEl = e;
         return false;
       }
