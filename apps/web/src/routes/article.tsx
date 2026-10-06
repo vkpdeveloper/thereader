@@ -390,11 +390,6 @@ export function ArticleScreen() {
           <SiteIcon src={article.favicon} size={14} />
           <span className="t-title-sm clamp-1">{article.title}</span>
         </div>
-        {original && (
-          <a className="icon-button" href={original} target="_blank" rel="noopener noreferrer" aria-label="Open original" data-tooltip="Open original">
-            <OpenInNewIcon size={20} />
-          </a>
-        )}
         {highlights.button}
         <IconButton
           icon={TextFieldsIcon}
@@ -417,17 +412,6 @@ export function ArticleScreen() {
         }}
       >
         <header className="article-header">
-          {original ? (
-            <a className="article-site" href={original} target="_blank" rel="noopener noreferrer">
-              <SiteIcon src={article.favicon} size={16} />
-              <span>{ready.summary.siteName}</span>
-            </a>
-          ) : (
-            <div className="article-site">
-              <SiteIcon src={article.favicon} size={16} />
-              <span>{ready.summary.siteName}</span>
-            </div>
-          )}
           <h1 ref={titleRef} className="article-title">
             {article.title}
           </h1>
