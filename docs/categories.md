@@ -61,8 +61,10 @@ A tombstone is `{ "categoryId": "3f2c…", "deleted": true }`.
   list of twelve colours, so it stays forward compatible.
 - Renames and recolours use last-write-wins by `(updatedAt, change id)`.
 - **Tombstones are final.** After the server stores a tombstone, it ignores
-  any later non-deleted write for that `categoryId`. A deleted category
-  cannot come back.
+  every non-deleted write for that `categoryId`, even one with a newer
+  `updatedAt` (the change is still acknowledged). Every device therefore
+  agrees that the category is deleted, whatever order the writes arrived in.
+  A deleted category cannot come back.
 
 ### `categoryItem` change
 
