@@ -1,0 +1,130 @@
+[
+  {
+    "id": "netflix-flink",
+    "url": "https://netflixtechblog.com/a-tale-of-two-flink-autoscalers-e9f6a1b1492b",
+    "status": 403,
+    "finalUrl": "https://netflixtechblog.com/a-tale-of-two-flink-autoscalers-e9f6a1b1492b",
+    "reason": "403 with the app request headers (bot protection)",
+    "checkedAt": "2026-10-05T23:33:44.318Z"
+  },
+  {
+    "id": "medium-karpathy-sw2",
+    "url": "https://medium.com/@karpathy/software-2-0-a64152b37c35",
+    "status": 403,
+    "finalUrl": "https://medium.com/@karpathy/software-2-0-a64152b37c35",
+    "reason": "403 with the app request headers (bot protection)",
+    "checkedAt": "2026-10-05T23:33:45.481Z"
+  },
+  {
+    "id": "medium-airbnb-auth",
+    "url": "https://medium.com/airbnb-engineering/flexible-authentication-reimagining-authentication-for-millions-of-users-at-airbnb-3a8a4c917137",
+    "status": 403,
+    "finalUrl": "https://medium.com/airbnb-engineering/flexible-authentication-reimagining-authentication-for-millions-of-users-at-airbnb-3a8a4c917137",
+    "reason": "403 with the app request headers (bot protection)",
+    "checkedAt": "2026-10-05T23:33:45.537Z"
+  },
+  {
+    "id": "mr-authenticity",
+    "url": "https://marginalrevolution.com/marginalrevolution/2026/10/authenticity-is-exactly-the-same-as-phoniness.html",
+    "status": 403,
+    "finalUrl": "https://marginalrevolution.com/marginalrevolution/2026/10/authenticity-is-exactly-the-same-as-phoniness.html",
+    "reason": "403 with the app request headers (bot protection)",
+    "checkedAt": "2026-10-05T23:33:46.176Z"
+  },
+  {
+    "id": "ars-mcp",
+    "url": "https://arstechnica.com/security/2026/10/vulnerability-in-agents-from-google-and-others-exposes-structural-flaw-in-mcp/",
+    "status": 405,
+    "finalUrl": "https://arstechnica.com/security/2026/10/vulnerability-in-agents-from-google-and-others-exposes-structural-flaw-in-mcp/",
+    "reason": "405 with the app request headers (bot protection)",
+    "checkedAt": "2026-10-05T23:33:53.015Z"
+  },
+  {
+    "id": "ars-nobel",
+    "url": "https://arstechnica.com/science/2026/10/controlling-the-brain-with-light-earns-a-physiology-nobel/",
+    "status": 405,
+    "finalUrl": "https://arstechnica.com/science/2026/10/controlling-the-brain-with-light-earns-a-physiology-nobel/",
+    "reason": "405 with the app request headers (bot protection)",
+    "checkedAt": "2026-10-05T23:33:53.035Z"
+  },
+  {
+    "id": "ars-monterey-review",
+    "url": "https://arstechnica.com/gadgets/2021/10/macos-12-monterey-the-ars-technica-review/",
+    "status": 405,
+    "finalUrl": "https://arstechnica.com/gadgets/2021/10/macos-12-monterey-the-ars-technica-review/",
+    "reason": "405 with the app request headers (bot protection)",
+    "checkedAt": "2026-10-05T23:33:53.126Z"
+  },
+  {
+    "id": "allrecipes-cookies",
+    "url": "https://www.allrecipes.com/recipe/10813/best-chocolate-chip-cookies/",
+    "status": 403,
+    "finalUrl": "https://www.allrecipes.com/recipe/10813/best-chocolate-chip-cookies/",
+    "reason": "403 with the app request headers (bot protection)",
+    "checkedAt": "2026-10-05T23:33:55.714Z"
+  },
+  {
+    "id": "seriouseats-cookies",
+    "url": "https://www.seriouseats.com/the-food-lab-best-chocolate-chip-cookie-recipe",
+    "status": 403,
+    "finalUrl": "https://www.seriouseats.com/the-food-lab-best-chocolate-chip-cookie-recipe",
+    "reason": "403 with the app request headers (bot protection)",
+    "checkedAt": "2026-10-05T23:33:55.844Z"
+  },
+  {
+    "id": "sallys-cookies",
+    "url": "https://sallysbakingblog.com/chewy-chocolate-chip-cookies/",
+    "status": 404,
+    "finalUrl": "https://sallysbakingblog.com/chewy-chocolate-chip-cookies/",
+    "reason": "404: URL guessed wrong, not a block",
+    "checkedAt": "2026-10-05T23:33:55.871Z"
+  },
+  {
+    "id": "pinchofyum-cookies",
+    "url": "https://pinchofyum.com/the-best-soft-chocolate-chip-cookies",
+    "status": 405,
+    "finalUrl": "https://pinchofyum.com/the-best-soft-chocolate-chip-cookies",
+    "reason": "405 with the app request headers (bot protection)",
+    "checkedAt": "2026-10-05T23:33:55.947Z"
+  },
+  {
+    "id": "golem-bt",
+    "url": "https://www.golem.de/news/festnetz-provider-bt-uebernimmt-talk-talk-in-einem-rettungskauf-2610-213733.html",
+    "status": 200,
+    "finalUrl": "https://www.golem.de/sonstiges/zustimmung/auswahl.html?from=https%3A%2F%2Fwww.golem.de%2Fnews%2Ffestnetz-provider-bt-uebernimmt-talk-talk-in-einem-rettungskauf-2610-213733.html",
+    "reason": "200 but redirected to a consent wall (zustimmung) with no article",
+    "checkedAt": "2026-10-05T23:33:58.363Z"
+  },
+  {
+    "id": "lemonde-spacex",
+    "url": "https://www.lemonde.fr/economie/article/2026/10/05/dependante-de-spacex-l-europe-est-confrontee-a-sa-penurie-de-fusees_6788581_3234.html",
+    "status": 402,
+    "finalUrl": "https://www.lemonde.fr/economie/article/2026/10/05/dependante-de-spacex-l-europe-est-confrontee-a-sa-penurie-de-fusees_6788581_3234.html",
+    "reason": "402 paywall",
+    "checkedAt": "2026-10-05T23:33:58.662Z"
+  },
+  {
+    "id": "budgetbytes-greek-soup",
+    "url": "https://www.budgetbytes.com/greek-chicken-soup/",
+    "status": 403,
+    "finalUrl": "https://www.budgetbytes.com/greek-chicken-soup/",
+    "reason": "403 with the app request headers (bot protection)",
+    "checkedAt": "2026-10-05T23:34:54.402Z"
+  },
+  {
+    "id": "cookieandkate-poblano",
+    "url": "https://cookieandkate.com/stuffed-poblano-peppers/",
+    "status": 403,
+    "finalUrl": "https://cookieandkate.com/stuffed-poblano-peppers/",
+    "reason": "403 with the app request headers (bot protection)",
+    "checkedAt": "2026-10-05T23:34:54.406Z"
+  },
+  {
+    "id": "rfi-allemagne",
+    "url": "https://www.rfi.fr/fr/europe/20261005-l-allemagne-pourrait-se-retrouver-dans-un-conflit-violent-avec-la-russie-avertit-le-chef-du-renseignement",
+    "status": 403,
+    "finalUrl": "https://www.rfi.fr/fr/europe/20261005-l-allemagne-pourrait-se-retrouver-dans-un-conflit-violent-avec-la-russie-avertit-le-chef-du-renseignement",
+    "reason": "403 with the app request headers (bot protection)",
+    "checkedAt": "2026-10-05T23:34:54.532Z"
+  }
+]
