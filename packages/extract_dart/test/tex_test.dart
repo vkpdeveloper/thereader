@@ -1,5 +1,10 @@
+import 'dart:async';
+import 'dart:isolate';
+
 import 'package:test/test.dart';
 import 'package:thereader_extract/thereader_extract.dart';
+
+// The same pages as packages/extract/test/tex.test.ts.
 
 /// A page that uses TeX (`\(...\)`), with [paragraph] as its second block.
 Article? _page(String paragraph) {
@@ -12,21 +17,43 @@ Article? _page(String paragraph) {
   );
 }
 
+Object? _second(String paragraph) => _page(paragraph)!.blocks[1].toJson();
+
+/// [_second] in an isolate that is killed after [timeout]: a synchronous loop
+/// that never ends cannot be stopped by the test's own timeout.
+Future<Object?> _secondWithin(String paragraph, Duration timeout) async {
+  final port = ReceivePort();
+  final isolate = await Isolate.spawn((SendPort out) => out.send(_second(paragraph)), port.sendPort);
+  try {
+    return await port.first.timeout(timeout);
+  } on TimeoutException {
+    isolate.kill(priority: Isolate.immediate);
+    rethrow;
+  } finally {
+    port.close();
+  }
+}
+
+Map<String, Object?> _text(String t) => {'type': 'text', 'text': t};
+Map<String, Object?> _math(String t) => {'type': 'math', 'tex': t, 'text': t};
+
 void main() {
-  test(r'a formula after text holding a $ comes out twice, as in TypeScript', () {
-    // TypeScript (bun, jsdom): the shared /g pattern restarts after the text before the formula.
-    expect(_page(r'Costs $5, see \(x\) here')!.blocks[1].toJson(), {
+  test(r'a formula after text holding a $ comes out once', () {
+    expect(_second(r'Costs $5, see \(x\) here'), {
       'type': 'paragraph',
-      'content': [
-        {'type': 'text', 'text': r'Costs $5, see '},
-        {'type': 'math', 'tex': 'x', 'text': 'x'},
-        {'type': 'math', 'tex': 'x', 'text': 'x'},
-        {'type': 'text', 'text': ' here'},
-      ],
+      'content': [_text(r'Costs $5, see '), _math('x'), _text(' here')],
     });
   });
 
-  test(r'TeX input that never finishes in TypeScript terminates', () {
-    expect(_page(r'one \(a\) $ \(b\) end'), isNotNull);
+  // These inputs used to loop forever in TypeScript (a nested call reset the shared pattern's lastIndex).
+  test(r'TeX input that used to loop forever finishes', () async {
+    expect(await _secondWithin(r'one \(a\) $ \(b\) end', const Duration(seconds: 10)), {
+      'type': 'paragraph',
+      'content': [_text('one '), _math('a'), _text(r' $ '), _math('b'), _text(' end')],
+    });
+    expect(await _secondWithin(r'one \(a\) $ \(b\) and \ \(c\) end', const Duration(seconds: 10)), {
+      'type': 'paragraph',
+      'content': [_text('one '), _math('a'), _text(r' $ '), _math('b'), _text(r' and \ '), _math('c'), _text(' end')],
+    });
   });
 }

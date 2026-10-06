@@ -40,14 +40,6 @@ verbatim, with the same flags. Where the TypeScript engine runs a costly pattern
 literal word, the first character) and skips the pattern when it fails; with assertions enabled
 the pattern is checked as well.
 
-### TypeScript behaviour copied on purpose
-
-The TeX patterns in `blocks.ts` are global (`/g`) regular expressions shared by nested calls: the
-text before a formula is converted by a call that resets `lastIndex` when that text holds a `$` or
-`\`, and the outer search starts over. The port emulates `lastIndex` (`_GlobalRegExp`), so a
-formula after such text comes out twice, as in TypeScript. On input where the TypeScript loop never
-ends (`\(a\) $ \(b\)` on a page that uses TeX), the port stops at the first repeated state.
-
 ## Tests: `dart test`
 
 - `conformance_test.dart`: the shared fixtures in `packages/extract/fixtures`. Each page is
@@ -59,6 +51,8 @@ ends (`\(a\) $ \(b\)` on a page that uses TeX), the port stops at the first repe
   `bun scripts/parser-cases.ts` in `packages/extract`). Cases marked `known` are the parser
   differences below.
 - `match_test.dart`, `model_test.dart`: `ClassPattern` against `RegExp`; model round trips.
+- `tex_test.dart`: TeX split out of text, the same cases as `packages/extract/test/tex.test.ts`
+  (input that once looped forever runs in an isolate killed on timeout).
 
 ## Parity with the TypeScript engine (eval corpus)
 

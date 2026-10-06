@@ -71,6 +71,10 @@ class InlineBuilder {
     const text = value.replace(ZERO_WIDTH, '');
     if (text.length === 0) return;
     if (this.converter.tex && (text.indexOf('$') >= 0 || text.indexOf('\\') >= 0) && ctx.marks.indexOf('code') < 0 && this.texRuns(text, ctx)) return;
+    this.plain(text, ctx);
+  }
+
+  private plain(text: string, ctx: Ctx): void {
     if (this.breaks > 0 && text.replace(SPACES, '').length === 0) return;
     this.breaks = 0;
     const run: TextRun = { type: 'text', text };
@@ -79,15 +83,15 @@ class InlineBuilder {
     this.nodes.push(run);
   }
 
-  /** Splits TeX written for a client-side renderer out of `text` as math; false when there is none. */
+  /**
+   * Splits TeX written for a client-side renderer out of `text` as math; false when there is none.
+   * `matchAll` searches a copy of the shared pattern, and the text around the formulas (which holds
+   * no formula) is added as is, so no call can move another's search.
+   */
   private texRuns(text: string, ctx: Ctx): boolean {
-    const re = this.converter.dollars ? TEX_ANY : TEX_DELIMITED;
-    re.lastIndex = 0;
-    let m = re.exec(text);
-    if (m === null) return false;
     let at = 0;
-    while (m !== null) {
-      if (m.index > at) this.text(text.slice(at, m.index), ctx);
+    for (const m of text.matchAll(this.converter.dollars ? TEX_ANY : TEX_DELIMITED)) {
+      if (m.index > at) this.plain(text.slice(at, m.index), ctx);
       const tex = (m[1] ?? m[2] ?? m[3] ?? m[4] ?? '').trim();
       if (tex.length > 0) {
         const node: Inline = { type: 'math', tex, text: tex };
@@ -95,9 +99,9 @@ class InlineBuilder {
         this.push(node);
       }
       at = m.index + m[0].length;
-      m = re.exec(text);
     }
-    if (at < text.length) this.text(text.slice(at), ctx);
+    if (at === 0) return false;
+    if (at < text.length) this.plain(text.slice(at), ctx);
     return true;
   }
 
@@ -390,8 +394,8 @@ export class Converter {
       for (const child of el.children) {
         if (child.kind === 1) visit(child);
         else if (child.text.indexOf('$$') >= 0 || child.text.indexOf('\\(') >= 0 || child.text.indexOf('\\[') >= 0) {
-          if (TEX_DELIMITED.test(child.text)) this.tex = true;
-          TEX_DELIMITED.lastIndex = 0;
+          // search() leaves lastIndex at 0, where matchAll in texRuns starts its copies.
+          if (child.text.search(TEX_DELIMITED) >= 0) this.tex = true;
         }
         if (this.tex) return;
       }

@@ -14,40 +14,12 @@ import 'tree.dart';
 import 'url.dart';
 
 /// TeX left for MathJax/KaTeX: $$…$$ and \[…\] display, \(…\) inline.
-final _texDelimited = _GlobalRegExp(RegExp(r'\$\$([^$]+?)\$\$|\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)'));
+final _texDelimited = RegExp(r'\$\$([^$]+?)\$\$|\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)');
 
 /// The same plus $…$ inline, for pages that show they use TeX (never "$5 and $10").
-final _texAny = _GlobalRegExp(
-  RegExp(r'\$\$([^$]+?)\$\$|\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)|\$([^\s$\d](?:[^$\n]{0,300}?[^\s$\\])?)\$(?![\d\w])'),
+final _texAny = RegExp(
+  r'\$\$([^$]+?)\$\$|\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)|\$([^\s$\d](?:[^$\n]{0,300}?[^\s$\\])?)\$(?![\d\w])',
 );
-
-/// A JavaScript regular expression with the `g` flag: `exec` resumes at
-/// [lastIndex] and resets it to 0 when nothing matches. The TypeScript engine
-/// shares one such object between nested calls, so its state is part of the
-/// behaviour (see [_InlineBuilder._texRuns]).
-class _GlobalRegExp {
-  _GlobalRegExp(this.regex);
-
-  final RegExp regex;
-  int lastIndex = 0;
-
-  RegExpMatch? exec(String s) {
-    if (lastIndex > s.length) {
-      lastIndex = 0;
-      return null;
-    }
-    final it = regex.allMatches(s, lastIndex).iterator;
-    if (!it.moveNext()) {
-      lastIndex = 0;
-      return null;
-    }
-    final m = it.current;
-    lastIndex = m.end;
-    return m;
-  }
-
-  bool test(String s) => exec(s) != null;
-}
 
 const _tagMark = {
   'b': Mark.bold, 'strong': Mark.bold, 'i': Mark.italic, 'em': Mark.italic, 'cite': Mark.italic, 'dfn': Mark.italic, //
@@ -199,28 +171,21 @@ class _InlineBuilder {
         _texRuns(text, ctx)) {
       return;
     }
+    _plain(text, ctx);
+  }
+
+  void _plain(String text, _Ctx ctx) {
     if (breaks > 0 && _onlyHtmlSpace(text)) return;
     breaks = 0;
     nodes.add(TextRun(text, marks: ctx.marks.isNotEmpty ? _sortMarks(ctx.marks) : null, href: ctx.href));
   }
 
   /// Splits TeX written for a client-side renderer out of [text] as math; false when there is none.
-  ///
-  /// The pattern is shared, as in the TypeScript engine, with the calls this
-  /// one makes for the text around a formula: when that text holds a `$` or
-  /// `\`, the inner search ends by resetting `lastIndex`, and the outer one
-  /// starts over (a formula after such text comes out twice). Where that loops
-  /// forever in TypeScript (`\(a\) $ \(b\)` on a TeX page), the repeated state
-  /// ends the loop here.
+  /// The text around the formulas (which holds no formula) is added as is.
   bool _texRuns(String text, _Ctx ctx) {
-    final re = converter.dollars ? _texAny : _texDelimited;
-    re.lastIndex = 0;
-    var m = re.exec(text);
-    if (m == null) return false;
     var at = 0;
-    Set<String>? seen;
-    while (m != null) {
-      if (m.start > at) this.text(text.substring(at, m.start), ctx);
+    for (final m in (converter.dollars ? _texAny : _texDelimited).allMatches(text)) {
+      if (m.start > at) _plain(text.substring(at, m.start), ctx);
       final tex = jsTrim(m[1] ?? m[2] ?? m[3] ?? m[4] ?? '');
       if (tex.isNotEmpty) {
         final node = InlineMath(tex: tex, text: tex);
@@ -228,11 +193,9 @@ class _InlineBuilder {
         push(node);
       }
       at = m.end;
-      m = re.exec(text);
-      // Only a match behind `at` can start a cycle; the same match with the same `at` again is one.
-      if (m != null && m.start < at && !(seen ??= {}).add('${m.start} ${m.end} $at')) break;
     }
-    if (at < text.length) this.text(text.substring(at), ctx);
+    if (at == 0) return false;
+    if (at < text.length) _plain(text.substring(at), ctx);
     return true;
   }
 
@@ -583,8 +546,7 @@ class Converter {
         } else if ((child as VText).texMarks) {
           final text = child.text;
           if (text.contains(r'$$') || text.contains(r'\(') || text.contains(r'\[')) {
-            if (_texDelimited.test(text)) tex = true;
-            _texDelimited.lastIndex = 0;
+            if (_texDelimited.hasMatch(text)) tex = true;
           }
         }
         if (tex) return;
