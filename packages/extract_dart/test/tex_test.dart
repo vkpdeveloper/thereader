@@ -12,7 +12,7 @@ Article? _page(String paragraph) {
   final more = 'More prose here to make the article long enough. ' * 10;
   return extractHtml(
     '<html><head><title>Tex test page</title></head><body><article><h1>Tex test page</h1>'
-    '<p>$prose</p><p>$paragraph</p><p>$more</p></article></body></html>',
+        '<p>$prose</p><p>$paragraph</p><p>$more</p></article></body></html>',
     'https://example.com/a',
   );
 }

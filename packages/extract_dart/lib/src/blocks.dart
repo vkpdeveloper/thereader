@@ -1021,12 +1021,14 @@ class Converter {
     // A bare marker ("1", "[2]") is a reference, not a note.
     if (text.length <= label.length + 3 || label.length > 4) return false;
     final content = firstElement(el, (e) => _noteContentClass.hasMatch(e.matchString)) ?? el;
-    if (mark != null && !_isAncestorOf(mark, content)) mark.skip = true;
+    // The marker is hidden while the note is read, and only un-hidden if it was shown before (cleaning may have removed it).
+    final hide = mark != null && !mark.skip && !_isAncestorOf(mark, content);
+    if (hide) mark.skip = true;
     final blocks = <Block>[];
     _inNote = true;
     final inline = inlineOnly(content);
     _inNote = false;
-    if (mark != null) mark.skip = false;
+    if (hide) mark.skip = false;
     if (inline.isEmpty) return false;
     blocks.add(ParagraphBlock(inline));
     final n = _inlineNotes.length + 1;

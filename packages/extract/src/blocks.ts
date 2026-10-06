@@ -842,12 +842,14 @@ export class Converter {
     // A bare marker ("1", "[2]") is a reference, not a note.
     if (text.length <= label.length + 3 || label.length > 4) return false;
     const content = firstElement(el, (e) => /(?:^|[\s_-])(?:note-?content|note-?text|note-?body|footnote-?content|sidenote-?content)(?:$|[\s_-])/.test(e.matchString)) ?? el;
-    if (mark !== null && !isAncestorOf(mark, content)) mark.skip = true;
+    // The marker is hidden while the note is read, and only un-hidden if it was shown before (cleaning may have removed it).
+    const hide = mark !== null && !mark.skip && !isAncestorOf(mark, content);
+    if (hide) mark.skip = true;
     const blocks: Block[] = [];
     this.inNote = true;
     const inline = this.inlineOnly(content);
     this.inNote = false;
-    if (mark !== null) mark.skip = false;
+    if (hide) mark!.skip = false;
     if (inline.length === 0) return false;
     blocks.push({ type: 'paragraph', content: inline });
     const n = this.inlineNotes.length + 1;
