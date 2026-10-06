@@ -247,7 +247,8 @@ function markUnlikely(body: VElement, flags: Flags, state: { bylineRemoved: bool
         // "header", "banner", "extra": weak signals that real prose overrides (MDN puts intros in a header).
         // A layout wrapper holding most of the page's prose ("with-sidebar") is never unlikely.
         const prose = proseLength(el);
-        if ((UNLIKELY_HARD.test(match) || prose < 400) && prose <= totalProse * 0.5) {
+        // Headings carry no prose of their own; only the hard words drop them ("header-anchor" is not chrome).
+        if ((UNLIKELY_HARD.test(match) || prose < 400 && !HEADINGS.has(el.tag)) && prose <= totalProse * 0.5) {
           el.skip = true;
           return false;
         }
