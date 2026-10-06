@@ -1099,7 +1099,8 @@ export class Converter {
       return;
     }
     const block: Callout = { type: 'callout', variant, blocks };
-    if (title !== undefined && title.length > 0) block.title = title;
+    // A title that only names the variant ("note", "Warning") repeats what the renderer already shows.
+    if (title !== undefined && title.length > 0 && !(variant !== null && inlineTextOf(title).trim().toLowerCase() === variant)) block.title = title;
     out.push(block);
   }
 

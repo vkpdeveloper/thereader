@@ -15,7 +15,7 @@
   "excerpt": "Readers care about structure even when they never think about it. Lists, tables and notes carry meaning that a wall of text cannot, so an extractor has to keep them intact.",
   "leadImage": null,
   "favicon": "https://guide.example.net/favicon.ico",
-  "wordCount": 212,
+  "wordCount": 211,
   "readingMinutes": 1,
   "blocks": [
     {
@@ -345,12 +345,6 @@
     {
       "type": "callout",
       "variant": "warning",
-      "title": [
-        {
-          "type": "text",
-          "text": "Warning"
-        }
-      ],
       "blocks": [
         {
           "type": "paragraph",
