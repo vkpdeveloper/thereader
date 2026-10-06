@@ -89,12 +89,17 @@ export function measure(el: VElement): void {
   el.textLen = text;
   el.commas = commas;
   if (isLink) {
-    const href = el.attrs['href'] ?? '';
     // In-page links (footnotes, anchors) weigh less than links away.
-    el.linkLen = href.length > 1 && href.charCodeAt(0) === 35 ? text * 0.3 : text;
+    el.linkLen = isInPageLink(el) ? text * 0.3 : text;
   } else {
     el.linkLen = link;
   }
+}
+
+/** A link to a fragment of this page (footnotes, anchors). A bare "#" is a script button, not a place. */
+function isInPageLink(a: VElement): boolean {
+  const href = a.attrs['href'] ?? '';
+  return href.length > 1 && href.charCodeAt(0) === 35;
 }
 
 function linkDensity(el: VElement): number {
@@ -937,7 +942,7 @@ function cleanConditionally(root: VElement, flags: Flags): void {
       if (child.skip) continue;
       const ct = child.tag;
       c.text += k.text;
-      c.link += ct === 'a' ? (((child.attrs['href'] ?? '').charCodeAt(0) === 35) ? k.text * 0.3 : k.text) : k.link;
+      c.link += ct === 'a' ? (isInPageLink(child) ? k.text * 0.3 : k.text) : k.link;
       c.commas += k.commas;
       c.p += k.p + (ct === 'p' ? 1 : 0);
       c.img += k.img + (ct === 'img' ? 1 : 0);
