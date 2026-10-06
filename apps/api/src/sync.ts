@@ -27,9 +27,26 @@ const MAX_HIGHLIGHT_TEXT = 4_000;
 const MAX_HIGHLIGHT_NOTE = 4_000;
 const MAX_HIGHLIGHT_LOCATOR_BYTES = 16 * 1024;
 const MAX_HIGHLIGHTS_PAGE = 500;
-const CHANGE_KINDS = ["progress", "session", "preferences", "library", "highlight"];
+// Saved web articles share the change envelope with a sentinel edition, like
+// preferences; the article itself is named by `payload.articleId`.
+export const ARTICLES_BOOK_ID = "_articles";
+const ARTICLES_SHA = "0".repeat(64);
+// Clients derive the id from the article's normalized URL: the first 128 bits
+// of its SHA-256, in lowercase hex.
+const ARTICLE_ID = /^[a-f0-9]{32}$/;
+const ARTICLE_KEYS = new Set([
+  "articleId", "url", "title", "siteName", "byline", "excerpt", "leadImage", "favicon", "language", "dir",
+  "wordCount", "readingMinutes", "blockCount", "publishedAt", "savedAt", "bodySha256", "bodySize", "schema", "deleted",
+]);
+const ARTICLE_POSITION_KEYS = new Set(["block", "offset", "percent"]);
+const MAX_ARTICLE_URL = 2_048;
+const MAX_ARTICLES_PAGE = 200;
+/** Uncompressed article document cap, shared with the body endpoint. */
+export const MAX_ARTICLE_BODY_BYTES = 8 * 1024 * 1024;
+export const ARTICLE_SCHEMA = 1;
+const CHANGE_KINDS = ["progress", "session", "preferences", "library", "highlight", "article", "articleProgress"];
 
-type ChangeKind = "progress" | "session" | "preferences" | "library" | "highlight";
+type ChangeKind = "progress" | "session" | "preferences" | "library" | "highlight" | "article" | "articleProgress";
 
 interface SyncChange {
   id: string;
@@ -82,6 +99,69 @@ export interface SyncState {
     cursor: number;
     more: boolean;
   };
+  // Present only when the request asked for it via `articlesSince`.
+  articles?: {
+    items: SyncArticle[];
+    cursor: number;
+    more: boolean;
+  };
+}
+
+export interface ArticlePosition {
+  block: number;
+  offset: number;
+  percent: number;
+}
+
+export interface SyncArticle {
+  id: string;
+  url: string;
+  title: string;
+  siteName: string | null;
+  byline: string | null;
+  excerpt: string | null;
+  leadImage: string | null;
+  favicon: string | null;
+  language: string | null;
+  dir: "ltr" | "rtl";
+  wordCount: number;
+  readingMinutes: number;
+  blockCount: number;
+  publishedAt: string | null;
+  savedAt: string | null;
+  bodySha256: string | null;
+  bodySize: number | null;
+  schema: number;
+  position: ArticlePosition | null;
+  positionUpdatedAt: string | null;
+  updatedAt: string;
+  deleted: boolean;
+}
+
+interface ArticleRow {
+  id: string;
+  url: string;
+  title: string;
+  site_name: string | null;
+  byline: string | null;
+  excerpt: string | null;
+  lead_image: string | null;
+  favicon: string | null;
+  language: string | null;
+  dir: string;
+  word_count: number;
+  reading_minutes: number;
+  block_count: number;
+  published_at: string | null;
+  saved_at: string | null;
+  body_sha256: string | null;
+  body_size: number | null;
+  schema: number;
+  position_json: string | null;
+  position_updated_at: string | null;
+  updated_at: string;
+  deleted_at: string | null;
+  rev: number;
 }
 
 export interface SyncHighlight {
@@ -179,6 +259,53 @@ function validHighlightPayload(value: Record<string, unknown>, futureLimit: numb
   return canonicalIsoDate(value.createdAt, futureLimit) !== null;
 }
 
+function optionalText(value: unknown, maximum: number): boolean {
+  return value === undefined || value === null || (typeof value === "string" && value.length <= maximum);
+}
+
+function webUrl(value: unknown): boolean {
+  return typeof value === "string" && value.length <= MAX_ARTICLE_URL && /^https?:\/\/[^\s]+$/i.test(value);
+}
+
+// Images may be inline `data:` URLs; anything longer than a URL is dropped by clients.
+function optionalImageUrl(value: unknown): boolean {
+  if (value === undefined || value === null) return true;
+  return typeof value === "string" && value.length <= MAX_ARTICLE_URL && /^(?:https?:\/\/|data:image\/)[^\s]+$/i.test(value);
+}
+
+function boundedInteger(value: unknown, minimum: number, maximum: number): boolean {
+  return Number.isSafeInteger(value) && (value as number) >= minimum && (value as number) <= maximum;
+}
+
+function validArticlePosition(value: unknown): value is ArticlePosition {
+  if (!isRecord(value) || Object.keys(value).some((key) => !ARTICLE_POSITION_KEYS.has(key))) return false;
+  return boundedInteger(value.block, 0, 1_000_000) && inRange(value.offset, 0, 1) && inRange(value.percent, 0, 1);
+}
+
+// A saved article's metadata, or a tombstone (`{articleId, deleted: true}`).
+function validArticlePayload(value: Record<string, unknown>, futureLimit: number): boolean {
+  if (Object.keys(value).some((key) => !ARTICLE_KEYS.has(key))) return false;
+  if (typeof value.articleId !== "string" || !ARTICLE_ID.test(value.articleId)) return false;
+  if (typeof value.deleted !== "boolean") return false;
+  if (value.deleted) return Object.keys(value).length === 2;
+  if (!webUrl(value.url)) return false;
+  if (typeof value.title !== "string" || value.title.length > 1_000) return false;
+  if (!optionalText(value.siteName, 300) || !optionalText(value.byline, 500) || !optionalText(value.excerpt, 2_000)) return false;
+  if (!optionalImageUrl(value.leadImage) || !optionalImageUrl(value.favicon)) return false;
+  if (!optionalText(value.language, 35) || !optionalText(value.publishedAt, 64)) return false;
+  if (value.dir !== "ltr" && value.dir !== "rtl") return false;
+  if (!boundedInteger(value.wordCount, 0, 10_000_000) || !boundedInteger(value.readingMinutes, 1, 100_000)) return false;
+  if (!boundedInteger(value.blockCount, 0, 1_000_000)) return false;
+  if (typeof value.bodySha256 !== "string" || !SHA256_PATTERN.test(value.bodySha256)) return false;
+  if (!boundedInteger(value.bodySize, 1, MAX_ARTICLE_BODY_BYTES) || value.schema !== ARTICLE_SCHEMA) return false;
+  return canonicalIsoDate(value.savedAt, futureLimit) !== null;
+}
+
+function validArticleProgressPayload(value: Record<string, unknown>): boolean {
+  if (Object.keys(value).some((key) => key !== "articleId" && key !== "position")) return false;
+  return typeof value.articleId === "string" && ARTICLE_ID.test(value.articleId) && validArticlePosition(value.position);
+}
+
 function parseChange(value: unknown, futureLimit: number): SyncChange {
   if (!isRecord(value)) throw invalidSync();
   const allowed = new Set(["id", "bookId", "sha256", "kind", "updatedAt", "payload"]);
@@ -203,6 +330,16 @@ function parseChange(value: unknown, futureLimit: number): SyncChange {
     }
     bookId = PREFERENCES_BOOK_ID;
     sha256 = PREFERENCES_SHA;
+  } else if (kind === "article" || kind === "articleProgress") {
+    if (value.bookId !== ARTICLES_BOOK_ID || value.sha256 !== ARTICLES_SHA) {
+      throw invalidSync("Articles must use the documented sentinel edition.");
+    }
+    const valid = kind === "article"
+      ? validArticlePayload(value.payload, futureLimit)
+      : validArticleProgressPayload(value.payload);
+    if (!valid) throw invalidSync("Article payload is invalid.");
+    bookId = ARTICLES_BOOK_ID;
+    sha256 = ARTICLES_SHA;
   } else {
     if (typeof value.bookId !== "string" || value.bookId.length > 128 || !BOOK_ID_PATTERN.test(value.bookId)) {
       throw invalidSync("bookId is invalid.");
@@ -335,6 +472,94 @@ function statementForChange(env: Env, deviceId: string, change: SyncChange): D1P
         change.updatedAt,
         change.updatedMs,
         payload.deleted ? change.updatedAt : null,
+        change.id,
+      );
+    }
+    case "article": {
+      const payload = change.payload;
+      const nextRev = "(SELECT COALESCE(MAX(rev), 0) + 1 FROM sync_articles)";
+      const newer = `(excluded.updated_ms > sync_articles.updated_ms
+             OR (excluded.updated_ms = sync_articles.updated_ms AND excluded.change_id > sync_articles.change_id))`;
+      if (payload.deleted) {
+        // A tombstone keeps the last metadata; a tombstone for an id this
+        // server never saw is stored with empty metadata.
+        return env.DB.prepare(
+          `INSERT INTO sync_articles (id, url, title, updated_at, updated_ms, deleted_at, change_id, rev)
+           VALUES (?, '', '', ?, ?, ?, ?, ${nextRev})
+           ON CONFLICT(id) DO UPDATE SET
+             updated_at = excluded.updated_at, updated_ms = excluded.updated_ms,
+             deleted_at = excluded.deleted_at, change_id = excluded.change_id, rev = excluded.rev
+           WHERE ${newer}`,
+        ).bind(payload.articleId, change.updatedAt, change.updatedMs, change.updatedAt, change.id);
+      }
+      // Saving again over a tombstone resurrects the article with a fresh
+      // reading position; saving over a live row keeps its position.
+      const keepPosition = (column: string) => `CASE WHEN sync_articles.deleted_at IS NULL THEN sync_articles.${column} END`;
+      const text = (key: string) => (typeof payload[key] === "string" ? payload[key] : null);
+      return env.DB.prepare(
+        `INSERT INTO sync_articles
+           (id, url, title, site_name, byline, excerpt, lead_image, favicon, language, dir,
+            word_count, reading_minutes, block_count, published_at, saved_at, body_sha256, body_size,
+            schema, updated_at, updated_ms, deleted_at, change_id, rev)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ${nextRev})
+         ON CONFLICT(id) DO UPDATE SET
+           url = excluded.url, title = excluded.title, site_name = excluded.site_name,
+           byline = excluded.byline, excerpt = excluded.excerpt, lead_image = excluded.lead_image,
+           favicon = excluded.favicon, language = excluded.language, dir = excluded.dir,
+           word_count = excluded.word_count, reading_minutes = excluded.reading_minutes,
+           block_count = excluded.block_count, published_at = excluded.published_at,
+           saved_at = excluded.saved_at, body_sha256 = excluded.body_sha256,
+           body_size = excluded.body_size, schema = excluded.schema,
+           position_json = ${keepPosition("position_json")},
+           position_updated_at = ${keepPosition("position_updated_at")},
+           position_updated_ms = ${keepPosition("position_updated_ms")},
+           position_change_id = ${keepPosition("position_change_id")},
+           updated_at = excluded.updated_at, updated_ms = excluded.updated_ms,
+           deleted_at = NULL, change_id = excluded.change_id, rev = excluded.rev
+         WHERE ${newer}`,
+      ).bind(
+        payload.articleId,
+        payload.url,
+        payload.title,
+        text("siteName"),
+        text("byline"),
+        text("excerpt"),
+        text("leadImage"),
+        text("favicon"),
+        text("language"),
+        payload.dir,
+        payload.wordCount,
+        payload.readingMinutes,
+        payload.blockCount,
+        text("publishedAt"),
+        payload.savedAt,
+        payload.bodySha256,
+        payload.bodySize,
+        payload.schema,
+        change.updatedAt,
+        change.updatedMs,
+        change.id,
+      );
+    }
+    case "articleProgress": {
+      // Positions only move live articles, ordered on their own clock like
+      // book progress. A position for an unknown or deleted id is dropped.
+      const payload = change.payload;
+      return env.DB.prepare(
+        `UPDATE sync_articles SET
+           position_json = ?, position_updated_at = ?, position_updated_ms = ?, position_change_id = ?,
+           rev = (SELECT COALESCE(MAX(rev), 0) + 1 FROM sync_articles)
+         WHERE id = ? AND deleted_at IS NULL
+           AND (position_updated_ms IS NULL OR ? > position_updated_ms
+             OR (? = position_updated_ms AND ? > position_change_id))`,
+      ).bind(
+        JSON.stringify(payload.position),
+        change.updatedAt,
+        change.updatedMs,
+        change.id,
+        payload.articleId,
+        change.updatedMs,
+        change.updatedMs,
         change.id,
       );
     }
@@ -473,23 +698,88 @@ async function highlightsSince(env: Env, since: number): Promise<NonNullable<Syn
   return { items, cursor: page.length === 0 ? since : page[page.length - 1]!.rev, more };
 }
 
+// Pulls article rows written after `since` (a server rev), tombstones and
+// position moves included, in rev order. Bodies are fetched separately.
+async function articlesSince(env: Env, since: number): Promise<NonNullable<SyncState["articles"]>> {
+  const rows = await env.DB.prepare(
+    `SELECT id, url, title, site_name, byline, excerpt, lead_image, favicon, language, dir,
+            word_count, reading_minutes, block_count, published_at, saved_at, body_sha256, body_size,
+            schema, position_json, position_updated_at, updated_at, deleted_at, rev
+       FROM sync_articles WHERE rev > ? ORDER BY rev LIMIT ?`,
+  )
+    .bind(since, MAX_ARTICLES_PAGE + 1)
+    .all<ArticleRow>();
+  const more = rows.results.length > MAX_ARTICLES_PAGE;
+  const page = more ? rows.results.slice(0, MAX_ARTICLES_PAGE) : rows.results;
+  const items = page.map((row): SyncArticle => {
+    let position: unknown = null;
+    if (row.position_json !== null) {
+      try {
+        position = JSON.parse(row.position_json);
+      } catch {
+        throw invalidState();
+      }
+      if (!validArticlePosition(position)) throw invalidState();
+    }
+    return {
+      id: row.id,
+      url: row.url,
+      title: row.title,
+      siteName: row.site_name,
+      byline: row.byline,
+      excerpt: row.excerpt,
+      leadImage: row.lead_image,
+      favicon: row.favicon,
+      language: row.language,
+      dir: row.dir === "rtl" ? "rtl" : "ltr",
+      wordCount: row.word_count,
+      readingMinutes: row.reading_minutes,
+      blockCount: row.block_count,
+      publishedAt: row.published_at,
+      savedAt: row.saved_at,
+      bodySha256: row.body_sha256,
+      bodySize: row.body_size,
+      schema: row.schema,
+      position: position as ArticlePosition | null,
+      positionUpdatedAt: row.position_updated_at,
+      updatedAt: row.updated_at,
+      deleted: row.deleted_at !== null,
+    };
+  });
+  return { items, cursor: page.length === 0 ? since : page[page.length - 1]!.rev, more };
+}
+
+// Within one atomic batch, article saves run before positions so a position
+// queued right after its save lands on the row the save creates.
+function articleOrder(change: SyncChange): number {
+  return change.kind === "articleProgress" ? 1 : 0;
+}
+
 export async function pushSync(request: Request, env: Env): Promise<SyncState> {
   const raw = await readBoundedJson(request, MAX_SYNC_BYTES);
   if (!isRecord(raw) || !validClientId(raw.deviceId) || !Array.isArray(raw.changes) || raw.changes.length > MAX_CHANGES) {
     throw invalidSync();
   }
-  if (Object.keys(raw).some((key) => key !== "deviceId" && key !== "changes" && key !== "highlightsSince")) throw invalidSync();
+  const allowed = new Set(["deviceId", "changes", "highlightsSince", "articlesSince"]);
+  if (Object.keys(raw).some((key) => !allowed.has(key))) throw invalidSync();
   // Optional: absent means an older client that knows nothing of highlights;
   // null means "send the full set"; a number is the last rev the client saw.
   const wantsHighlights = "highlightsSince" in raw;
   const since = raw.highlightsSince ?? 0;
   if (wantsHighlights && (!Number.isSafeInteger(since) || (since as number) < 0)) throw invalidSync("highlightsSince is invalid.");
+  // Same contract for articles: absent, null (everything) or the last cursor.
+  const wantsArticles = "articlesSince" in raw;
+  const articlesFrom = raw.articlesSince ?? 0;
+  if (wantsArticles && (!Number.isSafeInteger(articlesFrom) || (articlesFrom as number) < 0)) throw invalidSync("articlesSince is invalid.");
   const futureLimit = Date.now() + MAX_FUTURE_SKEW_MS;
   const changes = raw.changes.map((change) => parseChange(change, futureLimit));
   if (changes.length > 0) {
-    await env.DB.batch(changes.map((change) => statementForChange(env, raw.deviceId as string, change)));
+    // Array.prototype.sort is stable, so other changes keep their order.
+    const ordered = [...changes].sort((a, b) => articleOrder(a) - articleOrder(b));
+    await env.DB.batch(ordered.map((change) => statementForChange(env, raw.deviceId as string, change)));
   }
   const state = await getSyncState(env, changes.map((change) => change.id));
   if (wantsHighlights) state.highlights = await highlightsSince(env, since as number);
+  if (wantsArticles) state.articles = await articlesSince(env, articlesFrom as number);
   return state;
 }

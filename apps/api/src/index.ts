@@ -1,3 +1,4 @@
+import { getArticleBody, putArticleBody } from "./article-bodies";
 import { articleSource } from "./article-source";
 import { loadCatalog, toPublicBook, validateBookId } from "./catalog";
 import { CDN_PREFIX, serveCdn } from "./cdn";
@@ -119,6 +120,16 @@ async function route(request: Request, env: Env, ctx: ExecutionContext): Promise
   if (url.pathname === "/v1/article-source") {
     if (request.method !== "GET") throw new ApiError(405, "METHOD_NOT_ALLOWED", "Method not allowed.", { Allow: "GET, OPTIONS" });
     return articleSource(request);
+  }
+
+  const articleBodyMatch = /^\/v1\/article-bodies\/([a-f0-9]{64})$/.exec(url.pathname);
+  if (articleBodyMatch !== null) {
+    if (request.method === "GET" || request.method === "HEAD") return getArticleBody(request, env, articleBodyMatch[1]!);
+    if (request.method === "PUT") {
+      const result = await putArticleBody(request, env, articleBodyMatch[1]!);
+      return json(result.body, { status: result.status, headers: { "Cache-Control": "no-store" } });
+    }
+    throw new ApiError(405, "METHOD_NOT_ALLOWED", "Method not allowed.", { Allow: "GET, HEAD, PUT, OPTIONS" });
   }
 
   if (url.pathname === "/v1/books") {

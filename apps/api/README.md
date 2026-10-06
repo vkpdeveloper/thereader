@@ -135,6 +135,34 @@ included, at most 500 per response. When `more` is true, the client pulls again
 from `cursor`. Requests without `highlightsSince` get the old response shape and
 cost no extra reads.
 
+Saved web articles ride on the same request too, with the sentinel edition
+`bookId:"_articles"`, `sha256` of 64 zeros. An `article` change carries the
+article's metadata `{articleId,url,title,siteName,byline,excerpt,leadImage,
+favicon,language,dir,wordCount,readingMinutes,blockCount,publishedAt,savedAt,
+bodySha256,bodySize,schema:1,deleted:false}` or a tombstone
+`{articleId,deleted:true}`; `articleId` is 32 lowercase hex characters that
+clients derive from the article URL. Saves and tombstones are last-write-wins
+by `(updatedAt,id)`; a save newer than a tombstone resurrects the article with
+an empty position. An `articleProgress` change carries
+`{articleId,position:{block,offset,percent}}` and moves the position of a live
+article only, on its own `(updatedAt,id)` clock. Within a batch, saves are
+applied before positions. To pull, add `articlesSince` (`null` or the last
+`cursor`); the response then includes `articles:{items,cursor,more}`, at most
+200 rows per response, tombstones included. Field limits: URL 2,048 characters
+(`http`/`https`), title 1,000, site name 300, byline 500, excerpt 2,000, image
+URLs 2,048 (`http`, `https` or `data:image/`), language 35, `publishedAt` 64.
+
+`PUT /v1/article-bodies/:sha256` stores an article's extracted document, the
+exact JSON bytes whose SHA-256 the client recorded, as `application/json` or
+`application/gzip` (gzip-compressed JSON). The Worker checks the uncompressed
+size (at most 8 MB), the SHA-256 and that the JSON is an object with
+`schema:1`, a string `url` and `title` and a `blocks` array, then stores the
+bytes as sent under `articles/<sha256>` in R2. The first upload answers `201`,
+repeats `200` without writing. `GET`/`HEAD` serve the stored bytes with their
+type, `ETag` and immutable caching. Errors: `413 TOO_LARGE`,
+`415 UNSUPPORTED_MEDIA_TYPE`, `422 CHECKSUM_MISMATCH`, `422 INVALID_ARTICLE`,
+`404 NOT_FOUND`. The Worker never fetches or extracts article pages for sync.
+
 Sync changes are keyed by the supplied `(bookId,sha256)` and do not require the
 edition to be present in the catalog. This keeps a cancelled or still-pending
 upload from rejecting unrelated changes in the same atomic batch. Clients skip
