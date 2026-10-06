@@ -199,6 +199,8 @@ function isDateLine(lower: string): boolean {
 
 function tidy(input: Block[], title: string, meta: Metadata): Block[] {
   let blocks = input.filter((b) => !(b.type === 'paragraph' && (b.content.length === 0 || /^[\d\s.,/#|·•]{1,6}$/.test(inlineText(b.content)))));
+  // A line of underscores, dashes or asterisks is a section break.
+  blocks = blocks.map((b) => (b.type === 'paragraph' && /^[\s_*~=\-–—•·]{3,}$/.test(inlineText(b.content)) ? { type: 'rule' } : b));
 
   // The title (and a repeated subtitle) are drawn by the renderer, not the body.
   const t = comparable(title);
