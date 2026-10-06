@@ -41,7 +41,8 @@ const CODE_TITLE = /(?:^|[\s_-])(?:code-?block-?title|code-?title|filename|file-
 const GUTTER = /(?:^|[\s_-])(?:line-?numbers?(?:-rows)?|linenos?|lineno|linenodiv|gutter|ln-num|hljs-ln-n|hljs-ln-numbers|rouge-gutter|blob-num|lnt|code-line-number|react-syntax-highlighter-line-number|line-num|linenumber|line-number-cell)(?:$|[\s_-])/;
 const LINE_ELEMENT = /(?:^|[\s_-])(?:line|code-line|cm-line|ec-line|token-line|highlight-line|view-line|line-content)(?:$|[\s_-])/;
 const PULL_QUOTE = /(?:^|[\s_-])(?:pullquote|pull-quote|wp-block-pullquote|pull_quote|blockquote--pull)(?:$|[\s_-])/;
-const ZERO_WIDTH = /[\u200b\ufeff\u2060]/g;
+/** Zero-width characters, and private-use code points (icon-font glyphs that show as boxes without their font). */
+const ZERO_WIDTH = /[\u200b\ufeff\u2060\ue000-\uf8ff]/g;
 const SPACES = /[\t\n\f\r ]+/g;
 
 interface Ctx {
