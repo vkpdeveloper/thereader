@@ -232,7 +232,8 @@ function markUnlikely(body: VElement, flags: Flags, state: { bylineRemoved: bool
   const totalProse = proseLength(body);
   walk(body, (el) => {
     if (el === body) return true;
-    const match = el.matchString;
+    // A heading's id is a slug of its own words ("highlighting-with-comments"): judge headings by class.
+    const match = HEADINGS.has(el.tag) ? el.className.toLowerCase() : el.matchString;
     if (el.attrs['aria-modal'] === 'true' && el.attrs['role'] === 'dialog') {
       el.skip = true;
       return false;
