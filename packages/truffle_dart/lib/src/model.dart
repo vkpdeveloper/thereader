@@ -697,6 +697,7 @@ class Article {
     required this.wordCount,
     required this.readingMinutes,
     required this.blocks,
+    this.markdown,
   });
 
   int schema;
@@ -732,6 +733,9 @@ class Article {
   int readingMinutes;
   List<Block> blocks;
 
+  /// The article as Markdown (`articleMarkdown`), present only when extraction was asked for it.
+  String? markdown;
+
   factory Article.fromJson(Json json) {
     final lead = json['leadImage'];
     return Article(
@@ -752,6 +756,7 @@ class Article {
       wordCount: json['wordCount'] as int,
       readingMinutes: json['readingMinutes'] as int,
       blocks: _blocks(json['blocks']),
+      markdown: json['markdown'] as String?,
     );
   }
 
@@ -773,6 +778,7 @@ class Article {
     'wordCount': wordCount,
     'readingMinutes': readingMinutes,
     'blocks': _blocksJson(blocks),
+    if (markdown != null) 'markdown': markdown,
   };
 }
 

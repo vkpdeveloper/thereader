@@ -22,10 +22,11 @@ first use; Python 3.12). Postlight runs under `node` (22+).
 | --- | --- |
 | `bun run snapshot [--refresh] [--only id,id]` | Fetches every curated URL with the app's request headers into `test-corpus/live/` (raw bytes + `{finalUrl, status, contentType, fetchedAt}`); skips existing snapshots. |
 | `bun run validate [--ids id,id] [--file batch.json]` | Checks every curated annotation: schema, snippet lengths, and that each `mustInclude`/`mustExclude` snippet occurs in the snapshot's page text. Exits 1 on any failure. |
-| `bun run eval [--engines ours,ours-dart,readability,defuddle,trafilatura,postlight] [--dataset zyte\|curated\|all] [--runs 5] [--workers 4] [--ids id,id] [--timeout 60]` | Runs the engines, stores raw outputs in `test-corpus/eval-out/<dataset>/<engine>.json`, re-derives `results/latest.json` and `RESULTS.md`. `--ids` prints per-page results without saving. |
+| `bun run eval [--engines ours,ours-md,ours-dart,readability,defuddle,trafilatura,postlight] [--dataset zyte\|curated\|all] [--runs 5] [--workers 4] [--ids id,id] [--timeout 60]` | Runs the engines, stores raw outputs in `test-corpus/eval-out/<dataset>/<engine>.json`, re-derives `results/latest.json` and `RESULTS.md`. `--ids` prints per-page results without saving. |
 | `bun run report` | Re-derives the results and writes a self-contained dark HTML report to `$TMPDIR/extract-eval-report.html`. |
 | `bun run failures [--engine ours] [--dataset zyte\|curated\|all] [--limit 20] [--snippets 4]` | Worst pages for an engine, sorted by the gap to the best other engine, with missed and leaked snippets, failed structure checks, and the text it missed or added. |
 | `bun run dump <id>` | Annotation aid: a snapshot's text blocks with DOM paths. |
+| `bun run markdown-cost [--dataset zyte\|curated\|all] [--runs 21] [--workers 4] [--ids id,id]` | What `markdown: true` adds to `extract` in Chromium: both variants on every page in the same renderer, alternating which runs first, per-page medians compared. |
 
 The engine import is live: every `eval` run re-bundles `src/page.ts` together with
 `packages/truffle/src` (about 50 ms), so after editing the engine just run
@@ -37,6 +38,7 @@ score is re-derived from the stored outputs, so annotation fixes need no re-run 
 | engine | version | how it runs | settings |
 | --- | --- | --- | --- |
 | ours | git HEAD of `packages/truffle` (`+dirty` if modified) | Chromium, `DOMParser` | `extract(doc, { url })`, text = `articleText(article)` |
+| ours-md | same as ours | Chromium, `DOMParser` | `extract(doc, { url, markdown: true })` (timed); text and stats from `article.markdown` rendered to HTML by remark's parser (GFM + math) and mdast-util-to-hast |
 | ours-dart | git HEAD of `packages/truffle_dart` (`+dirty` if modified) | Dart AOT (`dart compile exe`), package:html | `extractTree(fromDocument(parse(html)), url)`, summarized in Chromium exactly like ours |
 | Readability | `@mozilla/readability` 0.6.0 | Chromium, `DOMParser` | `new Readability(doc).parse()` defaults |
 | Defuddle | `defuddle` 0.19.4 (core bundle) | Chromium, `DOMParser` | `new Defuddle(doc, { url }).parse()` defaults |
@@ -68,6 +70,18 @@ Versions are pinned in `package.json`, the root `bun.lock`, `python/pyproject.to
   `--workers` parallel workers. `latest.json` records the machine and its load average at the
   start and end of the run; timings on a loaded machine are inflated, so use `--workers 2` on a
   busy machine and compare engines within one run.
+
+### The Markdown export (ours-md)
+
+ours-md checks that `article.markdown` carries the article and renders properly. The Markdown is
+rendered the way a consumer would render it (`mdast-util-from-markdown` with GFM and math, then
+`mdast-util-to-hast`, which is what `remark-rehype` runs; math becomes `<math>` holding its TeX),
+then scored like the other HTML outputs. The leading `# title`, GitHub alert markers and
+footnote chrome (the "Footnotes" label, back-references) are removed first, as a reader view
+shows them. Its text differs from ours by design: Markdown keeps figure captions and code titles
+that `articleText` leaves out, and math as TeX. Its timing is `extract` with the option, so the
+gap between ours and ours-md is the export's cost. Measured in one run, though, the two are
+affected by run order and load; `bun run markdown-cost` measures the cost directly.
 
 ### Output normalization
 

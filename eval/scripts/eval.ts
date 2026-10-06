@@ -1,6 +1,6 @@
 // Runs the extraction engines over the datasets, stores raw outputs under
 // test-corpus/eval-out/ and re-derives eval/results/latest.json and eval/RESULTS.md.
-// bun run eval [--engines ours,ours-dart,readability,defuddle,trafilatura,postlight] [--dataset zyte|curated|all]
+// bun run eval [--engines ours,ours-md,ours-dart,readability,defuddle,trafilatura,postlight] [--dataset zyte|curated|all]
 //              [--runs 5] [--workers 4] [--ids id,id] [--timeout 60]
 import { mkdir, rm } from 'node:fs/promises';
 import { cpus, loadavg, platform, release, tmpdir } from 'node:os';
@@ -67,7 +67,7 @@ function toOutput(doc: Doc, run: EngineRun & { summary?: { title: string; text: 
   };
 }
 
-const browserEngines = engines.filter((e): e is BrowserEngine => e === 'ours' || e === 'readability' || e === 'defuddle');
+const browserEngines = engines.filter((e): e is BrowserEngine => e === 'ours' || e === 'ours-md' || e === 'readability' || e === 'defuddle');
 const external = engines.filter((e) => e === 'ours-dart' || e === 'trafilatura' || e === 'postlight');
 const pool = await BrowserPool.open(workers);
 const environment: Record<string, string> = {
@@ -188,6 +188,11 @@ async function packageVersion(name: string): Promise<string> {
 
 const info: Record<EngineName, () => Promise<EngineInfo>> = {
   ours: async () => ({ version: await oursVersion(), runtime: 'Chromium DOMParser', settings: 'extract(doc, { url }); text = articleText(article)' }),
+  'ours-md': async () => ({
+    version: await oursVersion(),
+    runtime: 'Chromium DOMParser',
+    settings: 'extract(doc, { url, markdown: true }) (timed); text and stats from article.markdown rendered by remark (GFM + math) and mdast-util-to-hast',
+  }),
   'ours-dart': async () => ({
     version: await oursVersion('packages/truffle_dart'),
     runtime: dartRuntime,

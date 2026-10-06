@@ -1,0 +1,1600 @@
+[
+  {
+    "name": "escapes syntax characters in text",
+    "blocks": [
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "Use *stars*, _under_scores_, snake_case, [brackets], `ticks`, back\\slash, <b>tags</b>, a < b, &amp; and AT&T, ~tilde~ and $5 or $10."
+          }
+        ]
+      }
+    ],
+    "markdown": "Use \\*stars\\*, \\_under_scores\\_, snake_case, \\[brackets\\], \\`ticks\\`, back\\\\slash, \\<b>tags\\</b>, a < b, \\&amp; and AT&T, \\~tilde\\~ and \\$5 or \\$10.\n"
+  },
+  {
+    "name": "escapes line starts",
+    "blocks": [
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "# not a heading"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "1. not a list"
+          },
+          {
+            "type": "break"
+          },
+          {
+            "type": "text",
+            "text": "- nor this"
+          },
+          {
+            "type": "break"
+          },
+          {
+            "type": "text",
+            "text": "+ nor this"
+          },
+          {
+            "type": "break"
+          },
+          {
+            "type": "text",
+            "text": "> nor a quote"
+          },
+          {
+            "type": "break"
+          },
+          {
+            "type": "text",
+            "text": "---"
+          },
+          {
+            "type": "break"
+          },
+          {
+            "type": "text",
+            "text": "==="
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "2024. A year, -5 degrees, #hashtag"
+          }
+        ]
+      }
+    ],
+    "markdown": "\\# not a heading\n\n1\\. not a list\\\n\\- nor this\\\n\\+ nor this\\\n\\> nor a quote\\\n---\\\n\\===\n\n2024\\. A year, -5 degrees, #hashtag\n"
+  },
+  {
+    "name": "headings",
+    "blocks": [
+      {
+        "type": "heading",
+        "level": 2,
+        "content": [
+          {
+            "type": "text",
+            "text": "Plain"
+          }
+        ]
+      },
+      {
+        "type": "heading",
+        "level": 3,
+        "content": [
+          {
+            "type": "text",
+            "text": "Issue #"
+          }
+        ]
+      },
+      {
+        "type": "heading",
+        "level": 4,
+        "content": [
+          {
+            "type": "text",
+            "text": "C# and F#"
+          }
+        ]
+      },
+      {
+        "type": "heading",
+        "level": 2,
+        "content": [
+          {
+            "type": "text",
+            "text": "Line"
+          },
+          {
+            "type": "break"
+          },
+          {
+            "type": "text",
+            "text": "break"
+          }
+        ],
+        "anchor": "x"
+      }
+    ],
+    "markdown": "## Plain\n\n### Issue \\#\n\n#### C# and F#\n\n## Line break\n"
+  },
+  {
+    "name": "marks nest and keep spaces outside",
+    "blocks": [
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "plain "
+          },
+          {
+            "type": "text",
+            "text": "bold ",
+            "marks": [
+              "bold"
+            ]
+          },
+          {
+            "type": "text",
+            "text": "both",
+            "marks": [
+              "bold",
+              "italic"
+            ]
+          },
+          {
+            "type": "text",
+            "text": " italic",
+            "marks": [
+              "italic"
+            ]
+          },
+          {
+            "type": "text",
+            "text": " and "
+          },
+          {
+            "type": "text",
+            "text": "struck",
+            "marks": [
+              "strike"
+            ]
+          },
+          {
+            "type": "text",
+            "text": " "
+          },
+          {
+            "type": "text",
+            "text": "code",
+            "marks": [
+              "code"
+            ]
+          },
+          {
+            "type": "text",
+            "text": " "
+          },
+          {
+            "type": "text",
+            "text": "bold code",
+            "marks": [
+              "bold",
+              "code"
+            ]
+          },
+          {
+            "type": "text",
+            "text": " "
+          },
+          {
+            "type": "text",
+            "text": "Ctrl",
+            "marks": [
+              "kbd"
+            ]
+          },
+          {
+            "type": "text",
+            "text": "+"
+          },
+          {
+            "type": "text",
+            "text": "C",
+            "marks": [
+              "kbd"
+            ]
+          },
+          {
+            "type": "text",
+            "text": " "
+          },
+          {
+            "type": "text",
+            "text": "under",
+            "marks": [
+              "underline"
+            ]
+          },
+          {
+            "type": "text",
+            "text": " H"
+          },
+          {
+            "type": "text",
+            "text": "2",
+            "marks": [
+              "sub"
+            ]
+          },
+          {
+            "type": "text",
+            "text": "O"
+          }
+        ]
+      }
+    ],
+    "markdown": "plain **bold *both*** *italic* and ~~struck~~ `code` **`bold code`** `Ctrl`+`C` under H2O\n"
+  },
+  {
+    "name": "emphasis a parser would not see is written as text",
+    "blocks": [
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "cite"
+          },
+          {
+            "type": "text",
+            "text": "[",
+            "marks": [
+              "italic"
+            ]
+          },
+          {
+            "type": "text",
+            "text": "12"
+          },
+          {
+            "type": "text",
+            "text": "]",
+            "marks": [
+              "italic"
+            ]
+          },
+          {
+            "type": "text",
+            "text": " and famous"
+          },
+          {
+            "type": "text",
+            "text": "“quoted”",
+            "marks": [
+              "italic"
+            ]
+          },
+          {
+            "type": "text",
+            "text": " but "
+          },
+          {
+            "type": "text",
+            "text": "“fine”",
+            "marks": [
+              "italic"
+            ]
+          },
+          {
+            "type": "text",
+            "text": " and intra"
+          },
+          {
+            "type": "text",
+            "text": "word",
+            "marks": [
+              "bold"
+            ]
+          },
+          {
+            "type": "text",
+            "text": "s"
+          }
+        ]
+      }
+    ],
+    "markdown": "cite\\[12\\] and famous“quoted” but *“fine”* and intra**word**s\n"
+  },
+  {
+    "name": "links",
+    "blocks": [
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "A "
+          },
+          {
+            "type": "text",
+            "text": "link",
+            "href": "https://example.com/a"
+          },
+          {
+            "type": "text",
+            "text": ", a "
+          },
+          {
+            "type": "text",
+            "text": "bold link",
+            "marks": [
+              "bold"
+            ],
+            "href": "https://example.com/b"
+          },
+          {
+            "type": "text",
+            "text": ", "
+          },
+          {
+            "type": "text",
+            "text": "https://example.com/self",
+            "href": "https://example.com/self"
+          },
+          {
+            "type": "text",
+            "text": ", "
+          },
+          {
+            "type": "text",
+            "text": "wiki",
+            "href": "https://en.wikipedia.org/wiki/Foo_(bar)"
+          },
+          {
+            "type": "text",
+            "text": ", "
+          },
+          {
+            "type": "text",
+            "text": "odd",
+            "href": "https://example.com/a)b"
+          },
+          {
+            "type": "text",
+            "text": " and mail "
+          },
+          {
+            "type": "text",
+            "text": "me",
+            "href": "mailto:me@example.com"
+          },
+          {
+            "type": "text",
+            "text": "!"
+          },
+          {
+            "type": "text",
+            "text": "x",
+            "href": "https://example.com/x"
+          }
+        ]
+      }
+    ],
+    "markdown": "A [link](https://example.com/a), a [**bold link**](https://example.com/b), <https://example.com/self>, [wiki](https://en.wikipedia.org/wiki/Foo_(bar)), [odd](<https://example.com/a)b>) and mail [me](mailto:me@example.com)\\![x](https://example.com/x)\n"
+  },
+  {
+    "name": "bare urls stay as written",
+    "blocks": [
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "See http://example.com/~user/a_b*c* and www.example.org/a_(b)). Not ahttp://x.com/_y_ though."
+          }
+        ]
+      }
+    ],
+    "markdown": "See <http://example.com/~user/a_b*c>\\* and www.example.org/a_(b)). Not ahttp://x.com/\\_y\\_ though.\n"
+  },
+  {
+    "name": "code spans",
+    "blocks": [
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "a `tick`",
+            "marks": [
+              "code"
+            ]
+          },
+          {
+            "type": "text",
+            "text": " "
+          },
+          {
+            "type": "text",
+            "text": "``double``",
+            "marks": [
+              "code"
+            ]
+          },
+          {
+            "type": "text",
+            "text": " "
+          },
+          {
+            "type": "text",
+            "text": " padded ",
+            "marks": [
+              "code"
+            ]
+          },
+          {
+            "type": "text",
+            "text": " "
+          },
+          {
+            "type": "text",
+            "text": "joined",
+            "marks": [
+              "code"
+            ]
+          },
+          {
+            "type": "text",
+            "text": "-up",
+            "marks": [
+              "code",
+              "sup"
+            ]
+          }
+        ]
+      }
+    ],
+    "markdown": "`` a `tick` `` ``` ``double`` ``` `  padded  ` `joined-up`\n"
+  },
+  {
+    "name": "inline images math and breaks",
+    "blocks": [
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "An "
+          },
+          {
+            "type": "image",
+            "src": "https://example.com/e.png",
+            "alt": "emoji [x]"
+          },
+          {
+            "type": "text",
+            "text": " icon, math "
+          },
+          {
+            "type": "math",
+            "tex": "e^{i\\pi}+1=0",
+            "text": "e^iπ+1=0"
+          },
+          {
+            "type": "text",
+            "text": ", dollars "
+          },
+          {
+            "type": "math",
+            "tex": "\\text{\\$}5",
+            "text": "$5"
+          },
+          {
+            "type": "text",
+            "text": ", fallback "
+          },
+          {
+            "type": "math",
+            "mathml": "<math><mi>x</mi></math>",
+            "text": "x*y"
+          },
+          {
+            "type": "break"
+          },
+          {
+            "type": "text",
+            "text": "next line"
+          }
+        ]
+      }
+    ],
+    "markdown": "An ![emoji \\[x\\]](https://example.com/e.png) icon, math $e^{i\\pi}+1=0$, dollars $$\\text{\\$}5$$, fallback x\\*y\\\nnext line\n"
+  },
+  {
+    "name": "lists tight loose nested and task",
+    "blocks": [
+      {
+        "type": "list",
+        "ordered": true,
+        "start": 3,
+        "items": [
+          {
+            "blocks": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Third"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "blocks": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Fourth"
+                  }
+                ]
+              },
+              {
+                "type": "list",
+                "ordered": false,
+                "items": [
+                  {
+                    "blocks": [
+                      {
+                        "type": "paragraph",
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "nested"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "blocks": [
+                      {
+                        "type": "paragraph",
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "more"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "list",
+        "ordered": false,
+        "items": [
+          {
+            "blocks": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "done"
+                  }
+                ]
+              }
+            ],
+            "checked": true
+          },
+          {
+            "blocks": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "todo"
+                  }
+                ]
+              }
+            ],
+            "checked": false
+          }
+        ]
+      },
+      {
+        "type": "list",
+        "ordered": false,
+        "items": [
+          {
+            "blocks": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "first paragraph"
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "second paragraph"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "blocks": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "item"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "blocks": []
+          }
+        ]
+      },
+      {
+        "type": "list",
+        "ordered": true,
+        "items": [
+          {
+            "blocks": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "a"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "blocks": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "b"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "list",
+        "ordered": true,
+        "items": [
+          {
+            "blocks": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "c"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "list",
+        "ordered": false,
+        "items": [
+          {
+            "blocks": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "x"
+                  }
+                ]
+              },
+              {
+                "type": "list",
+                "ordered": true,
+                "start": 5,
+                "items": [
+                  {
+                    "blocks": [
+                      {
+                        "type": "paragraph",
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "five"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "list",
+        "ordered": true,
+        "start": 9,
+        "items": [
+          {
+            "blocks": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "nine"
+                  }
+                ]
+              },
+              {
+                "type": "code",
+                "code": "line\n  indented\n",
+                "language": "python"
+              }
+            ]
+          },
+          {
+            "blocks": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "ten"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "markdown": "3. Third\n4. Fourth\n   - nested\n   - more\n\n- [x] done\n- [ ] todo\n\n* first paragraph\n\n  second paragraph\n\n* item\n\n*\n\n1. a\n2. b\n\n1) c\n\n- x\n\n  5. five\n\n9. nine\n\n   ```python\n   line\n     indented\n   ```\n\n10. ten\n"
+  },
+  {
+    "name": "quotes",
+    "blocks": [
+      {
+        "type": "quote",
+        "blocks": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Quoted"
+              }
+            ]
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Second"
+              }
+            ]
+          }
+        ],
+        "cite": [
+          {
+            "type": "text",
+            "text": "Someone",
+            "marks": [
+              "italic"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "quote",
+        "blocks": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Pulled"
+              }
+            ]
+          }
+        ],
+        "pull": true
+      }
+    ],
+    "markdown": "> Quoted\n>\n> Second\n>\n> — *Someone*\n\n> Pulled\n"
+  },
+  {
+    "name": "code blocks",
+    "blocks": [
+      {
+        "type": "code",
+        "code": "fn main() {}\n",
+        "language": "rust",
+        "languageSource": "markup",
+        "title": "src/main.rs"
+      },
+      {
+        "type": "code",
+        "code": "a ``` fence\n````\n",
+        "language": null
+      },
+      {
+        "type": "code",
+        "code": "plain",
+        "language": null,
+        "title": "notes \"v2\".txt"
+      },
+      {
+        "type": "code",
+        "code": "",
+        "language": "js"
+      },
+      {
+        "type": "code",
+        "code": "x",
+        "language": null,
+        "title": "a`b"
+      }
+    ],
+    "markdown": "```rust title=\"src/main.rs\"\nfn main() {}\n```\n\n`````\na ``` fence\n````\n`````\n\n```text title=\"notes \\\"v2\\\".txt\"\nplain\n```\n\n```js\n```\n\n~~~text title=\"a`b\"\nx\n~~~\n"
+  },
+  {
+    "name": "figures and media",
+    "blocks": [
+      {
+        "type": "figure",
+        "images": [
+          {
+            "src": "https://example.com/a.jpg",
+            "alt": "A",
+            "width": 800,
+            "height": 600
+          },
+          {
+            "src": "https://example.com/b (1).jpg",
+            "alt": "",
+            "href": "https://example.com/b-full.jpg"
+          }
+        ],
+        "caption": [
+          {
+            "type": "text",
+            "text": "Caption "
+          },
+          {
+            "type": "text",
+            "text": "text",
+            "marks": [
+              "italic"
+            ]
+          }
+        ],
+        "credit": [
+          {
+            "type": "text",
+            "text": "Photo: Someone"
+          }
+        ]
+      },
+      {
+        "type": "video",
+        "provider": "youtube",
+        "url": "https://www.youtube.com/watch?v=abc",
+        "embedUrl": "https://www.youtube.com/embed/abc",
+        "poster": "https://i.ytimg.com/vi/abc/hq.jpg",
+        "title": "A talk",
+        "caption": [
+          {
+            "type": "text",
+            "text": "Watch it"
+          }
+        ]
+      },
+      {
+        "type": "video",
+        "provider": "file",
+        "url": "https://example.com/v.mp4"
+      },
+      {
+        "type": "audio",
+        "provider": "other",
+        "url": "https://example.com/a.mp3",
+        "title": "Episode 1"
+      }
+    ],
+    "markdown": "![A](https://example.com/a.jpg)\n\n[![](<https://example.com/b (1).jpg>)](https://example.com/b-full.jpg)\n\nCaption *text*\n\nPhoto: Someone\n\n[![A talk](https://i.ytimg.com/vi/abc/hq.jpg)](https://www.youtube.com/watch?v=abc)\n\nWatch it\n\n<https://example.com/v.mp4>\n\n[Episode 1](https://example.com/a.mp3)\n"
+  },
+  {
+    "name": "embeds",
+    "blocks": [
+      {
+        "type": "embed",
+        "provider": "twitter",
+        "url": "https://twitter.com/a/status/1",
+        "author": "A Person (@a)",
+        "blocks": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "A post"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "embed",
+        "provider": "codepen",
+        "url": "https://codepen.io/a/pen/b"
+      }
+    ],
+    "markdown": "> A post\n>\n> — A Person (@a), <https://twitter.com/a/status/1>\n\n<https://codepen.io/a/pen/b>\n"
+  },
+  {
+    "name": "tables",
+    "blocks": [
+      {
+        "type": "table",
+        "caption": [
+          {
+            "type": "text",
+            "text": "Sizes"
+          }
+        ],
+        "rows": [
+          {
+            "cells": [
+              {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Name"
+                  }
+                ],
+                "header": true
+              },
+              {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Size"
+                  }
+                ],
+                "header": true,
+                "align": "right"
+              },
+              {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Note"
+                  }
+                ],
+                "header": true,
+                "align": "center"
+              }
+            ]
+          },
+          {
+            "cells": [
+              {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "a|b",
+                    "marks": [
+                      "code"
+                    ]
+                  }
+                ]
+              },
+              {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "1"
+                  }
+                ]
+              },
+              {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "x | y"
+                  },
+                  {
+                    "type": "break"
+                  },
+                  {
+                    "type": "text",
+                    "text": "z"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "cells": [
+              {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "spans two"
+                  }
+                ],
+                "colspan": 2
+              },
+              {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "tall"
+                  }
+                ],
+                "rowspan": 2
+              }
+            ]
+          },
+          {
+            "cells": [
+              {
+                "content": [
+                  {
+                    "type": "math",
+                    "tex": "|x| + \\|y\\|",
+                    "text": "|x|"
+                  }
+                ]
+              },
+              {
+                "content": []
+              }
+            ]
+          }
+        ],
+        "headerRows": 1
+      },
+      {
+        "type": "table",
+        "rows": [
+          {
+            "cells": [
+              {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "no"
+                  }
+                ]
+              },
+              {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "header"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "markdown": "Sizes\n\n| Name | Size | Note |\n| --- | --: | :-: |\n| `a\\|b` | 1 | x \\| y z |\n| spans two |  | tall |\n| $\\vert x\\vert + \\Vert y\\Vert$ |  |  |\n\n|  |  |\n| --- | --- |\n| no | header |\n"
+  },
+  {
+    "name": "rules and math blocks",
+    "blocks": [
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "before"
+          }
+        ]
+      },
+      {
+        "type": "rule"
+      },
+      {
+        "type": "math",
+        "tex": "\na^2+b^2=c^2\n",
+        "text": "a²+b²=c²"
+      },
+      {
+        "type": "math",
+        "mathml": "<math/>",
+        "text": "1 * 2"
+      }
+    ],
+    "markdown": "before\n\n---\n\n$$\na^2+b^2=c^2\n$$\n\n1 \\* 2\n"
+  },
+  {
+    "name": "definitions details and callouts",
+    "blocks": [
+      {
+        "type": "definitions",
+        "items": [
+          {
+            "term": [
+              {
+                "type": "text",
+                "text": "Term "
+              },
+              {
+                "type": "text",
+                "text": "bold",
+                "marks": [
+                  "bold"
+                ]
+              }
+            ],
+            "details": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Meaning."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "term": [
+              {
+                "type": "text",
+                "text": "Empty"
+              }
+            ],
+            "details": []
+          }
+        ]
+      },
+      {
+        "type": "details",
+        "summary": [
+          {
+            "type": "text",
+            "text": "More"
+          }
+        ],
+        "blocks": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Hidden"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "callout",
+        "variant": "warning",
+        "title": [
+          {
+            "type": "text",
+            "text": "Careful"
+          }
+        ],
+        "blocks": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Body"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "callout",
+        "variant": "info",
+        "blocks": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Info body"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "callout",
+        "variant": "danger",
+        "blocks": [
+          {
+            "type": "list",
+            "ordered": false,
+            "items": [
+              {
+                "blocks": [
+                  {
+                    "type": "paragraph",
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "risk"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "callout",
+        "variant": null,
+        "title": [
+          {
+            "type": "text",
+            "text": "Aside"
+          }
+        ],
+        "blocks": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "plain"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "markdown": "**Term bold**\n\nMeaning.\n\n**Empty**\n\n**More**\n\nHidden\n\n> [!WARNING]\n> **Careful**\n>\n> Body\n\n> [!NOTE]\n> Info body\n\n> [!CAUTION]\n> - risk\n\n> **Aside**\n>\n> plain\n"
+  },
+  {
+    "name": "footnotes called and uncalled",
+    "blocks": [
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": "Claim"
+          },
+          {
+            "type": "ref",
+            "id": "fn:1",
+            "label": "1"
+          },
+          {
+            "type": "text",
+            "text": " and"
+          },
+          {
+            "type": "ref",
+            "id": "note two",
+            "label": "*"
+          },
+          {
+            "type": "text",
+            "text": " and missing"
+          },
+          {
+            "type": "ref",
+            "id": "gone",
+            "label": "9"
+          },
+          {
+            "type": "text",
+            "text": "."
+          }
+        ]
+      },
+      {
+        "type": "footnotes",
+        "items": [
+          {
+            "id": "fn:1",
+            "label": "1",
+            "blocks": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "First note."
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Second paragraph"
+                  },
+                  {
+                    "type": "ref",
+                    "id": "n3",
+                    "label": "1"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "note two",
+            "label": "*",
+            "blocks": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Starred."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "n3",
+            "label": "1",
+            "blocks": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Called from a note."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "n4",
+            "label": "4",
+            "blocks": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Nobody calls this one."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "n5",
+            "label": "5",
+            "blocks": [
+              {
+                "type": "code",
+                "code": "x\n",
+                "language": null
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "markdown": "Claim[^1] and[^note-two] and missing9.\n\n[^1]: First note.\n\n    Second paragraph[^n3]\n\n[^note-two]: Starred.\n\n[^n3]: Called from a note.\n\n\\[4\\] Nobody calls this one.\n\n\\[5\\]\n\n```\nx\n```\n"
+  },
+  {
+    "name": "marker lines before blocks that could underline them",
+    "blocks": [
+      {
+        "type": "callout",
+        "variant": "note",
+        "blocks": [
+          {
+            "type": "rule"
+          },
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "after a rule"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "callout",
+        "variant": "tip",
+        "blocks": [
+          {
+            "type": "table",
+            "rows": [
+              {
+                "cells": [
+                  {
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "h"
+                      }
+                    ],
+                    "header": true
+                  }
+                ]
+              },
+              {
+                "cells": [
+                  {
+                    "content": [
+                      {
+                        "type": "text",
+                        "text": "v"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "headerRows": 1
+          }
+        ]
+      },
+      {
+        "type": "list",
+        "ordered": false,
+        "items": [
+          {
+            "blocks": [
+              {
+                "type": "rule"
+              }
+            ],
+            "checked": true
+          },
+          {
+            "blocks": [
+              {
+                "type": "list",
+                "ordered": false,
+                "items": [
+                  {
+                    "blocks": []
+                  }
+                ]
+              }
+            ],
+            "checked": false
+          },
+          {
+            "blocks": [
+              {
+                "type": "code",
+                "code": "x\n",
+                "language": "js"
+              }
+            ],
+            "checked": true
+          }
+        ]
+      },
+      {
+        "type": "embed",
+        "provider": "other",
+        "url": "https://example.com/p",
+        "author": "# Channel",
+        "blocks": [
+          {
+            "type": "paragraph",
+            "content": [
+              {
+                "type": "text",
+                "text": "Post"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "markdown": "> [!NOTE]\n>\n> ---\n>\n> after a rule\n\n> [!TIP]\n> | h |\n> | --- |\n> | v |\n\n- [x]\n\n  ---\n- [ ]\n\n  -\n- [x]\n  ```js\n  x\n  ```\n\n> Post\n>\n> — # Channel, <https://example.com/p>\n"
+  },
+  {
+    "name": "empty content writes nothing",
+    "blocks": [
+      {
+        "type": "paragraph",
+        "content": []
+      },
+      {
+        "type": "paragraph",
+        "content": [
+          {
+            "type": "text",
+            "text": " "
+          }
+        ]
+      },
+      {
+        "type": "heading",
+        "level": 2,
+        "content": []
+      },
+      {
+        "type": "quote",
+        "blocks": []
+      },
+      {
+        "type": "table",
+        "rows": []
+      }
+    ],
+    "markdown": ""
+  }
+]

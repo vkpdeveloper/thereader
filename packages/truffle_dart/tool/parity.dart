@@ -2,7 +2,8 @@
 //
 // Reads what `packages/truffle/scripts/parity-dump.ts` wrote to
 // `test-corpus/parity/` and compares, page by page, with the TypeScript
-// `extractTree` output:
+// `extractTree` output (written with `markdown: true`, so `article.markdown`
+// is compared too):
 //
 //   engine    Dart `extractTree` on the very VDocument jsdom produced (parser
 //             differences excluded; the target is 0 differing pages);
@@ -63,9 +64,9 @@ void main(List<String> args) {
         final vdoc = VDocument.fromJson(
           jsonDecode(File('${_root}vdoc/$key.json').readAsStringSync()) as Map<String, dynamic>,
         );
-        article = extractTree(vdoc, url);
+        article = extractTree(vdoc, url, markdown: true);
       } else {
-        article = extractHtml(File('${_root}html/$key.html').readAsStringSync(), url);
+        article = extractHtml(File('${_root}html/$key.html').readAsStringSync(), url, markdown: true);
       }
       actualText = '${encoder.convert(article?.toJson())}\n';
     } catch (error, stack) {
@@ -117,6 +118,15 @@ String? firstDifference(Object? a, Object? b, String path) {
     return a.length == b.length ? null : '$path length (ts: ${a.length}, dart: ${b.length})';
   }
   if (a == b) return null;
+  if (a is String && b is String && (a.length > 160 || b.length > 160)) {
+    // Long text (the Markdown): show both around the first differing character.
+    var i = 0;
+    while (i < a.length && i < b.length && a.codeUnitAt(i) == b.codeUnitAt(i)) {
+      i++;
+    }
+    String around(String s) => s.substring(i < 60 ? 0 : i - 60, i + 100 > s.length ? s.length : i + 100);
+    return '$path at $i (ts: ${jsonEncode(around(a))}, dart: ${jsonEncode(around(b))})';
+  }
   return '$path (ts: ${_short(a)}, dart: ${_short(b)})';
 }
 

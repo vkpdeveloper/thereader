@@ -1,5 +1,12 @@
 import { Readability } from '@mozilla/readability';
 import Defuddle from 'defuddle';
+import { toHtml } from 'hast-util-to-html';
+import { fromMarkdown } from 'mdast-util-from-markdown';
+import { gfmFromMarkdown } from 'mdast-util-gfm';
+import { mathFromMarkdown } from 'mdast-util-math';
+import { toHast } from 'mdast-util-to-hast';
+import { gfm } from 'micromark-extension-gfm';
+import { math } from 'micromark-extension-math';
 import { articleText, extract } from 'truffle';
 import type { Article, Block, Inline } from 'truffle';
 import { canonicalLanguage, normalizeText } from './text';
@@ -10,7 +17,7 @@ import { canonicalLanguage, normalizeText } from './text';
  * separately with `performance.now()`.
  */
 
-export type BrowserEngine = 'ours' | 'readability' | 'defuddle';
+export type BrowserEngine = 'ours' | 'ours-md' | 'readability' | 'defuddle';
 
 export interface Stats {
   codeBlocks: number;
@@ -205,6 +212,41 @@ function articleStats(article: Article): { stats: Stats; blockTypes: Record<stri
   return { stats, blockTypes };
 }
 
+/**
+ * Renders Markdown the way a consumer would: remark's parser (GFM + math) and
+ * mdast-util-to-hast (what remark-rehype runs), math as `<math>` holding its
+ * TeX. GitHub alert markers are dropped as GitHub does.
+ */
+export function renderMarkdown(markdown: string): string {
+  const tree = fromMarkdown(markdown, { extensions: [gfm(), math()], mdastExtensions: [gfmFromMarkdown(), mathFromMarkdown()] });
+  const mathElement = (value: string, display: boolean) => ({
+    type: 'element' as const,
+    tagName: 'math',
+    properties: display ? { display: 'block' } : {},
+    children: [{ type: 'text' as const, value }],
+  });
+  const hast = toHast(tree, {
+    handlers: {
+      inlineMath: (_state, node) => mathElement(node.value, false),
+      math: (_state, node) => mathElement(node.value, true),
+    },
+  });
+  return toHtml(hast);
+}
+
+/** Text and structure of rendered Markdown: the leading title heading and footnote chrome removed. */
+export function summarizeMarkdown(markdown: string, title: string): Summary {
+  const root = fragment(renderMarkdown(markdown));
+  const first = root.firstElementChild;
+  if (first?.tagName === 'H1' && (first.textContent ?? '').trim() === title.trim()) first.remove();
+  for (const chrome of Array.from(root.querySelectorAll('#footnote-label, [data-footnote-backref]'))) chrome.remove();
+  for (const quote of Array.from(root.querySelectorAll('blockquote > p:first-child'))) {
+    const text = quote.firstChild;
+    if (text?.nodeType === Node.TEXT_NODE) text.nodeValue = (text.nodeValue ?? '').replace(/^\[!(?:NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*/, '');
+  }
+  return { title, text: nodeText(root), stats: htmlStats(root, title) };
+}
+
 const engines: Record<BrowserEngine, Engine> = {
   ours: {
     run: (doc, url) => extract(doc, { url }),
@@ -213,6 +255,13 @@ const engines: Record<BrowserEngine, Engine> = {
       if (!article) return summarizeHtml('');
       const { stats, blockTypes } = articleStats(article);
       return { title: article.title, text: normalizeText(articleText(article)), stats, blockTypes };
+    },
+  },
+  'ours-md': {
+    run: (doc, url) => extract(doc, { url, markdown: true }),
+    summarize(result) {
+      const article = result as { title: string; markdown: string } | null;
+      return article ? summarizeMarkdown(article.markdown, article.title) : summarizeHtml('');
     },
   },
   readability: {
@@ -272,6 +321,34 @@ export function runEngine(name: BrowserEngine, runs: number, slowMs = 5000): Eng
     result.error = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
   }
   return result;
+}
+
+/**
+ * Cost of the Markdown export: `extract` with and without `markdown: true` on
+ * the current page, alternating which goes first, on a fresh document each run
+ * (parsing is not timed). One untimed warm-up of each first.
+ */
+export function timeMarkdown(runs: number): { plain: number[]; markdown: number[] } {
+  const { html, url } = current;
+  const out = { plain: [] as number[], markdown: [] as number[] };
+  const once = (markdown: boolean) => {
+    const doc = parse(html, url);
+    const t0 = performance.now();
+    extract(doc, { url, markdown });
+    return performance.now() - t0;
+  };
+  once(false);
+  once(true);
+  for (let i = 0; i < runs; i++) {
+    if (i % 2 === 0) {
+      out.plain.push(once(false));
+      out.markdown.push(once(true));
+    } else {
+      out.markdown.push(once(true));
+      out.plain.push(once(false));
+    }
+  }
+  return out;
 }
 
 /** Text of the whole page as the engines see it (scripts, styles, templates and noscript dropped). */
@@ -342,4 +419,4 @@ export function meta(): Record<string, string> {
   };
 }
 
-Object.assign(globalThis, { evalPage: { load, runEngine, summarizeHtml, summarizeArticle, pageText, pageBlocks, meta } });
+Object.assign(globalThis, { evalPage: { load, runEngine, timeMarkdown, summarizeHtml, summarizeArticle, pageText, pageBlocks, meta } });

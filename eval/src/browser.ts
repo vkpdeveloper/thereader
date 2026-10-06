@@ -2,7 +2,7 @@ import { resolve } from 'node:path';
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
 
 /** The page script's API as seen from Node (it lives on `globalThis.evalPage` in the renderer). */
-export type PageApi = Pick<typeof import('./page'), 'load' | 'runEngine' | 'summarizeHtml' | 'summarizeArticle' | 'pageText' | 'pageBlocks' | 'meta'>;
+export type PageApi = Pick<typeof import('./page'), 'load' | 'runEngine' | 'timeMarkdown' | 'summarizeHtml' | 'summarizeArticle' | 'pageText' | 'pageBlocks' | 'meta'>;
 
 /** Bundles `src/page.ts` (and the engine sources it imports, live) into one browser script. */
 export async function bundlePage(): Promise<string> {

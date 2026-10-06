@@ -274,9 +274,16 @@ export interface Article {
   /** Rounded up, at least 1. */
   readingMinutes: number;
   blocks: Block[];
+  /** The article as Markdown (`articleMarkdown`), present only when extraction was asked for it. */
+  markdown?: string;
 }
 
 export interface ExtractOptions {
   /** URL the HTML was fetched from (after redirects). Resolves relative URLs. */
   url: string;
+  /** Also write the article as Markdown into `article.markdown`. Off by default; the blocks are returned either way. */
+  markdown?: boolean;
 }
+
+/** What extraction returns when `markdown: true` is passed. */
+export type MarkdownArticle = Article & { markdown: string };

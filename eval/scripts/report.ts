@@ -8,6 +8,7 @@ import { type DocOutput, ENGINES, type EngineName, mean, percentile } from '../s
 
 const COLORS: Record<EngineName, string> = {
   ours: '#38bdf8',
+  'ours-md': '#818cf8',
   'ours-dart': '#2dd4bf',
   readability: '#f472b6',
   defuddle: '#a3e635',

@@ -1,36 +1,52 @@
 {
- "generatedAt": "2026-10-06T04:00:58.487Z",
+ "generatedAt": "2026-10-06T19:16:42.052Z",
  "engines": {
   "ours": {
-   "version": "0009aa3",
+   "version": "b1b2419",
    "runtime": "Chromium DOMParser",
    "settings": "extract(doc, { url }); text = articleText(article)",
-   "ranAt": "2026-10-06T04:00:58.420Z",
-   "runs": 3,
-   "workers": 3,
+   "ranAt": "2026-10-06T19:16:42.008Z",
+   "runs": 5,
+   "workers": 4,
    "environment": {
     "os": "darwin 27.0.0",
     "cpu": "Apple M5 x10",
     "chromium": "153.0.8010.12",
     "bun": "1.4.0",
-    "load avg at start": "3.9 4.2 5.9",
-    "load avg at end": "5.2 4.6 5.9"
+    "load avg at start": "3.1 2.4 2.1",
+    "load avg at end": "3.2 2.5 2.1"
+   }
+  },
+  "ours-md": {
+   "version": "b1b2419",
+   "runtime": "Chromium DOMParser",
+   "settings": "extract(doc, { url, markdown: true }) (timed); text and stats from article.markdown rendered by remark (GFM + math) and mdast-util-to-hast",
+   "ranAt": "2026-10-06T19:16:42.027Z",
+   "runs": 5,
+   "workers": 4,
+   "environment": {
+    "os": "darwin 27.0.0",
+    "cpu": "Apple M5 x10",
+    "chromium": "153.0.8010.12",
+    "bun": "1.4.0",
+    "load avg at start": "3.1 2.4 2.1",
+    "load avg at end": "3.2 2.5 2.1"
    }
   },
   "ours-dart": {
-   "version": "0009aa3",
+   "version": "b1b2419",
    "runtime": "Dart 3.13.4 AOT, package:html 0.15.7, one process",
    "settings": "package:html parse, then extractTree(fromDocument(doc), url) (base href added as for Chromium); text = articleText(article)",
-   "ranAt": "2026-10-06T04:00:58.443Z",
-   "runs": 3,
-   "workers": 3,
+   "ranAt": "2026-10-06T19:16:42.045Z",
+   "runs": 5,
+   "workers": 4,
    "environment": {
     "os": "darwin 27.0.0",
     "cpu": "Apple M5 x10",
     "chromium": "153.0.8010.12",
     "bun": "1.4.0",
-    "load avg at start": "3.9 4.2 5.9",
-    "load avg at end": "5.2 4.6 5.9"
+    "load avg at start": "3.1 2.4 2.1",
+    "load avg at end": "3.2 2.5 2.1"
    }
   },
   "readability": {
@@ -103,45 +119,91 @@
    "docs": 326,
    "failed": 0,
    "parse": {
-    "median": 0.882,
-    "p95": 6.85,
-    "mean": 1.754
+    "median": 0.82,
+    "p95": 6.945,
+    "mean": 1.714
    },
    "extract": {
-    "median": 1.23,
-    "p95": 10.185,
-    "mean": 3
+    "median": 1.14,
+    "p95": 9.785,
+    "mean": 2.852
    },
    "total": {
-    "median": 2.252,
-    "p95": 14.98,
-    "mean": 4.757
+    "median": 2.098,
+    "p95": 12.855,
+    "mean": 4.574
    },
    "bySize": {
     "<50KB": {
      "docs": 35,
-     "median": 1.11,
-     "p95": 3.75
+     "median": 0.99,
+     "p95": 3.745
     },
     "50-200KB": {
      "docs": 176,
-     "median": 1.778,
-     "p95": 5.68
+     "median": 1.643,
+     "p95": 5.23
     },
     "200-500KB": {
      "docs": 76,
-     "median": 3.24,
-     "p95": 9.61
+     "median": 2.978,
+     "p95": 9.215
     },
     "0.5-1MB": {
      "docs": 21,
-     "median": 6.085,
-     "p95": 18.765
+     "median": 5.95,
+     "p95": 18.565
     },
     ">1MB": {
      "docs": 18,
-     "median": 30.512,
-     "p95": 93.32
+     "median": 30.26,
+     "p95": 93.365
+    }
+   }
+  },
+  "ours-md": {
+   "docs": 326,
+   "failed": 0,
+   "parse": {
+    "median": 0.823,
+    "p95": 6.81,
+    "mean": 1.714
+   },
+   "extract": {
+    "median": 1.142,
+    "p95": 10.04,
+    "mean": 2.966
+   },
+   "total": {
+    "median": 2.163,
+    "p95": 13.07,
+    "mean": 4.685
+   },
+   "bySize": {
+    "<50KB": {
+     "docs": 35,
+     "median": 0.96,
+     "p95": 3.43
+    },
+    "50-200KB": {
+     "docs": 176,
+     "median": 1.72,
+     "p95": 5.32
+    },
+    "200-500KB": {
+     "docs": 76,
+     "median": 2.947,
+     "p95": 9.465
+    },
+    "0.5-1MB": {
+     "docs": 21,
+     "median": 6.16,
+     "p95": 18.435
+    },
+    ">1MB": {
+     "docs": 18,
+     "median": 32.615,
+     "p95": 97.06
     }
    }
   },
@@ -149,45 +211,45 @@
    "docs": 326,
    "failed": 0,
    "parse": {
-    "median": 2.741,
-    "p95": 19.879,
-    "mean": 5.717
+    "median": 2.49,
+    "p95": 17.659,
+    "mean": 5.093
    },
    "extract": {
-    "median": 1.054,
-    "p95": 15.51,
-    "mean": 3.603
+    "median": 0.936,
+    "p95": 16.291,
+    "mean": 3.333
    },
    "total": {
-    "median": 4.154,
-    "p95": 30.261,
-    "mean": 9.687
+    "median": 3.671,
+    "p95": 29.08,
+    "mean": 8.455
    },
    "bySize": {
     "<50KB": {
      "docs": 35,
-     "median": 1.583,
-     "p95": 10.245
+     "median": 1.41,
+     "p95": 12.927
     },
     "50-200KB": {
      "docs": 176,
-     "median": 3.211,
-     "p95": 9.674
+     "median": 2.843,
+     "p95": 9.291
     },
     "200-500KB": {
      "docs": 76,
-     "median": 6.36,
-     "p95": 17.839
+     "median": 5.575,
+     "p95": 16.552
     },
     "0.5-1MB": {
      "docs": 21,
-     "median": 10.939,
-     "p95": 34.656
+     "median": 10.636,
+     "p95": 29.08
     },
     ">1MB": {
      "docs": 18,
-     "median": 71.653,
-     "p95": 297.19
+     "median": 63.002,
+     "p95": 166.071
     }
    }
   },
@@ -474,45 +536,45 @@
      "docs": 181,
      "failed": 0,
      "parse": {
-      "median": 0.69,
-      "p95": 3.72,
-      "mean": 1.054
+      "median": 0.64,
+      "p95": 3.46,
+      "mean": 1.011
      },
      "extract": {
-      "median": 0.945,
-      "p95": 2.055,
-      "mean": 1.078
+      "median": 0.865,
+      "p95": 1.875,
+      "mean": 0.972
      },
      "total": {
-      "median": 1.64,
-      "p95": 5.215,
-      "mean": 2.143
+      "median": 1.515,
+      "p95": 4.64,
+      "mean": 1.991
      },
      "bySize": {
       "<50KB": {
        "docs": 17,
-       "median": 0.855,
-       "p95": 1.195
+       "median": 0.705,
+       "p95": 1.23
       },
       "50-200KB": {
        "docs": 119,
-       "median": 1.505,
-       "p95": 3.15
+       "median": 1.405,
+       "p95": 2.96
       },
       "200-500KB": {
        "docs": 34,
-       "median": 2.685,
-       "p95": 4.785
+       "median": 2.5,
+       "p95": 4.64
       },
       "0.5-1MB": {
        "docs": 8,
-       "median": 5.565,
-       "p95": 9.8
+       "median": 5.095,
+       "p95": 9.51
       },
       ">1MB": {
        "docs": 3,
-       "median": 10.78,
-       "p95": 11.31
+       "median": 11.465,
+       "p95": 12.455
       }
      }
     },
@@ -1967,6 +2029,1520 @@
      }
     ]
    },
+   "ours-md": {
+    "metrics": {
+     "precision": 0.9476,
+     "recall": 0.9858,
+     "f1": 0.9663,
+     "accuracy": 0.2652,
+     "f1_std": 0.0033,
+     "precision_std": 0.0055,
+     "recall_std": 0.0026,
+     "accuracy_std": 0.0328,
+     "f1_ci": [
+      0.9601,
+      0.9721
+     ]
+    },
+    "failed": 0,
+    "empty": 0,
+    "perf": {
+     "docs": 181,
+     "failed": 0,
+     "parse": {
+      "median": 0.64,
+      "p95": 3.39,
+      "mean": 1.005
+     },
+     "extract": {
+      "median": 0.885,
+      "p95": 1.935,
+      "mean": 0.985
+     },
+     "total": {
+      "median": 1.575,
+      "p95": 4.93,
+      "mean": 1.997
+     },
+     "bySize": {
+      "<50KB": {
+       "docs": 17,
+       "median": 0.76,
+       "p95": 1.37
+      },
+      "50-200KB": {
+       "docs": 119,
+       "median": 1.41,
+       "p95": 2.85
+      },
+      "200-500KB": {
+       "docs": 34,
+       "median": 2.44,
+       "p95": 5.025
+      },
+      "0.5-1MB": {
+       "docs": 8,
+       "median": 4.953,
+       "p95": 9.58
+      },
+      ">1MB": {
+       "docs": 3,
+       "median": 10.645,
+       "p95": 11.435
+      }
+     }
+    },
+    "docs": [
+     {
+      "id": "042bb7b5fedab6eac7db576522b89b93904c237d344bcbe14a6a5ab7f7335856",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 367
+     },
+     {
+      "id": "04a6711caa7c687592777718866e781e976e0fe684faebe8b3cedcef8cd0ea34",
+      "precision": 0.9903,
+      "recall": 1,
+      "f1": 0.9951,
+      "accuracy": 0,
+      "chars": 5641
+     },
+     {
+      "id": "05844573ca7e1fba714d715bb11ca08c26e25328999c74a1cb3bc8a0e4399f0f",
+      "precision": 0.8462,
+      "recall": 1,
+      "f1": 0.9167,
+      "accuracy": 0,
+      "chars": 5410
+     },
+     {
+      "id": "06e5123e4ef7cfb4533250dc45d1e03d0838fc66223f45c583c4d12f48b4da85",
+      "precision": 0.9639,
+      "recall": 1,
+      "f1": 0.9816,
+      "accuracy": 0,
+      "chars": 3476
+     },
+     {
+      "id": "06ee193de4bd611f7fafbab0c59b0f6fe3495093516720632cd093b24c7a0e98",
+      "precision": 1,
+      "recall": 0.9701,
+      "f1": 0.9848,
+      "accuracy": 0,
+      "chars": 4715
+     },
+     {
+      "id": "076f4f33bf75059db581bedf36e76fb65e89a8f7752db3339aa3ea11c5122f32",
+      "precision": 0.9002,
+      "recall": 1,
+      "f1": 0.9475,
+      "accuracy": 0,
+      "chars": 2456
+     },
+     {
+      "id": "08f793762792bd252c75fb57544cdf506ffcc04785136cb87503f02364b82b56",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 3087
+     },
+     {
+      "id": "098bb3e96c0acdf36efdcde45fb9cca3f8c82c7cb2071b76097a1b96155f1eb2",
+      "precision": 0.9778,
+      "recall": 0.9955,
+      "f1": 0.9865,
+      "accuracy": 0,
+      "chars": 4074
+     },
+     {
+      "id": "0d46122928b6f468cc4bbc694051d0dbae5702bc75a16dab82a99b58daf150a0",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 4706
+     },
+     {
+      "id": "0dd1357045727799a447563fd8851f4ebe79f042073ea16991a9b67aa595f81a",
+      "precision": 0.8901,
+      "recall": 0.9497,
+      "f1": 0.9189,
+      "accuracy": 0,
+      "chars": 1286
+     },
+     {
+      "id": "0e014df693f182824fe5e24030ddbe1d0b96ddb9685cf20d5766457ed32ffa2d",
+      "precision": 0.8825,
+      "recall": 1,
+      "f1": 0.9376,
+      "accuracy": 0,
+      "chars": 2806
+     },
+     {
+      "id": "0ec95c7261d122f304728e90c983450ef1ce1e0b423546835c397d50aaf0d0f2",
+      "precision": 0.987,
+      "recall": 1,
+      "f1": 0.9934,
+      "accuracy": 0,
+      "chars": 2537
+     },
+     {
+      "id": "11ea381ad92b5448cf66eae62f52ac565361a244c8881615fc6a7bb523cc0c32",
+      "precision": 0.9263,
+      "recall": 0.9926,
+      "f1": 0.9583,
+      "accuracy": 0,
+      "chars": 1848
+     },
+     {
+      "id": "14cc2a0ca59c62a8c9f205a171e9ccf4ef4cf69b0c642f51c8c65c051b39024f",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 2480
+     },
+     {
+      "id": "156770d676ce79905198e1c8407f81e5ecfb617d9aa44712718707eb7e3b8e38",
+      "precision": 0.8616,
+      "recall": 0.9757,
+      "f1": 0.9151,
+      "accuracy": 0,
+      "chars": 2440
+     },
+     {
+      "id": "16c30add7e96315e9cc957d85aa876ccb6b70055f0ddab51547a586117cc1f56",
+      "precision": 0.9368,
+      "recall": 0.9877,
+      "f1": 0.9615,
+      "accuracy": 0,
+      "chars": 15482
+     },
+     {
+      "id": "1ace8c85aaee21b9d4505eca506d50c4721c29db62848b567a9703bfe0583892",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 1441
+     },
+     {
+      "id": "1ee91d1fce65e09be8b8d2d29eab771546d98ca2ba5c862941e660e9fec12432",
+      "precision": 0.8973,
+      "recall": 1,
+      "f1": 0.9459,
+      "accuracy": 0,
+      "chars": 6634
+     },
+     {
+      "id": "1f765c48780665e89cc3af1f7c9af47876e9fae9b5be4a936b0649e10f5e3198",
+      "precision": 0.9583,
+      "recall": 1,
+      "f1": 0.9787,
+      "accuracy": 0,
+      "chars": 4833
+     },
+     {
+      "id": "20b2b64916b00b25203c9f1bf14248922f4d522f18328e9f876cce116df0083e",
+      "precision": 0.9854,
+      "recall": 0.9667,
+      "f1": 0.976,
+      "accuracy": 0,
+      "chars": 2567
+     },
+     {
+      "id": "21486419bb109c5a62a68957f528e6ff29c92f58d8d3c1f2837c86ff3f3e11f9",
+      "precision": 0.971,
+      "recall": 1,
+      "f1": 0.9853,
+      "accuracy": 0,
+      "chars": 2268
+     },
+     {
+      "id": "232a43fb15abde807427b2a7bf4f772e27b8760554370956d8291df4e8166dbf",
+      "precision": 0.9502,
+      "recall": 0.9889,
+      "f1": 0.9691,
+      "accuracy": 0,
+      "chars": 1696
+     },
+     {
+      "id": "23aaecd14171f96cfd201a8a46666097e286ad71f74f29347a78c5ecba50da1e",
+      "precision": 0.9838,
+      "recall": 1,
+      "f1": 0.9918,
+      "accuracy": 0,
+      "chars": 1840
+     },
+     {
+      "id": "264dc3ae31249cb1f50c50986e0952a4708c2e705d18a2d8bf0e525da6e2b485",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 3519
+     },
+     {
+      "id": "287e4d9f4af31733aad6534aefb2bd00fb344ec8d6ebf1ac99dbc4d762da0ca4",
+      "precision": 0.9916,
+      "recall": 1,
+      "f1": 0.9958,
+      "accuracy": 0,
+      "chars": 10923
+     },
+     {
+      "id": "291a8bf33ee49074f33dcff37544ac40506cae450db83b6cb63f02b9920b51c2",
+      "precision": 0.9806,
+      "recall": 0.9954,
+      "f1": 0.988,
+      "accuracy": 0,
+      "chars": 3926
+     },
+     {
+      "id": "2c46804d9db4a85e8f8d31128ce0e11d02f25c7120c2faa5ec0664c604a47717",
+      "precision": 0.9885,
+      "recall": 0.9931,
+      "f1": 0.9908,
+      "accuracy": 0,
+      "chars": 2512
+     },
+     {
+      "id": "2f42ef1d3ea0c96e56355d3db93d0e06b47e760b74f6f4261278b8cd1c246dd6",
+      "precision": 0.9303,
+      "recall": 0.9811,
+      "f1": 0.955,
+      "accuracy": 0,
+      "chars": 8411
+     },
+     {
+      "id": "30b771a40a4e96156d398716c877deef54b05d091770d2717c98e4c6b670010c",
+      "precision": 0.8239,
+      "recall": 0.9873,
+      "f1": 0.8983,
+      "accuracy": 0,
+      "chars": 1575
+     },
+     {
+      "id": "3252222e61fe78982cffe0b0bad2b089c27b32f65852d1c5d3951517f3c2e295",
+      "precision": 0.9896,
+      "recall": 1,
+      "f1": 0.9948,
+      "accuracy": 0,
+      "chars": 2860
+     },
+     {
+      "id": "33fe2471fd553c6570f93997f208b4f39bf30be5947c3cfa620ee8eff3355ab9",
+      "precision": 0.9656,
+      "recall": 0.9959,
+      "f1": 0.9805,
+      "accuracy": 0,
+      "chars": 4650
+     },
+     {
+      "id": "34a7328535ad4e60b059f81d37eec5d25c2bc8de759ce9a7b5e47ac7dc6fd1b0",
+      "precision": 0.9462,
+      "recall": 0.967,
+      "f1": 0.9565,
+      "accuracy": 0,
+      "chars": 551
+     },
+     {
+      "id": "358cc4a080456476b0f883c56bdce796874c286ed6efab25f5718dd95fab42a8",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 549
+     },
+     {
+      "id": "359fee228518d55b921194561e9ca88e428df81940246f8fac7a75398377daea",
+      "precision": 0.9727,
+      "recall": 0.994,
+      "f1": 0.9832,
+      "accuracy": 0,
+      "chars": 3062
+     },
+     {
+      "id": "35b158918c676ff2c74445517db76c83db70a805cc50b64e1369b354a027fcbd",
+      "precision": 0.9333,
+      "recall": 1,
+      "f1": 0.9655,
+      "accuracy": 0,
+      "chars": 939
+     },
+     {
+      "id": "360c732d1fdbfc6895d7096c0c0b8c0d581bb1af80160f4c6a0f1fd9ff85e469",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 2086
+     },
+     {
+      "id": "374ac9a59a85196cdacc1679fb8993521a7b7d9d6533720f102300be1c7face4",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 2595
+     },
+     {
+      "id": "39d5c43beb60605c3eec760c99500e62e7bd71ebbe4ae05edf382125e1b0b80a",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 3192
+     },
+     {
+      "id": "3c5bf8db4272925bf1dd5713fc325e179fd0d1cc6fb8c77aa2d917cfd2518a32",
+      "precision": 0.8968,
+      "recall": 0.9921,
+      "f1": 0.9421,
+      "accuracy": 0,
+      "chars": 5344
+     },
+     {
+      "id": "3c6d3381ef52ca26be2fbde19c1b0fe17d85682b726dfecf5e300c1ca34546b1",
+      "precision": 0.9798,
+      "recall": 0.9945,
+      "f1": 0.9871,
+      "accuracy": 0,
+      "chars": 53965
+     },
+     {
+      "id": "3cb22bfabed8de715c0813a7bb5052363c96bd71ccce3bb2dfb3ab9d1d7a9bbc",
+      "precision": 1,
+      "recall": 0.9807,
+      "f1": 0.9902,
+      "accuracy": 0,
+      "chars": 6261
+     },
+     {
+      "id": "3cb5e2f46626d5bb0345759453036f7eabc0b0c7796b796513606bf693060ced",
+      "precision": 0.9907,
+      "recall": 1,
+      "f1": 0.9953,
+      "accuracy": 0,
+      "chars": 3158
+     },
+     {
+      "id": "3ce1c8fdf6ad2ded9e48a68be71eb069fc453ef1b75f47698428a1fdda0deb24",
+      "precision": 1,
+      "recall": 0.9417,
+      "f1": 0.97,
+      "accuracy": 0,
+      "chars": 587
+     },
+     {
+      "id": "3d8f3404cf975af824d7866b7679bc45189c3eea6adb32f0a125a0904b1abbb2",
+      "precision": 0.9992,
+      "recall": 1,
+      "f1": 0.9996,
+      "accuracy": 0,
+      "chars": 13337
+     },
+     {
+      "id": "3f65af7b6b98b1c9ae9a3e0d8a09a85600cdc44e26e4b3a6db96a31f4b1767e3",
+      "precision": 0.8659,
+      "recall": 0.6998,
+      "f1": 0.7741,
+      "accuracy": 0,
+      "chars": 2519
+     },
+     {
+      "id": "4219d096902dad9fd9d57e881e7928ca66bdf5334c2bc7dfddaa264887777a7a",
+      "precision": 0.9436,
+      "recall": 0.9897,
+      "f1": 0.9661,
+      "accuracy": 0,
+      "chars": 5772
+     },
+     {
+      "id": "42aad16bde9288623543642a9ce1a396be83e2db44aa2ff8cbbfe46e14abd7cc",
+      "precision": 0.919,
+      "recall": 0.9869,
+      "f1": 0.9517,
+      "accuracy": 0,
+      "chars": 3931
+     },
+     {
+      "id": "432362af0be43f6da757ea778bd7f2f000094a565bdebac5af7442987a5372f3",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 1021
+     },
+     {
+      "id": "4648a420af9984d45b76a4afedf4f74965f8a2e0bf1c69bd3da2dc189020f3c9",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 5978
+     },
+     {
+      "id": "4a44ab3e4c41d56ce9b79eb07acb06aed1bc52aba68a950f06e7de7ef848400a",
+      "precision": 0.9563,
+      "recall": 0.8495,
+      "f1": 0.8997,
+      "accuracy": 0,
+      "chars": 1036
+     },
+     {
+      "id": "51374560f40088e227f0053ff1bb0b8525d10a8d7bfbff1cd6033f42347fd85b",
+      "precision": 0.9064,
+      "recall": 0.9878,
+      "f1": 0.9453,
+      "accuracy": 0,
+      "chars": 1544
+     },
+     {
+      "id": "51d066b0602c9421d8d6410bc4b931700978409a3faa2a984e8fbde519ad7241",
+      "precision": 0.9819,
+      "recall": 0.8794,
+      "f1": 0.9278,
+      "accuracy": 0,
+      "chars": 2235
+     },
+     {
+      "id": "5211188428849a31e309ef2475746563ff788b1591c89818c08d5abedec4ef5e",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 2855
+     },
+     {
+      "id": "55bb6340e3d7dd8632ba45179ae43c39f8ad0cfcecb4719e3b9cf6106ffb70a3",
+      "precision": 0.9286,
+      "recall": 1,
+      "f1": 0.963,
+      "accuracy": 0,
+      "chars": 2414
+     },
+     {
+      "id": "57b4dafd18cfd0531b69f81e87158648227c673ef159f8d8c87d34e34bdb21f2",
+      "precision": 0.9963,
+      "recall": 0.9945,
+      "f1": 0.9954,
+      "accuracy": 0,
+      "chars": 17262
+     },
+     {
+      "id": "57d46c9d751e3fd3ffaf3ede7ac20cebd30eacb5ea78e1a6aa0a72059244e7ca",
+      "precision": 0.9651,
+      "recall": 1,
+      "f1": 0.9822,
+      "accuracy": 0,
+      "chars": 3592
+     },
+     {
+      "id": "57e2e98887a1965689955921208e32f410b10e2b95c907e74e57982d3edf3cc6",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 4124
+     },
+     {
+      "id": "5a822960e9a2cb1e664d334b6c936c5cb6e41fb5331877538c2c8339cb59d57e",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 1347
+     },
+     {
+      "id": "5ae11e580afc12d3ba1a12944281e6a7a5dded5c98b4efcf24aedcb28f0d5b22",
+      "precision": 0.7458,
+      "recall": 1,
+      "f1": 0.8544,
+      "accuracy": 0,
+      "chars": 3136
+     },
+     {
+      "id": "5caf91b8a4423735f866b089d2611ea14503584cf3b6f487c6d26eb7b9521fca",
+      "precision": 0.9784,
+      "recall": 0.9645,
+      "f1": 0.9714,
+      "accuracy": 0,
+      "chars": 1576
+     },
+     {
+      "id": "5f03fc173ebc6abdfae50b96ce0b05a6137b7d3f2ef379be35a9bb8ca9f49e87",
+      "precision": 0.9956,
+      "recall": 0.9912,
+      "f1": 0.9934,
+      "accuracy": 0,
+      "chars": 11459
+     },
+     {
+      "id": "5f9c5ed5d64dfe682d9bde13b9b4f032a3ebdbf165c06ec49c0705bcbe106e3b",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 1582
+     },
+     {
+      "id": "5fa3154ec031ab35411a457d78eb5aa92c0e803c5329bd05c001e6d64009e206",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 3950
+     },
+     {
+      "id": "5fa5679de56c43edf70685762c2d1f2de296432ae53aa46e075b552fee17cab8",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 5126
+     },
+     {
+      "id": "5fbc7ccb504c755ae23a85499a17518483d7862b74b4a5c34d86ede1a1a4448e",
+      "precision": 0.9399,
+      "recall": 0.969,
+      "f1": 0.9543,
+      "accuracy": 0,
+      "chars": 4791
+     },
+     {
+      "id": "612cd29826624e68ce96789c8049e16279dfd2fceb27434eea7943b2aaf84e90",
+      "precision": 0.8775,
+      "recall": 0.9835,
+      "f1": 0.9275,
+      "accuracy": 0,
+      "chars": 1140
+     },
+     {
+      "id": "624fcd903d56fc7055fa7097b330629450c095ad6937318deb027be7803bbf35",
+      "precision": 0.7802,
+      "recall": 0.9709,
+      "f1": 0.8652,
+      "accuracy": 0,
+      "chars": 3119
+     },
+     {
+      "id": "63db31a161b3c5b64e88c2978635cbc38d342ba82fd2c5335321203dcc55c76f",
+      "precision": 0.9952,
+      "recall": 0.9984,
+      "f1": 0.9968,
+      "accuracy": 0,
+      "chars": 10488
+     },
+     {
+      "id": "65408257dbe4b41f71a35ade24e30243265095fc1d4988a35b9a6ca52f2b4eab",
+      "precision": 0.9282,
+      "recall": 1,
+      "f1": 0.9628,
+      "accuracy": 0,
+      "chars": 4883
+     },
+     {
+      "id": "65bf3048b500bbd84928d9122f99617ca898216b91add1d8b2ac09c670484a5c",
+      "precision": 0.9599,
+      "recall": 0.9895,
+      "f1": 0.9745,
+      "accuracy": 0,
+      "chars": 20609
+     },
+     {
+      "id": "65ce3a4577a0306994efa190a0d96e84014f9d4257ad54753e807ede518f02c0",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 1917
+     },
+     {
+      "id": "680c2848e94a96f961a0964631de94ac572f83c45bfd0bec2deafa893bcfe15c",
+      "precision": 1,
+      "recall": 0.9992,
+      "f1": 0.9996,
+      "accuracy": 0,
+      "chars": 7446
+     },
+     {
+      "id": "686bb170effe273eaff1c0f88e412172e8d972518a6d1454c896f52aafaa9643",
+      "precision": 0.8544,
+      "recall": 0.9926,
+      "f1": 0.9183,
+      "accuracy": 0,
+      "chars": 4622
+     },
+     {
+      "id": "6a72de37e8f98f4eee6c0821e593b35ce536cef6c8b424c5e1dd747ebe6621ba",
+      "precision": 0.9567,
+      "recall": 0.9866,
+      "f1": 0.9714,
+      "accuracy": 0,
+      "chars": 5106
+     },
+     {
+      "id": "6ebac05f637ece8aa57c298a2a5e3a8047f546f855d0f29cc683cea60ce85c85",
+      "precision": 0.689,
+      "recall": 0.9774,
+      "f1": 0.8083,
+      "accuracy": 0,
+      "chars": 3460
+     },
+     {
+      "id": "702d1da63b8e064cb70617620e45c2d116b4912c9bc9d518dcf5ce54bb8057ed",
+      "precision": 0.9913,
+      "recall": 1,
+      "f1": 0.9956,
+      "accuracy": 0,
+      "chars": 9647
+     },
+     {
+      "id": "70cb2d5bca75ab5a8f6bb378a38a52f882f6bda508de93b12502e74936d86ff2",
+      "precision": 0.8658,
+      "recall": 0.9867,
+      "f1": 0.9223,
+      "accuracy": 0,
+      "chars": 2973
+     },
+     {
+      "id": "776a1c046798b474e410f6edf3225d6a27fecd0de6aac22aef7b7f64fe87caaf",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 1698
+     },
+     {
+      "id": "7837c9d66c815b9a21dd669a3dc21677c3f084b1b7dd603d56e87867d8970dd3",
+      "precision": 0.9889,
+      "recall": 0.978,
+      "f1": 0.9834,
+      "accuracy": 0,
+      "chars": 6388
+     },
+     {
+      "id": "785affa2c34e6e4844ef080e98e1a1e532eeeb671bdacebfb9e98ad7320ff382",
+      "precision": 0.9945,
+      "recall": 0.9759,
+      "f1": 0.9851,
+      "accuracy": 0,
+      "chars": 2029
+     },
+     {
+      "id": "7916ecca969ffdd8f6fc32d171fbe0dd63db40fe4c1d2ade02b1dec5929a162f",
+      "precision": 0.8427,
+      "recall": 0.9895,
+      "f1": 0.9103,
+      "accuracy": 0,
+      "chars": 2059
+     },
+     {
+      "id": "7a457a4f71735c17b8b34fafc88835d225cf879b2d812311857a64cfc891eee9",
+      "precision": 0.9408,
+      "recall": 0.9911,
+      "f1": 0.9653,
+      "accuracy": 0,
+      "chars": 2084
+     },
+     {
+      "id": "7a664e40d256470fdb12d10c3f8d1c6db0581e9b080c71765e55f273a3ac7d03",
+      "precision": 0.6368,
+      "recall": 0.9786,
+      "f1": 0.7715,
+      "accuracy": 0,
+      "chars": 22504
+     },
+     {
+      "id": "7ab16ade32386ece353b8d31fc3bb7e660189efd5bf3c8549aaba101ad3f5ef5",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 535
+     },
+     {
+      "id": "7bb1ca90354313840329d2f569ea9fb3a582df2aa0a5e3669f8fc567eb6ea61b",
+      "precision": 0.9949,
+      "recall": 0.9704,
+      "f1": 0.9825,
+      "accuracy": 0,
+      "chars": 3402
+     },
+     {
+      "id": "7de5241947a5f7147fe9787c6f6fa16685bfe66e6c35510a68780f27690dc4f0",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 4445
+     },
+     {
+      "id": "7dfc3e359d7c0ca48ac9046ae5759286cedf80abe7526fc6c6e6546b9ba43e33",
+      "precision": 1,
+      "recall": 0.9446,
+      "f1": 0.9715,
+      "accuracy": 0,
+      "chars": 2953
+     },
+     {
+      "id": "7f93c1944a41d01960f8a16fdfda6c562e86f04ead8375ab796c4278402df9a8",
+      "precision": 0.9463,
+      "recall": 0.9925,
+      "f1": 0.9688,
+      "accuracy": 0,
+      "chars": 5097
+     },
+     {
+      "id": "8267acacb9e4a109b1f7ee7bafe735b73e9c94180b703b131f9e90c9be044f39",
+      "precision": 0.9983,
+      "recall": 0.9745,
+      "f1": 0.9863,
+      "accuracy": 0,
+      "chars": 6524
+     },
+     {
+      "id": "82b6d780c792df78dcfb00484d50c86fbc7f324a9eb5835b7615f028edb9a574",
+      "precision": 0.9674,
+      "recall": 0.9987,
+      "f1": 0.9828,
+      "accuracy": 0,
+      "chars": 5011
+     },
+     {
+      "id": "833caf3bdba53dcf48de273cf646370eebe9ac565744b0d0e941e298e1b79730",
+      "precision": 0.9662,
+      "recall": 0.9961,
+      "f1": 0.9809,
+      "accuracy": 0,
+      "chars": 5079
+     },
+     {
+      "id": "8380689f358c1e3a0f6fca6e11ed13e5304a74060139f7a584347db213950446",
+      "precision": 1,
+      "recall": 0.9446,
+      "f1": 0.9715,
+      "accuracy": 0,
+      "chars": 2316
+     },
+     {
+      "id": "851498a2b9f4f0b578ac9700c245253dbc147a06c0fb3499adebf1c2d5663c29",
+      "precision": 0.9885,
+      "recall": 0.9844,
+      "f1": 0.9864,
+      "accuracy": 0,
+      "chars": 20335
+     },
+     {
+      "id": "85439e26c41c75901820d01a13e8cea7836abb58635ea3986f71a163ab0311d3",
+      "precision": 0.9265,
+      "recall": 1,
+      "f1": 0.9618,
+      "accuracy": 0,
+      "chars": 887
+     },
+     {
+      "id": "8634d1211c3f2b73041e6cadd5d59676619838949999a83a23c51a3195b44892",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 8167
+     },
+     {
+      "id": "87438a0dacbeb979e72522f42b9020048da13dc5a079477114190c8855701b7f",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 3270
+     },
+     {
+      "id": "87bf60570e6e2e33cb1f0fdb5600d6c85012e60be25ba6fa587b8f90eb9a3770",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 3156
+     },
+     {
+      "id": "88c328b68b038a625b4b3f8c322215caa30b0e88af0754bd71056ffc15c7b4b7",
+      "precision": 0.9534,
+      "recall": 0.9868,
+      "f1": 0.9698,
+      "accuracy": 0,
+      "chars": 1394
+     },
+     {
+      "id": "8b194530308204139d9c8f7d495a26b117c78756ac1802cfc3c0a8bfdf2c0d50",
+      "precision": 0.784,
+      "recall": 0.9941,
+      "f1": 0.8766,
+      "accuracy": 0,
+      "chars": 3954
+     },
+     {
+      "id": "8cad00dc22de45ba42e9540421b5f78333f7ac57b385d69acb27a53b9fd69f0c",
+      "precision": 0.5914,
+      "recall": 0.9422,
+      "f1": 0.7266,
+      "accuracy": 0,
+      "chars": 4594
+     },
+     {
+      "id": "8e3efab59f48fd29a1e1e7aa135880c4251a9f090f94999668cdbaec59d30b5a",
+      "precision": 0.99,
+      "recall": 1,
+      "f1": 0.995,
+      "accuracy": 0,
+      "chars": 1052
+     },
+     {
+      "id": "921019755f4a96ac4abf9dbcb4ef9d5ac202624a542d5ea70912330aa6fcc71f",
+      "precision": 0.9348,
+      "recall": 0.9556,
+      "f1": 0.9451,
+      "accuracy": 0,
+      "chars": 2720
+     },
+     {
+      "id": "94fbcc26772088646cb977cecf1abc4012847a1f6927d09505cbf0c3d417ba07",
+      "precision": 0.9286,
+      "recall": 0.9826,
+      "f1": 0.9548,
+      "accuracy": 0,
+      "chars": 1271
+     },
+     {
+      "id": "95301fb7883e0ee5214d1111554d30dd97e08c6380d7699369c0b9c15f42e6aa",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 539
+     },
+     {
+      "id": "961bd85ca85aaf791b278cc4a60058e92d57c4f32a3411cf8e7d802af183c926",
+      "precision": 1,
+      "recall": 0.9956,
+      "f1": 0.9978,
+      "accuracy": 0,
+      "chars": 2977
+     },
+     {
+      "id": "9a440270bf8625d586039dfae1b8df409b467524e075124cd7a5424a5806901b",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 3142
+     },
+     {
+      "id": "9cb8224b660f36c932823ab613fb76a07928fcbc41956c4c1f96f4ecab9202aa",
+      "precision": 0.9888,
+      "recall": 0.992,
+      "f1": 0.9904,
+      "accuracy": 0,
+      "chars": 3814
+     },
+     {
+      "id": "9da36ae4714bfccc72374c6c146e9d1cd3cca39e2110bd67ccdbcc806f4cf139",
+      "precision": 0.9861,
+      "recall": 1,
+      "f1": 0.993,
+      "accuracy": 0,
+      "chars": 2486
+     },
+     {
+      "id": "9e8c9f082a8d77c58c17bda03b6b4bb6a1d6883fe196c252db4ca83b9991e0d3",
+      "precision": 0.8937,
+      "recall": 1,
+      "f1": 0.9439,
+      "accuracy": 0,
+      "chars": 3932
+     },
+     {
+      "id": "9ebb3af65694a953005df5bd3869b2cefc263e1dea0471e3ef361c66a264cdd3",
+      "precision": 0.8342,
+      "recall": 1,
+      "f1": 0.9096,
+      "accuracy": 0,
+      "chars": 3480
+     },
+     {
+      "id": "9eef8162bbb67b0bd73792313b91b87dc9304f43f85f479e67e71c166417451e",
+      "precision": 0.9883,
+      "recall": 1,
+      "f1": 0.9941,
+      "accuracy": 0,
+      "chars": 5491
+     },
+     {
+      "id": "a078b3656adc0295d0e37bd4f599342f4a0894da2451e0ef3038ac045434fef3",
+      "precision": 0.9526,
+      "recall": 0.9971,
+      "f1": 0.9744,
+      "accuracy": 0,
+      "chars": 6021
+     },
+     {
+      "id": "a1fca19b884e0e946ad3fbe2a7f5031e5e3b23372702a76db302b6143c77cb31",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 3225
+     },
+     {
+      "id": "a6968f427cdb786531cfb326518e674bd8b48af94df7c5c6165cdf40e944357a",
+      "precision": 0.8752,
+      "recall": 0.9982,
+      "f1": 0.9326,
+      "accuracy": 0,
+      "chars": 3621
+     },
+     {
+      "id": "a860fb5eda1ac75df3bc95ba096ade649fdbb1bb566adb9fee3cb13e59f37604",
+      "precision": 0.9476,
+      "recall": 1,
+      "f1": 0.9731,
+      "accuracy": 0,
+      "chars": 1060
+     },
+     {
+      "id": "aadb38e527d5379306de3b910ec62cb2447cc1035686b2b2d152580f8f8a1ea2",
+      "precision": 0.9882,
+      "recall": 1,
+      "f1": 0.9941,
+      "accuracy": 0,
+      "chars": 2426
+     },
+     {
+      "id": "aade2ec8d1e7b0919aef1001c3ef0573f8a239e22d4d751d8e664f04ea77ef0d",
+      "precision": 0.962,
+      "recall": 0.9806,
+      "f1": 0.9712,
+      "accuracy": 0,
+      "chars": 1882
+     },
+     {
+      "id": "abd9d6291b6bfae0c3ffad8ab7623b482c6da46face0271dc42af6324d8f0ce5",
+      "precision": 0.9582,
+      "recall": 0.986,
+      "f1": 0.9719,
+      "accuracy": 0,
+      "chars": 6287
+     },
+     {
+      "id": "ac1bfdd4c510f679c58f1b62101630d40fda20a16703235ae0f56b65a465e423",
+      "precision": 0.9921,
+      "recall": 1,
+      "f1": 0.996,
+      "accuracy": 0,
+      "chars": 3884
+     },
+     {
+      "id": "ac3c035520461017a7c5b248d8e39ef063cad4c0c7d7b7ecd68aff8f15099485",
+      "precision": 0.8537,
+      "recall": 1,
+      "f1": 0.9211,
+      "accuracy": 0,
+      "chars": 482
+     },
+     {
+      "id": "ad826691a8a2f9c4ce50cf0b885af933c4b5119c1f6235cd7df1dfb83f255bcc",
+      "precision": 0.9857,
+      "recall": 0.981,
+      "f1": 0.9833,
+      "accuracy": 0,
+      "chars": 3535
+     },
+     {
+      "id": "ad9e9e596f21a6812fae27b5d9d622359826c368e471d7d5ff9ac4676eaac9cd",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 6521
+     },
+     {
+      "id": "aec5deeaada8b2fb81b55349da0229d5c77a4dc9605c1aaa31e5ce8b71358bc9",
+      "precision": 0.8829,
+      "recall": 0.9655,
+      "f1": 0.9224,
+      "accuracy": 0,
+      "chars": 5365
+     },
+     {
+      "id": "b0cf2bbf0192315eec95ede9c59bbf4ae58699275739d590edc24b012e3e8800",
+      "precision": 0.9512,
+      "recall": 1,
+      "f1": 0.975,
+      "accuracy": 0,
+      "chars": 3452
+     },
+     {
+      "id": "b37be3535e1fb61e5a238b7fa1ead1ad98b651cb09f138efadac3d54a122fb21",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 792
+     },
+     {
+      "id": "b3c19dd5f0612d098788fa5173e491b3280da6226b492f8fe110f4ab1896cca8",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 878
+     },
+     {
+      "id": "b6906ca016bbfc64c90426e098c75b3e8c84457a77f51f1e7ea6941cb80c2147",
+      "precision": 0.9911,
+      "recall": 1,
+      "f1": 0.9955,
+      "accuracy": 0,
+      "chars": 7369
+     },
+     {
+      "id": "b6fb53e9fb043c98eb1e6530a1074c40922e29025f5454809f3938a7c174faa3",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 1132
+     },
+     {
+      "id": "ba07d1e64775f4090e39116c382111f5a2cfe9528dd179673f4e9bfcea370c15",
+      "precision": 0.9403,
+      "recall": 0.9924,
+      "f1": 0.9657,
+      "accuracy": 0,
+      "chars": 2959
+     },
+     {
+      "id": "ba4dfe2d3e817ff7b8b01172ccc307850fc5469bcdd26c3c48ca046cb88ab7cf",
+      "precision": 0.8251,
+      "recall": 0.979,
+      "f1": 0.8955,
+      "accuracy": 0,
+      "chars": 3115
+     },
+     {
+      "id": "bc13ff87b2630ffbebc33bc37b11178b14f03109055e1d17bf644f804b63d98a",
+      "precision": 0.9498,
+      "recall": 0.9937,
+      "f1": 0.9713,
+      "accuracy": 0,
+      "chars": 2983
+     },
+     {
+      "id": "bd673bd7988144f0ab7b9c5e19fed140fb5aaa30d8894cb045b72d3b79a7dc54",
+      "precision": 0.9422,
+      "recall": 0.9946,
+      "f1": 0.9677,
+      "accuracy": 0,
+      "chars": 3495
+     },
+     {
+      "id": "bdb56ac83513635db1d8b9eb46b2da4c0de8da2f1f28f5bf5163df3eb3d3ec06",
+      "precision": 0.9671,
+      "recall": 0.9989,
+      "f1": 0.9827,
+      "accuracy": 0,
+      "chars": 17338
+     },
+     {
+      "id": "c00962aabe7bdd1fca78f5360ea7fa93cd7674863b05157e00827506a7aa58c4",
+      "precision": 0.9813,
+      "recall": 1,
+      "f1": 0.9906,
+      "accuracy": 0,
+      "chars": 13255
+     },
+     {
+      "id": "c13b9c0e04fb28d445d22e92bff6ab7f7800a429930677c28c4dad89f3269869",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 4143
+     },
+     {
+      "id": "c467d507551a836efa9cfe843ba5d7bafe519750e04d0c9ff0decf44f013f829",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 938
+     },
+     {
+      "id": "c4a3637c6696f238cf9fe1c7fbb17bbb6731a71d4f5fe399b9b4fc3294a96a6b",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 804
+     },
+     {
+      "id": "c50845a7158af12ee75acea301a3ea0dad1e848d6b9dbdb43ba7f2d825b2528b",
+      "precision": 0.7962,
+      "recall": 0.9754,
+      "f1": 0.8768,
+      "accuracy": 0,
+      "chars": 5478
+     },
+     {
+      "id": "c582d3b772578e8feaa3cfd8f5ae8100bb6f0bc66048204a9a398395841c1164",
+      "precision": 0.9975,
+      "recall": 0.9823,
+      "f1": 0.9899,
+      "accuracy": 0,
+      "chars": 17745
+     },
+     {
+      "id": "c58aa507c4deebd660f69905f9abb8f96d935f6e7210f597ed4cd32b3f39f7f7",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 9753
+     },
+     {
+      "id": "c69e539d689a8335a69042727f1b58edab09d5d99fb607ec625a63151a537dc2",
+      "precision": 0.752,
+      "recall": 1,
+      "f1": 0.8585,
+      "accuracy": 0,
+      "chars": 3377
+     },
+     {
+      "id": "c7e39ac49fa1235f5d50f83bf2444248bd3aa4e6df044377916c812dd109ba23",
+      "precision": 0.8978,
+      "recall": 0.9567,
+      "f1": 0.9263,
+      "accuracy": 0,
+      "chars": 4368
+     },
+     {
+      "id": "c81e134ed49902bcf69b551426b4a346c5a77ae993cac8bda68b5541a664ef4c",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 1844
+     },
+     {
+      "id": "c82b3d1d540bbbd6081bdfb78b4c068c583aa766bcaaefe7ad16d24e5413a829",
+      "precision": 0.9446,
+      "recall": 0.9908,
+      "f1": 0.9672,
+      "accuracy": 0,
+      "chars": 2185
+     },
+     {
+      "id": "c90731f051d033e49e4cfcc920895051bbc3b54ef1a11519abcf22a115c3aa79",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 4714
+     },
+     {
+      "id": "cc03ddb5ef7d5f1fdb8a87f5e6dfd058a2a70acedf2551655a898dc5c18eb79e",
+      "precision": 0.7721,
+      "recall": 0.9375,
+      "f1": 0.8468,
+      "accuracy": 0,
+      "chars": 830
+     },
+     {
+      "id": "cc4aa22b8212aec7d289667c0a965569e6f06b9e9196ff8b02219bf2bc1b90d0",
+      "precision": 1,
+      "recall": 0.9954,
+      "f1": 0.9977,
+      "accuracy": 0,
+      "chars": 10410
+     },
+     {
+      "id": "d0382c0d9573a0a7beb1e649012d04ec7275ac23513ca6ca59e51477b028283c",
+      "precision": 0.8007,
+      "recall": 1,
+      "f1": 0.8893,
+      "accuracy": 0,
+      "chars": 5545
+     },
+     {
+      "id": "d1c57d7821e5a5b27fb468c59489601bb2a042b1c05221166e3221d2b5dc217f",
+      "precision": 0.9388,
+      "recall": 0.9963,
+      "f1": 0.9667,
+      "accuracy": 0,
+      "chars": 5201
+     },
+     {
+      "id": "d48aeb9cf2f2ff15769a57513249b4a6a669159f3e50b335e741d4206a824e88",
+      "precision": 0.9392,
+      "recall": 1,
+      "f1": 0.9686,
+      "accuracy": 0,
+      "chars": 9145
+     },
+     {
+      "id": "d605bdef2cde7308a9f2fbd1484d4a9c3da0167177245d346da61e455f42208d",
+      "precision": 1,
+      "recall": 0.9353,
+      "f1": 0.9666,
+      "accuracy": 0,
+      "chars": 1712
+     },
+     {
+      "id": "d90bda7ed14df19574f4ca8b1ccde5752a78f40058af1393e81cc99adb3e8756",
+      "precision": 0.9808,
+      "recall": 1,
+      "f1": 0.9903,
+      "accuracy": 0,
+      "chars": 1992
+     },
+     {
+      "id": "db6b0816c612296c7f1f001c6df874214fcca0da0fc86fb3aea9358c7f681754",
+      "precision": 0.6143,
+      "recall": 1,
+      "f1": 0.7611,
+      "accuracy": 0,
+      "chars": 2482
+     },
+     {
+      "id": "dc7ccccc1f34eb2928cb238739aaf18c712d59d8d34b41acfb29178aeba65356",
+      "precision": 0.912,
+      "recall": 0.9926,
+      "f1": 0.9506,
+      "accuracy": 0,
+      "chars": 2712
+     },
+     {
+      "id": "dfd43bc0d46e7aaa78ba10fbcb5b9fdfe78771d36cb4c7497e17fb6f69170ec5",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 4959
+     },
+     {
+      "id": "e100c9612ad8495db03b2a9f968952d0eaa4853d9b32ded6a29f8e313a974873",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 1996
+     },
+     {
+      "id": "e1c7023ee2148901b086256fdd30a0893d10b0720b510d5ff07a021109347266",
+      "precision": 0.9313,
+      "recall": 0.9896,
+      "f1": 0.9595,
+      "accuracy": 0,
+      "chars": 5088
+     },
+     {
+      "id": "e1cd54e5577d077df83a12a4753c3c8bf2d88d68cd709cc4c442874777581c4a",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 1129
+     },
+     {
+      "id": "e372e42c0a3df7b86e1c0bacf7bc14d042144a01e88833bc5a643d61b3547090",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 428
+     },
+     {
+      "id": "e4c6a3b482403a8f60190ba27248cd52b250b86f5d4a8a10edcf7062c64fc3f5",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 2800
+     },
+     {
+      "id": "e593d7fe88f9f5cd6587ac172be2db6055d40b6f071023f97ab1ce373534261e",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 14457
+     },
+     {
+      "id": "e7301133baab43596f19076beab32096f6405b868e0a69bcfc3349e595d62475",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 1294
+     },
+     {
+      "id": "e7994d5500875202d93e736e8f0c8a0436107d10add94ce3789001b8c5c32358",
+      "precision": 0.9715,
+      "recall": 0.9985,
+      "f1": 0.9848,
+      "accuracy": 0,
+      "chars": 4081
+     },
+     {
+      "id": "e7d77f1869803e24667fa0b985cff27fb4139951a5ffa494bc9ba810df48fb30",
+      "precision": 0.9212,
+      "recall": 0.7823,
+      "f1": 0.8461,
+      "accuracy": 0,
+      "chars": 5338
+     },
+     {
+      "id": "ea25dd7edff4d27973600f35728f20aed5a3eedcc23257d9c3afc3d3e840c3de",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 4627
+     },
+     {
+      "id": "eb62ac8425e5573947ecde962d14433d18e5725cc4a8c908fe22f678e96a65a1",
+      "precision": 0.9026,
+      "recall": 0.9925,
+      "f1": 0.9454,
+      "accuracy": 0,
+      "chars": 5292
+     },
+     {
+      "id": "ec3878db7e49b1ed354c511b132e3de5f773ff4fc8014163df58c22fffd93d2f",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 4135
+     },
+     {
+      "id": "ec7fc408c5ce66c22692a3f696c682f3de794bacfaca405d9a0dac5957051e5a",
+      "precision": 0.9987,
+      "recall": 0.9917,
+      "f1": 0.9952,
+      "accuracy": 0,
+      "chars": 12305
+     },
+     {
+      "id": "ecb46e3e489d2aac92b2563112e1801077b4219a6db9751f18e228bcaf457802",
+      "precision": 0.807,
+      "recall": 0.9955,
+      "f1": 0.8914,
+      "accuracy": 0,
+      "chars": 4756
+     },
+     {
+      "id": "eecd2575093b85933997521d6babddd397599419588d7096c5c19dc4ffe2ea72",
+      "precision": 0.8925,
+      "recall": 0.9959,
+      "f1": 0.9413,
+      "accuracy": 0,
+      "chars": 5941
+     },
+     {
+      "id": "ef2b3f268a67950c16563de9ca3209163c7618868c0216739e1e794e7884cc20",
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 642
+     },
+     {
+      "id": "ef4e67b66d63b5facef55c06a94d85f2ae01a0a1a4a3a1bcfe2499c8c8a7dacf",
+      "precision": 1,
+      "recall": 0.9602,
+      "f1": 0.9797,
+      "accuracy": 0,
+      "chars": 4541
+     },
+     {
+      "id": "f105de6e63ca91ea482f60193f6252092557f969f2fd128ff68c0d4d6b90dd7d",
+      "precision": 0.8684,
+      "recall": 0.825,
+      "f1": 0.8462,
+      "accuracy": 0,
+      "chars": 1094
+     },
+     {
+      "id": "f344ca5fb36e130f4344235fa22726f3367e09c211c120f21d9ae92effe902db",
+      "precision": 0.9842,
+      "recall": 0.9167,
+      "f1": 0.9492,
+      "accuracy": 0,
+      "chars": 1145
+     },
+     {
+      "id": "f5c90a6d5253c3a21ff3168c64bea4b5ffade7a1ba5bed952a59ebee0d648d98",
+      "precision": 0.9836,
+      "recall": 1,
+      "f1": 0.9918,
+      "accuracy": 0,
+      "chars": 11682
+     },
+     {
+      "id": "f6ac15a4d98511396da23e4428deb5605422b1c8bbc8284e771f6896bdccf57f",
+      "precision": 0.8617,
+      "recall": 1,
+      "f1": 0.9257,
+      "accuracy": 0,
+      "chars": 604
+     },
+     {
+      "id": "f81c6c05d9cbc93316992fa23ef74ec405194e292611f2e94f6a814868903665",
+      "precision": 0.9639,
+      "recall": 0.9872,
+      "f1": 0.9754,
+      "accuracy": 0,
+      "chars": 9250
+     },
+     {
+      "id": "f8ff621a0b9b7646cc0d57d37416feabba2bf78ef5dd0bfc5b080f9f97bbe584",
+      "precision": 0.9196,
+      "recall": 1,
+      "f1": 0.9581,
+      "accuracy": 0,
+      "chars": 2541
+     },
+     {
+      "id": "fde930b01859de8311c6a14f8aa8c72be0659b551367803deb6736cf3526cf2e",
+      "precision": 0.9976,
+      "recall": 0.9591,
+      "f1": 0.978,
+      "accuracy": 0,
+      "chars": 2475
+     },
+     {
+      "id": "ff0f958ade714ebfaf5c0b42b1c0152a62063f4e6f72141406ccefc4a2677f21",
+      "precision": 0.8387,
+      "recall": 1,
+      "f1": 0.9123,
+      "accuracy": 0,
+      "chars": 7146
+     },
+     {
+      "id": "ffc109d474fdee1a59fa554df8b09643f4a7d45b23eceabad66f0712c3f7daed",
+      "precision": 1,
+      "recall": 0.9973,
+      "f1": 0.9987,
+      "accuracy": 0,
+      "chars": 2098
+     }
+    ]
+   },
    "ours-dart": {
     "metrics": {
      "precision": 0.9672,
@@ -1988,45 +3564,45 @@
      "docs": 181,
      "failed": 0,
      "parse": {
-      "median": 2.252,
-      "p95": 7.204,
-      "mean": 2.858
+      "median": 1.969,
+      "p95": 6.436,
+      "mean": 2.59
      },
      "extract": {
-      "median": 0.776,
-      "p95": 1.769,
-      "mean": 0.947
+      "median": 0.691,
+      "p95": 1.574,
+      "mean": 0.852
      },
      "total": {
-      "median": 3.168,
-      "p95": 8.569,
-      "mean": 3.814
+      "median": 2.85,
+      "p95": 7.829,
+      "mean": 3.45
      },
      "bySize": {
       "<50KB": {
        "docs": 17,
-       "median": 1.294,
-       "p95": 1.779
+       "median": 1.125,
+       "p95": 1.762
       },
       "50-200KB": {
        "docs": 119,
-       "median": 2.815,
-       "p95": 5.417
+       "median": 2.5,
+       "p95": 4.91
       },
       "200-500KB": {
        "docs": 34,
-       "median": 5.22,
-       "p95": 8.205
+       "median": 4.655,
+       "p95": 7.768
       },
       "0.5-1MB": {
        "docs": 8,
-       "median": 8.949,
-       "p95": 11.382
+       "median": 7.916,
+       "p95": 10.94
       },
       ">1MB": {
        "docs": 3,
-       "median": 17.929,
-       "p95": 18.69
+       "median": 16.578,
+       "p95": 17.522
       }
      }
     },
@@ -10101,45 +11677,45 @@
      "docs": 145,
      "failed": 0,
      "parse": {
-      "median": 1.35,
-      "p95": 11.465,
-      "mean": 2.627
+      "median": 1.17,
+      "p95": 11.035,
+      "mean": 2.591
      },
      "extract": {
-      "median": 2.155,
-      "p95": 28.955,
-      "mean": 5.4
+      "median": 1.965,
+      "p95": 27.675,
+      "mean": 5.199
      },
      "total": {
-      "median": 3.79,
-      "p95": 40.975,
-      "mean": 8.019
+      "median": 3.44,
+      "p95": 39.39,
+      "mean": 7.8
      },
      "bySize": {
       "<50KB": {
        "docs": 18,
-       "median": 1.698,
-       "p95": 4.965
+       "median": 1.513,
+       "p95": 4.295
       },
       "50-200KB": {
        "docs": 57,
-       "median": 2.725,
-       "p95": 8.905
+       "median": 2.485,
+       "p95": 8.8
       },
       "200-500KB": {
        "docs": 42,
-       "median": 4.38,
-       "p95": 10.08
+       "median": 4.232,
+       "p95": 9.595
       },
       "0.5-1MB": {
        "docs": 13,
-       "median": 10.435,
-       "p95": 41.625
+       "median": 10.095,
+       "p95": 39.39
       },
       ">1MB": {
        "docs": 15,
-       "median": 39.83,
-       "p95": 93.32
+       "median": 38.55,
+       "p95": 93.365
       }
      }
     },
@@ -11935,7 +13511,7 @@
       "structurePass": 1,
       "languageRecall": null,
       "combined": 1,
-      "chars": 21700
+      "chars": 21688
      },
      {
       "id": "arxiv-mixtral",
@@ -11959,7 +13535,7 @@
       "structurePass": 1,
       "languageRecall": null,
       "combined": 1,
-      "chars": 27395
+      "chars": 27383
      },
      {
       "id": "distill-momentum",
@@ -13279,6 +14855,3738 @@
      }
     ]
    },
+   "ours-md": {
+    "overall": {
+     "docs": 145,
+     "includeRecall": 0.9975,
+     "leakRate": 0.0213,
+     "docsLeaking": 0.049,
+     "titleExact": 0.9586,
+     "titleFuzzy": 0.9862,
+     "structurePass": 0.9262,
+     "checks": {
+      "footnotes": {
+       "pass": 17,
+       "total": 20
+      },
+      "headings": {
+       "pass": 103,
+       "total": 107
+      },
+      "tables": {
+       "pass": 31,
+       "total": 31
+      },
+      "images": {
+       "pass": 82,
+       "total": 85
+      },
+      "code": {
+       "pass": 55,
+       "total": 60
+      },
+      "languages": {
+       "pass": 44,
+       "total": 46
+      },
+      "math": {
+       "pass": 7,
+       "total": 8
+      },
+      "embeds": {
+       "pass": 0,
+       "total": 9
+      }
+     },
+     "languageRecall": 0.9674,
+     "combined": 0.9821
+    },
+    "jsOnly": null,
+    "byTier": {
+     "1": {
+      "docs": 9,
+      "includeRecall": 0.9778,
+      "leakRate": 0,
+      "docsLeaking": 0,
+      "titleExact": 1,
+      "titleFuzzy": 1,
+      "structurePass": 1,
+      "checks": {
+       "footnotes": {
+        "pass": 4,
+        "total": 4
+       },
+       "headings": {
+        "pass": 3,
+        "total": 3
+       },
+       "tables": {
+        "pass": 1,
+        "total": 1
+       },
+       "code": {
+        "pass": 1,
+        "total": 1
+       },
+       "images": {
+        "pass": 2,
+        "total": 2
+       }
+      },
+      "languageRecall": null,
+      "combined": 0.9861
+     },
+     "2": {
+      "docs": 20,
+      "includeRecall": 1,
+      "leakRate": 0,
+      "docsLeaking": 0,
+      "titleExact": 0.95,
+      "titleFuzzy": 1,
+      "structurePass": 0.9344,
+      "checks": {
+       "headings": {
+        "pass": 16,
+        "total": 17
+       },
+       "tables": {
+        "pass": 3,
+        "total": 3
+       },
+       "footnotes": {
+        "pass": 4,
+        "total": 5
+       },
+       "images": {
+        "pass": 6,
+        "total": 7
+       },
+       "code": {
+        "pass": 15,
+        "total": 16
+       },
+       "languages": {
+        "pass": 12,
+        "total": 12
+       },
+       "math": {
+        "pass": 1,
+        "total": 1
+       }
+      },
+      "languageRecall": 1,
+      "combined": 0.9892
+     },
+     "3": {
+      "docs": 70,
+      "includeRecall": 1,
+      "leakRate": 0.0257,
+      "docsLeaking": 0.0571,
+      "titleExact": 0.9571,
+      "titleFuzzy": 0.9857,
+      "structurePass": 0.8976,
+      "checks": {
+       "code": {
+        "pass": 28,
+        "total": 30
+       },
+       "languages": {
+        "pass": 20,
+        "total": 22
+       },
+       "images": {
+        "pass": 44,
+        "total": 46
+       },
+       "headings": {
+        "pass": 46,
+        "total": 49
+       },
+       "tables": {
+        "pass": 8,
+        "total": 8
+       },
+       "footnotes": {
+        "pass": 2,
+        "total": 2
+       },
+       "embeds": {
+        "pass": 0,
+        "total": 8
+       },
+       "math": {
+        "pass": 1,
+        "total": 1
+       }
+      },
+      "languageRecall": 0.9318,
+      "combined": 0.9788
+     },
+     "4": {
+      "docs": 35,
+      "includeRecall": 1,
+      "leakRate": 0,
+      "docsLeaking": 0,
+      "titleExact": 0.9429,
+      "titleFuzzy": 0.9714,
+      "structurePass": 0.9706,
+      "checks": {
+       "images": {
+        "pass": 24,
+        "total": 24
+       },
+       "headings": {
+        "pass": 30,
+        "total": 30
+       },
+       "footnotes": {
+        "pass": 6,
+        "total": 7
+       },
+       "math": {
+        "pass": 4,
+        "total": 5
+       },
+       "code": {
+        "pass": 9,
+        "total": 10
+       },
+       "languages": {
+        "pass": 10,
+        "total": 10
+       },
+       "tables": {
+        "pass": 16,
+        "total": 16
+       }
+      },
+      "languageRecall": 1,
+      "combined": 0.9929
+     },
+     "5": {
+      "docs": 11,
+      "includeRecall": 0.9848,
+      "leakRate": 0.1136,
+      "docsLeaking": 0.2727,
+      "titleExact": 1,
+      "titleFuzzy": 1,
+      "structurePass": 0.8846,
+      "checks": {
+       "code": {
+        "pass": 2,
+        "total": 3
+       },
+       "languages": {
+        "pass": 2,
+        "total": 2
+       },
+       "headings": {
+        "pass": 8,
+        "total": 8
+       },
+       "tables": {
+        "pass": 3,
+        "total": 3
+       },
+       "images": {
+        "pass": 6,
+        "total": 6
+       },
+       "math": {
+        "pass": 1,
+        "total": 1
+       },
+       "footnotes": {
+        "pass": 1,
+        "total": 2
+       },
+       "embeds": {
+        "pass": 0,
+        "total": 1
+       }
+      },
+      "languageRecall": 1,
+      "combined": 0.953
+     }
+    },
+    "byCategory": {
+     "academic": {
+      "docs": 7,
+      "includeRecall": 1,
+      "leakRate": 0.1429,
+      "docsLeaking": 0.2857,
+      "titleExact": 1,
+      "titleFuzzy": 1,
+      "structurePass": 0.9545,
+      "checks": {
+       "images": {
+        "pass": 5,
+        "total": 5
+       },
+       "headings": {
+        "pass": 7,
+        "total": 7
+       },
+       "math": {
+        "pass": 4,
+        "total": 4
+       },
+       "tables": {
+        "pass": 2,
+        "total": 2
+       },
+       "footnotes": {
+        "pass": 3,
+        "total": 4
+       }
+      },
+      "languageRecall": null,
+      "combined": 0.9619
+     },
+     "boilerplate": {
+      "docs": 7,
+      "includeRecall": 0.9762,
+      "leakRate": 0,
+      "docsLeaking": 0,
+      "titleExact": 1,
+      "titleFuzzy": 1,
+      "structurePass": 0.875,
+      "checks": {
+       "images": {
+        "pass": 5,
+        "total": 5
+       },
+       "headings": {
+        "pass": 2,
+        "total": 2
+       },
+       "embeds": {
+        "pass": 0,
+        "total": 1
+       }
+      },
+      "languageRecall": null,
+      "combined": 0.9786
+     },
+     "docs": {
+      "docs": 28,
+      "includeRecall": 1,
+      "leakRate": 0,
+      "docsLeaking": 0,
+      "titleExact": 0.9286,
+      "titleFuzzy": 0.9643,
+      "structurePass": 0.9703,
+      "checks": {
+       "headings": {
+        "pass": 26,
+        "total": 27
+       },
+       "code": {
+        "pass": 27,
+        "total": 27
+       },
+       "languages": {
+        "pass": 26,
+        "total": 26
+       },
+       "images": {
+        "pass": 6,
+        "total": 7
+       },
+       "tables": {
+        "pass": 8,
+        "total": 8
+       },
+       "footnotes": {
+        "pass": 4,
+        "total": 4
+       },
+       "math": {
+        "pass": 1,
+        "total": 2
+       }
+      },
+      "languageRecall": 1,
+      "combined": 0.9914
+     },
+     "interactive": {
+      "docs": 2,
+      "includeRecall": 1,
+      "leakRate": 0,
+      "docsLeaking": 0,
+      "titleExact": 1,
+      "titleFuzzy": 1,
+      "structurePass": 0,
+      "checks": {},
+      "languageRecall": null,
+      "combined": 1
+     },
+     "news": {
+      "docs": 19,
+      "includeRecall": 1,
+      "leakRate": 0,
+      "docsLeaking": 0,
+      "titleExact": 1,
+      "titleFuzzy": 1,
+      "structurePass": 0.8235,
+      "checks": {
+       "images": {
+        "pass": 10,
+        "total": 11
+       },
+       "headings": {
+        "pass": 3,
+        "total": 3
+       },
+       "tables": {
+        "pass": 1,
+        "total": 1
+       },
+       "embeds": {
+        "pass": 0,
+        "total": 2
+       }
+      },
+      "languageRecall": null,
+      "combined": 0.9842
+     },
+     "non-english": {
+      "docs": 29,
+      "includeRecall": 1,
+      "leakRate": 0.0621,
+      "docsLeaking": 0.1379,
+      "titleExact": 0.8966,
+      "titleFuzzy": 0.9655,
+      "structurePass": 0.9552,
+      "checks": {
+       "code": {
+        "pass": 6,
+        "total": 6
+       },
+       "images": {
+        "pass": 24,
+        "total": 24
+       },
+       "headings": {
+        "pass": 24,
+        "total": 24
+       },
+       "tables": {
+        "pass": 9,
+        "total": 9
+       },
+       "embeds": {
+        "pass": 0,
+        "total": 3
+       },
+       "languages": {
+        "pass": 1,
+        "total": 1
+       }
+      },
+      "languageRecall": 1,
+      "combined": 0.9793
+     },
+     "reference": {
+      "docs": 5,
+      "includeRecall": 1,
+      "leakRate": 0.05,
+      "docsLeaking": 0.2,
+      "titleExact": 1,
+      "titleFuzzy": 1,
+      "structurePass": 0.9375,
+      "checks": {
+       "code": {
+        "pass": 0,
+        "total": 1
+       },
+       "images": {
+        "pass": 5,
+        "total": 5
+       },
+       "headings": {
+        "pass": 5,
+        "total": 5
+       },
+       "tables": {
+        "pass": 4,
+        "total": 4
+       },
+       "math": {
+        "pass": 1,
+        "total": 1
+       }
+      },
+      "languageRecall": null,
+      "combined": 0.98
+     },
+     "simple-blog": {
+      "docs": 14,
+      "includeRecall": 0.9857,
+      "leakRate": 0,
+      "docsLeaking": 0,
+      "titleExact": 1,
+      "titleFuzzy": 1,
+      "structurePass": 0.92,
+      "checks": {
+       "footnotes": {
+        "pass": 7,
+        "total": 7
+       },
+       "headings": {
+        "pass": 5,
+        "total": 6
+       },
+       "tables": {
+        "pass": 2,
+        "total": 2
+       },
+       "images": {
+        "pass": 7,
+        "total": 7
+       },
+       "code": {
+        "pass": 2,
+        "total": 2
+       },
+       "embeds": {
+        "pass": 0,
+        "total": 1
+       }
+      },
+      "languageRecall": null,
+      "combined": 0.9816
+     },
+     "tech-blog": {
+      "docs": 34,
+      "includeRecall": 1,
+      "leakRate": 0,
+      "docsLeaking": 0,
+      "titleExact": 0.9706,
+      "titleFuzzy": 1,
+      "structurePass": 0.8818,
+      "checks": {
+       "code": {
+        "pass": 20,
+        "total": 24
+       },
+       "languages": {
+        "pass": 17,
+        "total": 19
+       },
+       "images": {
+        "pass": 20,
+        "total": 21
+       },
+       "headings": {
+        "pass": 31,
+        "total": 33
+       },
+       "footnotes": {
+        "pass": 3,
+        "total": 5
+       },
+       "tables": {
+        "pass": 5,
+        "total": 5
+       },
+       "math": {
+        "pass": 1,
+        "total": 1
+       },
+       "embeds": {
+        "pass": 0,
+        "total": 2
+       }
+      },
+      "languageRecall": 0.9211,
+      "combined": 0.9801
+     }
+    },
+    "failed": 0,
+    "empty": 0,
+    "perf": {
+     "docs": 145,
+     "failed": 0,
+     "parse": {
+      "median": 1.215,
+      "p95": 12.225,
+      "mean": 2.598
+     },
+     "extract": {
+      "median": 2.065,
+      "p95": 31.93,
+      "mean": 5.438
+     },
+     "total": {
+      "median": 3.53,
+      "p95": 43.215,
+      "mean": 8.04
+     },
+     "bySize": {
+      "<50KB": {
+       "docs": 18,
+       "median": 1.555,
+       "p95": 4.165
+      },
+      "50-200KB": {
+       "docs": 57,
+       "median": 2.585,
+       "p95": 8.855
+      },
+      "200-500KB": {
+       "docs": 42,
+       "median": 4.178,
+       "p95": 9.805
+      },
+      "0.5-1MB": {
+       "docs": 13,
+       "median": 10.215,
+       "p95": 43.215
+      },
+      ">1MB": {
+       "docs": 15,
+       "median": 42.61,
+       "p95": 97.06
+      }
+     }
+    },
+    "docs": [
+     {
+      "id": "pg-great-work",
+      "tier": 1,
+      "category": "simple-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": null,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "footnotes": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 66517
+     },
+     {
+      "id": "pg-do-things",
+      "tier": 1,
+      "category": "simple-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "footnotes": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 24752
+     },
+     {
+      "id": "pg-hard-work",
+      "tier": 1,
+      "category": "simple-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "footnotes": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 17955
+     },
+     {
+      "id": "danluu-input-lag",
+      "tier": 1,
+      "category": "simple-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "headings": true,
+       "tables": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 28342
+     },
+     {
+      "id": "danluu-web-bloat",
+      "tier": 2,
+      "category": "simple-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "headings": true,
+       "tables": true,
+       "footnotes": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 24431
+     },
+     {
+      "id": "joel-test",
+      "tier": 1,
+      "category": "simple-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {},
+      "structurePass": null,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 20093
+     },
+     {
+      "id": "joel-unicode",
+      "tier": 2,
+      "category": "simple-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 20634
+     },
+     {
+      "id": "codinghorror-no-code",
+      "tier": 1,
+      "category": "simple-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "images": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 4088
+     },
+     {
+      "id": "hillel-engineers",
+      "tier": 1,
+      "category": "simple-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true,
+       "footnotes": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 24646
+     },
+     {
+      "id": "fowler-two-hard",
+      "tier": 1,
+      "category": "simple-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 0.8,
+      "missing": [
+       4
+      ],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {},
+      "structurePass": null,
+      "languageRecall": null,
+      "combined": 0.875,
+      "chars": 1225
+     },
+     {
+      "id": "sqlite-whentouse",
+      "tier": 1,
+      "category": "docs",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 14795
+     },
+     {
+      "id": "waitbutwhy-tail-end",
+      "tier": 2,
+      "category": "simple-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "footnotes": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 5687
+     },
+     {
+      "id": "simonw-llms-2024",
+      "tier": 2,
+      "category": "simple-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 40602
+     },
+     {
+      "id": "karpathy-rnn",
+      "tier": 2,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 47365
+     },
+     {
+      "id": "eli-concurrent",
+      "tier": 2,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "headings": true,
+       "footnotes": false
+      },
+      "structurePass": 0.75,
+      "languageRecall": 1,
+      "combined": 0.95,
+      "chars": 10368
+     },
+     {
+      "id": "rsc-regexp",
+      "tier": 2,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": false,
+      "titleFuzzy": true,
+      "structure": {
+       "code": false,
+       "languages": true,
+       "images": false,
+       "headings": true
+      },
+      "structurePass": 0.5,
+      "languageRecall": 1,
+      "combined": 0.9,
+      "chars": 42902
+     },
+     {
+      "id": "norvig-spell",
+      "tier": 2,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": null,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "headings": true,
+       "tables": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 21946
+     },
+     {
+      "id": "gruber-markdown",
+      "tier": 2,
+      "category": "docs",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 24230
+     },
+     {
+      "id": "brendangregg-crisis",
+      "tier": 2,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "headings": true,
+       "tables": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 7563
+     },
+     {
+      "id": "matklad-fast-rust",
+      "tier": 2,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 24614
+     },
+     {
+      "id": "jvns-float",
+      "tier": 2,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "headings": true,
+       "math": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 11450
+     },
+     {
+      "id": "jvns-git-config",
+      "tier": 2,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 13325
+     },
+     {
+      "id": "overreacted-memo",
+      "tier": 2,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 5573
+     },
+     {
+      "id": "overreacted-useeffect",
+      "tier": 3,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 60771
+     },
+     {
+      "id": "fasterthanlime-rust",
+      "tier": 3,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 34634
+     },
+     {
+      "id": "go-loopvar",
+      "tier": 2,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 6936
+     },
+     {
+      "id": "rust-blog-185",
+      "tier": 2,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 10088
+     },
+     {
+      "id": "v8-pointer-compression",
+      "tier": 3,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": false,
+       "languages": false,
+       "images": true,
+       "headings": true,
+       "tables": true
+      },
+      "structurePass": 0.6,
+      "languageRecall": 0.5,
+      "combined": 0.92,
+      "chars": 25168
+     },
+     {
+      "id": "fowler-microservices",
+      "tier": 3,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true,
+       "footnotes": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 37587
+     },
+     {
+      "id": "cloudflare-pingora",
+      "tier": 3,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 9343
+     },
+     {
+      "id": "cloudflare-quic",
+      "tier": 3,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 15625
+     },
+     {
+      "id": "github-git-256",
+      "tier": 3,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 12169
+     },
+     {
+      "id": "github-android-vulns",
+      "tier": 3,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 14696
+     },
+     {
+      "id": "stripe-idempotency",
+      "tier": 3,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": false,
+       "languages": false,
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 0.5,
+      "languageRecall": 0,
+      "combined": 0.9,
+      "chars": 8299
+     },
+     {
+      "id": "discord-go-rust",
+      "tier": 4,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true,
+       "footnotes": false
+      },
+      "structurePass": 0.6667,
+      "languageRecall": null,
+      "combined": 0.9333,
+      "chars": 12416
+     },
+     {
+      "id": "figma-multiplayer",
+      "tier": 4,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 19532
+     },
+     {
+      "id": "webdev-vitals",
+      "tier": 3,
+      "category": "docs",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "images": false,
+       "headings": true,
+       "tables": true
+      },
+      "structurePass": 0.8,
+      "languageRecall": 1,
+      "combined": 0.96,
+      "chars": 11380
+     },
+     {
+      "id": "lilian-agents",
+      "tier": 3,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 42370
+     },
+     {
+      "id": "lilian-diffusion",
+      "tier": 4,
+      "category": "academic",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true,
+       "math": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 53498
+     },
+     {
+      "id": "comeau-css-reset",
+      "tier": 4,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": false,
+       "languages": true,
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 0.75,
+      "languageRecall": 1,
+      "combined": 0.95,
+      "chars": 19018
+     },
+     {
+      "id": "comeau-rerenders",
+      "tier": 4,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 19064
+     },
+     {
+      "id": "smashing-container-queries",
+      "tier": 3,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "images": true,
+       "headings": false
+      },
+      "structurePass": 0.75,
+      "languageRecall": 1,
+      "combined": 0.95,
+      "chars": 14712
+     },
+     {
+      "id": "csstricks-flexbox",
+      "tier": 3,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "images": true,
+       "headings": false,
+       "embeds": false
+      },
+      "structurePass": 0.6,
+      "languageRecall": 1,
+      "combined": 0.92,
+      "chars": 22448
+     },
+     {
+      "id": "devto-cve",
+      "tier": 3,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "headings": true,
+       "tables": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 2580
+     },
+     {
+      "id": "devto-react-signup",
+      "tier": 3,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 6607
+     },
+     {
+      "id": "hashnode-docs-license",
+      "tier": 3,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "headings": true,
+       "embeds": false
+      },
+      "structurePass": 0.5,
+      "languageRecall": null,
+      "combined": 0.9,
+      "chars": 1972
+     },
+     {
+      "id": "acx-neuralese",
+      "tier": 3,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true,
+       "footnotes": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 19903
+     },
+     {
+      "id": "acx-lky-review",
+      "tier": 4,
+      "category": "simple-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true,
+       "footnotes": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 43689
+     },
+     {
+      "id": "projectzero-nso",
+      "tier": 3,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 19590
+     },
+     {
+      "id": "mdn-array-map",
+      "tier": 3,
+      "category": "docs",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "headings": true,
+       "tables": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 8013
+     },
+     {
+      "id": "mdn-using-fetch",
+      "tier": 3,
+      "category": "docs",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 21711
+     },
+     {
+      "id": "python-controlflow",
+      "tier": 2,
+      "category": "docs",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "headings": true,
+       "footnotes": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 34284
+     },
+     {
+      "id": "python-asyncio-task",
+      "tier": 3,
+      "category": "docs",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "headings": true,
+       "tables": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 41796
+     },
+     {
+      "id": "rustbook-ownership",
+      "tier": 3,
+      "category": "docs",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 24268
+     },
+     {
+      "id": "react-thinking",
+      "tier": 4,
+      "category": "docs",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 19159
+     },
+     {
+      "id": "react-usestate",
+      "tier": 4,
+      "category": "docs",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 21072
+     },
+     {
+      "id": "docusaurus-codeblocks",
+      "tier": 4,
+      "category": "docs",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "headings": true,
+       "tables": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 16674
+     },
+     {
+      "id": "jest-getting-started",
+      "tier": 3,
+      "category": "docs",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 6588
+     },
+     {
+      "id": "mkdocs-admonitions",
+      "tier": 4,
+      "category": "docs",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "headings": true,
+       "footnotes": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 13845
+     },
+     {
+      "id": "fastapi-first-steps",
+      "tier": 3,
+      "category": "docs",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 11794
+     },
+     {
+      "id": "vitepress-markdown",
+      "tier": 4,
+      "category": "docs",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "headings": true,
+       "tables": true,
+       "math": false,
+       "footnotes": true
+      },
+      "structurePass": 0.8333,
+      "languageRecall": 1,
+      "combined": 0.9667,
+      "chars": 21470
+     },
+     {
+      "id": "vue-reactivity",
+      "tier": 4,
+      "category": "docs",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": false,
+      "titleFuzzy": false,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 0.9,
+      "chars": 15980
+     },
+     {
+      "id": "k8s-pods",
+      "tier": 3,
+      "category": "docs",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 21843
+     },
+     {
+      "id": "k8s-kubectl-linux",
+      "tier": 4,
+      "category": "docs",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 14097
+     },
+     {
+      "id": "mslearn-csharp",
+      "tier": 3,
+      "category": "docs",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 14331
+     },
+     {
+      "id": "requests-quickstart",
+      "tier": 2,
+      "category": "docs",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "headings": false
+      },
+      "structurePass": 0.6667,
+      "languageRecall": 1,
+      "combined": 0.9333,
+      "chars": 15615
+     },
+     {
+      "id": "rtd-tutorial",
+      "tier": 3,
+      "category": "docs",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": false,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 15523
+     },
+     {
+      "id": "numpy-beginners",
+      "tier": 3,
+      "category": "docs",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "images": true,
+       "headings": true,
+       "math": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 44308
+     },
+     {
+      "id": "go-effective",
+      "tier": 3,
+      "category": "docs",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 95632
+     },
+     {
+      "id": "node-fs",
+      "tier": 5,
+      "category": "docs",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "headings": true,
+       "tables": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 235097
+     },
+     {
+      "id": "postgres-window",
+      "tier": 2,
+      "category": "docs",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "footnotes": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 6999
+     },
+     {
+      "id": "tailwind-states",
+      "tier": 4,
+      "category": "docs",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "headings": true,
+       "tables": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 46528
+     },
+     {
+      "id": "github-docs-git",
+      "tier": 3,
+      "category": "docs",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 9176
+     },
+     {
+      "id": "stripe-docs-payment",
+      "tier": 5,
+      "category": "docs",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "headings": true,
+       "tables": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 6354
+     },
+     {
+      "id": "whatwg-parsing",
+      "tier": 5,
+      "category": "reference",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [
+       2
+      ],
+      "leakRate": 0.25,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": false,
+       "images": true,
+       "headings": true,
+       "tables": true
+      },
+      "structurePass": 0.75,
+      "languageRecall": null,
+      "combined": 0.9,
+      "chars": 254615
+     },
+     {
+      "id": "wiki-fourier",
+      "tier": 4,
+      "category": "reference",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true,
+       "tables": true,
+       "math": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 141386
+     },
+     {
+      "id": "wiki-tokyo",
+      "tier": 4,
+      "category": "reference",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true,
+       "tables": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 125982
+     },
+     {
+      "id": "wiki-largest-cities",
+      "tier": 4,
+      "category": "reference",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true,
+       "tables": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 33430
+     },
+     {
+      "id": "wiki-turing",
+      "tier": 3,
+      "category": "reference",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 104215
+     },
+     {
+      "id": "plato-consciousness",
+      "tier": 3,
+      "category": "academic",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 124084
+     },
+     {
+      "id": "arxiv-mistral",
+      "tier": 4,
+      "category": "academic",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true,
+       "tables": true,
+       "math": true,
+       "footnotes": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 24246
+     },
+     {
+      "id": "arxiv-mixtral",
+      "tier": 4,
+      "category": "academic",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true,
+       "tables": true,
+       "math": true,
+       "footnotes": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 30187
+     },
+     {
+      "id": "distill-momentum",
+      "tier": 5,
+      "category": "academic",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [
+       1,
+       2
+      ],
+      "leakRate": 0.5,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "headings": true,
+       "math": true,
+       "footnotes": false
+      },
+      "structurePass": 0.6667,
+      "languageRecall": null,
+      "combined": 0.8333,
+      "chars": 40402
+     },
+     {
+      "id": "distill-augmented-rnns",
+      "tier": 5,
+      "category": "academic",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [
+       1,
+       2
+      ],
+      "leakRate": 0.5,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 0.9,
+      "chars": 21476
+     },
+     {
+      "id": "gwern-scaling",
+      "tier": 5,
+      "category": "academic",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true,
+       "footnotes": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 100443
+     },
+     {
+      "id": "ciechanowski-watch",
+      "tier": 5,
+      "category": "interactive",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {},
+      "structurePass": null,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 44863
+     },
+     {
+      "id": "ciechanowski-gps",
+      "tier": 5,
+      "category": "interactive",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {},
+      "structurePass": null,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 55484
+     },
+     {
+      "id": "guardian-skulls",
+      "tier": 3,
+      "category": "news",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 4168
+     },
+     {
+      "id": "guardian-cambridge",
+      "tier": 3,
+      "category": "news",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 16360
+     },
+     {
+      "id": "guardian-gallery-theatres",
+      "tier": 4,
+      "category": "boilerplate",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 1336
+     },
+     {
+      "id": "bbc-news-a",
+      "tier": 3,
+      "category": "news",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 5045
+     },
+     {
+      "id": "bbc-news-b",
+      "tier": 3,
+      "category": "news",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 3485
+     },
+     {
+      "id": "npr-ukraine",
+      "tier": 3,
+      "category": "news",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 8066
+     },
+     {
+      "id": "npr-hastert",
+      "tier": 3,
+      "category": "news",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 6125
+     },
+     {
+      "id": "aljazeera-ethiopia",
+      "tier": 3,
+      "category": "news",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 2289
+     },
+     {
+      "id": "propublica-machine-bias",
+      "tier": 3,
+      "category": "news",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": false,
+       "tables": true
+      },
+      "structurePass": 0.5,
+      "languageRecall": null,
+      "combined": 0.9,
+      "chars": 27836
+     },
+     {
+      "id": "propublica-enid",
+      "tier": 3,
+      "category": "news",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 5077
+     },
+     {
+      "id": "verge-wikipedia-bots",
+      "tier": 3,
+      "category": "news",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {},
+      "structurePass": null,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 3071
+     },
+     {
+      "id": "verge-decomps",
+      "tier": 5,
+      "category": "boilerplate",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 0.8333,
+      "missing": [
+       3
+      ],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 0.9167,
+      "chars": 2342
+     },
+     {
+      "id": "quanta-fourth-dimension",
+      "tier": 3,
+      "category": "news",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 54592
+     },
+     {
+      "id": "quanta-ai-math",
+      "tier": 3,
+      "category": "news",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {},
+      "structurePass": null,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 17042
+     },
+     {
+      "id": "aeon-intelligence",
+      "tier": 3,
+      "category": "news",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {},
+      "structurePass": null,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 22744
+     },
+     {
+      "id": "restofworld-memory",
+      "tier": 3,
+      "category": "news",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "headings": true,
+       "embeds": false
+      },
+      "structurePass": 0.5,
+      "languageRecall": null,
+      "combined": 0.9,
+      "chars": 5946
+     },
+     {
+      "id": "wired-exoplanet",
+      "tier": 4,
+      "category": "news",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {},
+      "structurePass": null,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 4896
+     },
+     {
+      "id": "techcrunch-openai-watermark",
+      "tier": 3,
+      "category": "news",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 2931
+     },
+     {
+      "id": "theregister-debian",
+      "tier": 3,
+      "category": "news",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {},
+      "structurePass": null,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 2258
+     },
+     {
+      "id": "engadget-wikimedia",
+      "tier": 3,
+      "category": "news",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {},
+      "structurePass": null,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 3546
+     },
+     {
+      "id": "nasa-hubble",
+      "tier": 3,
+      "category": "news",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "embeds": false
+      },
+      "structurePass": 0.5,
+      "languageRecall": null,
+      "combined": 0.9,
+      "chars": 6250
+     },
+     {
+      "id": "foxnews-planet-fitness",
+      "tier": 4,
+      "category": "boilerplate",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 2754
+     },
+     {
+      "id": "hn-debugbear",
+      "tier": 3,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 8555
+     },
+     {
+      "id": "zenn-npm",
+      "tier": 3,
+      "category": "non-english",
+      "language": "ja",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "images": true,
+       "headings": true,
+       "tables": true,
+       "embeds": false
+      },
+      "structurePass": 0.8,
+      "languageRecall": null,
+      "combined": 0.96,
+      "chars": 13806
+     },
+     {
+      "id": "zenn-tokium",
+      "tier": 3,
+      "category": "non-english",
+      "language": "ja",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "images": true,
+       "headings": true,
+       "embeds": false
+      },
+      "structurePass": 0.75,
+      "languageRecall": null,
+      "combined": 0.95,
+      "chars": 29182
+     },
+     {
+      "id": "qiita-a",
+      "tier": 3,
+      "category": "non-english",
+      "language": "ja",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 2225
+     },
+     {
+      "id": "qiita-b",
+      "tier": 3,
+      "category": "non-english",
+      "language": "ja",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "headings": true,
+       "tables": true,
+       "embeds": false
+      },
+      "structurePass": 0.75,
+      "languageRecall": null,
+      "combined": 0.95,
+      "chars": 3549
+     },
+     {
+      "id": "ruanyifeng-commit",
+      "tier": 2,
+      "category": "non-english",
+      "language": "zh",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 4030
+     },
+     {
+      "id": "ruanyifeng-weekly",
+      "tier": 3,
+      "category": "non-english",
+      "language": "zh",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 4766
+     },
+     {
+      "id": "sspai-post",
+      "tier": 4,
+      "category": "non-english",
+      "language": "zh",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": false,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 5582
+     },
+     {
+      "id": "zhwiki-great-wall",
+      "tier": 4,
+      "category": "non-english",
+      "language": "zh",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 14195
+     },
+     {
+      "id": "yna-news",
+      "tier": 3,
+      "category": "non-english",
+      "language": "ko",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 1171
+     },
+     {
+      "id": "hani-news",
+      "tier": 3,
+      "category": "non-english",
+      "language": "ko",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 5141
+     },
+     {
+      "id": "kowiki-hangul",
+      "tier": 4,
+      "category": "non-english",
+      "language": "ko",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true,
+       "tables": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 35402
+     },
+     {
+      "id": "bbc-arabic",
+      "tier": 3,
+      "category": "non-english",
+      "language": "ar",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [
+       0,
+       2
+      ],
+      "leakRate": 0.4,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 0.92,
+      "chars": 4656
+     },
+     {
+      "id": "aljazeera-arabic",
+      "tier": 3,
+      "category": "non-english",
+      "language": "ar",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 1570
+     },
+     {
+      "id": "ynet-news",
+      "tier": 4,
+      "category": "non-english",
+      "language": "he",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 4674
+     },
+     {
+      "id": "hewiki-jerusalem",
+      "tier": 4,
+      "category": "non-english",
+      "language": "he",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true,
+       "tables": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 113280
+     },
+     {
+      "id": "bbc-hindi",
+      "tier": 3,
+      "category": "non-english",
+      "language": "hi",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [
+       0,
+       1,
+       3
+      ],
+      "leakRate": 0.6,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 0.88,
+      "chars": 5094
+     },
+     {
+      "id": "habr-a",
+      "tier": 3,
+      "category": "non-english",
+      "language": "ru",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 12369
+     },
+     {
+      "id": "habr-b",
+      "tier": 3,
+      "category": "non-english",
+      "language": "ru",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 9794
+     },
+     {
+      "id": "heise-github",
+      "tier": 3,
+      "category": "non-english",
+      "language": "de",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 1818
+     },
+     {
+      "id": "spiegel-spain",
+      "tier": 3,
+      "category": "non-english",
+      "language": "de",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [
+       0
+      ],
+      "leakRate": 0.2,
+      "titleExact": false,
+      "titleFuzzy": false,
+      "structure": {
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 0.86,
+      "chars": 1794
+     },
+     {
+      "id": "linuxfr-debian",
+      "tier": 4,
+      "category": "non-english",
+      "language": "fr",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {},
+      "structurePass": null,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 4479
+     },
+     {
+      "id": "frwiki-paris",
+      "tier": 4,
+      "category": "non-english",
+      "language": "fr",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true,
+       "tables": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 312425
+     },
+     {
+      "id": "bbc-mundo",
+      "tier": 3,
+      "category": "non-english",
+      "language": "es",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [
+       0,
+       1,
+       3
+      ],
+      "leakRate": 0.6,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 0.88,
+      "chars": 5666
+     },
+     {
+      "id": "elpais-vivienda",
+      "tier": 3,
+      "category": "non-english",
+      "language": "es",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 7601
+     },
+     {
+      "id": "dewiki-berlin",
+      "tier": 4,
+      "category": "non-english",
+      "language": "de",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true,
+       "tables": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 171276
+     },
+     {
+      "id": "jawiki-tokyo",
+      "tier": 4,
+      "category": "non-english",
+      "language": "ja",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true,
+       "tables": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 39939
+     },
+     {
+      "id": "arwiki-cairo",
+      "tier": 4,
+      "category": "non-english",
+      "language": "ar",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true,
+       "tables": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 89701
+     },
+     {
+      "id": "ruwiki-moscow",
+      "tier": 4,
+      "category": "non-english",
+      "language": "ru",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true,
+       "tables": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 154652
+     },
+     {
+      "id": "recipetineats-schnitzel",
+      "tier": 5,
+      "category": "boilerplate",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true,
+       "embeds": false
+      },
+      "structurePass": 0.6667,
+      "languageRecall": null,
+      "combined": 0.9333,
+      "chars": 13506
+     },
+     {
+      "id": "loveandlemons-pumpkin-soup",
+      "tier": 5,
+      "category": "boilerplate",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 7332
+     },
+     {
+      "id": "scottaaronson-post",
+      "tier": 3,
+      "category": "boilerplate",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {},
+      "structurePass": null,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 16573
+     },
+     {
+      "id": "slashdot-wikipedia-bots",
+      "tier": 4,
+      "category": "boilerplate",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {},
+      "structurePass": null,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 1737
+     },
+     {
+      "id": "lesswrong-how-would-we-know",
+      "tier": 4,
+      "category": "tech-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "headings": true,
+       "tables": true,
+       "footnotes": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 33956
+     },
+     {
+      "id": "noahpinion-sf-eras",
+      "tier": 3,
+      "category": "simple-blog",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "images": true,
+       "headings": false,
+       "embeds": false
+      },
+      "structurePass": 0.3333,
+      "languageRecall": null,
+      "combined": 0.8667,
+      "chars": 10936
+     },
+     {
+      "id": "tagesschau-nobel",
+      "tier": 3,
+      "category": "non-english",
+      "language": "de",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": false,
+      "titleFuzzy": true,
+      "structure": {
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": null,
+      "combined": 1,
+      "chars": 6176
+     }
+    ]
+   },
    "ours-dart": {
     "overall": {
      "docs": 145,
@@ -13833,45 +19141,45 @@
      "docs": 145,
      "failed": 0,
      "parse": {
-      "median": 4.141,
-      "p95": 44.663,
-      "mean": 9.286
+      "median": 3.533,
+      "p95": 40.19,
+      "mean": 8.218
      },
      "extract": {
-      "median": 1.909,
-      "p95": 36.193,
-      "mean": 6.918
+      "median": 1.788,
+      "p95": 35.061,
+      "mean": 6.429
      },
      "total": {
-      "median": 6.65,
-      "p95": 82.285,
-      "mean": 17.018
+      "median": 6.067,
+      "p95": 74.661,
+      "mean": 14.704
      },
      "bySize": {
       "<50KB": {
        "docs": 18,
-       "median": 2.774,
-       "p95": 12.091
+       "median": 2.455,
+       "p95": 13.59
       },
       "50-200KB": {
        "docs": 57,
-       "median": 4.302,
-       "p95": 18.298
+       "median": 3.721,
+       "p95": 18.231
       },
       "200-500KB": {
        "docs": 42,
-       "median": 9.233,
-       "p95": 22.121
+       "median": 8.166,
+       "p95": 23.272
       },
       "0.5-1MB": {
        "docs": 13,
-       "median": 20.984,
-       "p95": 61.29
+       "median": 19.383,
+       "p95": 58.717
       },
       ">1MB": {
        "docs": 15,
-       "median": 82.285,
-       "p95": 297.19
+       "median": 74.661,
+       "p95": 166.071
       }
      }
     },
@@ -15667,7 +20975,7 @@
       "structurePass": 1,
       "languageRecall": null,
       "combined": 1,
-      "chars": 21700
+      "chars": 21688
      },
      {
       "id": "arxiv-mixtral",
@@ -15691,7 +20999,7 @@
       "structurePass": 1,
       "languageRecall": null,
       "combined": 1,
-      "chars": 27395
+      "chars": 27383
      },
      {
       "id": "distill-momentum",

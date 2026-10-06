@@ -10,6 +10,7 @@ import 'blocks.dart';
 import 'content.dart';
 import 'dom.dart';
 import 'js.dart';
+import 'markdown.dart';
 import 'match.dart';
 import 'metadata.dart';
 import 'model.dart';
@@ -20,14 +21,18 @@ import 'url.dart';
 /// Extracts the readable article from raw HTML fetched from [url] (after
 /// redirects). Parses with package:html, then runs the same pipeline as the
 /// TypeScript engine. Returns null when the page has no readable article.
-Article? extractArticle(String html, Uri url) => extractHtml(html, url.toString());
+/// With [markdown], also writes the article as Markdown into
+/// [Article.markdown]; the blocks are returned either way.
+Article? extractArticle(String html, Uri url, {bool markdown = false}) =>
+    extractHtml(html, url.toString(), markdown: markdown);
 
 /// [extractArticle] with the page URL as a string, exactly as given.
-Article? extractHtml(String html, String url) => extractTree(fromDocument(html_parser.parse(html)), url);
+Article? extractHtml(String html, String url, {bool markdown = false}) =>
+    extractTree(fromDocument(html_parser.parse(html)), url, markdown: markdown);
 
 /// Platform-independent part of the pipeline: everything after the DOM is
 /// copied into a [VDocument]. Mutates [doc].
-Article? extractTree(VDocument doc, String url) {
+Article? extractTree(VDocument doc, String url, {bool markdown = false}) {
   final pageUrl = url;
   final base = doc.baseHref != null ? resolveHttp(doc.baseHref!, pageUrl) ?? pageUrl : pageUrl;
   final meta = readMetadata(doc, pageUrl);
@@ -56,7 +61,7 @@ Article? extractTree(VDocument doc, String url) {
 
   final text = blocksText(blocks);
   final wordCount = countWords(text);
-  return Article(
+  final article = Article(
     url: meta.url,
     title: title,
     subtitle: meta.subtitle != null && meta.subtitle != title ? meta.subtitle : null,
@@ -74,6 +79,8 @@ Article? extractTree(VDocument doc, String url) {
     readingMinutes: math.max(1, (wordCount / 230).ceil()),
     blocks: blocks,
   );
+  if (markdown) article.markdown = articleMarkdown(article);
+  return article;
 }
 
 // ------------------------------------------------------------------ title
