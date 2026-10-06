@@ -35,7 +35,18 @@ One file per TypeScript file in `lib/src/` (`tree`, `url`, `metadata`, `content`
   parser).
 
 Dart regular expressions are ECMAScript's (irregexp), so the patterns are the TypeScript ones
-verbatim, with the same flags.
+verbatim, with the same flags. Where the TypeScript engine runs a costly pattern over running text
+(calls to action, author bios), the port first checks a cheap condition every match implies (a
+literal word, the first character) and skips the pattern when it fails; with assertions enabled
+the pattern is checked as well.
+
+### TypeScript behaviour copied on purpose
+
+The TeX patterns in `blocks.ts` are global (`/g`) regular expressions shared by nested calls: the
+text before a formula is converted by a call that resets `lastIndex` when that text holds a `$` or
+`\`, and the outer search starts over. The port emulates `lastIndex` (`_GlobalRegExp`), so a
+formula after such text comes out twice, as in TypeScript. On input where the TypeScript loop never
+ends (`\(a\) $ \(b\)` on a page that uses TeX), the port stops at the first repeated state.
 
 ## Tests: `dart test`
 
@@ -101,23 +112,27 @@ Per page: parse (package:html), `fromDocument` and `extractTree` timed separatel
 timed runs; summaries over pages and by HTML size, next to the TypeScript timings for the same
 pages (Chromium from the last eval run, Bun `extractTree` from the parity dump).
 
-On an Apple M5 (load average ~7 from other work, so absolute numbers are somewhat inflated),
-326 corpus pages, 5 timed runs per page, ms per page (median / p95 / mean):
+On an Apple M5 (load average ~3.5-4.7 from other work), 326 corpus pages, 5 timed runs per page,
+ms per page (median / p95 / mean):
 
 | | AOT | JIT |
 | --- | ---: | ---: |
-| parse (package:html) | 4.85 / 36.8 / 10.3 | 3.82 / 34.7 / 9.63 |
-| `fromDocument` | 0.71 / 5.24 / 1.49 | 0.63 / 5.70 / 1.45 |
-| `extractTree` | 1.14 / 29.1 / 4.97 | 1.06 / 25.7 / 4.83 |
-| extract (`fromDocument` + `extractTree`) | 1.95 / 32.8 / 6.46 | 1.87 / 28.4 / 6.27 |
-| total | 7.49 / 57.8 / 16.8 | 6.28 / 61.0 / 15.9 |
+| parse (package:html) | 2.39 / 16.6 / 4.94 | 2.53 / 17.4 / 5.41 |
+| `fromDocument` | 0.33 / 2.39 / 0.72 | 0.38 / 2.71 / 0.82 |
+| `extractTree` | 0.58 / 13.1 / 2.52 | 0.71 / 13.9 / 2.92 |
+| extract (`fromDocument` + `extractTree`) | 0.97 / 14.4 / 3.24 | 1.19 / 15.1 / 3.74 |
+| total | 3.53 / 27.4 / 8.18 | 3.99 / 32.8 / 9.15 |
 
-The TypeScript engine on the same pages: Chromium parse 1.57 / 14.3 / 3.22, extract 2.04 / 16.5
-/ 4.70, total 3.94 / 24.1 / 7.92; Bun `extractTree` 0.90 / 11.3 / 2.47. Per page, Dart AOT
-extraction is 0.98x Chromium's at the median (2.3x at p95), `extractTree` 1.4x Bun's (4.1x at
+The TypeScript engine on the same pages: Chromium parse 0.83 / 7.13 / 1.71, extract 1.23 / 9.11
+/ 2.93, total 2.18 / 13.6 / 4.65; Bun `extractTree` 0.68 / 5.82 / 1.84. Per page, Dart AOT
+extraction is 0.83x Chromium's at the median (1.7x at p95), `extractTree` 0.95x Bun's (2.2x at
 p95); the gap in the total is package:html, a pure-Dart parser against Chromium's native one
-(3x at the median). Pages over 1 MB (Wikipedia articles) are the slowest: 129 ms median total
-(69 ms parse, 59 ms extract), against 51 ms in Chromium.
+(2.9x at the median). Pages over 1 MB (Wikipedia articles) are the slowest: 59 ms median total
+(34 ms parse, 29 ms extract), against 31 ms in Chromium.
+
+The rules added with the engine's quality pass (footnotes, TeX, frames, galleries, bios, calls to
+action) cost Dart `extractTree` 7-11% at the median and about 10% on the mean, measured against the
+previous port on the same pages and load; the TypeScript engine slowed by 9-16%.
 
 The eval harness runs the AOT build as the `ours-dart` engine
 (`cd eval && bun run eval --engines ours,ours-dart`); see `eval/README.md`.
