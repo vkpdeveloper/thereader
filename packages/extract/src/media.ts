@@ -1,5 +1,5 @@
-import type { Audio, Embed, Image, Video } from './model';
-import { resolveHttp, resolveUrl } from './url';
+import type { Audio, Code, Embed, Image, Video } from './model';
+import { hostOf, resolveHttp, resolveUrl } from './url';
 import { collapse, firstElement, VElement } from './tree';
 
 /** Placeholder sources lazy loaders put in `src` until the real image scrolls into view. */
@@ -261,7 +261,129 @@ export function mediaFromFrame(src: string, title: string | undefined): Video | 
   m = TWEET.exec(src);
   if (m !== null) return { type: 'embed', provider: 'twitter', url: 'https://twitter.com/' + m[1] + '/status/' + m[2] };
   if (/bandcamp\.com\/EmbeddedPlayer/i.test(src)) return withTitle({ type: 'audio', provider: 'bandcamp', url: src, embedUrl: src });
+  m = STREAMABLE.exec(src);
+  if (m !== null) return withTitle({ type: 'video', provider: 'streamable', url: 'https://streamable.com/' + m[1], embedUrl: 'https://streamable.com/e/' + m[1] });
+  m = BILIBILI.exec(src);
+  if (m !== null) return withTitle({ type: 'video', provider: 'bilibili', url: 'https://www.bilibili.com/video/' + m[1], embedUrl: src });
+  m = NICONICO.exec(src);
+  if (m !== null) return withTitle({ type: 'video', provider: 'niconico', url: 'https://www.nicovideo.jp/watch/' + m[1], embedUrl: src });
+  m = TWEET_FRAME.exec(src);
+  if (m !== null) return { type: 'embed', provider: 'twitter', url: 'https://twitter.com/i/status/' + m[1] };
+  m = INSTAGRAM.exec(src);
+  if (m !== null) return { type: 'embed', provider: 'instagram', url: 'https://www.instagram.com/' + m[1] + '/' + m[2] + '/' };
+  m = TIKTOK.exec(src);
+  if (m !== null) return { type: 'embed', provider: 'tiktok', url: 'https://www.tiktok.com/embed/v2/' + m[1] };
   return null;
+}
+
+const STREAMABLE = /streamable\.com\/(?:e|o|s)\/(\w+)/i;
+const BILIBILI = /player\.bilibili\.com\/player\.html\?(?:.*&)?bvid=(BV\w+)/i;
+const NICONICO = /embed\.nicovideo\.jp\/watch\/((?:sm|nm|so)?\d+)/i;
+const TWEET_FRAME = /platform\.twitter\.com\/embed\/Tweet\.html\?(?:.*&)?id=(\d+)/i;
+const INSTAGRAM = /instagram\.com\/(p|reel|tv)\/([\w-]+)\/embed/i;
+const TIKTOK = /tiktok\.com\/embed(?:\/v2)?\/(\d+)/i;
+
+/** Hosts of interactive content (charts, maps, sandboxes, slides, documents) that publishers embed. */
+const EMBED_HOSTS: [RegExp, string][] = [
+  [/(?:^|\.)(?:datawrapper\.dwcdn\.net|datawrapper\.de)$/, 'datawrapper'],
+  [/(?:^|\.)(?:flourish\.studio|flo\.uri\.sh)$/, 'flourish'],
+  [/(?:^|\.)infogram\.com$/, 'infogram'],
+  [/(?:^|\.)observablehq\.com$/, 'observable'],
+  [/(?:^|\.)public\.tableau\.com$/, 'tableau'],
+  [/(?:^|\.)(?:plotly\.com|plot\.ly)$/, 'plotly'],
+  [/(?:^|\.)arcgis\.com$/, 'arcgis'],
+  [/(?:^|\.)openstreetmap\.org$/, 'openstreetmap'],
+  [/(?:^|\.)codesandbox\.io$/, 'codesandbox'],
+  [/(?:^|\.)stackblitz\.com$/, 'stackblitz'],
+  [/(?:^|\.)jsfiddle\.net$/, 'jsfiddle'],
+  [/(?:^|\.)replit\.com$/, 'replit'],
+  [/(?:^|\.)glitch\.(?:com|me)$/, 'glitch'],
+  [/(?:^|\.)(?:play\.rust-lang\.org|go\.dev|play\.golang\.org)$/, 'playground'],
+  [/(?:^|\.)airtable\.com$/, 'airtable'],
+  [/(?:^|\.)figma\.com$/, 'figma'],
+  [/(?:^|\.)slideshare\.net$/, 'slideshare'],
+  [/(?:^|\.)speakerdeck\.com$/, 'speakerdeck'],
+  [/(?:^|\.)scribd\.com$/, 'scribd'],
+  [/(?:^|\.)docs\.google\.com$/, 'google-docs'],
+];
+
+/** Frames that are never content: ads, analytics, comment and chat widgets, forms. */
+const WIDGET_FRAME = /doubleclick|googlesyndication|googletagmanager|google-analytics|adservice|adsystem|adnxs|criteo|taboola|outbrain|disqus|facebook\.com\/plugins\/(?:like|share|page|follow|comments)|sharethis|addthis|recaptcha|newsletter|subscribe|signup|sign-up|login|consent|cookie|intercom|zendesk|livechat|hotjar|survey|typeform|\/ads?\//i;
+
+const FRAME_SRC = ['data-src', 'data-lazy-src', 'data-cmp-src', 'data-original', 'data-url'];
+
+/** The URL a frame loads, including lazy and consent-gated copies (`data-src`, `data-cmp-src`). */
+export function frameSource(el: VElement): string {
+  const src = (el.attrs['src'] ?? '').trim();
+  if (src.length > 0 && !/^(?:about|javascript|data):/i.test(src)) return src;
+  for (const key of FRAME_SRC) {
+    const value = (el.attrs[key] ?? '').trim();
+    if (/^(?:https?:)?\/\//i.test(value)) return value;
+  }
+  for (const key in el.attrs) {
+    const value = el.attrs[key]!.trim();
+    if (key.startsWith('data-') && key.endsWith('src') && /^(?:https?:)?\/\//i.test(value)) return value;
+  }
+  return '';
+}
+
+const MERMAID = /^\s*(?:graph|flowchart|sequenceDiagram|classDiagram|stateDiagram(?:-v2)?|erDiagram|gantt|pie|journey|gitGraph|mindmap|timeline|quadrantChart|xychart-beta|sankey-beta|C4Context)\b/;
+
+/** What a frame's `data-content` carries: a link-card target URL, or diagram source. */
+function frameContent(el: VElement): string | null {
+  let value = el.attrs['data-content'];
+  if (value === undefined || value.length === 0) return null;
+  if (/%[0-9a-f]{2}/i.test(value)) {
+    try {
+      value = decodeURIComponent(value);
+    } catch {
+      /* keep encoded */
+    }
+  }
+  value = value.trim();
+  if (value.charCodeAt(0) === 123) {
+    try {
+      const json = JSON.parse(value) as Record<string, unknown>;
+      const inner = json['data'] ?? json['content'] ?? json['source'] ?? json['url'];
+      return typeof inner === 'string' ? inner.trim() : null;
+    } catch {
+      return null;
+    }
+  }
+  return value;
+}
+
+/**
+ * Any frame in the article: players and social posts, interactive content on
+ * known hosts, link cards and other `/embed` endpoints, diagrams shipped as
+ * source. Null for ads, widgets, forms and blank frames.
+ */
+export function frameBlock(el: VElement, base: string): Video | Audio | Embed | Code | null {
+  const raw = frameSource(el);
+  const src = raw.length > 0 ? resolveHttp(raw, base) : null;
+  if (src === null) return null;
+  const media = mediaFromFrame(src, el.attrs['title']);
+  if (media !== null) return media;
+  if (WIDGET_FRAME.test(src)) return null;
+  const width = el.attrs['width'];
+  const height = el.attrs['height'];
+  if (width === '0' || width === '1' || height === '0' || height === '1') return null;
+  const content = frameContent(el);
+  if (content !== null && MERMAID.test(content)) return { type: 'code', code: content.replace(/\r\n?/g, '\n'), language: null };
+  const host = hostOf(src);
+  for (const [pattern, provider] of EMBED_HOSTS) if (pattern.test(host)) return { type: 'embed', provider, url: src };
+  if (/^(?:embed|embeds|player)\./.test(host) || /\/embed(?:ded)?(?:-[a-z]+)?\/[^?#]/i.test(src)) {
+    const target = content !== null ? resolveHttp(content, base) : null;
+    return { type: 'embed', provider: 'other', url: target ?? src };
+  }
+  return null;
+}
+
+const NO_BASE = 'https://invalid.invalid/';
+
+/** A frame the converter will keep (see `frameBlock`); usable before the page base is known. */
+export function isContentFrame(el: VElement): boolean {
+  return frameBlock(el, NO_BASE) !== null;
 }
 
 /** `<video>`/`<audio>` elements with their own files. */

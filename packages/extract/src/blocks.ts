@@ -1,6 +1,6 @@
 import { isCallout, isDataTableCached, isFootnotes } from './content';
 import { detectLanguage, languageFromClass, normalizeLanguage } from './languages';
-import { imageFrom, isDecorativeImage, isSmallImage, lazyVideo, mediaFromElement, mediaFromFrame, socialProvider, TWEET } from './media';
+import { frameBlock, imageFrom, isDecorativeImage, isSmallImage, lazyVideo, mediaFromElement, socialProvider, TWEET } from './media';
 import type { Block, Callout, Definition, Figure, Footnote, Image, Inline, ListItem, Mark, Table, TableCell, TableRow, TextRun } from './model';
 import { collapse, firstElement, rawText, textOf, walk, type VElement, type VNode } from './tree';
 import { resolveUrl } from './url';
@@ -518,8 +518,8 @@ export class Converter {
         this.standaloneImage(el, out);
         return;
       case 'iframe': {
-        const block = mediaFromFrame(el.attrs['src'] ?? el.attrs['data-src'] ?? '', el.attrs['title']);
-        if (block !== null) out.push(block);
+        const block = frameBlock(el, this.base);
+        if (block !== null) out.push(block.type === 'code' ? this.codeBlock(block.code, 'plaintext') : block);
         return;
       }
       case 'video':
@@ -1156,8 +1156,8 @@ export class Converter {
         case 'noscript':
           return false;
         case 'iframe': {
-          const block = mediaFromFrame(e.attrs['src'] ?? e.attrs['data-src'] ?? '', e.attrs['title']);
-          if (block !== null) media.push(block);
+          const block = frameBlock(e, this.base);
+          if (block !== null) media.push(block.type === 'code' ? this.codeBlock(block.code, 'plaintext') : block);
           return false;
         }
         case 'video':

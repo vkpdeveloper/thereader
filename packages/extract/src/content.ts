@@ -1,3 +1,4 @@
+import { isContentFrame } from './media';
 import { textOf, visibleLength, VElement, walk, type VNode } from './tree';
 
 /**
@@ -18,7 +19,6 @@ const NEGATIVE = /-ad-|hidden|^hid$| hid$| hid |^hid |banner|combx|comment|com-|
 const BYLINE = /byline|author|dateline|writtenby|p-author/;
 const SHARE = /(?:\b|_)(?:share|sharedaddy|social|sharing)(?:\b|_)/;
 const UNLIKELY_ROLES = new Set(['menu', 'menubar', 'complementary', 'navigation', 'alert', 'alertdialog', 'dialog', 'banner', 'contentinfo', 'search', 'tooltip']);
-const VIDEO_HOSTS = /\/\/(?:www\.)?(?:(?:dailymotion|youtube|youtube-nocookie|player\.vimeo|v\.qq|loom|fast\.wistia|embed\.ted)\.com|(?:archive|upload\.wikimedia)\.org|player\.twitch\.tv|(?:open\.)?spotify\.com|w\.soundcloud\.com|youtu\.be|codepen\.io|bandcamp\.com)/i;
 const AD_WORDS = /^(?:ad(?:vertising|vertisement)?|pub(?:licité)?|werb(?:ung)?|广告|Реклама|Anuncio)$/i;
 const LOADING_WORDS = /^(?:(?:loading|正在加载|Загрузка|chargement|cargando)(?:…|\.\.\.)?)$/i;
 
@@ -775,7 +775,7 @@ function prepare(root: VElement, flags: Flags): void {
       el.skip = true;
       return false;
     }
-    if (tag === 'iframe' && !VIDEO_HOSTS.test(el.attrs['src'] ?? el.attrs['data-src'] ?? '')) {
+    if (tag === 'iframe' && !isContentFrame(el)) {
       el.skip = true;
       return false;
     }
@@ -909,8 +909,8 @@ function cleanConditionally(root: VElement, flags: Flags): void {
       c.img += k.img + (ct === 'img' ? 1 : 0);
       c.li += k.li + (ct === 'li' ? 1 : 0);
       c.input += k.input + (ct === 'input' && (child.attrs['type'] ?? '').toLowerCase() !== 'checkbox' ? 1 : 0);
-      c.protected += k.protected + (ct === 'pre' || ct === 'math' || ct === 'math-tex' || ct === 'table' && isDataTableCached(child) || ct === 'video' || ct === 'audio' || ct === 'iframe' && VIDEO_HOSTS.test(child.attrs['src'] ?? child.attrs['data-src'] ?? '') ? 1 : 0);
-      c.embeds += k.embeds + (EMBEDS.has(ct) && !VIDEO_HOSTS.test(child.attrs['src'] ?? '') ? 1 : 0);
+      c.protected += k.protected + (ct === 'pre' || ct === 'math' || ct === 'math-tex' || ct === 'table' && isDataTableCached(child) || ct === 'video' || ct === 'audio' || ct === 'iframe' && isContentFrame(child) ? 1 : 0);
+      c.embeds += k.embeds + (EMBEDS.has(ct) && !(ct === 'iframe' && isContentFrame(child)) ? 1 : 0);
       c.headingText += HEADINGS.has(ct) ? k.text : k.headingText;
       c.listText += LISTS.has(ct) ? k.text : k.listText;
       c.textishText += TEXTISH.has(ct) ? k.text : k.textishText;
