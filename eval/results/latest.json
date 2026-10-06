@@ -1,20 +1,20 @@
 {
- "generatedAt": "2026-10-06T00:33:50.415Z",
+ "generatedAt": "2026-10-06T02:23:06.050Z",
  "engines": {
   "ours": {
-   "version": "952e3ce+dirty",
+   "version": "ca3b2d1",
    "runtime": "Chromium DOMParser",
    "settings": "extract(doc, { url }); text = articleText(article)",
-   "ranAt": "2026-10-06T00:33:50.406Z",
-   "runs": 1,
-   "workers": 3,
+   "ranAt": "2026-10-06T02:23:06.042Z",
+   "runs": 3,
+   "workers": 4,
    "environment": {
     "os": "darwin 27.0.0",
     "cpu": "Apple M5 x10",
     "chromium": "153.0.8010.12",
     "bun": "1.4.0",
-    "load avg at start": "4.6 5.5 9.4",
-    "load avg at end": "4.7 5.5 9.3"
+    "load avg at start": "5.8 5.5 7.5",
+    "load avg at end": "5.8 5.5 7.5"
    }
   },
   "readability": {
@@ -87,45 +87,45 @@
    "docs": 326,
    "failed": 0,
    "parse": {
-    "median": 1.467,
-    "p95": 11.095,
-    "mean": 2.855
+    "median": 1.178,
+    "p95": 11.945,
+    "mean": 2.633
    },
    "extract": {
-    "median": 1.962,
-    "p95": 14.67,
-    "mean": 4.448
+    "median": 1.725,
+    "p95": 15.15,
+    "mean": 4.566
    },
    "total": {
-    "median": 3.582,
-    "p95": 22.025,
-    "mean": 7.303
+    "median": 3.038,
+    "p95": 22.085,
+    "mean": 7.222
    },
    "bySize": {
     "<50KB": {
      "docs": 35,
-     "median": 1.67,
-     "p95": 6.37
+     "median": 1.545,
+     "p95": 5.325
     },
     "50-200KB": {
      "docs": 176,
-     "median": 3.018,
-     "p95": 9.23
+     "median": 2.455,
+     "p95": 8.435
     },
     "200-500KB": {
      "docs": 76,
-     "median": 5.328,
-     "p95": 14.675
+     "median": 4.595,
+     "p95": 14.045
     },
     "0.5-1MB": {
      "docs": 21,
-     "median": 10.66,
-     "p95": 25.465
+     "median": 8.945,
+     "p95": 30.905
     },
     ">1MB": {
      "docs": 18,
-     "median": 45.555,
-     "p95": 131.05
+     "median": 55.188,
+     "p95": 155.675
     }
    }
   },
@@ -393,17 +393,17 @@
   "engines": {
    "ours": {
     "metrics": {
-     "precision": 0.9621,
-     "recall": 0.9878,
-     "f1": 0.9748,
-     "accuracy": 0.3204,
-     "f1_std": 0.0026,
-     "precision_std": 0.0042,
-     "recall_std": 0.0025,
-     "accuracy_std": 0.0344,
+     "precision": 0.9672,
+     "recall": 0.9868,
+     "f1": 0.9769,
+     "accuracy": 0.3425,
+     "f1_std": 0.0025,
+     "precision_std": 0.0038,
+     "recall_std": 0.0026,
+     "accuracy_std": 0.0351,
      "f1_ci": [
-      0.9697,
-      0.9797
+      0.9721,
+      0.9817
      ]
     },
     "failed": 0,
@@ -412,45 +412,45 @@
      "docs": 181,
      "failed": 0,
      "parse": {
-      "median": 1.22,
-      "p95": 6.5,
-      "mean": 1.852
+      "median": 0.89,
+      "p95": 3.905,
+      "mean": 1.378
      },
      "extract": {
-      "median": 1.59,
-      "p95": 3.955,
-      "mean": 1.829
+      "median": 1.2,
+      "p95": 2.53,
+      "mean": 1.373
      },
      "total": {
-      "median": 2.865,
-      "p95": 8.69,
-      "mean": 3.681
+      "median": 2.145,
+      "p95": 6.25,
+      "mean": 2.767
      },
      "bySize": {
       "<50KB": {
        "docs": 17,
-       "median": 1.415,
-       "p95": 2.795
+       "median": 1.015,
+       "p95": 1.61
       },
       "50-200KB": {
        "docs": 119,
-       "median": 2.63,
-       "p95": 5.835
+       "median": 1.9,
+       "p95": 3.505
       },
       "200-500KB": {
        "docs": 34,
-       "median": 4.427,
-       "p95": 8.355
+       "median": 3.368,
+       "p95": 6.25
       },
       "0.5-1MB": {
        "docs": 8,
-       "median": 9.722,
-       "p95": 16.38
+       "median": 6.468,
+       "p95": 14.975
       },
       ">1MB": {
        "docs": 3,
-       "median": 16.095,
-       "p95": 16.45
+       "median": 16.66,
+       "p95": 19.76
       }
      }
     },
@@ -465,11 +465,11 @@
      },
      {
       "id": "04a6711caa7c687592777718866e781e976e0fe684faebe8b3cedcef8cd0ea34",
-      "precision": 0.9787,
+      "precision": 0.9978,
       "recall": 1,
-      "f1": 0.9892,
+      "f1": 0.9989,
       "accuracy": 0,
-      "chars": 5709
+      "chars": 5602
      },
      {
       "id": "05844573ca7e1fba714d715bb11ca08c26e25328999c74a1cb3bc8a0e4399f0f",
@@ -497,11 +497,11 @@
      },
      {
       "id": "076f4f33bf75059db581bedf36e76fb65e89a8f7752db3339aa3ea11c5122f32",
-      "precision": 0.9487,
+      "precision": 0.9724,
       "recall": 1,
-      "f1": 0.9737,
+      "f1": 0.986,
       "accuracy": 0,
-      "chars": 2315
+      "chars": 2249
      },
      {
       "id": "08f793762792bd252c75fb57544cdf506ffcc04785136cb87503f02364b82b56",
@@ -649,11 +649,11 @@
      },
      {
       "id": "287e4d9f4af31733aad6534aefb2bd00fb344ec8d6ebf1ac99dbc4d762da0ca4",
-      "precision": 0.9795,
+      "precision": 0.9916,
       "recall": 1,
-      "f1": 0.9897,
+      "f1": 0.9958,
       "accuracy": 0,
-      "chars": 11055
+      "chars": 10923
      },
      {
       "id": "291a8bf33ee49074f33dcff37544ac40506cae450db83b6cb63f02b9920b51c2",
@@ -769,11 +769,11 @@
      },
      {
       "id": "3c6d3381ef52ca26be2fbde19c1b0fe17d85682b726dfecf5e300c1ca34546b1",
-      "precision": 0.9786,
+      "precision": 0.9798,
       "recall": 0.9945,
-      "f1": 0.9864,
+      "f1": 0.9871,
       "accuracy": 0,
-      "chars": 54025
+      "chars": 53965
      },
      {
       "id": "3cb22bfabed8de715c0813a7bb5052363c96bd71ccce3bb2dfb3ab9d1d7a9bbc",
@@ -809,11 +809,11 @@
      },
      {
       "id": "3f65af7b6b98b1c9ae9a3e0d8a09a85600cdc44e26e4b3a6db96a31f4b1767e3",
-      "precision": 0.9016,
+      "precision": 0.9314,
       "recall": 0.6998,
-      "f1": 0.788,
+      "f1": 0.7992,
       "accuracy": 0,
-      "chars": 2405
+      "chars": 2326
      },
      {
       "id": "4219d096902dad9fd9d57e881e7928ca66bdf5334c2bc7dfddaa264887777a7a",
@@ -849,19 +849,19 @@
      },
      {
       "id": "4a44ab3e4c41d56ce9b79eb07acb06aed1bc52aba68a950f06e7de7ef848400a",
-      "precision": 0.9626,
-      "recall": 1,
-      "f1": 0.981,
+      "precision": 0.9563,
+      "recall": 0.8495,
+      "f1": 0.8997,
       "accuracy": 0,
-      "chars": 1251
+      "chars": 1036
      },
      {
       "id": "51374560f40088e227f0053ff1bb0b8525d10a8d7bfbff1cd6033f42347fd85b",
-      "precision": 0.9533,
+      "precision": 1,
       "recall": 1,
-      "f1": 0.9761,
-      "accuracy": 0,
-      "chars": 1490
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 1418
      },
      {
       "id": "51d066b0602c9421d8d6410bc4b931700978409a3faa2a984e8fbde519ad7241",
@@ -881,11 +881,11 @@
      },
      {
       "id": "55bb6340e3d7dd8632ba45179ae43c39f8ad0cfcecb4719e3b9cf6106ffb70a3",
-      "precision": 0.8478,
+      "precision": 0.9286,
       "recall": 1,
-      "f1": 0.9176,
+      "f1": 0.963,
       "accuracy": 0,
-      "chars": 2630
+      "chars": 2414
      },
      {
       "id": "57b4dafd18cfd0531b69f81e87158648227c673ef159f8d8c87d34e34bdb21f2",
@@ -921,19 +921,19 @@
      },
      {
       "id": "5ae11e580afc12d3ba1a12944281e6a7a5dded5c98b4efcf24aedcb28f0d5b22",
-      "precision": 0.6902,
+      "precision": 0.7458,
       "recall": 1,
-      "f1": 0.8167,
+      "f1": 0.8544,
       "accuracy": 0,
-      "chars": 3421
+      "chars": 3136
      },
      {
       "id": "5caf91b8a4423735f866b089d2611ea14503584cf3b6f487c6d26eb7b9521fca",
-      "precision": 0.9892,
-      "recall": 0.9787,
-      "f1": 0.984,
+      "precision": 0.9784,
+      "recall": 0.9645,
+      "f1": 0.9714,
       "accuracy": 0,
-      "chars": 1580
+      "chars": 1576
      },
      {
       "id": "5f03fc173ebc6abdfae50b96ce0b05a6137b7d3f2ef379be35a9bb8ca9f49e87",
@@ -953,11 +953,11 @@
      },
      {
       "id": "5fa3154ec031ab35411a457d78eb5aa92c0e803c5329bd05c001e6d64009e206",
-      "precision": 0.969,
+      "precision": 1,
       "recall": 1,
-      "f1": 0.9842,
-      "accuracy": 0,
-      "chars": 4067
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 3950
      },
      {
       "id": "5fa5679de56c43edf70685762c2d1f2de296432ae53aa46e075b552fee17cab8",
@@ -985,11 +985,11 @@
      },
      {
       "id": "624fcd903d56fc7055fa7097b330629450c095ad6937318deb027be7803bbf35",
-      "precision": 0.8402,
+      "precision": 0.8952,
       "recall": 0.9927,
-      "f1": 0.9101,
+      "f1": 0.9414,
       "accuracy": 0,
-      "chars": 2927
+      "chars": 2769
      },
      {
       "id": "63db31a161b3c5b64e88c2978635cbc38d342ba82fd2c5335321203dcc55c76f",
@@ -1001,11 +1001,11 @@
      },
      {
       "id": "65408257dbe4b41f71a35ade24e30243265095fc1d4988a35b9a6ca52f2b4eab",
-      "precision": 0.8919,
-      "recall": 0.9959,
-      "f1": 0.941,
+      "precision": 0.9282,
+      "recall": 1,
+      "f1": 0.9628,
       "accuracy": 0,
-      "chars": 5050
+      "chars": 4883
      },
      {
       "id": "65bf3048b500bbd84928d9122f99617ca898216b91add1d8b2ac09c670484a5c",
@@ -1026,10 +1026,10 @@
      {
       "id": "680c2848e94a96f961a0964631de94ac572f83c45bfd0bec2deafa893bcfe15c",
       "precision": 1,
-      "recall": 1,
-      "f1": 1,
-      "accuracy": 1,
-      "chars": 7454
+      "recall": 0.9992,
+      "f1": 0.9996,
+      "accuracy": 0,
+      "chars": 7446
      },
      {
       "id": "686bb170effe273eaff1c0f88e412172e8d972518a6d1454c896f52aafaa9643",
@@ -1049,19 +1049,19 @@
      },
      {
       "id": "6ebac05f637ece8aa57c298a2a5e3a8047f546f855d0f29cc683cea60ce85c85",
-      "precision": 0.6923,
+      "precision": 0.6998,
       "recall": 0.9699,
-      "f1": 0.8079,
+      "f1": 0.813,
       "accuracy": 0,
-      "chars": 3417
+      "chars": 3359
      },
      {
       "id": "702d1da63b8e064cb70617620e45c2d116b4912c9bc9d518dcf5ce54bb8057ed",
-      "precision": 0.9839,
+      "precision": 0.9956,
       "recall": 1,
-      "f1": 0.9919,
+      "f1": 0.9978,
       "accuracy": 0,
-      "chars": 9723
+      "chars": 9603
      },
      {
       "id": "70cb2d5bca75ab5a8f6bb378a38a52f882f6bda508de93b12502e74936d86ff2",
@@ -1073,19 +1073,19 @@
      },
      {
       "id": "776a1c046798b474e410f6edf3225d6a27fecd0de6aac22aef7b7f64fe87caaf",
-      "precision": 0.9522,
+      "precision": 1,
       "recall": 1,
-      "f1": 0.9755,
-      "accuracy": 0,
-      "chars": 1773
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 1698
      },
      {
       "id": "7837c9d66c815b9a21dd669a3dc21677c3f084b1b7dd603d56e87867d8970dd3",
-      "precision": 0.9856,
-      "recall": 0.9571,
-      "f1": 0.9711,
+      "precision": 0.9889,
+      "recall": 0.978,
+      "f1": 0.9834,
       "accuracy": 0,
-      "chars": 6267
+      "chars": 6388
      },
      {
       "id": "785affa2c34e6e4844ef080e98e1a1e532eeeb671bdacebfb9e98ad7320ff382",
@@ -1113,11 +1113,11 @@
      },
      {
       "id": "7a664e40d256470fdb12d10c3f8d1c6db0581e9b080c71765e55f273a3ac7d03",
-      "precision": 0.9315,
-      "recall": 0.9847,
-      "f1": 0.9573,
+      "precision": 0.9929,
+      "recall": 0.9969,
+      "f1": 0.9949,
       "accuracy": 0,
-      "chars": 6218
+      "chars": 5870
      },
      {
       "id": "7ab16ade32386ece353b8d31fc3bb7e660189efd5bf3c8549aaba101ad3f5ef5",
@@ -1162,18 +1162,18 @@
      {
       "id": "8267acacb9e4a109b1f7ee7bafe735b73e9c94180b703b131f9e90c9be044f39",
       "precision": 1,
-      "recall": 1,
-      "f1": 1,
-      "accuracy": 1,
-      "chars": 6664
+      "recall": 0.9745,
+      "f1": 0.9871,
+      "accuracy": 0,
+      "chars": 6508
      },
      {
       "id": "82b6d780c792df78dcfb00484d50c86fbc7f324a9eb5835b7615f028edb9a574",
       "precision": 0.9723,
-      "recall": 1,
-      "f1": 0.986,
+      "recall": 0.9987,
+      "f1": 0.9853,
       "accuracy": 0,
-      "chars": 4980
+      "chars": 4976
      },
      {
       "id": "833caf3bdba53dcf48de273cf646370eebe9ac565744b0d0e941e298e1b79730",
@@ -1193,11 +1193,11 @@
      },
      {
       "id": "851498a2b9f4f0b578ac9700c245253dbc147a06c0fb3499adebf1c2d5663c29",
-      "precision": 0.9885,
+      "precision": 0.9967,
       "recall": 0.9852,
-      "f1": 0.9868,
+      "f1": 0.9909,
       "accuracy": 0,
-      "chars": 20347
+      "chars": 20191
      },
      {
       "id": "85439e26c41c75901820d01a13e8cea7836abb58635ea3986f71a163ab0311d3",
@@ -1329,19 +1329,19 @@
      },
      {
       "id": "9ebb3af65694a953005df5bd3869b2cefc263e1dea0471e3ef361c66a264cdd3",
-      "precision": 0.8861,
+      "precision": 0.9343,
       "recall": 1,
-      "f1": 0.9396,
+      "f1": 0.9661,
       "accuracy": 0,
-      "chars": 3261
+      "chars": 3090
      },
      {
       "id": "9eef8162bbb67b0bd73792313b91b87dc9304f43f85f479e67e71c166417451e",
-      "precision": 0.9831,
+      "precision": 1,
       "recall": 1,
-      "f1": 0.9915,
-      "accuracy": 0,
-      "chars": 5510
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 5398
      },
      {
       "id": "a078b3656adc0295d0e37bd4f599342f4a0894da2451e0ef3038ac045434fef3",
@@ -1361,11 +1361,11 @@
      },
      {
       "id": "a6968f427cdb786531cfb326518e674bd8b48af94df7c5c6165cdf40e944357a",
-      "precision": 0.9154,
-      "recall": 1,
-      "f1": 0.9558,
+      "precision": 0.9524,
+      "recall": 0.9982,
+      "f1": 0.9747,
       "accuracy": 0,
-      "chars": 3460
+      "chars": 3314
      },
      {
       "id": "a860fb5eda1ac75df3bc95ba096ade649fdbb1bb566adb9fee3cb13e59f37604",
@@ -1393,11 +1393,11 @@
      },
      {
       "id": "abd9d6291b6bfae0c3ffad8ab7623b482c6da46face0271dc42af6324d8f0ce5",
-      "precision": 0.9843,
-      "recall": 1,
-      "f1": 0.9921,
+      "precision": 1,
+      "recall": 0.992,
+      "f1": 0.996,
       "accuracy": 0,
-      "chars": 6218
+      "chars": 6052
      },
      {
       "id": "ac1bfdd4c510f679c58f1b62101630d40fda20a16703235ae0f56b65a465e423",
@@ -1433,11 +1433,11 @@
      },
      {
       "id": "aec5deeaada8b2fb81b55349da0229d5c77a4dc9605c1aaa31e5ce8b71358bc9",
-      "precision": 0.9376,
-      "recall": 1,
-      "f1": 0.9678,
+      "precision": 0.94,
+      "recall": 0.9655,
+      "f1": 0.9526,
       "accuracy": 0,
-      "chars": 5200
+      "chars": 5002
      },
      {
       "id": "b0cf2bbf0192315eec95ede9c59bbf4ae58699275739d590edc24b012e3e8800",
@@ -1489,11 +1489,11 @@
      },
      {
       "id": "ba4dfe2d3e817ff7b8b01172ccc307850fc5469bcdd26c3c48ca046cb88ab7cf",
-      "precision": 0.8589,
+      "precision": 0.8968,
       "recall": 0.993,
-      "f1": 0.9211,
+      "f1": 0.9425,
       "accuracy": 0,
-      "chars": 3025
+      "chars": 2905
      },
      {
       "id": "bc13ff87b2630ffbebc33bc37b11178b14f03109055e1d17bf644f804b63d98a",
@@ -1569,19 +1569,19 @@
      },
      {
       "id": "c58aa507c4deebd660f69905f9abb8f96d935f6e7210f597ed4cd32b3f39f7f7",
-      "precision": 0.9908,
+      "precision": 1,
       "recall": 1,
-      "f1": 0.9954,
-      "accuracy": 0,
-      "chars": 9858
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 9753
      },
      {
       "id": "c69e539d689a8335a69042727f1b58edab09d5d99fb607ec625a63151a537dc2",
-      "precision": 0.7112,
+      "precision": 0.752,
       "recall": 1,
-      "f1": 0.8313,
+      "f1": 0.8585,
       "accuracy": 0,
-      "chars": 3588
+      "chars": 3377
      },
      {
       "id": "c7e39ac49fa1235f5d50f83bf2444248bd3aa4e6df044377916c812dd109ba23",
@@ -1601,11 +1601,11 @@
      },
      {
       "id": "c82b3d1d540bbbd6081bdfb78b4c068c583aa766bcaaefe7ad16d24e5413a829",
-      "precision": 0.9424,
+      "precision": 0.9703,
       "recall": 1,
-      "f1": 0.9703,
+      "f1": 0.9849,
       "accuracy": 0,
-      "chars": 2224
+      "chars": 2151
      },
      {
       "id": "c90731f051d033e49e4cfcc920895051bbc3b54ef1a11519abcf22a115c3aa79",
@@ -1713,11 +1713,11 @@
      },
      {
       "id": "e1cd54e5577d077df83a12a4753c3c8bf2d88d68cd709cc4c442874777581c4a",
-      "precision": 0.9184,
+      "precision": 1,
       "recall": 1,
-      "f1": 0.9574,
-      "accuracy": 0,
-      "chars": 1227
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 1129
      },
      {
       "id": "e372e42c0a3df7b86e1c0bacf7bc14d042144a01e88833bc5a643d61b3547090",
@@ -1737,11 +1737,11 @@
      },
      {
       "id": "e593d7fe88f9f5cd6587ac172be2db6055d40b6f071023f97ab1ce373534261e",
-      "precision": 0.9534,
-      "recall": 0.9361,
-      "f1": 0.9447,
-      "accuracy": 0,
-      "chars": 14405
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "accuracy": 1,
+      "chars": 14457
      },
      {
       "id": "e7301133baab43596f19076beab32096f6405b868e0a69bcfc3349e595d62475",
@@ -1754,10 +1754,10 @@
      {
       "id": "e7994d5500875202d93e736e8f0c8a0436107d10add94ce3789001b8c5c32358",
       "precision": 0.9759,
-      "recall": 1,
-      "f1": 0.9878,
+      "recall": 0.9985,
+      "f1": 0.987,
       "accuracy": 0,
-      "chars": 4063
+      "chars": 4059
      },
      {
       "id": "e7d77f1869803e24667fa0b985cff27fb4139951a5ffa494bc9ba810df48fb30",
@@ -1809,11 +1809,11 @@
      },
      {
       "id": "eecd2575093b85933997521d6babddd397599419588d7096c5c19dc4ffe2ea72",
-      "precision": 0.9231,
-      "recall": 0.9969,
-      "f1": 0.9586,
+      "precision": 0.9501,
+      "recall": 0.9959,
+      "f1": 0.9725,
       "accuracy": 0,
-      "chars": 5746
+      "chars": 5570
      },
      {
       "id": "ef2b3f268a67950c16563de9ca3209163c7618868c0216739e1e794e7884cc20",
@@ -1873,19 +1873,19 @@
      },
      {
       "id": "f8ff621a0b9b7646cc0d57d37416feabba2bf78ef5dd0bfc5b080f9f97bbe584",
-      "precision": 0.9396,
+      "precision": 0.9605,
       "recall": 1,
-      "f1": 0.9689,
+      "f1": 0.9798,
       "accuracy": 0,
-      "chars": 2469
+      "chars": 2425
      },
      {
       "id": "fde930b01859de8311c6a14f8aa8c72be0659b551367803deb6736cf3526cf2e",
       "precision": 1,
-      "recall": 1,
-      "f1": 1,
-      "accuracy": 1,
-      "chars": 2567
+      "recall": 0.9591,
+      "f1": 0.9791,
+      "accuracy": 0,
+      "chars": 2467
      },
      {
       "id": "ff0f958ade714ebfaf5c0b42b1c0152a62063f4e6f72141406ccefc4a2677f21",
@@ -7974,48 +7974,48 @@
    "ours": {
     "overall": {
      "docs": 145,
-     "includeRecall": 0.9761,
-     "leakRate": 0.0462,
-     "docsLeaking": 0.1049,
-     "titleExact": 0.931,
-     "titleFuzzy": 0.9448,
-     "structurePass": 0.8579,
+     "includeRecall": 0.9975,
+     "leakRate": 0.0213,
+     "docsLeaking": 0.049,
+     "titleExact": 0.9586,
+     "titleFuzzy": 0.9862,
+     "structurePass": 0.9536,
      "checks": {
       "footnotes": {
-       "pass": 10,
+       "pass": 18,
        "total": 20
       },
       "headings": {
-       "pass": 93,
+       "pass": 103,
        "total": 107
       },
       "tables": {
-       "pass": 27,
+       "pass": 31,
        "total": 31
       },
       "images": {
-       "pass": 80,
+       "pass": 82,
        "total": 85
       },
       "code": {
-       "pass": 54,
+       "pass": 55,
        "total": 60
       },
       "languages": {
-       "pass": 43,
+       "pass": 44,
        "total": 46
       },
       "math": {
-       "pass": 5,
+       "pass": 8,
        "total": 8
       },
       "embeds": {
-       "pass": 2,
+       "pass": 8,
        "total": 9
       }
      },
-     "languageRecall": 0.9457,
-     "combined": 0.9478
+     "languageRecall": 0.9674,
+     "combined": 0.9866
     },
     "jsOnly": null,
     "byTier": {
@@ -8026,10 +8026,10 @@
       "docsLeaking": 0,
       "titleExact": 1,
       "titleFuzzy": 1,
-      "structurePass": 0.7273,
+      "structurePass": 1,
       "checks": {
        "footnotes": {
-        "pass": 1,
+        "pass": 4,
         "total": 4
        },
        "headings": {
@@ -8050,19 +8050,19 @@
        }
       },
       "languageRecall": null,
-      "combined": 0.9139
+      "combined": 0.9861
      },
      "2": {
       "docs": 20,
-      "includeRecall": 0.9917,
-      "leakRate": 0.0526,
-      "docsLeaking": 0.1053,
+      "includeRecall": 1,
+      "leakRate": 0,
+      "docsLeaking": 0,
       "titleExact": 0.95,
-      "titleFuzzy": 0.95,
-      "structurePass": 0.9016,
+      "titleFuzzy": 1,
+      "structurePass": 0.9508,
       "checks": {
        "headings": {
-        "pass": 14,
+        "pass": 16,
         "total": 17
        },
        "tables": {
@@ -8086,28 +8086,28 @@
         "total": 12
        },
        "math": {
-        "pass": 0,
+        "pass": 1,
         "total": 1
        }
       },
       "languageRecall": 1,
-      "combined": 0.9625
+      "combined": 0.9917
      },
      "3": {
       "docs": 70,
-      "includeRecall": 0.9919,
-      "leakRate": 0.0657,
-      "docsLeaking": 0.1571,
-      "titleExact": 0.9286,
-      "titleFuzzy": 0.9429,
-      "structurePass": 0.8614,
+      "includeRecall": 1,
+      "leakRate": 0.0257,
+      "docsLeaking": 0.0571,
+      "titleExact": 0.9571,
+      "titleFuzzy": 0.9857,
+      "structurePass": 0.9398,
       "checks": {
        "code": {
-        "pass": 27,
+        "pass": 28,
         "total": 30
        },
        "languages": {
-        "pass": 19,
+        "pass": 20,
         "total": 22
        },
        "images": {
@@ -8115,7 +8115,7 @@
         "total": 46
        },
        "headings": {
-        "pass": 42,
+        "pass": 46,
         "total": 49
        },
        "tables": {
@@ -8123,44 +8123,44 @@
         "total": 8
        },
        "footnotes": {
-        "pass": 1,
+        "pass": 2,
         "total": 2
        },
        "embeds": {
-        "pass": 2,
+        "pass": 7,
         "total": 8
        },
        "math": {
-        "pass": 0,
+        "pass": 1,
         "total": 1
        }
       },
-      "languageRecall": 0.8864,
-      "combined": 0.9571
+      "languageRecall": 0.9318,
+      "combined": 0.9859
      },
      "4": {
       "docs": 35,
-      "includeRecall": 0.961,
+      "includeRecall": 1,
       "leakRate": 0,
       "docsLeaking": 0,
       "titleExact": 0.9429,
       "titleFuzzy": 0.9714,
-      "structurePass": 0.8627,
+      "structurePass": 0.9804,
       "checks": {
        "images": {
-        "pass": 23,
+        "pass": 24,
         "total": 24
        },
        "headings": {
-        "pass": 27,
+        "pass": 30,
         "total": 30
        },
        "footnotes": {
-        "pass": 2,
+        "pass": 6,
         "total": 7
        },
        "math": {
-        "pass": 4,
+        "pass": 5,
         "total": 5
        },
        "code": {
@@ -8172,21 +8172,21 @@
         "total": 10
        },
        "tables": {
-        "pass": 13,
+        "pass": 16,
         "total": 16
        }
       },
       "languageRecall": 1,
-      "combined": 0.9507
+      "combined": 0.9938
      },
      "5": {
       "docs": 11,
-      "includeRecall": 0.8939,
-      "leakRate": 0.0909,
-      "docsLeaking": 0.1818,
-      "titleExact": 0.8182,
-      "titleFuzzy": 0.8182,
-      "structurePass": 0.7692,
+      "includeRecall": 0.9848,
+      "leakRate": 0.1136,
+      "docsLeaking": 0.2727,
+      "titleExact": 1,
+      "titleFuzzy": 1,
+      "structurePass": 0.9231,
       "checks": {
        "code": {
         "pass": 2,
@@ -8197,15 +8197,15 @@
         "total": 2
        },
        "headings": {
-        "pass": 7,
+        "pass": 8,
         "total": 8
        },
        "tables": {
-        "pass": 2,
+        "pass": 3,
         "total": 3
        },
        "images": {
-        "pass": 5,
+        "pass": 6,
         "total": 6
        },
        "math": {
@@ -8217,23 +8217,23 @@
         "total": 2
        },
        "embeds": {
-        "pass": 0,
+        "pass": 1,
         "total": 1
        }
       },
       "languageRecall": 1,
-      "combined": 0.8803
+      "combined": 0.9591
      }
     },
     "byCategory": {
      "academic": {
       "docs": 7,
-      "includeRecall": 0.9714,
+      "includeRecall": 1,
       "leakRate": 0.1429,
       "docsLeaking": 0.2857,
       "titleExact": 1,
       "titleFuzzy": 1,
-      "structurePass": 0.7273,
+      "structurePass": 0.9545,
       "checks": {
        "images": {
         "pass": 5,
@@ -8244,32 +8244,32 @@
         "total": 7
        },
        "math": {
-        "pass": 3,
+        "pass": 4,
         "total": 4
        },
        "tables": {
-        "pass": 0,
+        "pass": 2,
         "total": 2
        },
        "footnotes": {
-        "pass": 1,
+        "pass": 3,
         "total": 4
        }
       },
       "languageRecall": null,
-      "combined": 0.9152
+      "combined": 0.9619
      },
      "boilerplate": {
       "docs": 7,
-      "includeRecall": 0.8619,
+      "includeRecall": 0.9762,
       "leakRate": 0,
       "docsLeaking": 0,
       "titleExact": 1,
       "titleFuzzy": 1,
-      "structurePass": 0.75,
+      "structurePass": 1,
       "checks": {
        "images": {
-        "pass": 4,
+        "pass": 5,
         "total": 5
        },
        "headings": {
@@ -8277,24 +8277,24 @@
         "total": 2
        },
        "embeds": {
-        "pass": 0,
+        "pass": 1,
         "total": 1
        }
       },
       "languageRecall": null,
-      "combined": 0.8929
+      "combined": 0.9881
      },
      "docs": {
       "docs": 28,
-      "includeRecall": 0.981,
+      "includeRecall": 1,
       "leakRate": 0,
       "docsLeaking": 0,
-      "titleExact": 0.8214,
-      "titleFuzzy": 0.8571,
-      "structurePass": 0.9208,
+      "titleExact": 0.9286,
+      "titleFuzzy": 0.9643,
+      "structurePass": 0.9802,
       "checks": {
        "headings": {
-        "pass": 22,
+        "pass": 26,
         "total": 27
        },
        "code": {
@@ -8314,16 +8314,16 @@
         "total": 8
        },
        "footnotes": {
-        "pass": 3,
+        "pass": 4,
         "total": 4
        },
        "math": {
-        "pass": 1,
+        "pass": 2,
         "total": 2
        }
       },
       "languageRecall": 1,
-      "combined": 0.9618
+      "combined": 0.9926
      },
      "interactive": {
       "docs": 2,
@@ -8340,11 +8340,11 @@
      "news": {
       "docs": 19,
       "includeRecall": 1,
-      "leakRate": 0.0737,
-      "docsLeaking": 0.2105,
-      "titleExact": 0.9474,
-      "titleFuzzy": 0.9474,
-      "structurePass": 0.8235,
+      "leakRate": 0,
+      "docsLeaking": 0,
+      "titleExact": 1,
+      "titleFuzzy": 1,
+      "structurePass": 0.9412,
       "checks": {
        "images": {
         "pass": 10,
@@ -8359,21 +8359,21 @@
         "total": 1
        },
        "embeds": {
-        "pass": 0,
+        "pass": 2,
         "total": 2
        }
       },
       "languageRecall": null,
-      "combined": 0.9613
+      "combined": 0.9947
      },
      "non-english": {
       "docs": 29,
-      "includeRecall": 0.9862,
-      "leakRate": 0.0931,
-      "docsLeaking": 0.2069,
+      "includeRecall": 1,
+      "leakRate": 0.0621,
+      "docsLeaking": 0.1379,
       "titleExact": 0.8966,
-      "titleFuzzy": 0.931,
-      "structurePass": 0.9403,
+      "titleFuzzy": 0.9655,
+      "structurePass": 0.9851,
       "checks": {
        "code": {
         "pass": 6,
@@ -8384,7 +8384,7 @@
         "total": 24
        },
        "headings": {
-        "pass": 23,
+        "pass": 24,
         "total": 24
        },
        "tables": {
@@ -8392,7 +8392,7 @@
         "total": 9
        },
        "embeds": {
-        "pass": 0,
+        "pass": 2,
         "total": 3
        },
        "languages": {
@@ -8401,31 +8401,31 @@
        }
       },
       "languageRecall": 1,
-      "combined": 0.9593
+      "combined": 0.9824
      },
      "reference": {
       "docs": 5,
-      "includeRecall": 0.8,
-      "leakRate": 0,
-      "docsLeaking": 0,
-      "titleExact": 0.8,
-      "titleFuzzy": 0.8,
-      "structurePass": 0.6875,
+      "includeRecall": 1,
+      "leakRate": 0.05,
+      "docsLeaking": 0.2,
+      "titleExact": 1,
+      "titleFuzzy": 1,
+      "structurePass": 0.9375,
       "checks": {
        "code": {
         "pass": 0,
         "total": 1
        },
        "images": {
-        "pass": 4,
+        "pass": 5,
         "total": 5
        },
        "headings": {
-        "pass": 4,
+        "pass": 5,
         "total": 5
        },
        "tables": {
-        "pass": 2,
+        "pass": 4,
         "total": 4
        },
        "math": {
@@ -8434,23 +8434,23 @@
        }
       },
       "languageRecall": null,
-      "combined": 0.8267
+      "combined": 0.98
      },
      "simple-blog": {
       "docs": 14,
       "includeRecall": 0.9857,
-      "leakRate": 0.0462,
-      "docsLeaking": 0.0769,
+      "leakRate": 0,
+      "docsLeaking": 0,
       "titleExact": 1,
       "titleFuzzy": 1,
-      "structurePass": 0.76,
+      "structurePass": 0.96,
       "checks": {
        "footnotes": {
-        "pass": 4,
+        "pass": 7,
         "total": 7
        },
        "headings": {
-        "pass": 4,
+        "pass": 5,
         "total": 6
        },
        "tables": {
@@ -8466,28 +8466,28 @@
         "total": 2
        },
        "embeds": {
-        "pass": 0,
+        "pass": 1,
         "total": 1
        }
       },
       "languageRecall": null,
-      "combined": 0.9218
+      "combined": 0.9863
      },
      "tech-blog": {
       "docs": 34,
-      "includeRecall": 0.9951,
-      "leakRate": 0.0273,
-      "docsLeaking": 0.0606,
-      "titleExact": 1,
+      "includeRecall": 1,
+      "leakRate": 0,
+      "docsLeaking": 0,
+      "titleExact": 0.9706,
       "titleFuzzy": 1,
-      "structurePass": 0.8364,
+      "structurePass": 0.9091,
       "checks": {
        "code": {
-        "pass": 19,
+        "pass": 20,
         "total": 24
        },
        "languages": {
-        "pass": 16,
+        "pass": 17,
         "total": 19
        },
        "images": {
@@ -8495,11 +8495,11 @@
         "total": 21
        },
        "headings": {
-        "pass": 28,
+        "pass": 31,
         "total": 33
        },
        "footnotes": {
-        "pass": 2,
+        "pass": 4,
         "total": 5
        },
        "tables": {
@@ -8507,7 +8507,7 @@
         "total": 5
        },
        "math": {
-        "pass": 0,
+        "pass": 1,
         "total": 1
        },
        "embeds": {
@@ -8515,8 +8515,8 @@
         "total": 2
        }
       },
-      "languageRecall": 0.8684,
-      "combined": 0.9623
+      "languageRecall": 0.9211,
+      "combined": 0.9857
      }
     },
     "failed": 0,
@@ -8525,45 +8525,45 @@
      "docs": 145,
      "failed": 0,
      "parse": {
-      "median": 1.98,
-      "p95": 17.405,
-      "mean": 4.107
+      "median": 1.965,
+      "p95": 18.08,
+      "mean": 4.2
      },
      "extract": {
-      "median": 3.11,
-      "p95": 36.325,
-      "mean": 7.717
+      "median": 3.135,
+      "p95": 44.93,
+      "mean": 8.551
      },
      "total": {
-      "median": 5.66,
-      "p95": 54,
-      "mean": 11.825
+      "median": 5.63,
+      "p95": 64.305,
+      "mean": 12.784
      },
      "bySize": {
       "<50KB": {
        "docs": 18,
-       "median": 2.465,
-       "p95": 9.5
+       "median": 2.375,
+       "p95": 7.485
       },
       "50-200KB": {
        "docs": 57,
-       "median": 4.09,
-       "p95": 14.045
+       "median": 4,
+       "p95": 13.475
       },
       "200-500KB": {
        "docs": 42,
-       "median": 6.488,
-       "p95": 16.37
+       "median": 6.76,
+       "p95": 15.51
       },
       "0.5-1MB": {
        "docs": 13,
-       "median": 15.205,
-       "p95": 36.025
+       "median": 16.415,
+       "p95": 63.94
       },
       ">1MB": {
        "docs": 15,
-       "median": 54,
-       "p95": 131.05
+       "median": 64.305,
+       "p95": 155.675
       }
      }
     },
@@ -8581,12 +8581,12 @@
       "titleExact": true,
       "titleFuzzy": true,
       "structure": {
-       "footnotes": false
+       "footnotes": true
       },
-      "structurePass": 0,
+      "structurePass": 1,
       "languageRecall": null,
-      "combined": 0.75,
-      "chars": 66711
+      "combined": 1,
+      "chars": 66517
      },
      {
       "id": "pg-do-things",
@@ -8601,12 +8601,12 @@
       "titleExact": true,
       "titleFuzzy": true,
       "structure": {
-       "footnotes": false
+       "footnotes": true
       },
-      "structurePass": 0,
+      "structurePass": 1,
       "languageRecall": null,
-      "combined": 0.8,
-      "chars": 24827
+      "combined": 1,
+      "chars": 24752
      },
      {
       "id": "pg-hard-work",
@@ -8621,12 +8621,12 @@
       "titleExact": true,
       "titleFuzzy": true,
       "structure": {
-       "footnotes": false
+       "footnotes": true
       },
-      "structurePass": 0,
+      "structurePass": 1,
       "languageRecall": null,
-      "combined": 0.8,
-      "chars": 18009
+      "combined": 1,
+      "chars": 17955
      },
      {
       "id": "danluu-input-lag",
@@ -8800,12 +8800,8 @@
       "jsOnly": false,
       "includeRecall": 1,
       "missing": [],
-      "leaks": [
-       0,
-       1,
-       2
-      ],
-      "leakRate": 0.6,
+      "leaks": [],
+      "leakRate": 0,
       "titleExact": true,
       "titleFuzzy": true,
       "structure": {
@@ -8814,8 +8810,8 @@
       },
       "structurePass": 1,
       "languageRecall": null,
-      "combined": 0.88,
-      "chars": 5927
+      "combined": 1,
+      "chars": 5687
      },
      {
       "id": "simonw-llms-2024",
@@ -8860,7 +8856,7 @@
       "structurePass": 1,
       "languageRecall": 1,
       "combined": 1,
-      "chars": 47371
+      "chars": 47365
      },
      {
       "id": "eli-concurrent",
@@ -8895,7 +8891,7 @@
       "missing": [],
       "leaks": [],
       "leakRate": 0,
-      "titleExact": true,
+      "titleExact": false,
       "titleFuzzy": true,
       "structure": {
        "code": false,
@@ -8906,7 +8902,7 @@
       "structurePass": 0.5,
       "languageRecall": 1,
       "combined": 0.9,
-      "chars": 42008
+      "chars": 42902
      },
      {
       "id": "norvig-spell",
@@ -8941,16 +8937,16 @@
       "missing": [],
       "leaks": [],
       "leakRate": 0,
-      "titleExact": false,
-      "titleFuzzy": false,
+      "titleExact": true,
+      "titleFuzzy": true,
       "structure": {
        "code": true,
        "headings": true
       },
       "structurePass": 1,
       "languageRecall": null,
-      "combined": 0.9,
-      "chars": 24499
+      "combined": 1,
+      "chars": 24230
      },
      {
       "id": "brendangregg-crisis",
@@ -8960,11 +8956,8 @@
       "jsOnly": false,
       "includeRecall": 1,
       "missing": [],
-      "leaks": [
-       2,
-       3
-      ],
-      "leakRate": 0.4,
+      "leaks": [],
+      "leakRate": 0,
       "titleExact": true,
       "titleFuzzy": true,
       "structure": {
@@ -8973,8 +8966,8 @@
       },
       "structurePass": 1,
       "languageRecall": null,
-      "combined": 0.92,
-      "chars": 8502
+      "combined": 1,
+      "chars": 7563
      },
      {
       "id": "matklad-fast-rust",
@@ -9014,13 +9007,13 @@
       "structure": {
        "code": true,
        "languages": true,
-       "headings": false,
-       "math": false
+       "headings": true,
+       "math": true
       },
-      "structurePass": 0.5,
+      "structurePass": 1,
       "languageRecall": 1,
-      "combined": 0.9,
-      "chars": 11321
+      "combined": 1,
+      "chars": 11450
      },
      {
       "id": "jvns-git-config",
@@ -9036,12 +9029,12 @@
       "titleFuzzy": true,
       "structure": {
        "code": true,
-       "headings": false
+       "headings": true
       },
-      "structurePass": 0.5,
+      "structurePass": 1,
       "languageRecall": null,
-      "combined": 0.9,
-      "chars": 13792
+      "combined": 1,
+      "chars": 13325
      },
      {
       "id": "overreacted-memo",
@@ -9101,14 +9094,14 @@
       "titleExact": true,
       "titleFuzzy": true,
       "structure": {
-       "code": false,
-       "languages": false,
+       "code": true,
+       "languages": true,
        "headings": true
       },
-      "structurePass": 0.3333,
-      "languageRecall": 0,
-      "combined": 0.8667,
-      "chars": 35811
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 34634
      },
      {
       "id": "go-loopvar",
@@ -9184,26 +9177,21 @@
       "category": "tech-blog",
       "language": "en",
       "jsOnly": false,
-      "includeRecall": 0.8333,
-      "missing": [
-       5
-      ],
-      "leaks": [
-       0,
-       1
-      ],
-      "leakRate": 0.5,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
       "titleExact": true,
       "titleFuzzy": true,
       "structure": {
        "images": true,
        "headings": true,
-       "footnotes": false
+       "footnotes": true
       },
-      "structurePass": 0.6667,
+      "structurePass": 1,
       "languageRecall": null,
-      "combined": 0.75,
-      "chars": 41406
+      "combined": 1,
+      "chars": 37375
      },
      {
       "id": "cloudflare-pingora",
@@ -9336,7 +9324,7 @@
       "structurePass": 0.6667,
       "languageRecall": null,
       "combined": 0.9333,
-      "chars": 12446
+      "chars": 12416
      },
      {
       "id": "figma-multiplayer",
@@ -9357,7 +9345,7 @@
       "structurePass": 1,
       "languageRecall": null,
       "combined": 1,
-      "chars": 19561
+      "chars": 19532
      },
      {
       "id": "webdev-vitals",
@@ -9375,13 +9363,13 @@
        "code": true,
        "languages": true,
        "images": false,
-       "headings": false,
+       "headings": true,
        "tables": true
       },
-      "structurePass": 0.6,
+      "structurePass": 0.8,
       "languageRecall": 1,
-      "combined": 0.92,
-      "chars": 11293
+      "combined": 0.96,
+      "chars": 11335
      },
      {
       "id": "lilian-agents",
@@ -9403,7 +9391,7 @@
       "structurePass": 1,
       "languageRecall": null,
       "combined": 1,
-      "chars": 40974
+      "chars": 40849
      },
      {
       "id": "lilian-diffusion",
@@ -9420,12 +9408,12 @@
       "structure": {
        "images": true,
        "headings": true,
-       "math": false
+       "math": true
       },
-      "structurePass": 0.6667,
+      "structurePass": 1,
       "languageRecall": null,
-      "combined": 0.9333,
-      "chars": 51551
+      "combined": 1,
+      "chars": 50899
      },
      {
       "id": "comeau-css-reset",
@@ -9448,7 +9436,7 @@
       "structurePass": 0.75,
       "languageRecall": 1,
       "combined": 0.95,
-      "chars": 18889
+      "chars": 18876
      },
      {
       "id": "comeau-rerenders",
@@ -9471,7 +9459,7 @@
       "structurePass": 1,
       "languageRecall": 1,
       "combined": 1,
-      "chars": 18879
+      "chars": 18866
      },
      {
       "id": "smashing-container-queries",
@@ -9494,7 +9482,7 @@
       "structurePass": 0.75,
       "languageRecall": 1,
       "combined": 0.95,
-      "chars": 14639
+      "chars": 14680
      },
      {
       "id": "csstricks-flexbox",
@@ -9518,7 +9506,7 @@
       "structurePass": 0.8,
       "languageRecall": 1,
       "combined": 0.96,
-      "chars": 22008
+      "chars": 21803
      },
      {
       "id": "devto-cve",
@@ -9598,13 +9586,13 @@
       "titleFuzzy": true,
       "structure": {
        "images": true,
-       "headings": false,
+       "headings": true,
        "footnotes": true
       },
-      "structurePass": 0.6667,
+      "structurePass": 1,
       "languageRecall": null,
-      "combined": 0.9333,
-      "chars": 19580
+      "combined": 1,
+      "chars": 19839
      },
      {
       "id": "acx-lky-review",
@@ -9620,13 +9608,13 @@
       "titleFuzzy": true,
       "structure": {
        "images": true,
-       "headings": false,
+       "headings": true,
        "footnotes": true
       },
-      "structurePass": 0.6667,
+      "structurePass": 1,
       "languageRecall": null,
-      "combined": 0.9333,
-      "chars": 43430
+      "combined": 1,
+      "chars": 43690
      },
      {
       "id": "projectzero-nso",
@@ -9654,10 +9642,8 @@
       "category": "docs",
       "language": "en",
       "jsOnly": false,
-      "includeRecall": 0.8,
-      "missing": [
-       0
-      ],
+      "includeRecall": 1,
+      "missing": [],
       "leaks": [],
       "leakRate": 0,
       "titleExact": true,
@@ -9670,8 +9656,8 @@
       },
       "structurePass": 1,
       "languageRecall": 1,
-      "combined": 0.9,
-      "chars": 7860
+      "combined": 1,
+      "chars": 8013
      },
      {
       "id": "mdn-using-fetch",
@@ -9688,12 +9674,12 @@
       "structure": {
        "code": true,
        "languages": true,
-       "headings": false
+       "headings": true
       },
-      "structurePass": 0.6667,
+      "structurePass": 1,
       "languageRecall": 1,
-      "combined": 0.9333,
-      "chars": 21678
+      "combined": 1,
+      "chars": 21711
      },
      {
       "id": "python-controlflow",
@@ -9733,13 +9719,13 @@
       "structure": {
        "code": true,
        "languages": true,
-       "headings": false,
+       "headings": true,
        "tables": true
       },
-      "structurePass": 0.75,
+      "structurePass": 1,
       "languageRecall": 1,
-      "combined": 0.95,
-      "chars": 41388
+      "combined": 1,
+      "chars": 41796
      },
      {
       "id": "rustbook-ownership",
@@ -9749,31 +9735,6 @@
       "jsOnly": false,
       "includeRecall": 1,
       "missing": [],
-      "leaks": [],
-      "leakRate": 0,
-      "titleExact": false,
-      "titleFuzzy": false,
-      "structure": {
-       "code": true,
-       "languages": true,
-       "images": true,
-       "headings": true
-      },
-      "structurePass": 1,
-      "languageRecall": 1,
-      "combined": 0.9,
-      "chars": 23812
-     },
-     {
-      "id": "react-thinking",
-      "tier": 4,
-      "category": "docs",
-      "language": "en",
-      "jsOnly": false,
-      "includeRecall": 0.8333,
-      "missing": [
-       5
-      ],
       "leaks": [],
       "leakRate": 0,
       "titleExact": true,
@@ -9786,8 +9747,31 @@
       },
       "structurePass": 1,
       "languageRecall": 1,
-      "combined": 0.9167,
-      "chars": 18839
+      "combined": 1,
+      "chars": 23793
+     },
+     {
+      "id": "react-thinking",
+      "tier": 4,
+      "category": "docs",
+      "language": "en",
+      "jsOnly": false,
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [],
+      "leakRate": 0,
+      "titleExact": true,
+      "titleFuzzy": true,
+      "structure": {
+       "code": true,
+       "languages": true,
+       "images": true,
+       "headings": true
+      },
+      "structurePass": 1,
+      "languageRecall": 1,
+      "combined": 1,
+      "chars": 19159
      },
      {
       "id": "react-usestate",
@@ -9809,7 +9793,7 @@
       "structurePass": 1,
       "languageRecall": 1,
       "combined": 1,
-      "chars": 21655
+      "chars": 21072
      },
      {
       "id": "docusaurus-codeblocks",
@@ -9826,13 +9810,13 @@
       "structure": {
        "code": true,
        "languages": true,
-       "headings": false,
+       "headings": true,
        "tables": true
       },
-      "structurePass": 0.75,
+      "structurePass": 1,
       "languageRecall": 1,
-      "combined": 0.95,
-      "chars": 16571
+      "combined": 1,
+      "chars": 16674
      },
      {
       "id": "jest-getting-started",
@@ -9854,7 +9838,7 @@
       "structurePass": 1,
       "languageRecall": 1,
       "combined": 1,
-      "chars": 6512
+      "chars": 6588
      },
      {
       "id": "mkdocs-admonitions",
@@ -9872,12 +9856,12 @@
        "code": true,
        "languages": true,
        "headings": true,
-       "footnotes": false
+       "footnotes": true
       },
-      "structurePass": 0.75,
+      "structurePass": 1,
       "languageRecall": 1,
-      "combined": 0.95,
-      "chars": 13884
+      "combined": 1,
+      "chars": 13845
      },
      {
       "id": "fastapi-first-steps",
@@ -9900,7 +9884,7 @@
       "structurePass": 1,
       "languageRecall": 1,
       "combined": 1,
-      "chars": 11741
+      "chars": 11794
      },
      {
       "id": "vitepress-markdown",
@@ -9925,7 +9909,7 @@
       "structurePass": 1,
       "languageRecall": 1,
       "combined": 1,
-      "chars": 21458
+      "chars": 21470
      },
      {
       "id": "vue-reactivity",
@@ -9947,7 +9931,7 @@
       "structurePass": 1,
       "languageRecall": 1,
       "combined": 0.9,
-      "chars": 15984
+      "chars": 15980
      },
      {
       "id": "k8s-pods",
@@ -9970,7 +9954,7 @@
       "structurePass": 1,
       "languageRecall": 1,
       "combined": 1,
-      "chars": 21808
+      "chars": 21843
      },
      {
       "id": "k8s-kubectl-linux",
@@ -9992,7 +9976,7 @@
       "structurePass": 1,
       "languageRecall": 1,
       "combined": 1,
-      "chars": 14218
+      "chars": 14097
      },
      {
       "id": "mslearn-csharp",
@@ -10014,7 +9998,7 @@
       "structurePass": 1,
       "languageRecall": 1,
       "combined": 1,
-      "chars": 14000
+      "chars": 14331
      },
      {
       "id": "requests-quickstart",
@@ -10022,10 +10006,8 @@
       "category": "docs",
       "language": "en",
       "jsOnly": false,
-      "includeRecall": 0.8333,
-      "missing": [
-       5
-      ],
+      "includeRecall": 1,
+      "missing": [],
       "leaks": [],
       "leakRate": 0,
       "titleExact": true,
@@ -10037,8 +10019,8 @@
       },
       "structurePass": 0.6667,
       "languageRecall": 1,
-      "combined": 0.85,
-      "chars": 15064
+      "combined": 0.9333,
+      "chars": 15615
      },
      {
       "id": "rtd-tutorial",
@@ -10061,7 +10043,7 @@
       "structurePass": 1,
       "languageRecall": 1,
       "combined": 1,
-      "chars": 15023
+      "chars": 15047
      },
      {
       "id": "numpy-beginners",
@@ -10080,12 +10062,12 @@
        "languages": true,
        "images": true,
        "headings": true,
-       "math": false
+       "math": true
       },
-      "structurePass": 0.8,
+      "structurePass": 1,
       "languageRecall": 1,
-      "combined": 0.96,
-      "chars": 44386
+      "combined": 1,
+      "chars": 44308
      },
      {
       "id": "go-effective",
@@ -10107,7 +10089,7 @@
       "structurePass": 1,
       "languageRecall": 1,
       "combined": 1,
-      "chars": 95609
+      "chars": 95632
      },
      {
       "id": "node-fs",
@@ -10119,8 +10101,8 @@
       "missing": [],
       "leaks": [],
       "leakRate": 0,
-      "titleExact": false,
-      "titleFuzzy": false,
+      "titleExact": true,
+      "titleFuzzy": true,
       "structure": {
        "code": true,
        "languages": true,
@@ -10129,8 +10111,8 @@
       },
       "structurePass": 1,
       "languageRecall": 1,
-      "combined": 0.9,
-      "chars": 231837
+      "combined": 1,
+      "chars": 235097
      },
      {
       "id": "postgres-window",
@@ -10175,7 +10157,7 @@
       "structurePass": 1,
       "languageRecall": 1,
       "combined": 1,
-      "chars": 46846
+      "chars": 46528
      },
      {
       "id": "github-docs-git",
@@ -10220,7 +10202,7 @@
       "structurePass": 1,
       "languageRecall": 1,
       "combined": 1,
-      "chars": 6337
+      "chars": 6354
      },
      {
       "id": "whatwg-parsing",
@@ -10228,29 +10210,24 @@
       "category": "reference",
       "language": "en",
       "jsOnly": false,
-      "includeRecall": 0,
-      "missing": [
-       0,
-       1,
-       2,
-       3,
-       4,
-       5
+      "includeRecall": 1,
+      "missing": [],
+      "leaks": [
+       2
       ],
-      "leaks": [],
-      "leakRate": 0,
-      "titleExact": false,
-      "titleFuzzy": false,
+      "leakRate": 0.25,
+      "titleExact": true,
+      "titleFuzzy": true,
       "structure": {
        "code": false,
-       "images": false,
-       "headings": false,
-       "tables": false
+       "images": true,
+       "headings": true,
+       "tables": true
       },
-      "structurePass": 0,
+      "structurePass": 0.75,
       "languageRecall": null,
-      "combined": 0.2,
-      "chars": 23104
+      "combined": 0.9,
+      "chars": 254615
      },
      {
       "id": "wiki-fourier",
@@ -10273,7 +10250,7 @@
       "structurePass": 1,
       "languageRecall": null,
       "combined": 1,
-      "chars": 139259
+      "chars": 139727
      },
      {
       "id": "wiki-tokyo",
@@ -10295,7 +10272,7 @@
       "structurePass": 1,
       "languageRecall": null,
       "combined": 1,
-      "chars": 124425
+      "chars": 124042
      },
      {
       "id": "wiki-largest-cities",
@@ -10312,12 +10289,12 @@
       "structure": {
        "images": true,
        "headings": true,
-       "tables": false
+       "tables": true
       },
-      "structurePass": 0.6667,
+      "structurePass": 1,
       "languageRecall": null,
-      "combined": 0.9333,
-      "chars": 23912
+      "combined": 1,
+      "chars": 33105
      },
      {
       "id": "wiki-turing",
@@ -10346,10 +10323,8 @@
       "category": "academic",
       "language": "en",
       "jsOnly": false,
-      "includeRecall": 0.8,
-      "missing": [
-       0
-      ],
+      "includeRecall": 1,
+      "missing": [],
       "leaks": [],
       "leakRate": 0,
       "titleExact": true,
@@ -10359,8 +10334,8 @@
       },
       "structurePass": 1,
       "languageRecall": null,
-      "combined": 0.9,
-      "chars": 123535
+      "combined": 1,
+      "chars": 124084
      },
      {
       "id": "arxiv-mistral",
@@ -10377,14 +10352,14 @@
       "structure": {
        "images": true,
        "headings": true,
-       "tables": false,
+       "tables": true,
        "math": true,
-       "footnotes": false
+       "footnotes": true
       },
-      "structurePass": 0.6,
+      "structurePass": 1,
       "languageRecall": null,
-      "combined": 0.92,
-      "chars": 20327
+      "combined": 1,
+      "chars": 21975
      },
      {
       "id": "arxiv-mixtral",
@@ -10401,14 +10376,14 @@
       "structure": {
        "images": true,
        "headings": true,
-       "tables": false,
+       "tables": true,
        "math": true,
-       "footnotes": false
+       "footnotes": true
       },
-      "structurePass": 0.6,
+      "structurePass": 1,
       "languageRecall": null,
-      "combined": 0.92,
-      "chars": 27891
+      "combined": 1,
+      "chars": 27889
      },
      {
       "id": "distill-momentum",
@@ -10433,7 +10408,7 @@
       "structurePass": 0.6667,
       "languageRecall": null,
       "combined": 0.8333,
-      "chars": 40494
+      "chars": 40525
      },
      {
       "id": "distill-augmented-rnns",
@@ -10457,7 +10432,7 @@
       "structurePass": 1,
       "languageRecall": null,
       "combined": 0.9,
-      "chars": 21215
+      "chars": 21211
      },
      {
       "id": "gwern-scaling",
@@ -10479,7 +10454,7 @@
       "structurePass": 1,
       "languageRecall": null,
       "combined": 1,
-      "chars": 99015
+      "chars": 99576
      },
      {
       "id": "ciechanowski-watch",
@@ -10515,7 +10490,7 @@
       "structurePass": null,
       "languageRecall": null,
       "combined": 1,
-      "chars": 55703
+      "chars": 55484
      },
      {
       "id": "guardian-skulls",
@@ -10563,24 +10538,19 @@
       "category": "boilerplate",
       "language": "en",
       "jsOnly": false,
-      "includeRecall": 0.2,
-      "missing": [
-       1,
-       2,
-       3,
-       4
-      ],
+      "includeRecall": 1,
+      "missing": [],
       "leaks": [],
       "leakRate": 0,
       "titleExact": true,
       "titleFuzzy": true,
       "structure": {
-       "images": false
+       "images": true
       },
-      "structurePass": 0,
+      "structurePass": 1,
       "languageRecall": null,
-      "combined": 0.4,
-      "chars": 227
+      "combined": 1,
+      "chars": 1358
      },
      {
       "id": "bbc-news-a",
@@ -10671,11 +10641,8 @@
       "jsOnly": false,
       "includeRecall": 1,
       "missing": [],
-      "leaks": [
-       0,
-       1
-      ],
-      "leakRate": 0.4,
+      "leaks": [],
+      "leakRate": 0,
       "titleExact": true,
       "titleFuzzy": true,
       "structure": {
@@ -10683,8 +10650,8 @@
       },
       "structurePass": 1,
       "languageRecall": null,
-      "combined": 0.92,
-      "chars": 2547
+      "combined": 1,
+      "chars": 2143
      },
      {
       "id": "propublica-machine-bias",
@@ -10725,7 +10692,7 @@
       "structurePass": 1,
       "languageRecall": null,
       "combined": 1,
-      "chars": 4919
+      "chars": 4728
      },
      {
       "id": "verge-wikipedia-bots",
@@ -10735,18 +10702,15 @@
       "jsOnly": false,
       "includeRecall": 1,
       "missing": [],
-      "leaks": [
-       0,
-       1
-      ],
-      "leakRate": 0.4,
+      "leaks": [],
+      "leakRate": 0,
       "titleExact": true,
       "titleFuzzy": true,
       "structure": {},
       "structurePass": null,
       "languageRecall": null,
-      "combined": 0.9,
-      "chars": 3493
+      "combined": 1,
+      "chars": 3071
      },
      {
       "id": "verge-decomps",
@@ -10768,7 +10732,7 @@
       "structurePass": 1,
       "languageRecall": null,
       "combined": 0.9167,
-      "chars": 2407
+      "chars": 2342
      },
      {
       "id": "quanta-fourth-dimension",
@@ -10788,7 +10752,7 @@
       "structurePass": 1,
       "languageRecall": null,
       "combined": 1,
-      "chars": 54713
+      "chars": 54553
      },
      {
       "id": "quanta-ai-math",
@@ -10806,7 +10770,7 @@
       "structurePass": null,
       "languageRecall": null,
       "combined": 1,
-      "chars": 17169
+      "chars": 17007
      },
      {
       "id": "aeon-intelligence",
@@ -10818,12 +10782,12 @@
       "missing": [],
       "leaks": [],
       "leakRate": 0,
-      "titleExact": false,
-      "titleFuzzy": false,
+      "titleExact": true,
+      "titleFuzzy": true,
       "structure": {},
       "structurePass": null,
       "languageRecall": null,
-      "combined": 0.875,
+      "combined": 1,
       "chars": 22744
      },
      {
@@ -10840,11 +10804,11 @@
       "titleFuzzy": true,
       "structure": {
        "headings": true,
-       "embeds": false
+       "embeds": true
       },
-      "structurePass": 0.5,
+      "structurePass": 1,
       "languageRecall": null,
-      "combined": 0.9,
+      "combined": 1,
       "chars": 5905
      },
      {
@@ -10863,7 +10827,7 @@
       "structurePass": null,
       "languageRecall": null,
       "combined": 1,
-      "chars": 5064
+      "chars": 4896
      },
      {
       "id": "techcrunch-openai-watermark",
@@ -10873,11 +10837,8 @@
       "jsOnly": false,
       "includeRecall": 1,
       "missing": [],
-      "leaks": [
-       0,
-       1
-      ],
-      "leakRate": 0.4,
+      "leaks": [],
+      "leakRate": 0,
       "titleExact": true,
       "titleFuzzy": true,
       "structure": {
@@ -10885,8 +10846,8 @@
       },
       "structurePass": 1,
       "languageRecall": null,
-      "combined": 0.92,
-      "chars": 3293
+      "combined": 1,
+      "chars": 2910
      },
      {
       "id": "theregister-debian",
@@ -10896,17 +10857,15 @@
       "jsOnly": false,
       "includeRecall": 1,
       "missing": [],
-      "leaks": [
-       0
-      ],
-      "leakRate": 0.2,
+      "leaks": [],
+      "leakRate": 0,
       "titleExact": true,
       "titleFuzzy": true,
       "structure": {},
       "structurePass": null,
       "languageRecall": null,
-      "combined": 0.95,
-      "chars": 2837
+      "combined": 1,
+      "chars": 2258
      },
      {
       "id": "engadget-wikimedia",
@@ -10924,7 +10883,7 @@
       "structurePass": null,
       "languageRecall": null,
       "combined": 1,
-      "chars": 3626
+      "chars": 3521
      },
      {
       "id": "nasa-hubble",
@@ -10940,11 +10899,11 @@
       "titleFuzzy": true,
       "structure": {
        "images": true,
-       "embeds": false
+       "embeds": true
       },
-      "structurePass": 0.5,
+      "structurePass": 1,
       "languageRecall": null,
-      "combined": 0.9,
+      "combined": 1,
       "chars": 5654
      },
      {
@@ -11006,11 +10965,11 @@
        "images": true,
        "headings": true,
        "tables": true,
-       "embeds": false
+       "embeds": true
       },
-      "structurePass": 0.8,
+      "structurePass": 1,
       "languageRecall": null,
-      "combined": 0.96,
+      "combined": 1,
       "chars": 13665
      },
      {
@@ -11029,12 +10988,12 @@
        "code": true,
        "images": true,
        "headings": true,
-       "embeds": false
+       "embeds": true
       },
-      "structurePass": 0.75,
+      "structurePass": 1,
       "languageRecall": null,
-      "combined": 0.95,
-      "chars": 28700
+      "combined": 1,
+      "chars": 29105
      },
      {
       "id": "qiita-a",
@@ -11064,11 +11023,8 @@
       "jsOnly": false,
       "includeRecall": 1,
       "missing": [],
-      "leaks": [
-       0,
-       1
-      ],
-      "leakRate": 0.4,
+      "leaks": [],
+      "leakRate": 0,
       "titleExact": true,
       "titleFuzzy": true,
       "structure": {
@@ -11079,8 +11035,8 @@
       },
       "structurePass": 0.75,
       "languageRecall": null,
-      "combined": 0.87,
-      "chars": 3614
+      "combined": 0.95,
+      "chars": 3549
      },
      {
       "id": "ruanyifeng-commit",
@@ -11165,7 +11121,7 @@
       "structurePass": 1,
       "languageRecall": null,
       "combined": 1,
-      "chars": 14081
+      "chars": 14045
      },
      {
       "id": "yna-news",
@@ -11227,7 +11183,7 @@
       "structurePass": 1,
       "languageRecall": null,
       "combined": 1,
-      "chars": 35672
+      "chars": 35258
      },
      {
       "id": "bbc-arabic",
@@ -11261,11 +11217,8 @@
       "jsOnly": false,
       "includeRecall": 1,
       "missing": [],
-      "leaks": [
-       0,
-       1
-      ],
-      "leakRate": 0.5,
+      "leaks": [],
+      "leakRate": 0,
       "titleExact": true,
       "titleFuzzy": true,
       "structure": {
@@ -11273,8 +11226,8 @@
       },
       "structurePass": 1,
       "languageRecall": null,
-      "combined": 0.9,
-      "chars": 1636
+      "combined": 1,
+      "chars": 1487
      },
      {
       "id": "ynet-news",
@@ -11290,12 +11243,12 @@
       "titleFuzzy": true,
       "structure": {
        "images": true,
-       "headings": false
+       "headings": true
       },
-      "structurePass": 0.5,
+      "structurePass": 1,
       "languageRecall": null,
-      "combined": 0.9,
-      "chars": 4595
+      "combined": 1,
+      "chars": 4614
      },
      {
       "id": "hewiki-jerusalem",
@@ -11317,7 +11270,7 @@
       "structurePass": 1,
       "languageRecall": null,
       "combined": 1,
-      "chars": 110407
+      "chars": 111140
      },
      {
       "id": "bbc-hindi",
@@ -11342,7 +11295,7 @@
       "structurePass": 1,
       "languageRecall": null,
       "combined": 0.88,
-      "chars": 5679
+      "chars": 4739
      },
      {
       "id": "habr-a",
@@ -11407,7 +11360,7 @@
       "structurePass": 1,
       "languageRecall": null,
       "combined": 1,
-      "chars": 1824
+      "chars": 1818
      },
      {
       "id": "spiegel-spain",
@@ -11470,7 +11423,7 @@
       "structurePass": 1,
       "languageRecall": null,
       "combined": 1,
-      "chars": 303633
+      "chars": 307267
      },
      {
       "id": "bbc-mundo",
@@ -11537,7 +11490,7 @@
       "structurePass": 1,
       "languageRecall": null,
       "combined": 1,
-      "chars": 158291
+      "chars": 168074
      },
      {
       "id": "jawiki-tokyo",
@@ -11545,10 +11498,8 @@
       "category": "non-english",
       "language": "ja",
       "jsOnly": false,
-      "includeRecall": 0.8,
-      "missing": [
-       0
-      ],
+      "includeRecall": 1,
+      "missing": [],
       "leaks": [],
       "leakRate": 0,
       "titleExact": true,
@@ -11560,8 +11511,8 @@
       },
       "structurePass": 1,
       "languageRecall": null,
-      "combined": 0.9,
-      "chars": 39248
+      "combined": 1,
+      "chars": 39420
      },
      {
       "id": "arwiki-cairo",
@@ -11583,7 +11534,7 @@
       "structurePass": 1,
       "languageRecall": null,
       "combined": 1,
-      "chars": 87469
+      "chars": 88089
      },
      {
       "id": "ruwiki-moscow",
@@ -11591,10 +11542,8 @@
       "category": "non-english",
       "language": "ru",
       "jsOnly": false,
-      "includeRecall": 0.8,
-      "missing": [
-       4
-      ],
+      "includeRecall": 1,
+      "missing": [],
       "leaks": [],
       "leakRate": 0,
       "titleExact": true,
@@ -11606,8 +11555,8 @@
       },
       "structurePass": 1,
       "languageRecall": null,
-      "combined": 0.9,
-      "chars": 148322
+      "combined": 1,
+      "chars": 152352
      },
      {
       "id": "recipetineats-schnitzel",
@@ -11624,12 +11573,12 @@
       "structure": {
        "images": true,
        "headings": true,
-       "embeds": false
+       "embeds": true
       },
-      "structurePass": 0.6667,
+      "structurePass": 1,
       "languageRecall": null,
-      "combined": 0.9333,
-      "chars": 13416
+      "combined": 1,
+      "chars": 13478
      },
      {
       "id": "loveandlemons-pumpkin-soup",
@@ -11650,7 +11599,7 @@
       "structurePass": 1,
       "languageRecall": null,
       "combined": 1,
-      "chars": 7307
+      "chars": 7332
      },
      {
       "id": "scottaaronson-post",
@@ -11703,12 +11652,12 @@
       "structure": {
        "headings": true,
        "tables": true,
-       "footnotes": false
+       "footnotes": true
       },
-      "structurePass": 0.6667,
+      "structurePass": 1,
       "languageRecall": null,
-      "combined": 0.9333,
-      "chars": 33964
+      "combined": 1,
+      "chars": 33956
      },
      {
       "id": "noahpinion-sf-eras",
@@ -11725,12 +11674,12 @@
       "structure": {
        "images": true,
        "headings": false,
-       "embeds": false
+       "embeds": true
       },
-      "structurePass": 0.3333,
+      "structurePass": 0.6667,
       "languageRecall": null,
-      "combined": 0.8667,
-      "chars": 10833
+      "combined": 0.9333,
+      "chars": 10897
      },
      {
       "id": "tagesschau-nobel",
@@ -11743,14 +11692,14 @@
       "leaks": [],
       "leakRate": 0,
       "titleExact": false,
-      "titleFuzzy": false,
+      "titleFuzzy": true,
       "structure": {
        "headings": true
       },
       "structurePass": 1,
       "languageRecall": null,
-      "combined": 0.9,
-      "chars": 6230
+      "combined": 1,
+      "chars": 6176
      }
     ]
    },
