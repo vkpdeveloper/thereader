@@ -42,7 +42,10 @@ class FakeServer {
   puts = 0;
   gets = 0;
   calls: Array<Record<string, unknown>> = [];
+  /** Requests in arrival order: `sync` or `put`. */
+  log: string[] = [];
   failPuts = false;
+  failSync = false;
   rejectArticles = false;
 
   private newer(at: string, id: string, rowAt: string | null, rowId: string | null): boolean {
@@ -50,7 +53,9 @@ class FakeServer {
   }
 
   sync(call: Record<string, unknown>): SyncResponse {
+    if (this.failSync) throw new ApiError('Could not reach api.test.', 'NETWORK', null, true);
     this.calls.push(call);
+    this.log.push('sync');
     const changes = call.changes as Array<{ id: string; kind: string; updatedAt: string; payload: Record<string, unknown> }>;
     if (this.rejectArticles && ('articlesSince' in call || changes.some((c) => c.kind.startsWith('article')))) {
       throw new ApiError('Sync request is invalid.', 'INVALID_SYNC', 400);
@@ -74,6 +79,11 @@ class FakeServer {
           positionChangeId: resurrect ? null : (row?.positionChangeId ?? null),
           rev: ++this.rev,
         });
+        // Like the Worker: a deletion drops a document no live article references.
+        const sha = row?.meta.bodySha256;
+        if (deleted && typeof sha === 'string' && ![...this.rows.values()].some((r) => !r.deleted && r.meta.bodySha256 === sha)) {
+          this.bodies.delete(sha);
+        }
       } else if (c.kind === 'articleProgress') {
         if (!row || row.deleted || !this.newer(c.updatedAt, c.id, row.positionUpdatedAt, row.positionChangeId)) continue;
         Object.assign(row, { position: c.payload.position, positionUpdatedAt: c.updatedAt, positionChangeId: c.id, rev: ++this.rev });
@@ -102,6 +112,7 @@ class FakeServer {
   async put(sha: string, bytes: Uint8Array): Promise<void> {
     if (this.failPuts) throw new ApiError('Could not reach api.test.', 'NETWORK', null, true);
     this.puts++;
+    this.log.push('put');
     if (toHex(sha256Bytes(bytes)) !== sha) throw new ApiError('mismatch', 'CHECKSUM_MISMATCH', 422);
     this.bodies.set(sha, bytes);
   }
@@ -329,6 +340,7 @@ describe('article sync between devices', () => {
     await b.articles.remove(saved.id);
     await b.cycle();
     expect(server.rows.get(saved.id)!.deleted).toBe(true);
+    expect(server.bodies.has(saved.bodySha256!)).toBe(false);
     await a.cycle();
     expect(a.articles.summary(saved.id)).toBeUndefined();
     expect(await a.kv.get(articleKey(saved.id))).toBeNull();
@@ -342,8 +354,31 @@ describe('article sync between devices', () => {
     expect(a.counts().extractions).toBe(2);
     await a.cycle();
     expect(server.rows.get(saved.id)!.deleted).toBe(false);
+    // Saving again uploads the document again.
+    expect(server.puts).toBe(2);
+    expect(server.bodies.has(again.bodySha256!)).toBe(true);
     await b.cycle();
-    expect(b.articles.summary(saved.id)).toMatchObject({ id: saved.id, progress: null });
+    expect(b.articles.summary(saved.id)).toMatchObject({ id: saved.id, progress: null, stored: true });
+    expect((await b.articles.get(saved.id))?.title).toBe(saved.title);
+  });
+
+  test('a document uploads only after the server accepted its save', async () => {
+    const server = new FakeServer();
+    const clock = new Clock();
+    const a = await device(server, clock);
+    const saved = await a.articles.add('https://example.com/story');
+    server.failSync = true;
+    await a.cycle();
+    expect(server.log).toEqual([]);
+    expect(a.uploads()).toEqual({ [saved.id]: saved.bodySha256! });
+
+    server.failSync = false;
+    await a.cycle();
+    expect(server.log).toEqual(['sync', 'put']);
+    const [change] = server.calls[0]!.changes as Array<{ kind: string; payload: Record<string, unknown> }>;
+    expect(change!.kind).toBe('article');
+    expect(change!.payload.bodySha256).toBe(saved.bodySha256);
+    expect(a.uploads()).toEqual({});
   });
 
   test('a deletion elsewhere wins over a position this device read meanwhile', async () => {

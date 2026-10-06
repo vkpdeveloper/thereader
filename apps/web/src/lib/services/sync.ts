@@ -680,8 +680,6 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
     const submitted = new Map<string, SyncChange>();
     let bytes = 100;
     try {
-      // Documents first, so other devices rarely see an article before its text.
-      if (withArticles && !keepalive) await this.uploadArticleBodies(origin, client, state);
       // Bound both count and encoded body; huge payloads must not block every
       // other queued change behind the API's request-size limit.
       const library = this.deps.library.all;
@@ -792,6 +790,10 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
       } finally {
         this.applying = false;
       }
+      // Documents go up once the server holds their saves: the server deletes
+      // a document no live article references, so uploading first could race
+      // a deletion and leave a save pointing at nothing.
+      if (withArticles && !keepalive) await this.uploadArticleBodies(origin, client);
       await this.captureNow();
       this.failures = 0;
       this.scheduleMetadataRefresh(origin, client, metadataRefresh);
@@ -915,15 +917,18 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
   }
 
   /**
-   * Uploads documents this device saved, a few per cycle. A network or server
-   * failure keeps the rest queued for the next cycle; a document the server
-   * refuses (too large, invalid) or that is gone locally is dropped, and its
-   * article stays readable here and pending elsewhere.
+   * Uploads documents this device saved, a few per cycle, once the server has
+   * accepted their saves. A network or server failure keeps the rest queued
+   * for the next cycle; a document the server refuses (too large, invalid) or
+   * that is gone locally is dropped, and its article stays readable here and
+   * pending elsewhere.
    */
-  private async uploadArticleBodies(origin: string, client: SyncApi, state: OriginState): Promise<void> {
+  private async uploadArticleBodies(origin: string, client: SyncApi): Promise<void> {
     const store = this.deps.articles;
     if (!store || !client.putArticleBody) return;
-    for (const [id, sha] of Object.entries(state.articleUploads ?? {}).slice(0, ARTICLE_UPLOADS_PER_CYCLE)) {
+    const state = this.state.origins[origin] ?? emptyOrigin();
+    const ready = Object.entries(state.articleUploads ?? {}).filter(([id]) => !state.pending[`article:${id}`]);
+    for (const [id, sha] of ready.slice(0, ARTICLE_UPLOADS_PER_CYCLE)) {
       const body = await store.bodyFor(id);
       if (body && body.sha256 === sha) {
         try {
