@@ -188,6 +188,10 @@ export function isDecorativeImage(img: VElement, image: Image, base: string): bo
     if (href !== null && /^https?:\/\/[^/]+\/?(?:index\.html?)?(?:[?#].*)?$/i.test(href)) return true;
   }
   if (/(?:^|[\s_-])(?:avatar|gravatar|author-(?:photo|image|avatar|img)|logo|site-logo|badge|profile-(?:pic|photo|image)|headshot|byline-image|sponsor-logo|social-icon)(?:$|[\s_-])/.test(img.matchString)) return true;
+  // Small portraits next to author names ("Photo of Jane Doe").
+  if (image.width !== undefined && image.width <= 160 || dimension(img.attrs['width']) !== undefined && dimension(img.attrs['width'])! <= 160) {
+    if (/^(?:photo|picture|portrait|headshot|avatar|profile (?:photo|picture)) of\s/i.test(image.alt)) return true;
+  }
   return /gravatar\.com\/avatar|\/avatars?\//i.test(image.src);
 }
 
