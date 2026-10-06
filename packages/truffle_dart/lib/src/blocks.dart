@@ -1258,6 +1258,9 @@ class Converter {
 
   void _list(VElement el, List<Block> out) {
     final items = <ListItem>[];
+    final ordered = el.tag == 'ol';
+    final start = _intAttr(el, 'start');
+    var number = start ?? 1;
     for (final child in el.children) {
       if (child is VText) {
         if (!isBlank(child.text)) {
@@ -1275,7 +1278,17 @@ class Converter {
       if (e.skip) continue;
       final blocks = <Block>[];
       if (e.tag == 'li') {
+        number = _intAttr(e, 'value') ?? number;
+        // LaTeXML writes the marker as text before the item's paragraphs: <span class="ltx_tag ltx_tag_item">•</span>.
+        final label = _itemLabel(e);
+        if (label != null) label.skip = true;
         children(e, blocks);
+        if (label != null) {
+          label.skip = false;
+          _prependLabel(blocks, collapse(rawText(label)));
+        }
+        _stripItemMarker(blocks, ordered ? number : null);
+        number++;
         if (blocks.isEmpty) continue;
         final item = ListItem(blocks: blocks);
         final box = firstElement(e, (x) => x.tag == 'input' && jsLower(x.attrs['type'] ?? '') == 'checkbox');
@@ -1307,9 +1320,8 @@ class Converter {
       out.add(gallery);
       return;
     }
-    final list = ListBlock(ordered: el.tag == 'ol', items: items);
-    final start = _intAttr(el, 'start');
-    if (el.tag == 'ol' && start != null && start != 1) list.start = start;
+    final list = ListBlock(ordered: ordered, items: items);
+    if (ordered && start != null && start != 1) list.start = start;
     out.add(list);
   }
 
@@ -2059,6 +2071,66 @@ void _stripNoteLabel(List<Block> blocks, String label) {
       break;
     }
     content.removeAt(0);
+  }
+  if (content.isEmpty) blocks.removeAt(0);
+}
+
+/// The marker an item opens with as an element of its own (LaTeXML's `ltx_tag_item`), or null.
+VElement? _itemLabel(VElement li) {
+  for (final child in li.children) {
+    if (child is VText) {
+      if (!isBlank(child.text)) return null;
+      continue;
+    }
+    final e = child as VElement;
+    return !e.skip && e.hasClass('ltx_tag_item') ? e : null;
+  }
+  return null;
+}
+
+/// An item's label read into its first line: "(a) The encoder…", not "(a)" over the paragraph.
+void _prependLabel(List<Block> blocks, String label) {
+  if (label.isEmpty) return;
+  final first = blocks.isEmpty ? null : blocks[0];
+  if (first is ParagraphBlock) {
+    first.content = normalizeInlines([TextRun('$label '), ...first.content]);
+  } else {
+    blocks.insert(0, ParagraphBlock([TextRun(label)]));
+  }
+}
+
+/// Bullets that never start a word; dashes, stars and dots only count with a space after them.
+final _bulletMarker = RegExp(r'^\s*(?:[•◦▪▫●○■□‣⁃∙►▸]\s*|[-–*·](?:\s+|$))');
+final _numberMarker = RegExp(r'^\s*(?:(\d{1,4})[.)]|\((\d{1,4})\))(?:\s+|$)');
+
+/// A marker the page typed into an item ("• Point", "3. Step", LaTeXML's tags) repeats the one the list draws and
+/// goes; an ordered item keeps a number that is not its own.
+void _stripItemMarker(List<Block> blocks, int? number) {
+  if (blocks.isEmpty) return;
+  final first = blocks[0];
+  if (first is! ParagraphBlock) return;
+  final content = first.content;
+  if (content.isEmpty) return;
+  final run = content[0];
+  if (run is! TextRun) return;
+  final m = (number == null ? _bulletMarker : _numberMarker).firstMatch(run.text);
+  if (m == null || (number != null && int.parse(m[1] ?? m[2]!) != number)) return;
+  final rest = run.text.substring(m.end);
+  if (rest.isEmpty) {
+    content.removeAt(0);
+  } else {
+    content[0] = TextRun(rest, marks: run.marks, href: run.href);
+  }
+  if (content.isNotEmpty) {
+    final next = content[0];
+    if (next is TextRun) {
+      final text = jsTrimStart(next.text);
+      if (text.isEmpty) {
+        content.removeAt(0);
+      } else if (text.length != next.text.length) {
+        content[0] = TextRun(text, marks: next.marks, href: next.href);
+      }
+    }
   }
   if (content.isEmpty) blocks.removeAt(0);
 }

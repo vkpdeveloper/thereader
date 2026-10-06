@@ -229,4 +229,35 @@ void main() {
     );
     expect([for (final b in other) (b as Map)['type']], ['figure', 'video']);
   });
+
+  test('a marker typed into a list item that repeats the list marker goes', () {
+    List<List<Object?>> texts(String body) => [
+      for (final b in _article(body).blocks.sublist(1, _article(body).blocks.length - 1))
+        if (b is ListBlock)
+          for (final i in b.items) [for (final x in i.blocks) x is ParagraphBlock ? inlineText(x.content) : x.type],
+    ];
+    expect(
+      texts(
+        '<ul><li>• One</li><li><span class="dot">•</span>Two</li><li>- Three</li><li>•<div><p>Four</p></div></li></ul>',
+      ),
+      [
+        ['One'],
+        ['Two'],
+        ['Three'],
+        ['Four'],
+      ],
+    );
+    expect(texts('<ol start="4"><li>4. Four</li><li>5) Five</li><li value="9">(9) Nine</li></ol>'), [
+      ['Four'],
+      ['Five'],
+      ['Nine'],
+    ]);
+    // Numbers that are not the item's own, numbers in a bulleted list and words that start with a dash stay.
+    expect(texts('<ol><li>2024. A year</li><li>7. Seven</li></ol><ul><li>1. First</li><li>-1 degrees</li></ul>'), [
+      ['2024. A year'],
+      ['7. Seven'],
+      ['1. First'],
+      ['-1 degrees'],
+    ]);
+  });
 }

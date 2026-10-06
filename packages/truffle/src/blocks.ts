@@ -1055,6 +1055,9 @@ export class Converter {
 
   private list(el: VElement, out: Block[]): void {
     const items: ListItem[] = [];
+    const ordered = el.tag === 'ol';
+    const start = intAttr(el, 'start');
+    let number = start ?? 1;
     for (const child of el.children) {
       if (child.kind === 0) {
         if (child.text.trim().length > 0) items.push({ blocks: [{ type: 'paragraph', content: normalizeInlines([{ type: 'text', text: child.text }]) }] });
@@ -1063,7 +1066,17 @@ export class Converter {
       if (child.skip) continue;
       const blocks: Block[] = [];
       if (child.tag === 'li') {
+        number = intAttr(child, 'value') ?? number;
+        // LaTeXML writes the marker as text before the item's paragraphs: <span class="ltx_tag ltx_tag_item">•</span>.
+        const label = itemLabel(child);
+        if (label !== null) label.skip = true;
         this.children(child, blocks);
+        if (label !== null) {
+          label.skip = false;
+          prependLabel(blocks, collapse(rawText(label)));
+        }
+        stripItemMarker(blocks, ordered ? number : null);
+        number++;
         if (blocks.length === 0) continue;
         const item: ListItem = { blocks };
         const box = firstElement(child, (e) => e.tag === 'input' && (e.attrs['type'] ?? '').toLowerCase() === 'checkbox');
@@ -1088,9 +1101,8 @@ export class Converter {
       out.push(gallery);
       return;
     }
-    const block: Block = { type: 'list', ordered: el.tag === 'ol', items };
-    const start = intAttr(el, 'start');
-    if (el.tag === 'ol' && start !== undefined && start !== 1) block.start = start;
+    const block: Block = { type: 'list', ordered, items };
+    if (ordered && start !== undefined && start !== 1) block.start = start;
     out.push(block);
   }
 
@@ -1709,6 +1721,50 @@ function stripNoteLabel(blocks: Block[], label: string): void {
     if (run.text.length > 0) break;
     content.shift();
   }
+  if (content.length === 0) blocks.shift();
+}
+
+/** The marker an item opens with as an element of its own (LaTeXML's `ltx_tag_item`), or null. */
+function itemLabel(li: VElement): VElement | null {
+  for (const child of li.children) {
+    if (child.kind === 0) {
+      if (child.text.trim().length > 0) return null;
+      continue;
+    }
+    return !child.skip && child.hasClass('ltx_tag_item') ? child : null;
+  }
+  return null;
+}
+
+/** An item's label read into its first line: "(a) The encoder…", not "(a)" over the paragraph. */
+function prependLabel(blocks: Block[], label: string): void {
+  if (label.length === 0) return;
+  const first = blocks[0];
+  if (first !== undefined && first.type === 'paragraph') first.content = normalizeInlines([{ type: 'text', text: label + ' ' }, ...first.content]);
+  else blocks.unshift({ type: 'paragraph', content: [{ type: 'text', text: label }] });
+}
+
+/** Bullets that never start a word; dashes, stars and dots only count with a space after them. */
+const BULLET_MARKER = /^\s*(?:[•◦▪▫●○■□‣⁃∙►▸]\s*|[-–*·](?:\s+|$))/;
+const NUMBER_MARKER = /^\s*(?:(\d{1,4})[.)]|\((\d{1,4})\))(?:\s+|$)/;
+
+/**
+ * A marker the page typed into an item ("• Point", "3. Step", LaTeXML's tags) repeats the one the list draws and
+ * goes; an ordered item keeps a number that is not its own.
+ */
+function stripItemMarker(blocks: Block[], number: number | null): void {
+  const first = blocks[0];
+  if (first === undefined || first.type !== 'paragraph') return;
+  const content = first.content;
+  const run = content[0];
+  if (run === undefined || run.type !== 'text') return;
+  const m = (number === null ? BULLET_MARKER : NUMBER_MARKER).exec(run.text);
+  if (m === null || (number !== null && Number(m[1] ?? m[2]) !== number)) return;
+  run.text = run.text.slice(m[0].length);
+  if (run.text.length === 0) content.shift();
+  const next = content[0];
+  if (next !== undefined && next.type === 'text') next.text = next.text.trimStart();
+  if (next !== undefined && next.type === 'text' && next.text.length === 0) content.shift();
   if (content.length === 0) blocks.shift();
 }
 
