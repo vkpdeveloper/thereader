@@ -1,0 +1,1141 @@
+[
+ {
+  "name": "head noscript pixel",
+  "html": "<!doctype html><html><head><meta charset=\"utf-8\"><noscript><img height=\"1\" width=\"1\" style=\"display:none\" src=\"https://px.example/tr\"></noscript><meta property=\"og:title\" content=\"T\"><title>T</title><link rel=\"canonical\" href=\"/a\"></head>\n<body class=\"b\"><p>Text</p></body></html>",
+  "vdoc": {
+   "root": {
+    "t": "html",
+    "c": [
+     {
+      "t": "head",
+      "c": [
+       {
+        "t": "meta",
+        "a": {
+         "charset": "utf-8"
+        }
+       },
+       {
+        "t": "noscript"
+       }
+      ]
+     },
+     {
+      "t": "body",
+      "a": {
+       "class": "b"
+      },
+      "c": [
+       {
+        "t": "meta",
+        "a": {
+         "property": "og:title",
+         "content": "T"
+        }
+       },
+       {
+        "t": "title",
+        "c": [
+         "T"
+        ]
+       },
+       {
+        "t": "link",
+        "a": {
+         "rel": "canonical",
+         "href": "/a"
+        }
+       },
+       "\n",
+       {
+        "t": "p",
+        "c": [
+         "Text"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "head": [
+    0
+   ],
+   "body": [
+    1
+   ],
+   "jsonLd": [],
+   "nextData": null,
+   "baseHref": null
+  }
+ },
+ {
+  "name": "head noscript styles only",
+  "html": "<html><head><noscript><link rel=\"stylesheet\" href=\"/n.css\"><style>.x{}</style></noscript><title>T</title></head><body><p>Text</p></body></html>",
+  "vdoc": {
+   "root": {
+    "t": "html",
+    "c": [
+     {
+      "t": "head",
+      "c": [
+       {
+        "t": "noscript",
+        "c": [
+         {
+          "t": "link",
+          "a": {
+           "rel": "stylesheet",
+           "href": "/n.css"
+          }
+         }
+        ]
+       },
+       {
+        "t": "title",
+        "c": [
+         "T"
+        ]
+       }
+      ]
+     },
+     {
+      "t": "body",
+      "c": [
+       {
+        "t": "p",
+        "c": [
+         "Text"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "head": [
+    0
+   ],
+   "body": [
+    1
+   ],
+   "jsonLd": [],
+   "nextData": null,
+   "baseHref": null
+  }
+ },
+ {
+  "name": "head noscript whitespace comment img",
+  "html": "<html><head><title>T</title><noscript>\n\t<!-- pixel -->\n  <img src=\"https://px.example/p\" />\n  </noscript>\n  <!-- after -->\n</head>\n<body><p>Body</p></body></html>",
+  "vdoc": {
+   "root": {
+    "t": "html",
+    "c": [
+     {
+      "t": "head",
+      "c": [
+       {
+        "t": "title",
+        "c": [
+         "T"
+        ]
+       },
+       {
+        "t": "noscript",
+        "c": [
+         "\n\t",
+         "\n  "
+        ]
+       }
+      ]
+     },
+     {
+      "t": "body",
+      "c": [
+       {
+        "t": "img",
+        "a": {
+         "src": "https://px.example/p"
+        }
+       },
+       "\n  \n  ",
+       "\n\n",
+       {
+        "t": "p",
+        "c": [
+         "Body"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "head": [
+    0
+   ],
+   "body": [
+    1
+   ],
+   "jsonLd": [],
+   "nextData": null,
+   "baseHref": null
+  }
+ },
+ {
+  "name": "head noscript text",
+  "html": "<html><head><noscript>  Enable JavaScript <a href=\"/x\">here</a></noscript><meta name=\"description\" content=\"d\"></head><body><p>Body</p></body></html>",
+  "vdoc": {
+   "root": {
+    "t": "html",
+    "c": [
+     {
+      "t": "head",
+      "c": [
+       {
+        "t": "noscript",
+        "c": [
+         "  "
+        ]
+       }
+      ]
+     },
+     {
+      "t": "body",
+      "c": [
+       "Enable JavaScript ",
+       {
+        "t": "a",
+        "a": {
+         "href": "/x"
+        },
+        "c": [
+         "here"
+        ]
+       },
+       {
+        "t": "meta",
+        "a": {
+         "name": "description",
+         "content": "d"
+        }
+       },
+       {
+        "t": "p",
+        "c": [
+         "Body"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "head": [
+    0
+   ],
+   "body": [
+    1
+   ],
+   "jsonLd": [],
+   "nextData": null,
+   "baseHref": null
+  }
+ },
+ {
+  "name": "body noscript image",
+  "html": "<body><p>Before</p><img class=\"lazy\" data-src=\"/a.jpg\"><noscript><img src=\"/a.jpg\" alt=\"A\"></noscript><p>After</p></body>",
+  "vdoc": {
+   "root": {
+    "t": "html",
+    "c": [
+     {
+      "t": "head"
+     },
+     {
+      "t": "body",
+      "c": [
+       {
+        "t": "p",
+        "c": [
+         "Before"
+        ]
+       },
+       {
+        "t": "img",
+        "a": {
+         "class": "lazy",
+         "data-src": "/a.jpg"
+        }
+       },
+       {
+        "t": "noscript",
+        "c": [
+         {
+          "t": "img",
+          "a": {
+           "src": "/a.jpg",
+           "alt": "A"
+          }
+         }
+        ]
+       },
+       {
+        "t": "p",
+        "c": [
+         "After"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "head": [
+    0
+   ],
+   "body": [
+    1
+   ],
+   "jsonLd": [],
+   "nextData": null,
+   "baseHref": null
+  }
+ },
+ {
+  "name": "pre newlines",
+  "html": "<body><pre>\nbody pre</pre><table><tr><td><pre>\ncell pre</pre></td><td><pre>\n\ntwo newlines</pre></td></tr><caption><pre>\ncaption pre</pre></caption></table><pre><code>\nin code</code></pre></body>",
+  "vdoc": {
+   "root": {
+    "t": "html",
+    "c": [
+     {
+      "t": "head"
+     },
+     {
+      "t": "body",
+      "c": [
+       {
+        "t": "pre",
+        "c": [
+         "body pre"
+        ]
+       },
+       {
+        "t": "table",
+        "c": [
+         {
+          "t": "tbody",
+          "c": [
+           {
+            "t": "tr",
+            "c": [
+             {
+              "t": "td",
+              "c": [
+               {
+                "t": "pre",
+                "c": [
+                 "cell pre"
+                ]
+               }
+              ]
+             },
+             {
+              "t": "td",
+              "c": [
+               {
+                "t": "pre",
+                "c": [
+                 "\ntwo newlines"
+                ]
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "caption",
+          "c": [
+           {
+            "t": "pre",
+            "c": [
+             "caption pre"
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "pre",
+        "c": [
+         {
+          "t": "code",
+          "c": [
+           "\nin code"
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "head": [
+    0
+   ],
+   "body": [
+    1
+   ],
+   "jsonLd": [],
+   "nextData": null,
+   "baseHref": null
+  }
+ },
+ {
+  "name": "entities",
+  "html": "<body><p title=\"a&amp;b &copy &notit;\">&amp; &nbsp;&#x1F600; &#128512; &notin; &notit; &copy 2024 &lt;tag&gt; &#0; &#x110000;</p></body>",
+  "vdoc": {
+   "root": {
+    "t": "html",
+    "c": [
+     {
+      "t": "head"
+     },
+     {
+      "t": "body",
+      "c": [
+       {
+        "t": "p",
+        "a": {
+         "title": "a&b © &notit;"
+        },
+        "c": [
+         "&  😀 😀 ∉ ¬it; © 2024 <tag> � �"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "head": [
+    0
+   ],
+   "body": [
+    1
+   ],
+   "jsonLd": [],
+   "nextData": null,
+   "baseHref": null
+  }
+ },
+ {
+  "name": "line endings and nulls",
+  "html": "<body><p>a\r\nb\rc\u0000d</p><pre>x\r\n\r\ny</pre></body>",
+  "vdoc": {
+   "root": {
+    "t": "html",
+    "c": [
+     {
+      "t": "head"
+     },
+     {
+      "t": "body",
+      "c": [
+       {
+        "t": "p",
+        "c": [
+         "a\nb\ncd"
+        ]
+       },
+       {
+        "t": "pre",
+        "c": [
+         "x\n\ny"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "head": [
+    0
+   ],
+   "body": [
+    1
+   ],
+   "jsonLd": [],
+   "nextData": null,
+   "baseHref": null
+  }
+ },
+ {
+  "name": "attribute and tag case",
+  "html": "<BODY><DIV CLASS=\"X\" Data-Foo=\"1\" ID=\"Main\"><SPAN Title=\"t\">x</SPAN></DIV><svg viewBox=\"0 0 1 1\"><linearGradient gradientUnits=\"x\"/></svg><math definitionURL=\"u\"><mi>x</mi></math></BODY>",
+  "vdoc": {
+   "root": {
+    "t": "html",
+    "c": [
+     {
+      "t": "head"
+     },
+     {
+      "t": "body",
+      "c": [
+       {
+        "t": "div",
+        "a": {
+         "class": "X",
+         "data-foo": "1",
+         "id": "Main"
+        },
+        "c": [
+         {
+          "t": "span",
+          "a": {
+           "title": "t"
+          },
+          "c": [
+           "x"
+          ]
+         }
+        ]
+       },
+       {
+        "t": "svg",
+        "a": {
+         "viewBox": "0 0 1 1"
+        },
+        "c": [
+         ""
+        ]
+       },
+       {
+        "t": "math",
+        "a": {
+         "definitionURL": "u",
+         "data-xml": "<math definitionURL=\"u\"><mi>x</mi></math>"
+        },
+        "c": [
+         "x"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "head": [
+    0
+   ],
+   "body": [
+    1
+   ],
+   "jsonLd": [],
+   "nextData": null,
+   "baseHref": null
+  }
+ },
+ {
+  "name": "comments split text",
+  "html": "<body><p>a<!--x-->b</p></body>",
+  "vdoc": {
+   "root": {
+    "t": "html",
+    "c": [
+     {
+      "t": "head"
+     },
+     {
+      "t": "body",
+      "c": [
+       {
+        "t": "p",
+        "c": [
+         "a",
+         "b"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "head": [
+    0
+   ],
+   "body": [
+    1
+   ],
+   "jsonLd": [],
+   "nextData": null,
+   "baseHref": null
+  }
+ },
+ {
+  "name": "table foster parenting",
+  "html": "<body><table><tr><td>x</td></tr><div>div</div></table></body>",
+  "vdoc": {
+   "root": {
+    "t": "html",
+    "c": [
+     {
+      "t": "head"
+     },
+     {
+      "t": "body",
+      "c": [
+       {
+        "t": "div",
+        "c": [
+         "div"
+        ]
+       },
+       {
+        "t": "table",
+        "c": [
+         {
+          "t": "tbody",
+          "c": [
+           {
+            "t": "tr",
+            "c": [
+             {
+              "t": "td",
+              "c": [
+               "x"
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "head": [
+    0
+   ],
+   "body": [
+    1
+   ],
+   "jsonLd": [],
+   "nextData": null,
+   "baseHref": null
+  }
+ },
+ {
+  "name": "table foster parenting text",
+  "html": "<body><table>stray<tr><td>x</td></tr></table></body>",
+  "known": "jsdom appends foster-parented text after the table; browsers and package:html insert it before",
+  "vdoc": {
+   "root": {
+    "t": "html",
+    "c": [
+     {
+      "t": "head"
+     },
+     {
+      "t": "body",
+      "c": [
+       {
+        "t": "table",
+        "c": [
+         {
+          "t": "tbody",
+          "c": [
+           {
+            "t": "tr",
+            "c": [
+             {
+              "t": "td",
+              "c": [
+               "x"
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       "stray"
+      ]
+     }
+    ]
+   },
+   "head": [
+    0
+   ],
+   "body": [
+    1
+   ],
+   "jsonLd": [],
+   "nextData": null,
+   "baseHref": null
+  }
+ },
+ {
+  "name": "implied end tags",
+  "html": "<body><p>a<div>b</div><p>c<ul><li>d<li>e</ul><dl><dt>t<dd>d</dl></body>",
+  "vdoc": {
+   "root": {
+    "t": "html",
+    "c": [
+     {
+      "t": "head"
+     },
+     {
+      "t": "body",
+      "c": [
+       {
+        "t": "p",
+        "c": [
+         "a"
+        ]
+       },
+       {
+        "t": "div",
+        "c": [
+         "b"
+        ]
+       },
+       {
+        "t": "p",
+        "c": [
+         "c"
+        ]
+       },
+       {
+        "t": "ul",
+        "c": [
+         {
+          "t": "li",
+          "c": [
+           "d"
+          ]
+         },
+         {
+          "t": "li",
+          "c": [
+           "e"
+          ]
+         }
+        ]
+       },
+       {
+        "t": "dl",
+        "c": [
+         {
+          "t": "dt",
+          "c": [
+           "t"
+          ]
+         },
+         {
+          "t": "dd",
+          "c": [
+           "d"
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "head": [
+    0
+   ],
+   "body": [
+    1
+   ],
+   "jsonLd": [],
+   "nextData": null,
+   "baseHref": null
+  }
+ },
+ {
+  "name": "base and scripts",
+  "html": "<html><head><base href=\"/docs/\"><base href=\"/ignored/\"><script type=\"application/ld+json\">{\"@type\":\"Article\"}</script></head><body><script type=\"math/tex; mode=display\">x^2</script><script id=\"__NEXT_DATA__\" type=\"application/json\">{\"a\":1}</script><p>p</p></body></html>",
+  "vdoc": {
+   "root": {
+    "t": "html",
+    "c": [
+     {
+      "t": "head"
+     },
+     {
+      "t": "body",
+      "c": [
+       {
+        "t": "math-tex",
+        "a": {
+         "display": "block"
+        },
+        "c": [
+         "x^2"
+        ]
+       },
+       {
+        "t": "p",
+        "c": [
+         "p"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "head": [
+    0
+   ],
+   "body": [
+    1
+   ],
+   "jsonLd": [
+    "{\"@type\":\"Article\"}"
+   ],
+   "nextData": "{\"a\":1}",
+   "baseHref": "/docs/"
+  }
+ },
+ {
+  "name": "body metadata",
+  "html": "<body><title>Streamed</title><meta property=\"og:title\" content=\"T\"><meta charset=\"utf-8\"><link rel=\"icon\" href=\"/i.png\"><p>p</p></body>",
+  "vdoc": {
+   "root": {
+    "t": "html",
+    "c": [
+     {
+      "t": "head"
+     },
+     {
+      "t": "body",
+      "c": [
+       {
+        "t": "title",
+        "c": [
+         "Streamed"
+        ]
+       },
+       {
+        "t": "meta",
+        "a": {
+         "property": "og:title",
+         "content": "T"
+        }
+       },
+       {
+        "t": "link",
+        "a": {
+         "rel": "icon",
+         "href": "/i.png"
+        }
+       },
+       {
+        "t": "p",
+        "c": [
+         "p"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "head": [
+    0
+   ],
+   "body": [
+    1
+   ],
+   "jsonLd": [],
+   "nextData": null,
+   "baseHref": null
+  }
+ },
+ {
+  "name": "hidden and dropped",
+  "html": "<body><div hidden>h</div><div hidden id=\"S:1\">suspense</div><p style=\"display: none\">n</p><span class=\"sr-only\">s</span><div aria-hidden=\"true\" class=\"photo\">kept</div><button>b</button><p>p</p></body>",
+  "vdoc": {
+   "root": {
+    "t": "html",
+    "c": [
+     {
+      "t": "head"
+     },
+     {
+      "t": "body",
+      "c": [
+       {
+        "t": "div",
+        "a": {
+         "hidden": "",
+         "id": "S:1"
+        },
+        "c": [
+         "suspense"
+        ]
+       },
+       {
+        "t": "div",
+        "a": {
+         "aria-hidden": "true",
+         "class": "photo"
+        },
+        "c": [
+         "kept"
+        ]
+       },
+       {
+        "t": "p",
+        "c": [
+         "p"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "head": [
+    0
+   ],
+   "body": [
+    1
+   ],
+   "jsonLd": [],
+   "nextData": null,
+   "baseHref": null
+  }
+ },
+ {
+  "name": "template",
+  "html": "<body><div><template><div>t</template>\n<p>after</p></div></body>",
+  "known": "package:html has no <template> support: its content is parsed as ordinary children",
+  "vdoc": {
+   "root": {
+    "t": "html",
+    "c": [
+     {
+      "t": "head"
+     },
+     {
+      "t": "body",
+      "c": [
+       {
+        "t": "div",
+        "c": [
+         "\n",
+         {
+          "t": "p",
+          "c": [
+           "after"
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "head": [
+    0
+   ],
+   "body": [
+    1
+   ],
+   "jsonLd": [],
+   "nextData": null,
+   "baseHref": null
+  }
+ },
+ {
+  "name": "main end tag",
+  "html": "<body><main><div><div>a</main><footer>f</footer></body>",
+  "known": "package:html predates <main>: </main> does not close open elements, <main> does not close <p>",
+  "vdoc": {
+   "root": {
+    "t": "html",
+    "c": [
+     {
+      "t": "head"
+     },
+     {
+      "t": "body",
+      "c": [
+       {
+        "t": "main",
+        "c": [
+         {
+          "t": "div",
+          "c": [
+           {
+            "t": "div",
+            "c": [
+             "a"
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "footer",
+        "c": [
+         "f"
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "head": [
+    0
+   ],
+   "body": [
+    1
+   ],
+   "jsonLd": [],
+   "nextData": null,
+   "baseHref": null
+  }
+ },
+ {
+  "name": "menu list items",
+  "html": "<body><ul><li>a<menu><li>b</li></menu></li></ul></body>",
+  "known": "package:html does not treat <menu> as special: an <li> inside it closes the outer <li>",
+  "vdoc": {
+   "root": {
+    "t": "html",
+    "c": [
+     {
+      "t": "head"
+     },
+     {
+      "t": "body",
+      "c": [
+       {
+        "t": "ul",
+        "c": [
+         {
+          "t": "li",
+          "c": [
+           "a",
+           {
+            "t": "menu",
+            "c": [
+             {
+              "t": "li",
+              "c": [
+               "b"
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "head": [
+    0
+   ],
+   "body": [
+    1
+   ],
+   "jsonLd": [],
+   "nextData": null,
+   "baseHref": null
+  }
+ },
+ {
+  "name": "svg attribute order",
+  "html": "<body><svg xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" viewBox=\"0 0 1 1\"></svg></body>",
+  "known": "package:html moves adjusted foreign attributes (xmlns, xlink:*, camelCase SVG names) to the end",
+  "vdoc": {
+   "root": {
+    "t": "html",
+    "c": [
+     {
+      "t": "head"
+     },
+     {
+      "t": "body",
+      "c": [
+       {
+        "t": "svg",
+        "a": {
+         "xmlns": "http://www.w3.org/2000/svg",
+         "role": "img",
+         "viewBox": "0 0 1 1"
+        },
+        "c": [
+         ""
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "head": [
+    0
+   ],
+   "body": [
+    1
+   ],
+   "jsonLd": [],
+   "nextData": null,
+   "baseHref": null
+  }
+ },
+ {
+  "name": "noscript closes paragraph",
+  "html": "<body><p>a<noscript><div>n</div></noscript>b</p></body>",
+  "known": "noscript markup is re-parsed in isolation, so block content in it does not close an open <p>",
+  "vdoc": {
+   "root": {
+    "t": "html",
+    "c": [
+     {
+      "t": "head"
+     },
+     {
+      "t": "body",
+      "c": [
+       {
+        "t": "p",
+        "c": [
+         "a",
+         {
+          "t": "noscript"
+         }
+        ]
+       },
+       {
+        "t": "div",
+        "c": [
+         "n"
+        ]
+       },
+       "b",
+       {
+        "t": "p"
+       }
+      ]
+     }
+    ]
+   },
+   "head": [
+    0
+   ],
+   "body": [
+    1
+   ],
+   "jsonLd": [],
+   "nextData": null,
+   "baseHref": null
+  }
+ }
+]

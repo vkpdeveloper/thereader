@@ -63,7 +63,7 @@ void main() {
       final callout = CalloutBlock(variant: null, blocks: const []).toJson();
       expect(callout, {'type': 'callout', 'variant': null, 'blocks': <Object?>[]});
       expect(const TextRun('a').toJson(), {'type': 'text', 'text': 'a'});
-      expect(const ListItem(blocks: [], checked: false).toJson(), {'blocks': <Object?>[], 'checked': false});
+      expect(ListItem(blocks: [], checked: false).toJson(), {'blocks': <Object?>[], 'checked': false});
     });
 
     test('rejects unknown types', () {
@@ -95,16 +95,5 @@ void main() {
       };
       cases.forEach((text, words) => expect(countWords(text), words, reason: jsonEncode(text)));
     });
-  });
-
-  group('stub extractor', () {
-    final cases = _fixture('placeholder_cases.json');
-    for (final MapEntry(key: name, value: raw) in cases.entries) {
-      test('matches the former TypeScript placeholder: $name', () {
-        final c = raw as Json;
-        final article = extractArticle(c['html'] as String, Uri.parse(c['url'] as String));
-        expect(article?.toJson(), equals(c['expected']));
-      });
-    }
   });
 }

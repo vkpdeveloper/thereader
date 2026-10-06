@@ -5,7 +5,10 @@
 /// null when absent so an explicit value is never confused with a missing one.
 ///
 /// Types whose TypeScript names collide with Dart or Flutter (`List`, `Image`,
-/// `Table`, ...) carry a `Block`, `Article` or `Data` affix.
+/// `Table`, ...) carry a `Block`, `Article` or `Data` affix. Most fields are
+/// mutable because the extractor builds documents in place, as the
+/// TypeScript engine does; consumers treat them as read-only. Text runs are
+/// immutable (the extractor replaces them), so they can be `const`.
 library;
 
 typedef Json = Map<String, Object?>;
@@ -82,12 +85,12 @@ final class LineBreak extends Inline {
 
 /// A small image inside a line (emoji, icons, inline formulas as images).
 final class InlineImage extends Inline {
-  const InlineImage({required this.src, required this.alt, this.width, this.height});
+  InlineImage({required this.src, required this.alt, this.width, this.height});
 
-  final String src;
-  final String alt;
-  final num? width;
-  final num? height;
+  String src;
+  String alt;
+  num? width;
+  num? height;
 
   @override
   String get type => 'image';
@@ -110,16 +113,16 @@ final class InlineImage extends Inline {
 }
 
 final class InlineMath extends Inline {
-  const InlineMath({this.tex, this.mathml, required this.text});
+  InlineMath({this.tex, this.mathml, required this.text});
 
   /// LaTeX source when the page provided it.
-  final String? tex;
+  String? tex;
 
   /// Serialized `<math>` element when the page provided MathML.
-  final String? mathml;
+  String? mathml;
 
   /// Text fallback.
-  final String text;
+  String text;
 
   @override
   String get type => 'math';
@@ -127,16 +130,21 @@ final class InlineMath extends Inline {
   factory InlineMath.fromJson(Json json) =>
       InlineMath(tex: json['tex'] as String?, mathml: json['mathml'] as String?, text: json['text'] as String);
 
+  /// Keys in the order the TypeScript engine writes them: TeX-only math
+  /// (`<script type="math/tex">`) is built as `{type, tex, text}`, MathML as
+  /// `{type, text, tex?, mathml}`.
   @override
-  Json toJson() => {'type': type, if (tex != null) 'tex': tex, if (mathml != null) 'mathml': mathml, 'text': text};
+  Json toJson() => mathml == null
+      ? {'type': type, if (tex != null) 'tex': tex, 'text': text}
+      : {'type': type, 'text': text, if (tex != null) 'tex': tex, 'mathml': mathml};
 }
 
 /// A footnote reference; [id] matches a [Footnote].
 final class FootnoteRef extends Inline {
-  const FootnoteRef({required this.id, required this.label});
+  FootnoteRef({required this.id, required this.label});
 
-  final String id;
-  final String label;
+  String id;
+  String label;
 
   @override
   String get type => 'ref';
@@ -148,19 +156,19 @@ final class FootnoteRef extends Inline {
 }
 
 class ArticleImage {
-  const ArticleImage({required this.src, required this.alt, this.width, this.height, this.srcset, this.href});
+  ArticleImage({required this.src, required this.alt, this.width, this.height, this.srcset, this.href});
 
   /// Best available source (largest reasonable candidate).
-  final String src;
-  final String alt;
-  final num? width;
-  final num? height;
+  String src;
+  String alt;
+  num? width;
+  num? height;
 
   /// Normalized absolute `srcset`, when the page offered several sizes.
-  final String? srcset;
+  String? srcset;
 
   /// Link target when the image itself is a link.
-  final String? href;
+  String? href;
 
   factory ArticleImage.fromJson(Json json) => ArticleImage(
     src: json['src'] as String,
@@ -210,14 +218,14 @@ sealed class Block {
 }
 
 final class HeadingBlock extends Block {
-  const HeadingBlock({required this.level, required this.content, this.anchor});
+  HeadingBlock({required this.level, required this.content, this.anchor});
 
   /// 2..6. The article title is the only level-1 heading and is not a block.
-  final int level;
-  final List<Inline> content;
+  int level;
+  List<Inline> content;
 
   /// Original element id, for in-article links.
-  final String? anchor;
+  String? anchor;
 
   @override
   String get type => 'heading';
@@ -235,9 +243,9 @@ final class HeadingBlock extends Block {
 }
 
 final class ParagraphBlock extends Block {
-  const ParagraphBlock(this.content);
+  ParagraphBlock(this.content);
 
-  final List<Inline> content;
+  List<Inline> content;
 
   @override
   String get type => 'paragraph';
@@ -249,12 +257,12 @@ final class ParagraphBlock extends Block {
 }
 
 class ListItem {
-  const ListItem({required this.blocks, this.checked});
+  ListItem({required this.blocks, this.checked});
 
-  final List<Block> blocks;
+  List<Block> blocks;
 
   /// Task-list state.
-  final bool? checked;
+  bool? checked;
 
   factory ListItem.fromJson(Json json) => ListItem(blocks: _blocks(json['blocks']), checked: json['checked'] as bool?);
 
@@ -262,13 +270,13 @@ class ListItem {
 }
 
 final class ListBlock extends Block {
-  const ListBlock({required this.ordered, this.start, required this.items});
+  ListBlock({required this.ordered, this.start, required this.items});
 
-  final bool ordered;
+  bool ordered;
 
   /// First number of an ordered list when not 1.
-  final int? start;
-  final List<ListItem> items;
+  int? start;
+  List<ListItem> items;
 
   @override
   String get type => 'list';
@@ -283,21 +291,21 @@ final class ListBlock extends Block {
   Json toJson() => {
     'type': type,
     'ordered': ordered,
-    if (start != null) 'start': start,
     'items': [for (final i in items) i.toJson()],
+    if (start != null) 'start': start,
   };
 }
 
 final class QuoteBlock extends Block {
-  const QuoteBlock({required this.blocks, this.cite, this.pull});
+  QuoteBlock({required this.blocks, this.cite, this.pull});
 
-  final List<Block> blocks;
+  List<Block> blocks;
 
   /// Attribution (`<cite>`, `<footer>` inside the quote).
-  final List<Inline>? cite;
+  List<Inline>? cite;
 
   /// Pull quote: a decorative repeat of article text.
-  final bool? pull;
+  bool? pull;
 
   @override
   String get type => 'quote';
@@ -315,19 +323,19 @@ final class QuoteBlock extends Block {
 }
 
 final class CodeBlock extends Block {
-  const CodeBlock({required this.code, required this.language, this.languageSource, this.title});
+  CodeBlock({required this.code, required this.language, this.languageSource, this.title});
 
   /// Verbatim source: line-number gutters and prompts removed, tabs kept.
-  final String code;
+  String code;
 
   /// Lowercase canonical language id, or null if unknown.
-  final String? language;
+  String? language;
 
   /// Where [language] came from: page markup, or the detector.
-  final LanguageSource? languageSource;
+  LanguageSource? languageSource;
 
   /// File name or title shown above the block.
-  final String? title;
+  String? title;
 
   @override
   String get type => 'code';
@@ -351,11 +359,11 @@ final class CodeBlock extends Block {
 
 /// One image, or a gallery when [images] has several.
 final class FigureBlock extends Block {
-  const FigureBlock({required this.images, this.caption, this.credit});
+  FigureBlock({required this.images, this.caption, this.credit});
 
-  final List<ArticleImage> images;
-  final List<Inline>? caption;
-  final List<Inline>? credit;
+  List<ArticleImage> images;
+  List<Inline>? caption;
+  List<Inline>? credit;
 
   @override
   String get type => 'figure';
@@ -376,19 +384,19 @@ final class FigureBlock extends Block {
 }
 
 final class VideoBlock extends Block {
-  const VideoBlock({required this.provider, required this.url, this.embedUrl, this.poster, this.title, this.caption});
+  VideoBlock({required this.provider, required this.url, this.embedUrl, this.poster, this.title, this.caption});
 
   /// youtube, vimeo, dailymotion, twitch, loom, wistia, ted, file, other.
-  final String provider;
+  String provider;
 
   /// Page a reader can open (watch page or file URL).
-  final String url;
+  String url;
 
   /// Embeddable player URL, when the provider has one.
-  final String? embedUrl;
-  final String? poster;
-  final String? title;
-  final List<Inline>? caption;
+  String? embedUrl;
+  String? poster;
+  String? title;
+  List<Inline>? caption;
 
   @override
   String get type => 'video';
@@ -415,13 +423,13 @@ final class VideoBlock extends Block {
 }
 
 final class AudioBlock extends Block {
-  const AudioBlock({required this.provider, required this.url, this.embedUrl, this.title, this.caption});
+  AudioBlock({required this.provider, required this.url, this.embedUrl, this.title, this.caption});
 
-  final String provider;
-  final String url;
-  final String? embedUrl;
-  final String? title;
-  final List<Inline>? caption;
+  String provider;
+  String url;
+  String? embedUrl;
+  String? title;
+  List<Inline>? caption;
 
   @override
   String get type => 'audio';
@@ -447,16 +455,16 @@ final class AudioBlock extends Block {
 
 /// A social post or other third-party embed kept as readable content.
 final class EmbedBlock extends Block {
-  const EmbedBlock({required this.provider, required this.url, this.author, this.blocks});
+  EmbedBlock({required this.provider, required this.url, this.author, this.blocks});
 
   /// twitter, mastodon, bluesky, instagram, threads, reddit, tiktok, facebook,
   /// linkedin, codepen, gist, other.
-  final String provider;
-  final String url;
-  final String? author;
+  String provider;
+  String url;
+  String? author;
 
   /// The embed's own text, when the page carried it.
-  final List<Block>? blocks;
+  List<Block>? blocks;
 
   @override
   String get type => 'embed';
@@ -479,13 +487,13 @@ final class EmbedBlock extends Block {
 }
 
 class TableCellData {
-  const TableCellData({required this.content, this.header, this.colspan, this.rowspan, this.align});
+  TableCellData({required this.content, this.header, this.colspan, this.rowspan, this.align});
 
-  final List<Inline> content;
-  final bool? header;
-  final int? colspan;
-  final int? rowspan;
-  final CellAlign? align;
+  List<Inline> content;
+  bool? header;
+  int? colspan;
+  int? rowspan;
+  CellAlign? align;
 
   factory TableCellData.fromJson(Json json) => TableCellData(
     content: _inlines(json['content']),
@@ -505,9 +513,9 @@ class TableCellData {
 }
 
 class TableRowData {
-  const TableRowData(this.cells);
+  TableRowData(this.cells);
 
-  final List<TableCellData> cells;
+  List<TableCellData> cells;
 
   factory TableRowData.fromJson(Json json) =>
       TableRowData([for (final e in json['cells'] as List) TableCellData.fromJson(e as Json)]);
@@ -518,15 +526,15 @@ class TableRowData {
 }
 
 final class TableBlock extends Block {
-  const TableBlock({this.caption, required this.rows, this.headerRows});
+  TableBlock({this.caption, required this.rows, this.headerRows});
 
-  final List<Inline>? caption;
+  List<Inline>? caption;
 
   /// Rows in order; header rows first.
-  final List<TableRowData> rows;
+  List<TableRowData> rows;
 
   /// Number of leading rows that form the header.
-  final int? headerRows;
+  int? headerRows;
 
   @override
   String get type => 'table';
@@ -540,8 +548,8 @@ final class TableBlock extends Block {
   @override
   Json toJson() => {
     'type': type,
-    if (caption != null) 'caption': _inlinesJson(caption!),
     'rows': [for (final r in rows) r.toJson()],
+    if (caption != null) 'caption': _inlinesJson(caption!),
     if (headerRows != null) 'headerRows': headerRows,
   };
 }
@@ -557,11 +565,11 @@ final class RuleBlock extends Block {
 }
 
 final class MathBlock extends Block {
-  const MathBlock({this.tex, this.mathml, required this.text});
+  MathBlock({this.tex, this.mathml, required this.text});
 
-  final String? tex;
-  final String? mathml;
-  final String text;
+  String? tex;
+  String? mathml;
+  String text;
 
   @override
   String get type => 'math';
@@ -570,14 +578,14 @@ final class MathBlock extends Block {
       MathBlock(tex: json['tex'] as String?, mathml: json['mathml'] as String?, text: json['text'] as String);
 
   @override
-  Json toJson() => {'type': type, if (tex != null) 'tex': tex, if (mathml != null) 'mathml': mathml, 'text': text};
+  Json toJson() => {'type': type, 'text': text, if (tex != null) 'tex': tex, if (mathml != null) 'mathml': mathml};
 }
 
 class Definition {
-  const Definition({required this.term, required this.details});
+  Definition({required this.term, required this.details});
 
-  final List<Inline> term;
-  final List<Block> details;
+  List<Inline> term;
+  List<Block> details;
 
   factory Definition.fromJson(Json json) => Definition(term: _inlines(json['term']), details: _blocks(json['details']));
 
@@ -585,9 +593,9 @@ class Definition {
 }
 
 final class DefinitionListBlock extends Block {
-  const DefinitionListBlock(this.items);
+  DefinitionListBlock(this.items);
 
-  final List<Definition> items;
+  List<Definition> items;
 
   @override
   String get type => 'definitions';
@@ -603,10 +611,10 @@ final class DefinitionListBlock extends Block {
 }
 
 final class DetailsBlock extends Block {
-  const DetailsBlock({required this.summary, required this.blocks});
+  DetailsBlock({required this.summary, required this.blocks});
 
-  final List<Inline> summary;
-  final List<Block> blocks;
+  List<Inline> summary;
+  List<Block> blocks;
 
   @override
   String get type => 'details';
@@ -620,11 +628,11 @@ final class DetailsBlock extends Block {
 
 /// Admonitions; [variant] is null when unstyled.
 final class CalloutBlock extends Block {
-  const CalloutBlock({required this.variant, this.title, required this.blocks});
+  CalloutBlock({required this.variant, this.title, required this.blocks});
 
-  final CalloutVariant? variant;
-  final List<Inline>? title;
-  final List<Block> blocks;
+  CalloutVariant? variant;
+  List<Inline>? title;
+  List<Block> blocks;
 
   @override
   String get type => 'callout';
@@ -639,17 +647,17 @@ final class CalloutBlock extends Block {
   Json toJson() => {
     'type': type,
     'variant': variant?.name,
-    if (title != null) 'title': _inlinesJson(title!),
     'blocks': _blocksJson(blocks),
+    if (title != null) 'title': _inlinesJson(title!),
   };
 }
 
 class Footnote {
-  const Footnote({required this.id, required this.label, required this.blocks});
+  Footnote({required this.id, required this.label, required this.blocks});
 
-  final String id;
-  final String label;
-  final List<Block> blocks;
+  String id;
+  String label;
+  List<Block> blocks;
 
   factory Footnote.fromJson(Json json) =>
       Footnote(id: json['id'] as String, label: json['label'] as String, blocks: _blocks(json['blocks']));
@@ -658,9 +666,9 @@ class Footnote {
 }
 
 final class FootnotesBlock extends Block {
-  const FootnotesBlock(this.items);
+  FootnotesBlock(this.items);
 
-  final List<Footnote> items;
+  List<Footnote> items;
 
   @override
   String get type => 'footnotes';
@@ -676,7 +684,7 @@ final class FootnotesBlock extends Block {
 }
 
 class Article {
-  const Article({
+  Article({
     this.schema = articleSchema,
     required this.url,
     required this.title,
@@ -696,38 +704,38 @@ class Article {
     required this.blocks,
   });
 
-  final int schema;
+  int schema;
 
   /// Canonical URL when the page declares one on the same site, else the
   /// fetched URL.
-  final String url;
-  final String title;
+  String url;
+  String title;
 
   /// Standfirst / dek.
-  final String? subtitle;
+  String? subtitle;
 
   /// Display byline, e.g. "Jane Doe and John Roe".
-  final String? byline;
-  final List<String> authors;
-  final String? siteName;
+  String? byline;
+  List<String> authors;
+  String? siteName;
 
   /// ISO 8601.
-  final String? publishedAt;
-  final String? modifiedAt;
+  String? publishedAt;
+  String? modifiedAt;
 
   /// BCP 47 tag, e.g. `en`, `pt-BR`.
-  final String? language;
-  final ArticleDirection dir;
+  String? language;
+  ArticleDirection dir;
 
   /// One or two sentences: the page description or the opening of the text.
-  final String? excerpt;
-  final ArticleImage? leadImage;
-  final String? favicon;
-  final int wordCount;
+  String? excerpt;
+  ArticleImage? leadImage;
+  String? favicon;
+  int wordCount;
 
   /// Rounded up, at least 1.
-  final int readingMinutes;
-  final List<Block> blocks;
+  int readingMinutes;
+  List<Block> blocks;
 
   factory Article.fromJson(Json json) {
     final lead = json['leadImage'];
