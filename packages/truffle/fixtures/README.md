@@ -9,6 +9,12 @@ Regenerate the expectations from the TypeScript reference with
 `UPDATE=1 bun test test/conformance.test.ts` after an intentional engine
 change, review the diff, and keep the Dart port passing.
 
+Each page also has `expected/<name>.md`, its `article.markdown` with
+`markdown: true`, and `markdown/cases.json` lists blocks with the Markdown
+`blocksMarkdown` writes for them (escaping, marks, lists, tables, footnotes,
+callouts). Both engines must reproduce them byte for byte;
+`UPDATE=1 bun test test/markdown.test.ts` regenerates them.
+
 Beyond these fixtures, the Dart port is checked against the reference on the
 whole eval corpus: `bun scripts/parity-dump.ts` here, then
 `dart run tool/parity.dart` in `packages/truffle_dart` (see its README).
