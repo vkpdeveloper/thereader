@@ -5,7 +5,8 @@ const MAX_URL_LENGTH = 2048;
 const MAX_REDIRECTS = 5;
 const TIMEOUT_MS = 15_000;
 
-const UPSTREAM_HEADERS = {
+/** Some publishers (Wikipedia among them) refuse requests that do not look like a browser. */
+export const UPSTREAM_HEADERS = {
   "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
   Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
   "Accept-Language": "en-US,en;q=0.9",

@@ -114,7 +114,7 @@ async function route(request: Request, env: Env, ctx: ExecutionContext): Promise
 
   if (url.pathname === "/v1/link-preview") {
     if (request.method !== "GET") throw new ApiError(405, "METHOD_NOT_ALLOWED", "Method not allowed.", { Allow: "GET, OPTIONS" });
-    return linkPreview(request);
+    return linkPreview(request, ctx);
   }
 
   if (url.pathname === "/v1/article-source") {

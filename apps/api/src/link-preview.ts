@@ -1,7 +1,11 @@
 import { ApiError } from "./errors";
+import { UPSTREAM_HEADERS } from "./article-source";
 
 const MAX_HTML_BYTES = 128 * 1024;
 const MAX_URL_LENGTH = 2048;
+/** A page's title, description and icon rarely change; an unreachable page is retried sooner. */
+const PREVIEW_CACHE = "public, max-age=86400";
+const FALLBACK_CACHE = "public, max-age=300";
 
 function safeUrl(value: string): URL {
   if (!value || value.length > MAX_URL_LENGTH) throw new ApiError(400, "INVALID_URL", "Invalid preview URL.");
@@ -85,15 +89,32 @@ async function readHead(response: Response): Promise<string> {
   return html;
 }
 
-export async function linkPreview(request: Request, fetcher: typeof fetch = fetch): Promise<Response> {
-  let target = safeUrl(new URL(request.url).searchParams.get("url") ?? "");
+/**
+ * Title, description and icon of a public https page, read from its head.
+ * Redirects are followed by hand so every hop is re-validated. Results are
+ * kept in the edge cache of each data centre, so a link previewed again (by
+ * any reader) does not fetch the page again.
+ */
+export async function linkPreview(request: Request, ctx: ExecutionContext, fetcher: typeof fetch = fetch): Promise<Response> {
+  const requested = safeUrl(new URL(request.url).searchParams.get("url") ?? "");
+  const cache = await caches.open("link-preview");
+  const cacheKey = new Request(`${new URL(request.url).origin}/v1/link-preview?url=${encodeURIComponent(requested.href)}`);
+  const cached = await cache.match(cacheKey);
+  if (cached !== undefined) return cached;
+  const response = await fetchPreview(requested, fetcher);
+  ctx.waitUntil(cache.put(cacheKey, response.clone()));
+  return response;
+}
+
+async function fetchPreview(requested: URL, fetcher: typeof fetch): Promise<Response> {
+  let target = requested;
   const fallback = () => ({ url: target.href, title: target.hostname, description: "", faviconUrl: "" });
   try {
     for (let redirect = 0; redirect < 3; redirect++) {
       const response = await fetcher(target.href, {
         redirect: "manual",
         signal: AbortSignal.timeout(6000),
-        headers: { Accept: "text/html,application/xhtml+xml" },
+        headers: { ...UPSTREAM_HEADERS, Accept: "text/html,application/xhtml+xml" },
       });
       if (response.status >= 300 && response.status < 400) {
         const location = response.headers.get("Location");
@@ -103,8 +124,8 @@ export async function linkPreview(request: Request, fetcher: typeof fetch = fetc
       }
       if (!response.ok || !/^(?:text\/html|application\/xhtml\+xml)/i.test(response.headers.get("Content-Type") ?? "")) break;
       const metadata = parseLinkMetadata(await readHead(response), target);
-      return Response.json({ url: target.href, ...metadata }, { headers: { "Cache-Control": "public, max-age=3600" } });
+      return Response.json({ url: target.href, ...metadata }, { headers: { "Cache-Control": PREVIEW_CACHE } });
     }
   } catch { /* Unavailable pages still show a domain preview. */ }
-  return Response.json(fallback(), { headers: { "Cache-Control": "public, max-age=300" } });
+  return Response.json(fallback(), { headers: { "Cache-Control": FALLBACK_CACHE } });
 }
