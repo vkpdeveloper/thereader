@@ -6,10 +6,12 @@ import { ContentsList, FloatingToc, HighlightsList, SearchBook } from '../compon
 import { FontPicker, TypographyPanel } from '../components/reader/TypographyPanel';
 import { FloatingBar, HighlightActions, NoteEditor, SelectionActions } from '../components/reader/Floating';
 import { useLinkPreview } from '../components/reader/useLinkPreview';
+import { useInk } from '../components/ink/useInk';
 import { LoadingLine, StateMessage } from '../components/states';
 import { useToast } from '../components/toast';
 import { useCanHover, useDocumentTitle, useGoBack, useIsDesktop, useWakeLock, isTypingTarget } from '../lib/hooks';
 import { engineColors, parseHighlightColor } from '../lib/themes';
+import { bookInkId } from '../lib/services/ink';
 import { useServices, useStore } from '../lib/services/react';
 import { MAX_FONT_SIZE, MIN_FONT_SIZE, type Highlight, type HighlightColor, type LibraryEntry, type ReaderPreferences, type ReadingLocator } from '../lib/types';
 import type { EngineCallbacks, PageInfo, ReaderEngine, SelectionInfo } from '../reader/engine';
@@ -278,8 +280,73 @@ export function ReaderScreen() {
   /** Right-to-left books turn pages leftwards: the arrows, click zones and swipes follow. */
   const rtl = engine?.info.readingProgression === 'rtl' && settings.reader.flow === 'paginated';
 
+  // ------------------------------------------------------------ pen
+
+  // The engine draws the strokes inside the page, so they turn and scroll
+  // with the text; this layer above the page only takes the pen's input.
+  const inkInput = useRef<HTMLDivElement>(null);
+  const inkDocId = bookInkId((session.current ?? entry)?.book.sha256 ?? '');
+  const bookInk = services.ink.strokes(inkDocId);
+  /** A finger under the pen once a stylus has been used: it turns pages or scrolls. */
+  const passing = useRef<{ x: number; y: number; lastY: number } | null>(null);
+  const ink = useInk({
+    docId: inkDocId,
+    ready: engine != null,
+    point: (e) => engineRef.current?.inkPoint(e.clientX, e.clientY) ?? null,
+    live: (points, pen) => engineRef.current?.drawLiveInk(points, pen),
+    anchor: (points) => engineRef.current?.anchorInk(points) ?? null,
+    hits: (x, y, reach) => engineRef.current?.inkHits(x, y, reach) ?? [],
+    clearable: () => engineRef.current?.inkOnScreen() ?? [],
+    clearLabel: 'Clear page',
+    pass: (phase, e) => {
+      const eng = engineRef.current;
+      if (!eng) return;
+      const paginated = settings.reader.flow === 'paginated';
+      if (phase === 'down') {
+        passing.current = { x: e.clientX, y: e.clientY, lastY: e.clientY };
+        return;
+      }
+      const start = passing.current;
+      if (!start) return;
+      if (phase === 'move') {
+        if (!paginated) eng.panBy(start.lastY - e.clientY);
+        start.lastY = e.clientY;
+        return;
+      }
+      passing.current = null;
+      const dx = e.clientX - start.x;
+      const dy = e.clientY - start.y;
+      if (paginated && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) void (dx < 0 !== rtl ? eng.next() : eng.previous());
+    },
+  });
+
+  useEffect(() => {
+    engine?.setInk(bookInk);
+  }, [engine, bookInk]);
+
+  // Picking up the pen clears the controls off the page.
+  useEffect(() => {
+    if (!ink.active) return;
+    cancelChromeHide();
+    hoverReveal.current = false;
+    setChrome(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ink.active]);
+
+  // A wheel over the pen's layer turns pages or scrolls as it would over the page.
+  useEffect(() => {
+    const el = inkInput.current;
+    if (!ink.active || !engine || !el) return;
+    const onWheel = (e: WheelEvent) => engine.wheel(e);
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [ink.active, engine]);
+
   const handleKey = (e: KeyboardEvent, fromFrame: boolean) => {
     if (hasOpenOverlay()) return;
+    // The pen's keys: TanStack Hotkeys handles those typed on the page; the
+    // frame's are forwarded here and matched against the same bindings.
+    if (fromFrame ? ink.handleKey(e) : ink.claims(e)) return;
     if (!fromFrame && isTypingTarget(e.target)) return;
     const eng = engineRef.current;
     const key = e.key;
@@ -402,6 +469,7 @@ export function ReaderScreen() {
       setLocator(loc);
       setPage(engineRef.current?.page ?? null);
       scheduleSave();
+      if (ink.active && settings.reader.flow === 'scrolled') ink.nudge();
     },
     onSelection(sel) {
       setPopover(null);
@@ -745,7 +813,7 @@ export function ReaderScreen() {
     </Sheet>
   );
 
-  const showFloatingToc = desktop && engine != null;
+  const showFloatingToc = desktop && engine != null && !ink.active;
 
   return (
     <div className="reader" data-flow={settings.reader.flow} onMouseMove={(e) => handleReaderPointer(e.clientY)}>
@@ -792,12 +860,14 @@ export function ReaderScreen() {
                 fullscreen={fullscreen}
                 onFullscreen={toggleFullscreen}
                 onShortcuts={() => setShortcuts(true)}
+                draw={ink.button}
                 onMouseLeave={() => {
                   if (canHover) scheduleChromeHide();
                 }}
               />
+              {ink.active && <div ref={inkInput} className="reader-ink-input" aria-label="Drawing canvas" {...ink.input} />}
               <BottomChrome
-                visible={chrome}
+                visible={chrome && !ink.active}
                 locator={locator}
                 page={page}
                 rtl={rtl}
@@ -841,6 +911,7 @@ export function ReaderScreen() {
         </Sheet>
       )}
       <ShortcutsDialog open={shortcuts} rtl={rtl} onClose={() => setShortcuts(false)} />
+      {ink.toolbar}
     </div>
   );
 }

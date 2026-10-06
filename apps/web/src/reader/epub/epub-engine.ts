@@ -1,3 +1,5 @@
+import type { InkPen } from '../../lib/inkPaths';
+import type { InkStroke } from '../../lib/services/ink';
 import type { Highlight, ReaderPreferences, ReadingLocator } from '../../lib/types';
 import type {
   EngineCallbacks,
@@ -10,6 +12,7 @@ import type {
   TocEntry,
 } from '../engine';
 import { parseMarkup, prepareChapter, type PreparedChapter } from './chapter';
+import { InkLayer } from './ink';
 import { clearMarks, drawMarks, type MarkSpan } from './marks';
 import type { EpubPackage, SpineItem } from './package';
 import { isExternal, normalizePath, resolveRef, safeDecode, splitHref } from './path';
@@ -136,6 +139,7 @@ export class EpubEngine implements ReaderEngine {
   private turnAnimation: Animation | null = null;
   private readonly reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   private readonly cleanup: (() => void)[] = [];
+  private readonly ink: InkLayer;
 
   constructor(
     private readonly zip: ZipArchive,
@@ -177,6 +181,14 @@ export class EpubEngine implements ReaderEngine {
     this.frame.style.background = this.colors.paper;
     this.wrapper.append(this.frame);
     container.append(this.wrapper);
+    this.ink = new InkLayer({
+      doc: () => this.doc,
+      frame: this.frame,
+      index: () => (this.current && !this.current.failed && this.doc?.body ? this.textIndex() : null),
+      href: () => this.current?.href ?? null,
+      isCurrent: (href) => this.current !== null && this.spineIndexFor(href) === this.current.index,
+      find: (quote) => this.anchor(quote, null),
+    });
   }
 
   // ---------------------------------------------------------------- setup
@@ -420,6 +432,7 @@ export class EpubEngine implements ReaderEngine {
     html.replaceChild(body, doc.body);
     this.layout();
     this.drawHighlights();
+    this.ink.redraw();
   }
 
   /** Applies geometry and preference CSS to the mounted chapter. */
@@ -1016,6 +1029,7 @@ export class EpubEngine implements ReaderEngine {
       this.fragmentPositions.clear();
       if (this.geometry.mode === 'fixed') {
         this.layoutFixed();
+        this.ink.redraw();
         return;
       }
       this.measure();
@@ -1025,6 +1039,7 @@ export class EpubEngine implements ReaderEngine {
       } else if (this.geometry.mode === 'paginated') {
         this.setPage(this.pageIndex);
       }
+      this.ink.redraw();
     };
     this.relayoutFrame = requestAnimationFrame(run);
     this.relayoutTimer = window.setTimeout(run, 150);
@@ -1240,12 +1255,58 @@ export class EpubEngine implements ReaderEngine {
     this.layout();
     this.position(target);
     this.sticky = target;
+    this.ink.redraw();
     this.emitLocator();
   }
 
   setHighlights(highlights: Highlight[]): void {
     this.highlights = highlights.filter((h) => !h.deleted);
     if (this.current) this.drawHighlights();
+  }
+
+  // ---------------------------------------------------------------- ink
+
+  setInk(strokes: InkStroke[]): void {
+    this.ink.set(strokes);
+  }
+
+  inkPoint(x: number, y: number): [number, number] | null {
+    return this.current && !this.destroyed ? this.ink.point(x, y) : null;
+  }
+
+  drawLiveInk(points: number[] | null, pen: InkPen): void {
+    if (!this.destroyed) this.ink.live(points, pen);
+  }
+
+  anchorInk(points: number[]): Pick<InkStroke, 'anchor' | 'points'> | null {
+    return this.current && !this.destroyed ? this.ink.anchor(points) : null;
+  }
+
+  inkHits(x: number, y: number, reach: number): InkStroke[] {
+    return this.ink.hits(x, y, reach);
+  }
+
+  inkOnScreen(): InkStroke[] {
+    return this.current && !this.destroyed ? this.ink.onScreen() : [];
+  }
+
+  wheel(e: WheelEvent): void {
+    if (!this.current || this.destroyed || e.ctrlKey) return;
+    if (e.deltaX || e.deltaY) this.cb.onReadingGesture();
+    if (this.geometry.mode !== 'scrolled') {
+      this.onWheel(e);
+      return;
+    }
+    e.preventDefault();
+    this.sticky = null;
+    const scale = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? this.scroller().clientHeight : 1;
+    this.win.scrollBy({ top: e.deltaY * scale, behavior: 'auto' });
+  }
+
+  panBy(dy: number): void {
+    if (!this.current || this.destroyed || this.geometry.mode !== 'scrolled') return;
+    this.sticky = null;
+    this.win.scrollBy({ top: dy, behavior: 'auto' });
   }
 
   async search(query: string, signal?: AbortSignal): Promise<SearchMatch[]> {
