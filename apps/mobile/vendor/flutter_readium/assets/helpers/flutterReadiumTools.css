@@ -127,3 +127,34 @@ td, th {
 /* Images keep intrinsic size and never blow past reading measure. */
 :root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) body:not(.flutter-readium-spotlight-active) img:not(:is(.MathJax_SVG, .inline_math, .display_math) img[style*="height"]),
 img:not(:is(.MathJax_SVG, .inline_math, .display_math) img[style*="height"]) { width: auto !important; max-width: 100% !important; height: auto !important; box-sizing: border-box !important; }
+
+/* THEREADER PATCH: content enhancer (apps/mobile/assets/reader in the app).
+   Once it has run (<html data-tr-enhanced>), tables are real tables again:
+   the upstream script above restacks every headed table into grey labelled
+   cards, while the enhancer wraps wide ones in a horizontal scroll box. And a
+   display formula's inline wrapper (MathJax's inline-block span) becomes a block, so the formula centres
+   and its scroll box is bounded by the column. */
+:root[data-tr-enhanced]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) table.has-header { border: revert !important; }
+:root[data-tr-enhanced]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) table.has-header tr,
+:root[data-tr-enhanced]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) table.has-header thead tr:first-child,
+:root[data-tr-enhanced]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) table.has-first-row-headers tr:first-child {
+  display: table-row !important;
+  margin: 0 !important;
+}
+:root[data-tr-enhanced]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) table.has-header tr td {
+  display: table-cell !important;
+  width: auto !important;
+}
+:root[data-tr-enhanced]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) table.has-header tr td::before { content: none !important; display: none !important; }
+:root[data-tr-enhanced]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) table.has-header tr td.mobile-header {
+  background-color: transparent !important;
+  text-transform: none !important;
+}
+:root[data-tr-enhanced]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) .tr-table-scroll:not(.tr-wrap) > table {
+  width: auto !important;
+  word-break: normal !important;
+}
+:root[data-tr-enhanced]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) :is(span, a, i, em, b, strong, sup, sub, label):has(> [data-tr-display]) {
+  display: block !important;
+  max-width: 100% !important;
+}

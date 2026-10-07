@@ -41,6 +41,11 @@ Local changes:
   `.tr-table-scroll` boxes (display maths stays centred, wide tables scroll).
   Images it inverts (`.tr-ink`) get no light backing, and equation images in
   MathJax/inline/display maths wrappers keep the publisher's inline height.
+  In enhanced documents the upstream script's restacked table layout (grey
+  `data-th` label cards on every headed table) is undone in CSS, so tables
+  are tables and wide ones scroll in the enhancer's box, and an inline
+  wrapper around a display formula (MathJax's inline-block span) becomes a
+  block so the formula centres and scrolls within the column.
 - Host fonts: the `fontFamilies` creation param (accepted by all three
   `ReadiumReaderWidget` variants) lists the app's bundled fonts.
   `HostFontFamilies.kt` and `HostFontFamilies.swift` validate those entries

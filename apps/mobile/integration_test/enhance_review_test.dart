@@ -59,7 +59,7 @@ class _Stop {
   final String? query;
 }
 
-const _stops = [
+final _stops = [
   _Stop(
     'nobs-ch1',
     'nobs',
@@ -95,8 +95,21 @@ const _stops = [
     'index_split_001.html#p111',
     query: 'Two affine subsets parallel to U are equal or disjoint',
   ),
-  _Stop('sampler-1', 'sampler', ''),
-  _Stop('sampler-1-paginated', 'sampler', '', flow: ReaderFlow.paginated),
+  // apps/web/fixtures/enhance-sampler.epub
+  for (final c in ['mathml', 'tex', 'code', 'images', 'table', 'pdf'])
+    _Stop('sampler-$c', 'sampler', 'OEBPS/$c.xhtml'),
+  _Stop(
+    'sampler-code-paginated',
+    'sampler',
+    'OEBPS/code.xhtml',
+    flow: ReaderFlow.paginated,
+  ),
+  _Stop(
+    'sampler-mathml-paginated',
+    'sampler',
+    'OEBPS/mathml.xhtml',
+    flow: ReaderFlow.paginated,
+  ),
 ];
 
 Future<String> _get(String path) async {
@@ -198,14 +211,24 @@ void main() {
       await settle(800);
     }
 
+    ReadiumReaderController? current;
+    String? currentKey;
     for (final stop in _stops) {
       if (only != null && !only.contains(stop.name)) continue;
       if (!await fetch(stop.book)) {
         await _log('${stop.name}: no ${stop.book}.epub on the host, skipped');
         continue;
       }
+      // Consecutive stops in the same book and settings share one opening:
+      // NOBS alone takes over a minute to open on a simulator.
+      final key = '${stop.book}/${stop.flow}/${stop.theme}';
+      if (current != null && currentKey != key) {
+        await close(current);
+        current = null;
+      }
       final prefs = ReaderPreferences(flow: stop.flow, themeId: stop.theme);
-      final controller = await open(stop.book, prefs);
+      final controller = current ??= await open(stop.book, prefs);
+      currentKey = key;
       if (stop.href.isNotEmpty) {
         // Fragment as a location, not in the href: Readium Swift looks the
         // href up in the reading order verbatim.
@@ -240,8 +263,8 @@ void main() {
       await settle();
       await _log('${stop.name}: at ${controller.locator.value?.toJson()}');
       await _get('/shot/${stop.name}');
-      await close(controller);
     }
+    if (current != null) await close(current);
 
     if (_shotsOnly || (only != null && !only.contains('checks'))) {
       await root.delete(recursive: true);
