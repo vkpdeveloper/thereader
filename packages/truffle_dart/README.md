@@ -179,29 +179,50 @@ keeps regular expressions interpreted, as in AOT; `--callers`, `--within`), and
 `tool/profile_aot.dart` is a load for a native sampler on an unstripped AOT snapshot, whose
 symbols name the Dart functions (`dart compile aot-snapshot`, `dartaotruntime`, macOS `sample`).
 
-The performance pass against the port before it (84a0a8b), on an Apple M5 at load average ~4
-from other work, 326 corpus pages, 3 ABBA rounds × 5 timed runs, AOT, ms per page:
+The performance pass against the port before it (84a0a8b), on an Apple M5 at load average ~3
+from other work, 326 corpus pages, `bench_compare.dart --rounds 3 --runs 5 --rss-pages 8` (3 ABBA
+rounds × 5 timed runs), AOT, ms per page:
 
-| | median before → after | p95 before → after | mean before → after | corpus total | speedup |
+| ms per page | median before → after | p95 before → after | mean before → after | corpus total before → after | speedup (total) |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| parse (package:html) | 3.55 → 3.35 | 22.6 → 22.5 | 6.81 → 6.82 | 2221 → 2224 ms | 1.00x |
-| `fromDocument` | 0.50 → 0.26 | 3.08 → 1.71 | 0.98 → 0.51 | 319 → 166 ms | 1.92x |
-| `extractTree` | 0.77 → 0.71 | 20.4 → 9.85 | 3.56 → 2.25 | 1162 → 735 ms | 1.58x |
-| `articleMarkdown` | 0.04 → 0.04 | 0.54 → 0.51 | 0.22 → 0.21 | 72 → 68 ms | 1.06x |
-| `extractHtml(markdown: true)` | 5.22 → 4.83 | 42.8 → 26.7 | 11.7 → 9.92 | 3821 → 3235 ms | 1.18x |
+| parse (package:html) | 2.45 → 2.41 | 16.44 → 17.43 | 4.89 → 4.89 | 1593.7 → 1593.2 | 1.00x |
+| `fromDocument` | 0.31 → 0.14 | 2.32 → 1.07 | 0.67 → 0.32 | 219.7 → 105.4 | 2.08x |
+| `extractTree` | 0.55 → 0.50 | 14.73 → 6.95 | 2.55 → 1.57 | 830.6 → 513.0 | 1.62x |
+| `articleMarkdown` | 0.03 → 0.03 | 0.36 → 0.36 | 0.16 → 0.15 | 50.98 → 48.81 | 1.04x |
+| parse + `fromDocument` + `extractTree` | 3.61 → 3.22 | 29.41 → 18.70 | 8.14 → 6.80 | 2655.2 → 2215.3 | 1.20x |
+| `extractHtml(markdown: true)` | 3.68 → 3.35 | 30.46 → 18.55 | 8.29 → 6.95 | 2704.1 → 2265.6 | 1.19x |
 
-Pages over 1 MB: 84.8 → 64.8 ms median for `extractHtml(markdown: true)`. Memory (allocation
-JIT, MB per page median / p95 / mean; RSS AOT):
+| `extractHtml(markdown: true)` ms by HTML size, median before → after | <50KB (35) | 50-200KB (176) | 200-500KB (76) | 0.5-1MB (21) | >1MB (18) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `fromDocument` | 0.11 → 0.05 | 0.28 → 0.13 | 0.44 → 0.21 | 0.59 → 0.29 | 4.40 → 1.81 |
+| `extractTree` | 0.48 → 0.39 | 0.44 → 0.40 | 0.65 → 0.59 | 1.08 → 0.98 | 18.35 → 11.78 |
+| `extractHtml(markdown: true)` | 1.38 → 1.24 | 2.91 → 2.62 | 5.48 → 5.28 | 10.21 → 9.89 | 60.97 → 45.24 |
 
-| | before | after |
+Memory: peak RSS of AOT processes (coarse; the whole-corpus figure moves by a few MB between runs),
+and allocation and live sizes per page from the JIT (AOT allocates the same objects):
+
+| peak RSS (AOT), MB | before | after |
 | --- | ---: | ---: |
-| allocated by `fromDocument` | 0.64 / 4.55 / 1.36 | 0.30 / 2.00 / 0.65 |
-| allocated by `extractTree` | 0.40 / 5.13 / 1.49 | 0.38 / 4.52 / 1.18 |
-| allocated by `extractHtml(markdown: true)` (parse: 3.7 of the 4.4 GB) | 7.40 / 41.4 / 14.5 | 6.99 / 37.1 / 13.4 |
-| live `VDocument` | 0.52 / 3.90 / 1.08 | 0.46 / 3.37 / 0.97 |
-| live `Document` + `VDocument` (peak of live data) | 1.13 / 6.99 / 2.23 | 0.93 / 5.54 / 1.84 |
-| peak RSS, whole corpus in one process | 217 MB | 213 MB |
-| peak RSS for one page, frwiki Paris (3 MB) / dewiki Berlin (1.7 MB) | 87.7 / 71.7 MB | 86.9 / 61.5 MB |
+| whole corpus, one process (lowest of 3) | 219.9 | 221.5 |
+| curated-frwiki-paris (3057 KB): page peak over RSS before | 87.7 | 86.9 |
+| curated-wiki-fourier (2244 KB): page peak over RSS before | 82.0 | 78.1 |
+| curated-ruwiki-moscow (2142 KB): page peak over RSS before | 73.3 | 68.1 |
+| curated-wiki-tokyo (1936 KB): page peak over RSS before | 73.7 | 63.1 |
+| curated-arwiki-cairo (1759 KB): page peak over RSS before | 68.2 | 62.4 |
+| curated-figma-multiplayer (1694 KB): page peak over RSS before | 35.4 | 35.1 |
+| curated-stripe-docs-payment (1681 KB): page peak over RSS before | 38.3 | 38.5 |
+| curated-dewiki-berlin (1663 KB): page peak over RSS before | 72.2 | 61.5 |
+
+| MB per page (JIT) | median before → after | p95 before → after | mean before → after | corpus total before → after |
+| --- | ---: | ---: | ---: | ---: |
+| allocated: parse (package:html) | 5.95 → 5.96 | 35.37 → 35.37 | 11.23 → 11.29 | 3662 → 3680 |
+| allocated: `fromDocument` | 0.64 → 0.30 | 4.55 → 1.95 | 1.36 → 0.61 | 444 → 198 |
+| allocated: `extractTree` | 0.40 → 0.38 | 5.13 → 4.52 | 1.49 → 1.18 | 485 → 385 |
+| allocated: `articleMarkdown` | 0.06 → 0.06 | 0.99 → 0.99 | 0.35 → 0.35 | 113 → 114 |
+| allocated: `extractHtml(markdown: true)` | 7.40 → 7.00 | 41.44 → 37.05 | 14.47 → 13.45 | 4716 → 4384 |
+| live: package:html `Document` | 0.75 → 0.75 | 4.24 → 4.24 | 1.50 → 1.50 | 488 → 488 |
+| live: `Document` + `VDocument` (end of `fromDocument`) | 1.13 → 0.93 | 7.00 → 5.54 | 2.23 → 1.84 | 727 → 601 |
+| live: `VDocument` | 0.52 → 0.46 | 3.90 → 3.37 | 1.08 → 0.97 | 351 → 315 |
 
 Parse is now about 70% of the pipeline and nearly all of its allocation, and package:html offers
 no way to do less of it without changing the tree. What the pass changed, in order of effect:

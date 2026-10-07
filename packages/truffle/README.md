@@ -110,34 +110,35 @@ median, p95, mean and corpus total, by HTML size and for the slowest pages. Memo
 sampling heap profiler in Chromium: bytes allocated per phase, and bytes retained by the tree and
 by the final output; the script's header says what each figure means and how precise it is.
 
-On the eval corpus (326 pages; an Apple M-series machine with 4 performance cores, shared with other
-work, so the times are indicative), baseline 84a0a8b → this version, `bun scripts/bench.ts --runs 10`.
-Time per page in ms (the median of 10 runs per page), Chromium, the web app's runtime:
+On the eval corpus (326 pages; Apple M5, load average ~3 from other work, so absolute times are
+indicative while the ratios hold, both builds sharing the load), baseline 84a0a8b → this version,
+`bun scripts/bench.ts --runs 10`. Time per page in ms (the median of 10 runs per page), Chromium,
+the web app's runtime:
 
 | phase | median | p95 | mean | corpus total | speedup (total) | per-page speedup (median) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| fromDom | 0.37 → 0.28 | 2.53 → 1.84 | 0.82 → 0.60 | 266 → 195 | 1.36× | 1.31× |
-| extractTree | 0.64 → 0.51 | 5.63 → 4.70 | 1.54 → 1.23 | 501 → 401 | 1.25× | 1.22× |
-| markdown | 0.03 → 0.02 | 0.28 → 0.26 | 0.11 → 0.09 | 36.1 → 31.0 | 1.16× | 1.02× |
-| extract | 1.07 → 0.83 | 7.71 → 6.50 | 2.46 → 1.91 | 801 → 623 | 1.29× | 1.26× |
+| fromDom | 0.38 → 0.28 | 2.36 → 1.78 | 0.80 → 0.60 | 262 → 194 | 1.35× | 1.32× |
+| extractTree | 0.63 → 0.51 | 5.48 → 4.67 | 1.52 → 1.22 | 494 → 397 | 1.25× | 1.22× |
+| markdown | 0.03 → 0.03 | 0.27 → 0.25 | 0.11 → 0.09 | 35.6 → 30.5 | 1.16× | 1.05× |
+| extract | 1.07 → 0.85 | 8.07 → 6.13 | 2.43 → 1.90 | 791 → 619 | 1.28× | 1.26× |
 
 Memory per page in Chromium (allocated: everything the phase allocates, garbage included;
 retained: what the tree and the final output hold after a full collection):
 
 | metric | median | p95 | mean | corpus total | change (total) |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| allocated: fromDom | 274.5 KB → 219.9 KB | 2.14 MB → 1.65 MB | 594.4 KB → 473.5 KB | 193.79 MB → 154.36 MB | -20.3% |
-| allocated: extractTree | 818.4 KB → 216.0 KB | 7.35 MB → 2.34 MB | 2.00 MB → 592.4 KB | 652.96 MB → 193.11 MB | -70.4% |
-| allocated: markdown | 22.0 KB → 18.2 KB | 359.4 KB → 311.6 KB | 131.8 KB → 115.9 KB | 42.95 MB → 37.78 MB | -12.0% |
-| allocated: extract (full) | 1.21 MB → 568.2 KB | 9.20 MB → 4.17 MB | 2.98 MB → 1.32 MB | 970.40 MB → 429.08 MB | -55.8% |
-| retained: tree | 207.2 KB → 165.6 KB | 1.47 MB → 1.26 MB | 413.8 KB → 332.5 KB | 134.91 MB → 108.39 MB | -19.7% |
-| retained: output | 32.6 KB → 25.2 KB | 339.0 KB → 343.5 KB | 117.1 KB → 99.3 KB | 38.19 MB → 32.39 MB | -15.2% |
+| allocated: fromDom | 280.4 KB → 217.8 KB | 2.05 MB → 1.65 MB | 593.0 KB → 475.5 KB | 193.31 MB → 155.00 MB | -19.8% |
+| allocated: extractTree | 832.5 KB → 220.0 KB | 7.41 MB → 2.32 MB | 1.99 MB → 594.2 KB | 648.86 MB → 193.70 MB | -70.1% |
+| allocated: markdown | 21.9 KB → 19.8 KB | 357.0 KB → 309.9 KB | 130.8 KB → 115.0 KB | 42.66 MB → 37.50 MB | -12.1% |
+| allocated: extract (full) | 1.23 MB → 563.4 KB | 9.24 MB → 4.05 MB | 2.96 MB → 1.32 MB | 964.61 MB → 429.16 MB | -55.5% |
+| retained: tree | 201.0 KB → 165.2 KB | 1.50 MB → 1.23 MB | 412.4 KB → 331.3 KB | 134.43 MB → 108.00 MB | -19.7% |
+| retained: output | 33.3 KB → 24.2 KB | 352.5 KB → 317.7 KB | 117.1 KB → 98.8 KB | 38.17 MB → 32.21 MB | -15.6% |
 
 Time per page in ms under Bun (JavaScriptCore) on jsdom documents, as the tests parse:
 
 | phase | median | p95 | mean | corpus total | speedup (total) | per-page speedup (median) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| fromDom | 1.97 → 1.23 | 11.9 → 6.85 | 3.98 → 2.36 | 1296 → 768 | 1.69× | 1.65× |
-| extractTree | 0.78 → 0.64 | 5.84 → 4.78 | 1.90 → 1.47 | 619 → 481 | 1.29× | 1.23× |
-| markdown | 0.03 → 0.03 | 0.27 → 0.26 | 0.11 → 0.10 | 34.9 → 31.7 | 1.10× | 1.07× |
-| extract | 2.92 → 1.92 | 17.7 → 11.5 | 6.00 → 3.95 | 1956 → 1288 | 1.52× | 1.49× |
+| fromDom | 1.92 → 1.16 | 11.8 → 6.88 | 3.85 → 2.32 | 1255 → 757 | 1.66× | 1.62× |
+| extractTree | 0.74 → 0.59 | 5.51 → 4.48 | 1.82 → 1.39 | 593 → 454 | 1.31× | 1.24× |
+| markdown | 0.03 → 0.03 | 0.25 → 0.24 | 0.10 → 0.09 | 33.2 → 30.4 | 1.09× | 1.06× |
+| extract | 2.82 → 1.82 | 16.7 → 10.6 | 5.82 → 3.83 | 1896 → 1249 | 1.52× | 1.48× |
