@@ -122,6 +122,19 @@ describe('math', () => {
     expect(bodyOf(doc).querySelectorAll('.tr-math-source.tr-hidden').length).toBe(2);
   });
 
+  test('a MathJax preview is hidden while the formula renders and shown again when it cannot', async () => {
+    for (const rendered of [false, true]) {
+      const output = rendered ? '<span class="MathJax">x</span>' : '';
+      const doc = xhtml(`<p>Area <span class="MathJax_Preview">πr²</span>${output}<script type="math/tex">\\pi r^2</script>.</p>`);
+      const body = bodyOf(doc);
+      await enhanceContent(doc, body, { tex: texToMathml, highlight });
+      const preview = body.querySelector('.MathJax_Preview')!;
+      expect(preview.classList.contains('tr-hidden')).toBe(true);
+      hydrateMath(body, () => null);
+      expect(preview.classList.contains('tr-hidden')).toBe(false);
+    }
+  });
+
   test('display MathML gets a scroll box and epub:switch shows MathML', async () => {
     const doc = new window.DOMParser().parseFromString(strFromU8(sampler['OEBPS/mathml.xhtml']), 'application/xhtml+xml') as unknown as Document;
     await enhanceAll(doc);

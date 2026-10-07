@@ -242,7 +242,7 @@ abstract final class EpubChapter {
       final hide = <dom.Element>[];
       if (_pageNumber.hasMatch(t[0]) && _runningHead.hasMatch(t[1])) {
         hide.addAll([first, second!, if (third != null && t[2].length <= 80) third]);
-      } else if (_runningHead.hasMatch(t[0]) && _pageNumber.hasMatch(t[2])) {
+      } else if (_runningHead.hasMatch(t[0]) && t[1].length <= 80 && _pageNumber.hasMatch(t[2])) {
         hide.addAll([first, second!, third!]);
       } else if (_runningHead.hasMatch(t[0]) && _pageNumber.hasMatch(t[1])) {
         hide.addAll([first, second!]);

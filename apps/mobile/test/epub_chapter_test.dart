@@ -137,6 +137,16 @@ void main() {
       expect(visible, ['every finite-dimensional vector space is iso morphic to some list space.']);
     });
 
+    test('a long paragraph between a running head and a number is not page furniture', () {
+      final long = 'Suppose U is a subspace of V. ' * 4;
+      final body = _prepared(
+        '<p class="c1"><a id="p9"></a>SECTION 3.D</p><p class="c1">$long</p><p class="c1">3</p>',
+        head: _pdfHead,
+      );
+      final visible = [for (final p in body.querySelectorAll('p')) if (!_hidden(p)) p.text.trim()];
+      expect(visible, contains(long.trim()));
+    });
+
     test('calibre output with page anchors is recognised without a generator tag', () {
       final pages = [for (var i = 1; i <= 6; i++) '<p class="calibre1"><a id="p$i"></a>$i</p><p class="calibre1">Text.</p>'];
       final body = _prepared('<i class="calibre3">${pages.join()}</i>');

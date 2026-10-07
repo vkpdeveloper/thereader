@@ -452,9 +452,14 @@ class _ZipWriter {
     _addCentral(record, start);
   }
 
+  /// Throws rather than truncate counts or offsets that need ZIP64; the
+  /// caller then opens the original book.
   void finish() {
     final cd = _central.takeBytes();
     final cdOffset = _offset;
+    if (_count > 0xffff || cdOffset + cd.length > 0xffffffff) {
+      throw const FormatException('Derived archive needs ZIP64');
+    }
     _write(cd);
     final eocd = Uint8List(22);
     _setU32(eocd, 0, 0x06054b50);

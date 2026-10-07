@@ -139,9 +139,10 @@ export function prepareRawTex(root: Element, tex: TexRenderer): number {
     const source = script.textContent ?? '';
     if (tex(source, display) === null) continue;
     script.parentNode!.insertBefore(makeHost(doc, source, display), script);
-    // MathJax previews duplicate the formula as plain text.
-    const preview = script.previousElementSibling?.previousElementSibling;
-    if (preview && hasClass(preview, 'MathJax_Preview')) addClass(preview, 'tr-hidden');
+    // MathJax previews duplicate the formula as plain text. A page MathJax
+    // already typeset has its output span between the preview and the script.
+    const preview = mathJaxPreview(script.previousElementSibling);
+    if (preview) addClass(preview, 'tr-hidden', 'tr-math-source');
     count++;
   }
   count += prepareDelimitedTex(root, tex);
@@ -203,6 +204,14 @@ function makeHost(doc: Document, tex: string, display: boolean): HTMLElement {
   return host;
 }
 
+/** The `MathJax_Preview` one or two element siblings before `el` (the host or MathJax's output span sits between). */
+function mathJaxPreview(el: Element | null): Element | null {
+  for (let sib = el?.previousElementSibling ?? null, i = 0; sib && i < 2; sib = sib.previousElementSibling, i++) {
+    if (hasClass(sib, 'MathJax_Preview')) return sib;
+  }
+  return null;
+}
+
 const templates = new Map<string, Element | null>();
 const sheets = new WeakMap<Document, CSSStyleSheet | null>();
 
@@ -222,7 +231,7 @@ export function hydrateMath(root: Element, tex: TexRenderer): number {
     const math = mathElement(doc, source, display, tex);
     if (!math) {
       // Prepared but not renderable here: show the book's own version again.
-      for (const sib of [host.previousElementSibling, host.nextElementSibling]) {
+      for (const sib of [host.previousElementSibling, host.nextElementSibling, mathJaxPreview(host)]) {
         if (sib && hasClass(sib, 'tr-math-source')) sib.classList.remove('tr-hidden');
       }
       continue;

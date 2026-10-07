@@ -456,21 +456,34 @@ abstract final class InkAnalysis {
     }
   }
 
+  /// Native resources are released even when a corrupt image fails to decode.
   static Future<Uint8List?> _sample(Uint8List bytes) async {
     final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
-    final descriptor = await ui.ImageDescriptor.encoded(buffer);
-    final scale = descriptor.width > 96 ? 96 / descriptor.width : 1.0;
-    final codec = await descriptor.instantiateCodec(
-      targetWidth: (descriptor.width * scale).round().clamp(1, 96),
-      targetHeight: (descriptor.height * scale).round().clamp(1, 4096),
-    );
-    final frame = await codec.getNextFrame();
-    final data = await frame.image.toByteData(format: ui.ImageByteFormat.rawRgba);
-    frame.image.dispose();
-    codec.dispose();
-    descriptor.dispose();
-    buffer.dispose();
-    return data?.buffer.asUint8List();
+    try {
+      final descriptor = await ui.ImageDescriptor.encoded(buffer);
+      try {
+        final scale = descriptor.width > 96 ? 96 / descriptor.width : 1.0;
+        final codec = await descriptor.instantiateCodec(
+          targetWidth: (descriptor.width * scale).round().clamp(1, 96),
+          targetHeight: (descriptor.height * scale).round().clamp(1, 4096),
+        );
+        try {
+          final frame = await codec.getNextFrame();
+          try {
+            final data = await frame.image.toByteData(format: ui.ImageByteFormat.rawRgba);
+            return data?.buffer.asUint8List();
+          } finally {
+            frame.image.dispose();
+          }
+        } finally {
+          codec.dispose();
+        }
+      } finally {
+        descriptor.dispose();
+      }
+    } finally {
+      buffer.dispose();
+    }
   }
 
   /// Mostly transparent, and what is opaque is mostly dark.
