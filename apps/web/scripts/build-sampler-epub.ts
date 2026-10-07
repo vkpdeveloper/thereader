@@ -3,14 +3,18 @@
  * exercises every content-enhancer rule (src/reader/enhance) — MathML inline,
  * display, wide and in epub:switch; pandoc/MathJax TeX; equation images with
  * TeX alt text; dark-ink and opaque images; code in several languages with
- * long lines; inline code; a wide table; and a pdftohtml-style chapter.
- * All text and images are generated here. Run from apps/web:
+ * long lines; inline code; a wide table; a pdftohtml-style chapter; and one
+ * chapter per way other toolchains carry maths (KaTeX and MathJax output,
+ * SVG equations, black-on-white equation images, formulas in attributes,
+ * MathML 2 and prefixed MathML). The text is original; rendered maths comes
+ * from sampler-formats.ts. Run from apps/web:
  * `bun scripts/build-sampler-epub.ts`.
  */
 import { strToU8, zipSync, zlibSync, type Zippable } from 'fflate';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import * as F from './sampler-formats';
 
 const web = join(dirname(fileURLToPath(import.meta.url)), '..');
 const outFile = join(web, 'fixtures', 'enhance-sampler.epub');
@@ -128,6 +132,19 @@ function photoPng(): Uint8Array {
   }
   return c.png();
 }
+
+/** A bar chart in colour on white: opaque, coloured, never inverted. */
+function chartPng(): Uint8Array {
+  const c = new Canvas(240, 140, [255, 255, 255, 255]);
+  const bars: [number, [number, number, number, number]][] = [[90, [220, 60, 60, 255]], [50, [60, 110, 220, 255]], [115, [70, 170, 90, 255]]];
+  bars.forEach(([h, colour], i) => {
+    for (let x = 30 + i * 70; x < 80 + i * 70; x++) c.line(x, 130, x, 130 - h, colour, 0.5);
+  });
+  c.line(20, 130, 230, 130, INK, 1);
+  return c.png();
+}
+
+const base64 = (s: string) => Uint8Array.from(atob(s), (ch) => ch.charCodeAt(0));
 
 // ---------------------------------------------------------------- content
 
@@ -272,12 +289,96 @@ total 0</pre>
 <p class="calibre1">The end of the sample chapter.</p>
 </i>`,
   },
+  {
+    id: 'katex',
+    title: 'KaTeX',
+    body: `<h1>KaTeX output</h1>
+<p>KaTeX writes every formula twice: MathML for screen readers and HTML that needs KaTeX's stylesheet and fonts, which this book does not ship. Inline, ${F.KATEX_INLINE} maps a vector to its length.</p>
+<p>A display formula:</p>
+${F.KATEX_DISPLAY}
+<p>The sum of the first squares grows like a cube.</p>`,
+  },
+  {
+    id: 'mathjax3',
+    title: 'MathJax 3 (CHTML)',
+    head: `<style type="text/css">${F.MJ3_CHTML_CSS}</style>\n`,
+    body: `<h1>MathJax 3, HTML output</h1>
+<p>A page saved after MathJax typeset it: the glyphs are drawn by MathJax's web fonts, and the MathML beside them is clipped away. Inline, ${F.MJ3_CHTML_INLINE} says the inner product is conjugate symmetric.</p>
+${F.MJ3_CHTML_DISPLAY}
+<p>A two by two determinant, as above.</p>`,
+  },
+  {
+    id: 'mathjax3svg',
+    title: 'MathJax 3 (SVG)',
+    head: `<style type="text/css">${F.MJ3_SVG_CSS}</style>\n`,
+    body: `<h1>MathJax 3, SVG output</h1>
+<p>Each formula is an SVG drawing in the current colour: ${F.MJ3_SVG_INLINE} is a scalar.</p>
+${F.MJ3_SVG_DISPLAY}
+<p>The Gaussian integral, drawn as paths.</p>`,
+  },
+  {
+    id: 'mathjax2',
+    title: 'MathJax 2',
+    head: `<style type="text/css">${F.MJ2_CSS}</style>\n`,
+    body: `<h1>MathJax 2 output</h1>
+<p>${F.MJ2_INLINE}</p>
+<div>${F.MJ2_DISPLAY}</div>
+<p>An older page keeps only the MathML attribute: ${F.MJ2_DATA_ONLY}, complex n-space.</p>`,
+  },
+  {
+    id: 'svg',
+    title: 'SVG equations',
+    body: `<h1>SVG equations</h1>
+<p>An inline SVG painted black: ${F.SVG_INLINE_BLACK}, and one with no paint at all, which is black too: ${F.SVG_INLINE_UNPAINTED}.</p>
+<p>An equation file shown as an image:</p>
+<div class="equation"><img src="images/eq-ink.svg" alt="The mean of x" style="height:3.4em;"/></div>
+<p>An equation embedded as an object: <object data="images/eq-sqrt.svg" type="image/svg+xml" style="height:1.4em; vertical-align:-0.4em;">the length of (x, y)</object> is the length of a vector.</p>
+<p>An illustration in colour stays as drawn:</p>
+<p><svg xmlns="http://www.w3.org/2000/svg" width="200" height="120" viewBox="0 0 200 120"><rect x="10" y="10" width="180" height="100" rx="12" fill="#1f3a5f"/><circle cx="70" cy="60" r="32" fill="#f2a541" stroke="#c0392b" stroke-width="4"/><path d="M120 90 L150 30 L180 90 Z" fill="#62c073"/></svg></p>`,
+  },
+  {
+    id: 'paper',
+    title: 'Equation images on white',
+    body: `<h1>Equation images on white</h1>
+<p>Word, InDesign and Kindle conversions export each equation as a picture with a white background, often with no TeX:</p>
+<p class="center"><img src="images/eq-white.png" alt="equation" style="height:2.6em;"/></p>
+<p>A GIF, as old Kindle books carry them: <img src="images/eq-white.gif" alt=""/></p>
+<p>A chart in colour on white is a picture, not ink, and stays as it is:</p>
+<p><img src="images/chart.png" alt="A bar chart" style="width:60%;"/></p>`,
+  },
+  {
+    id: 'attrs',
+    title: 'Formulas in attributes',
+    body: `<h1>Formulas in attributes</h1>
+<p>A span keeps its TeX in <code>data-tex</code>: <span class="math" data-tex="\\frac{a}{b} + \\frac{c}{d} = \\frac{ad + bc}{bd}">a/b + c/d = (ad + bc)/bd</span>.</p>
+<p>A geometric series in <code>data-latex</code>: <span data-latex="\\sum_{k=0}^{\\infty} x^k = \\frac{1}{1-x}">sum of x to the k equals 1/(1 &#8722; x)</span>.</p>
+<div class="equation" data-equation="\\mathbf{A}\\mathbf{x} = \\mathbf{b}">Ax = b</div>
+<p>MathML in <code>data-mathml</code>: <span data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;msup&gt;&lt;mi&gt;x&lt;/mi&gt;&lt;mn&gt;2&lt;/mn&gt;&lt;/msup&gt;&lt;mo&gt;&#8805;&lt;/mo&gt;&lt;mn&gt;0&lt;/mn&gt;&lt;/math&gt;">x squared is at least zero</span>.</p>
+<p>Pandoc's <code>--webtex</code> keeps the TeX as alt text: <img class="math inline" src="images/eq-sqrt.svg" alt="\\sqrt{x^2+y^2}"/>.</p>
+<p>MathJax's MathML input: <script type="math/mml"><![CDATA[<math xmlns="http://www.w3.org/1998/Math/MathML"><mi>f</mi><mo>:</mo><mi>X</mi><mo>&#8594;</mo><mi>Y</mi></math>]]></script> is a function.</p>
+<p data-equation="3.1">An equation number in an attribute is not a formula (3.1).</p>`,
+  },
+  {
+    id: 'mathml2',
+    title: 'MathML 2 and prefixes',
+    body: `<h1>MathML 2 and prefixed MathML</h1>
+<p>A prefixed formula: <m:math xmlns:m="http://www.w3.org/1998/Math/MathML"><m:msub><m:mi>v</m:mi><m:mn>1</m:mn></m:msub><m:mo>+</m:mo><m:msub><m:mi>v</m:mi><m:mn>2</m:mn></m:msub></m:math> is a sum of two vectors.</p>
+<p>Fences written with <code>mfenced</code>: <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>f</mi><mfenced><mi>a</mi><mi>b</mi></mfenced><mo>=</mo><mfenced open="{" close="}"><mi>a</mi><mi>b</mi></mfenced></math>.</p>
+<p>Letter styles from <code>mathvariant</code>: <math xmlns="http://www.w3.org/1998/Math/MathML"><mi mathvariant="bold">v</mi><mo>∈</mo><msup><mi mathvariant="double-struck">R</mi><mn>3</mn></msup><mo>,</mo><mi mathvariant="fraktur">g</mi><mo>,</mo><mi mathvariant="script">L</mi></math>.</p>
+<p>A boxed result:</p>
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><menclose notation="box"><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></menclose></math>
+<p>With a TeX annotation:</p>
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block" alttext="\\lVert v \\rVert"><semantics><mrow><mo>‖</mo><mi>v</mi><mo>‖</mo></mrow><annotation encoding="application/x-tex">\\lVert v \\rVert</annotation></semantics></math>`,
+  },
 ];
 
 // ---------------------------------------------------------------- package
 
 const MODIFIED = '2026-10-07T00:00:00Z';
-const manifestItems = chapters.map((c) => `<item id="${c.id}" href="${c.id}.xhtml" media-type="application/xhtml+xml"${c.id === 'mathml' || c.id === 'tex' ? ' properties="mathml"' : ''}/>`);
+const MATHML = new Set(['mathml', 'tex', 'katex', 'mathjax3', 'mathjax3svg', 'mathjax2', 'mathml2']);
+const SVG = new Set(['mathjax3svg', 'svg']);
+const properties = (id: string) => [MATHML.has(id) ? 'mathml' : '', SVG.has(id) ? 'svg' : ''].filter(Boolean).join(' ');
+const manifestItems = chapters.map((c) => `<item id="${c.id}" href="${c.id}.xhtml" media-type="application/xhtml+xml"${properties(c.id) ? ` properties="${properties(c.id)}"` : ''}/>`);
 const opf = `<?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="uid">
 <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -293,6 +394,11 @@ const opf = `<?xml version="1.0" encoding="utf-8"?>
 <item id="eq" href="images/eq.png" media-type="image/png"/>
 <item id="diagram" href="images/diagram.png" media-type="image/png"/>
 <item id="photo" href="images/photo.png" media-type="image/png"/>
+<item id="chart" href="images/chart.png" media-type="image/png"/>
+<item id="eq-ink" href="images/eq-ink.svg" media-type="image/svg+xml"/>
+<item id="eq-sqrt" href="images/eq-sqrt.svg" media-type="image/svg+xml"/>
+<item id="eq-white-png" href="images/eq-white.png" media-type="image/png"/>
+<item id="eq-white-gif" href="images/eq-white.gif" media-type="image/gif"/>
 ${manifestItems.join('\n')}
 </manifest>
 <spine>
@@ -319,6 +425,11 @@ const files: Zippable = {
   'OEBPS/images/eq.png': equationPng(),
   'OEBPS/images/diagram.png': diagramPng(),
   'OEBPS/images/photo.png': photoPng(),
+  'OEBPS/images/chart.png': chartPng(),
+  'OEBPS/images/eq-ink.svg': strToU8(F.SVG_FILE_INK),
+  'OEBPS/images/eq-sqrt.svg': strToU8(F.SVG_FILE_WEBTEX),
+  'OEBPS/images/eq-white.png': base64(F.PNG_WHITE_BASE64),
+  'OEBPS/images/eq-white.gif': base64(F.GIF_WHITE_BASE64),
 };
 for (const c of chapters) files[`OEBPS/${c.id}.xhtml`] = strToU8(XHTML(c.title, c.body, c.head));
 

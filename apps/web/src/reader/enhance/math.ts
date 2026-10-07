@@ -15,6 +15,7 @@ import {
   UI_ATTR,
 } from './dom';
 import { SHADOW_CSS } from './css';
+import { isMathElement, needsRebuild, rebuildMathml } from './mathml';
 
 /** TeX to MathML markup (temml with `xml: true`), null when it does not parse. */
 export type TexRenderer = (tex: string, display: boolean) => string | null;
@@ -22,14 +23,20 @@ export type TexRenderer = (tex: string, display: boolean) => string | null;
 /** Host for a rendered formula; its MathML lives in a shadow root. */
 export const MATH_HOST = 'tr-math';
 const TEX_ATTR = 'data-tr-tex';
+/** A rebuilt formula's MathML markup (see mathml.ts), for hosts without TeX. */
+const MML_ATTR = 'data-tr-mml';
 const DISPLAY_ATTR = 'data-tr-display';
+/** Longest rebuilt MathML kept on a host; a larger formula keeps the book's own markup. */
+const MAX_MML = 256_000;
 
 // ---------------------------------------------------------------- native MathML
 
 /**
  * Rule 1: keep the book's own MathML. `epub:switch` shows its MathML case
  * and hides the fallback; display formulas get a scroll box so a wide one
- * scrolls instead of overflowing the column.
+ * scrolls instead of overflowing the column. MathML that MathML Core
+ * browsers would get wrong (MathML 2 constructs, a missing namespace, an
+ * HTML-parsed `m:` prefix) renders from a rebuilt copy in a formula host.
  */
 export function prepareMathml(root: Element): number {
   let count = 0;
@@ -39,34 +46,68 @@ export function prepareMathml(root: Element): number {
     const mathCase = kids.find(
       (k) => (nameOf(k) === 'case' || nameOf(k) === 'epub:case') && /MathML/i.test(k.getAttribute('required-namespace') ?? ''),
     );
-    if (!mathCase || !mathCase.getElementsByTagNameNS(MATHML_NS, 'math').length) continue;
+    if (!mathCase || !Array.from(mathCase.getElementsByTagNameNS('*', '*')).some(isMathElement)) continue;
     for (const k of kids) if (k !== mathCase) addClass(k, 'tr-hidden');
     addClass(mathCase, 'tr-switch-case');
     count++;
   }
-  for (const math of Array.from(root.getElementsByTagNameNS(MATHML_NS, 'math'))) {
+  const doc = root.ownerDocument;
+  for (const math of formulasIn(root)) {
+    if (closest(math, (e) => hasClass(e, 'tr-hidden') || e.hasAttribute(UI_ATTR), 32)) continue;
     count++;
-    if (math.getAttribute('display') !== 'block') continue;
+    const display = math.getAttribute('display') === 'block' || math.getAttribute('mode') === 'display';
+    if (needsRebuild(math)) {
+      const markup = mathmlMarkup(rebuildMathml(math, doc));
+      if (markup) {
+        math.parentNode!.insertBefore(makeMathmlHost(doc, markup, display, math), math);
+        addClass(math, 'tr-hidden', 'tr-math-source');
+        continue;
+      }
+    }
+    if (!display || math.namespaceURI !== MATHML_NS) continue;
     const parent = math.parentElement;
     if (!parent || hasClass(parent, 'tr-math-scroll')) continue;
-    const box = create(root.ownerDocument, 'div', 'tr-math-scroll');
+    const box = create(doc, 'div', 'tr-math-scroll');
     parent.insertBefore(box, math);
     box.append(math);
   }
   return count;
 }
 
+/** Outermost `<math>` elements under `root`, in any namespace or prefix. */
+function formulasIn(root: Element): Element[] {
+  const out: Element[] = [];
+  for (const el of Array.from(root.getElementsByTagNameNS('*', '*'))) {
+    if (!isMathElement(el)) continue;
+    const last = out[out.length - 1];
+    if (last && last.contains(el)) continue;
+    out.push(el);
+  }
+  return out;
+}
+
+/** Serialized MathML for a host, or null when there is none or it is too big. */
+export function mathmlMarkup(math: Element | null): string | null {
+  if (!math) return null;
+  try {
+    const markup = new XMLSerializer().serializeToString(math);
+    return markup.length <= MAX_MML ? markup : null;
+  } catch {
+    return null;
+  }
+}
+
 // ---------------------------------------------------------------- TeX in image alt text
 
 /** TeX commands, scripts or groups. */
-const TEX_SIGNAL = /\\[A-Za-z]+|\\[{}|,;:!]|[_^]|\{[^{}]*\}/;
+export const TEX_SIGNAL = /\\[A-Za-z]+|\\[{}|,;:!]|[_^]|\{[^{}]*\}/;
 /** Classes of equation containers and equation images in converted books. */
-const MATH_CONTEXT = /(^|[\s_-])(math|maths|equation|eqn|equ|formula|tex|latex|displaymath|inlinemath|inline_math|disp-formula|inline-formula|MathJax\w*)([\s_-]|$)/i;
-const DISPLAY_CONTEXT = /(^|[\s_-])(displaymath|display-math|math-display|equation|eqn|disp-formula|MathJax_SVG_Display|MathJax_Display|MathJax_CHTML_Display|mathblock|math-block)([\s_-]|$)/i;
+export const MATH_CONTEXT = /(^|[\s_-])(math|maths|equation|eqn|equ|formula|tex|latex|displaymath|inlinemath|inline_math|disp-formula|inline-formula|MathJax\w*)([\s_-]|$)/i;
+export const DISPLAY_CONTEXT = /(^|[\s_-])(displaymath|display-math|math-display|equation|eqn|disp-formula|MathJax_SVG_Display|MathJax_Display|MathJax_CHTML_Display|mathblock|math-block)([\s_-]|$)/i;
 /** Inline-sized: a height or vertical-align in em/ex, the way TeX-to-image converters size formulas. */
 const EM_SIZED = /(height|vertical-align)\s*:\s*-?[\d.]+\s*(em|ex)/i;
 /** Real class lists are short; a huge one on a shared ancestor would be scanned once per image. */
-const classMatches = (re: RegExp) => (e: Element) => {
+export const classMatches = (re: RegExp) => (e: Element) => {
   const cls = classOf(e);
   return cls.length <= 512 && re.test(cls);
 };
@@ -189,7 +230,8 @@ export function prepareRawTex(root: Element, tex: TexRenderer): number {
   }
   for (const script of Array.from(root.getElementsByTagNameNS('*', 'script'))) {
     const type = (script.getAttribute('type') ?? '').toLowerCase();
-    if (!type.startsWith('math/tex')) continue;
+    // Sources whose rendered output already shows (see formats.ts) are done.
+    if (!type.startsWith('math/tex') || hasClass(script, 'tr-math-source')) continue;
     const prev = script.previousSibling;
     if (isElement(prev) && prev.hasAttribute(UI_ATTR)) continue;
     const display = /mode\s*=\s*display/.test(type);
@@ -247,13 +289,27 @@ function prepareDelimitedTex(root: Element, tex: TexRenderer): number {
 
 // ---------------------------------------------------------------- hosts
 
-function makeHost(doc: Document, tex: string, display: boolean): HTMLElement {
+export function makeHost(doc: Document, tex: string, display: boolean): HTMLElement {
+  const host = emptyHost(doc, display);
+  host.setAttribute(TEX_ATTR, tex);
+  host.setAttribute('aria-label', tex);
+  return host;
+}
+
+/** A host for rebuilt MathML; `source` is the element it stands for (its text labels the host). */
+export function makeMathmlHost(doc: Document, markup: string, display: boolean, source: Element | null): HTMLElement {
+  const host = emptyHost(doc, display);
+  host.setAttribute(MML_ATTR, markup);
+  const label = source?.getAttribute('alttext') ?? (source?.textContent ?? '').replace(/\s+/g, ' ').trim();
+  if (label) host.setAttribute('aria-label', label.slice(0, 300));
+  return host;
+}
+
+function emptyHost(doc: Document, display: boolean): HTMLElement {
   const host = create(doc, display ? 'div' : 'span', display ? `${MATH_HOST} tr-math-display` : MATH_HOST);
   host.setAttribute(UI_ATTR, '');
-  host.setAttribute(TEX_ATTR, tex);
   if (display) host.setAttribute(DISPLAY_ATTR, '');
   host.setAttribute('role', 'math');
-  host.setAttribute('aria-label', tex);
   return host;
 }
 
@@ -278,9 +334,9 @@ const sheets = new WeakMap<Document, CSSStyleSheet | null>();
 export function hydrateMath(root: Element, tex: TexRenderer): number {
   const doc = root.ownerDocument;
   let count = 0;
-  for (const host of Array.from(root.querySelectorAll(`.${MATH_HOST}[${TEX_ATTR}][${UI_ATTR}]`))) {
+  for (const host of Array.from(root.querySelectorAll(`.${MATH_HOST}[${UI_ATTR}]`))) {
     // Hosts the enhancer made are empty; a look-alike in the book keeps its content.
-    if ((host as HTMLElement).shadowRoot || host.firstChild) continue;
+    if ((host as HTMLElement).shadowRoot || host.firstChild || !(host.hasAttribute(TEX_ATTR) || host.hasAttribute(MML_ATTR))) continue;
     try {
       if (hydrateHost(doc, host, tex)) count++;
     } catch {
@@ -291,9 +347,9 @@ export function hydrateMath(root: Element, tex: TexRenderer): number {
 }
 
 function hydrateHost(doc: Document, host: Element, tex: TexRenderer): boolean {
-  const source = host.getAttribute(TEX_ATTR) ?? '';
   const display = host.hasAttribute(DISPLAY_ATTR);
-  const math = mathElement(doc, source, display, tex);
+  const mml = host.getAttribute(MML_ATTR);
+  const math = mml !== null ? mathmlElement(doc, mml) : mathElement(doc, host.getAttribute(TEX_ATTR) ?? '', display, tex);
   if (!math) {
     // Prepared but not renderable here: show the book's own version again.
     for (const sib of [host.previousElementSibling, host.nextElementSibling, mathJaxPreview(host)]) {
@@ -321,16 +377,28 @@ function mathElement(doc: Document, source: string, display: boolean, tex: TexRe
   const key = `${display ? 'D' : 'I'}${source}`;
   let template = templates.get(key);
   if (template === undefined) {
-    template = null;
     const markup = tex(source, display);
-    if (markup) {
-      const parsed = new DOMParser().parseFromString(markup, 'application/xml');
-      const el = parsed.documentElement;
-      if (el && !parsed.getElementsByTagName('parsererror').length && scrubMathml(el)) template = el;
-    }
+    template = markup ? parseMathml(markup) : null;
     templates.set(key, template, key.length + (markup?.length ?? 0));
   }
   return template ? (doc.importNode(template, true) as Element) : null;
+}
+
+function mathmlElement(doc: Document, markup: string): Element | null {
+  const key = `M${markup}`;
+  let template = templates.get(key);
+  if (template === undefined) {
+    template = markup.length <= MAX_MML ? parseMathml(markup) : null;
+    templates.set(key, template, key.length);
+  }
+  return template ? (doc.importNode(template, true) as Element) : null;
+}
+
+/** Parsed and scrubbed MathML, or null. */
+export function parseMathml(markup: string): Element | null {
+  const parsed = new DOMParser().parseFromString(markup, 'application/xml');
+  const el = parsed.documentElement;
+  return el && !parsed.getElementsByTagName('parsererror').length && scrubMathml(el) ? el : null;
 }
 
 const XMLNS_NS = 'http://www.w3.org/2000/xmlns/';

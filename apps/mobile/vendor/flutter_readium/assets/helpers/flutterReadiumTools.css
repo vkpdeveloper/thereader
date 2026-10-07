@@ -2,9 +2,9 @@
 /* The Reader dark canvas: keep transparent publisher diagrams legible without
    changing photograph/cover colors. Explicit math wrappers use a targeted
    inversion for their monochrome equation artwork. Images the content
-   enhancer inverts (`.tr-ink`, assets/reader/enhance.css in the app) stay
-   transparent. */
-img:not(.tr-ink), svg:not(.tr-ink) { background-color: #ededed; }
+   enhancer inverts or recolours (`.tr-ink`, `.tr-ink-paper`, `.tr-svg-ink`,
+   assets/reader/enhance.css in the app) stay transparent. */
+img:not(.tr-ink):not(.tr-ink-paper), svg:not(.tr-ink):not(.tr-svg-ink) { background-color: #ededed; }
 .MathJax_SVG img, .inline_math img, .display_math img {
   background-color: transparent;
   filter: invert(1) brightness(0.9294);
@@ -125,9 +125,10 @@ td, th {
   text-align: left !important;
 }
 
-/* Images keep intrinsic size and never blow past reading measure. */
-:root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) body:not(.flutter-readium-spotlight-active) img:not(:is(.MathJax_SVG, .inline_math, .display_math) img[style*="height"]),
-img:not(:is(.MathJax_SVG, .inline_math, .display_math) img[style*="height"]) { width: auto !important; max-width: 100% !important; height: auto !important; box-sizing: border-box !important; }
+/* Images keep intrinsic size and never blow past reading measure. Equation
+   images sized in em (text-relative) keep that size. */
+:root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) body:not(.flutter-readium-spotlight-active) img:not(:is(.MathJax_SVG, .inline_math, .display_math) img[style*="height"], img[style*="height"][style*="em"]),
+img:not(:is(.MathJax_SVG, .inline_math, .display_math) img[style*="height"], img[style*="height"][style*="em"]) { width: auto !important; max-width: 100% !important; height: auto !important; box-sizing: border-box !important; }
 
 /* THEREADER PATCH: content enhancer (apps/mobile/assets/reader in the app).
    Once it has run (<html data-tr-enhanced>), tables are real tables again:

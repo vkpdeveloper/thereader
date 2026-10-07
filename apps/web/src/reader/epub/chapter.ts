@@ -153,8 +153,17 @@ async function sanitizeAndRewrite(body: Element, item: SpineItem, res: Resources
       continue;
     }
     if (name === 'object') {
-      // Keep the fallback content; objects would need plugins or scripts.
-      el.replaceWith(...Array.from(el.childNodes));
+      // Keep the fallback content; objects would need plugins or scripts. One
+      // the enhancer replaced with an image keeps its fallback hidden.
+      const hidden = /(^|\s)tr-hidden(\s|$)/.test(el.getAttribute('class') ?? '');
+      if (hidden) {
+        const span = el.ownerDocument.createElementNS(XHTML_NS, 'span');
+        span.setAttribute('class', 'tr-hidden');
+        span.append(...Array.from(el.childNodes));
+        el.replaceWith(span);
+      } else {
+        el.replaceWith(...Array.from(el.childNodes));
+      }
       continue;
     }
     switch (name) {
