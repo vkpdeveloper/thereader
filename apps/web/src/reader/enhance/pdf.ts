@@ -15,6 +15,8 @@ const PAGE_NUMBER = /^(\d{1,4}|[ivxlcdm]{1,7})$/i;
 const RUNNING_HEAD = /^(chapter|section|part|appendix)\s+[\dA-Z]+(\.[\dA-Z]+)*$/i;
 /** A line that ends a sentence (a closing parenthesis does not: "(a)" labels run into their item). */
 const TERMINAL = /[.!?:;”"’]$/;
+/** A list item's label on its own line, "(a)" or "(iv)"; its item always follows. */
+const ITEM_LABEL = /^\(([a-z]|[ivx]{1,4}|\d{1,2})\)$/;
 
 /** Empty anchors marking PDF page starts (`<a id="p112"></a>`). */
 function pageAnchors(root: Element): Element[] {
@@ -135,7 +137,7 @@ function joinLines(doc: Document, lines: Element[], texts: Map<Element, string>)
       const prevText = lastVisibleText(run, texts);
       const nextText = texts.get(next) ?? '';
       const continues = plain(next) && next.parentNode === last.parentNode && adjacent(last, next) &&
-        !!prevText && !!nextText && (/^[a-z(]/.test(nextText) && !TERMINAL.test(prevText) || /[-,]$/.test(prevText));
+        !!prevText && !!nextText && (/^[a-z(]/.test(nextText) && !TERMINAL.test(prevText) || /[-,]$/.test(prevText) || ITEM_LABEL.test(prevText));
       if (!continues) break;
       run.push(next);
       last = next;

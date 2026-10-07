@@ -207,6 +207,17 @@ describe('PDF conversions', () => {
   });
 });
 
+describe('PDF item labels', () => {
+  test('a bare "(c)" line joins the item after it whatever it starts with', async () => {
+    const doc = xhtml('<p>(c)</p>\n<p>. v + U / \\ . w + U / ¤ ¿.</p>\n<p>Proof</p>', '<meta name="generator" content="pdftohtml 0.36"/>');
+    const before = bookText(doc);
+    await enhanceContent(doc, bodyOf(doc), { tex: null, highlight: null });
+    expect(bookText(doc)).toBe(before);
+    const para = bodyOf(doc).querySelector('.tr-pdf-para')!;
+    expect(para.textContent!.replace(/\s+/g, ' ').trim()).toBe('(c) . v + U / \\ . w + U / ¤ ¿.');
+  });
+});
+
 describe('dark ink', () => {
   const pixels = (fn: (i: number) => [number, number, number, number], n = 400) => {
     const data = new Uint8ClampedArray(n * 4);
