@@ -161,7 +161,8 @@ class EnhancedEpubCache {
 
   /// Deletes derived copies beside [source] other than [keep]: those of
   /// older bundles or file states of [source], and those whose book is gone
-  /// (a version that has since been replaced).
+  /// (a version that has since been replaced). Partial copies a killed build
+  /// left behind go the same way; none is ever opened.
   static Future<void> _prune(String source, {required String keep}) async {
     final dir = p.dirname(source);
     final base = p.basenameWithoutExtension(source);
@@ -170,7 +171,7 @@ class EnhancedEpubCache {
         if (item is! File || item.path == keep) continue;
         final name = p.basename(item.path);
         final at = name.indexOf(_marker);
-        if (at <= 0 || !name.endsWith('.epub')) continue;
+        if (at <= 0 || !RegExp(r'\.epub(\.part)?$').hasMatch(name)) continue;
         final owner = name.substring(0, at);
         if (owner == base || !await File(p.join(dir, '$owner.epub')).exists()) {
           await item.delete();

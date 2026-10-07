@@ -71,7 +71,20 @@ class ReadiumReaderEngine implements ReaderEngine {
       final source = file.isProvisional
           ? path
           : await EnhancedEpubCache.resolve(path);
-      final publication = await readium.openPublication(source);
+      rd.Publication publication;
+      try {
+        publication = await readium.openPublication(source);
+      } catch (error) {
+        if (source == path) rethrow;
+        // Whatever the derived copy trips over, the book itself still opens.
+        debugPrint(
+          '[readium] enhanced copy failed, opening the original: $error',
+        );
+        try {
+          await readium.closePublication();
+        } catch (_) {}
+        publication = await readium.openPublication(path);
+      }
       return ReadiumReaderController(
         readium: readium,
         publication: publication,

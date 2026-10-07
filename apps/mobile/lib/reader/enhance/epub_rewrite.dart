@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:archive/archive.dart' show getCrc32;
@@ -29,17 +30,28 @@ RewriteStats rewriteEpubWithEnhancer({
   required String source,
   required String target,
   required Map<String, Uint8List> bundle,
+  int maxEntryBytes = maxInflatedEntry,
+  int maxTotalBytes = maxInflatedTotal,
 }) {
   final watch = Stopwatch()..start();
   final input = File(source).openSync();
   RandomAccessFile? output;
   try {
     final zip = _CentralDirectory.read(input);
+    final inflate = _Inflater(
+      input,
+      maxEntry: maxEntryBytes,
+      maxTotal: maxTotalBytes,
+    );
     final byName = {for (final e in zip.entries) e.name: e};
 
     final container = byName['META-INF/container.xml'];
     if (container == null) throw const FormatException('No container.xml');
-    final opfPath = _rootfile(_text(_inflate(input, container)));
+    final opfPath = _rootfile(_text(inflate(container)));
+    // The bundle is named after the OPF's folder: keep it inside the book.
+    if (!_isContainedPath(opfPath)) {
+      throw FormatException('Unsupported package path $opfPath');
+    }
     final opfEntry = byName[opfPath];
     if (opfEntry == null) throw FormatException('No package document $opfPath');
     final opfDir = p.posix.dirname(opfPath) == '.'
@@ -47,9 +59,9 @@ RewriteStats rewriteEpubWithEnhancer({
         : p.posix.dirname(opfPath);
     String inOpfDir(String name) => opfDir.isEmpty ? name : '$opfDir/$name';
 
-    final opfText = _text(_inflate(input, opfEntry));
+    final opfBytes = inflate(opfEntry);
     final documents = _manifestDocuments(
-      opfText,
+      _text(opfBytes),
       opfDir,
     ).where(byName.containsKey).toSet();
 
@@ -66,32 +78,32 @@ RewriteStats rewriteEpubWithEnhancer({
         if (n.endsWith('.js')) assetPaths[n]!,
     ];
 
-    final replaced = <String, Uint8List>{};
-    replaced[opfPath] = Uint8List.fromList(
+    final opf = Uint8List.fromList(
       latin1.encode(
-        _addManifestItems(latin1.decode(_inflate(input, opfEntry)), [
+        _addManifestItems(latin1.decode(opfBytes), [
           for (final n in assetNames)
             (href: '$enhancerFolder/$n', type: _mediaType(n)),
         ]),
       ),
     );
     var injected = 0;
-    for (final doc in documents) {
-      final entry = byName[doc]!;
-      if (!entry.canInflate) continue;
+    // Documents are edited as they are written, so only one is in memory.
+    Uint8List? edited(_Entry entry) {
+      if (entry.name == opfPath) return opf;
+      final doc = entry.name;
+      if (!documents.contains(doc) || !entry.canInflate) return null;
       final dir = p.posix.dirname(doc);
-      String rel(String asset) =>
-          p.posix.relative(asset, from: dir == '.' ? '' : dir);
-      final bytes = _inflate(input, entry);
-      final edited = injectEnhancer(
-        bytes,
-        stylesheets: cssLinks.map(rel).toList(),
-        scripts: scripts.map(rel).toList(),
+      String href(String asset) => p.posix
+          .split(p.posix.relative(asset, from: dir == '.' ? '' : dir))
+          .map(Uri.encodeComponent)
+          .join('/');
+      final out = injectEnhancer(
+        inflate(entry),
+        stylesheets: cssLinks.map(href).toList(),
+        scripts: scripts.map(href).toList(),
       );
-      if (edited != null) {
-        replaced[doc] = edited;
-        injected++;
-      }
+      if (out != null) injected++;
+      return out;
     }
 
     final part = File('$target.part');
@@ -102,11 +114,11 @@ RewriteStats rewriteEpubWithEnhancer({
     final bundlePrefix = inOpfDir('$enhancerFolder/');
     for (final entry in zip.entriesByOffset) {
       if (entry.name.startsWith(bundlePrefix)) continue;
-      final edited = replaced[entry.name];
-      if (edited == null) {
+      final data = edited(entry);
+      if (data == null) {
         writer.copyRaw(input, entry, zip.endOf(entry));
       } else {
-        writer.addEdited(entry, edited);
+        writer.addEdited(entry, data);
       }
     }
     for (final n in assetNames) {
@@ -126,6 +138,20 @@ RewriteStats rewriteEpubWithEnhancer({
     input.closeSync();
   }
 }
+
+/// Inflation limits. A few kilobytes of deflate can claim gigabytes; a book
+/// past them is not enhanced, and its original opens instead.
+const maxInflatedEntry = 64 << 20;
+const maxInflatedTotal = 512 << 20;
+
+/// A relative path that stays inside the archive's root: no `..` segment,
+/// no leading `/`, backslash or NUL.
+bool _isContainedPath(String path) =>
+    path.isNotEmpty &&
+    !path.startsWith('/') &&
+    !path.contains('\\') &&
+    !path.contains('\x00') &&
+    !p.posix.split(path).contains('..');
 
 class RewriteStats {
   const RewriteStats({
@@ -187,7 +213,10 @@ Uint8List? injectEnhancer(
   return out == null ? null : Uint8List.fromList(latin1.encode(out));
 }
 
-String _attr(String s) => s.replaceAll('&', '&amp;').replaceAll('"', '&quot;');
+String _attr(String s) => s
+    .replaceAll('&', '&amp;')
+    .replaceAll('"', '&quot;')
+    .replaceAll('<', '&lt;');
 
 String _addManifestItems(String opf, List<({String href, String type})> items) {
   final close = RegExp(
@@ -228,8 +257,14 @@ Iterable<String> _manifestDocuments(String opf, String opfDir) sync* {
     final href = el.getAttribute('href');
     if (href == null) continue;
     if (type != 'application/xhtml+xml' && type != 'text/html') continue;
-    final path = Uri.decodeFull(href.split('#').first);
-    yield p.posix.normalize(opfDir.isEmpty ? path : '$opfDir/$path');
+    final String path;
+    try {
+      path = Uri.decodeFull(href.split('#').first);
+    } on ArgumentError {
+      continue; // A malformed escape: that document stays as published.
+    }
+    final name = p.posix.normalize(opfDir.isEmpty ? path : '$opfDir/$path');
+    if (_isContainedPath(name)) yield name;
   }
 }
 
@@ -258,21 +293,76 @@ bool _isFont(String name) => const {
   '.ttf',
 }.contains(p.extension(name).toLowerCase());
 
-Uint8List _inflate(RandomAccessFile input, _Entry entry) {
-  if (!entry.canInflate) {
-    throw FormatException('Unsupported entry ${entry.name}');
+/// Reads entries' uncompressed bytes within the inflation limits.
+class _Inflater {
+  _Inflater(this.input, {required this.maxEntry, required int maxTotal})
+    : _left = maxTotal;
+
+  final RandomAccessFile input;
+  final int maxEntry;
+  int _left;
+
+  Uint8List call(_Entry entry) {
+    if (!entry.canInflate) {
+      throw FormatException('Unsupported entry ${entry.name}');
+    }
+    final limit = math.min(maxEntry, _left);
+    // Deflate never meaningfully expands, so this also bounds the read.
+    if (entry.compressedSize > limit) throw _tooLarge(entry);
+    input.setPositionSync(entry.localOffset);
+    final header = input.readSync(30);
+    if (header.length < 30 || _u32(header, 0) != 0x04034b50) {
+      throw FormatException('Bad local header for ${entry.name}');
+    }
+    final dataStart =
+        entry.localOffset + 30 + _u16(header, 26) + _u16(header, 28);
+    input.setPositionSync(dataStart);
+    final raw = input.readSync(entry.compressedSize);
+    if (raw.length != entry.compressedSize) {
+      throw FormatException('Truncated entry ${entry.name}');
+    }
+    if (entry.method == 0) {
+      _left -= raw.length;
+      return raw;
+    }
+    final out = _LimitedSink(limit, () => _tooLarge(entry));
+    final inflater = ZLibDecoder(raw: true).startChunkedConversion(out);
+    const step = 1 << 16;
+    for (var at = 0; at < raw.length; at += step) {
+      inflater.add(
+        Uint8List.sublistView(raw, at, math.min(at + step, raw.length)),
+      );
+    }
+    inflater.close();
+    _left -= out.length;
+    return out.takeBytes();
   }
-  input.setPositionSync(entry.localOffset);
-  final header = input.readSync(30);
-  if (header.length < 30 || _u32(header, 0) != 0x04034b50) {
-    throw FormatException('Bad local header for ${entry.name}');
+
+  static FormatException _tooLarge(_Entry entry) =>
+      FormatException('${entry.name} inflates past the size limit');
+}
+
+/// Collects inflated output, failing as soon as it passes [limit] rather
+/// than after a bomb has been expanded in full.
+class _LimitedSink implements Sink<List<int>> {
+  _LimitedSink(this.limit, this.onOverflow);
+
+  final int limit;
+  final FormatException Function() onOverflow;
+  final _bytes = BytesBuilder(copy: false);
+
+  int get length => _bytes.length;
+
+  @override
+  void add(List<int> data) {
+    if (_bytes.length + data.length > limit) throw onOverflow();
+    _bytes.add(data);
   }
-  final dataStart =
-      entry.localOffset + 30 + _u16(header, 26) + _u16(header, 28);
-  input.setPositionSync(dataStart);
-  final raw = input.readSync(entry.compressedSize);
-  if (entry.method == 0) return raw;
-  return Uint8List.fromList(ZLibDecoder(raw: true).convert(raw));
+
+  @override
+  void close() {}
+
+  Uint8List takeBytes() => _bytes.takeBytes();
 }
 
 int _u16(List<int> b, int o) => b[o] | (b[o + 1] << 8);
@@ -331,6 +421,11 @@ class _CentralDirectory {
     if (count == 0xffff || size == 0xffffffff || offset == 0xffffffff) {
       throw const FormatException('ZIP64 archives are not rewritten');
     }
+    // Sizes and offsets are the archive's word: check them against the file
+    // before allocating or seeking by them.
+    if (offset + size > length - tailSize + eocd) {
+      throw const FormatException('Corrupt central directory');
+    }
     f.setPositionSync(offset);
     final cd = f.readSync(size);
     final entries = <_Entry>[];
@@ -341,6 +436,9 @@ class _CentralDirectory {
       }
       final nameLen = _u16(cd, pos + 28);
       final recordLen = 46 + nameLen + _u16(cd, pos + 30) + _u16(cd, pos + 32);
+      if (pos + recordLen > cd.length) {
+        throw const FormatException('Corrupt central directory');
+      }
       final record = Uint8List.sublistView(cd, pos, pos + recordLen);
       final nameBytes = Uint8List.sublistView(record, 46, 46 + nameLen);
       final name = _u16(record, 8) & 0x800 != 0
@@ -349,7 +447,19 @@ class _CentralDirectory {
       entries.add(_Entry(Uint8List.fromList(record), name));
       pos += recordLen;
     }
-    return _CentralDirectory(entries, offset);
+    final zip = _CentralDirectory(entries, offset);
+    // Readers disagree on which of two same-named entries wins, and a copy
+    // runs from one local record to the next: both must be unambiguous.
+    final names = <String>{};
+    for (final e in zip.entriesByOffset) {
+      if (!names.add(e.name)) {
+        throw FormatException('Duplicate entry ${e.name}');
+      }
+      if (e.localOffset + 30 + e.compressedSize > zip.endOf(e)) {
+        throw FormatException('Overlapping entry ${e.name}');
+      }
+    }
+    return zip;
   }
 }
 
@@ -376,7 +486,15 @@ class _ZipWriter {
   void copyRaw(RandomAccessFile input, _Entry entry, int end) {
     final start = _offset;
     input.setPositionSync(entry.localOffset);
-    var left = end - entry.localOffset;
+    final header = input.readSync(30);
+    if (header.length < 30 ||
+        _u32(header, 0) != 0x04034b50 ||
+        30 + _u16(header, 26) + _u16(header, 28) + entry.compressedSize >
+            end - entry.localOffset) {
+      throw FormatException('Bad local header for ${entry.name}');
+    }
+    _write(header);
+    var left = end - entry.localOffset - header.length;
     while (left > 0) {
       final chunk = input.readSync(left < 1 << 20 ? left : 1 << 20);
       if (chunk.isEmpty) throw const FormatException('Truncated archive');
