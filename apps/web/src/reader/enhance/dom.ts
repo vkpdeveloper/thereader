@@ -108,3 +108,33 @@ export const BLOCKS = new Set([
 export function squash(el: Node): string {
   return (el.textContent ?? '').replace(/[\s ­​]+/g, ' ').trim();
 }
+
+/**
+ * Oldest-first cache bounded by entries and by the summed size the caller
+ * gives each entry; one entry larger than a 32nd of the budget is not kept.
+ * Books are untrusted: a chapter of huge formulas must not pin memory.
+ */
+export class BoundedCache<V> {
+  private readonly map = new Map<string, { value: V; size: number }>();
+  private total = 0;
+
+  constructor(
+    private readonly maxEntries: number,
+    private readonly maxSize: number,
+  ) {}
+
+  get(key: string): V | undefined {
+    return this.map.get(key)?.value;
+  }
+
+  set(key: string, value: V, size: number): void {
+    if (size > this.maxSize / 32 || this.map.has(key)) return;
+    this.map.set(key, { value, size });
+    this.total += size;
+    while (this.map.size > this.maxEntries || this.total > this.maxSize) {
+      const [k, v] = this.map.entries().next().value as [string, { value: V; size: number }];
+      this.map.delete(k);
+      this.total -= v.size;
+    }
+  }
+}

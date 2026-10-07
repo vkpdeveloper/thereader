@@ -4,13 +4,17 @@ import hljs from 'highlight.js/lib/core';
 import python from 'highlight.js/lib/languages/python';
 import { JSDOM } from 'jsdom';
 import { readFileSync } from 'node:fs';
+import { prepareChapter } from '../epub/chapter';
+import type { SpineItem } from '../epub/package';
+import type { Resources } from '../epub/resources';
 import { anchorQuote, TextIndex } from '../epub/text';
-import { applyHighlight, declaredLanguage, tokensOf, type Highlighter } from './code';
+import type { ZipArchive } from '../epub/zip';
+import { applyHighlight, declaredLanguage, prepareCode, tokensOf, type Highlighter } from './code';
 import { enhanceContent, hydrateMath, needs } from './index';
 import { inkVerdict } from './ink';
-import { texOfImage } from './math';
+import { findDelimited, scrubMathml, texOfImage } from './math';
 import { isPdfConversion } from './pdf';
-import { texToMathml } from './tex';
+import { MAX_TEX, texToMathml } from './tex';
 
 // Run with `cd apps/web && bun test src/reader/enhance`.
 
@@ -29,9 +33,12 @@ const highlight: Highlighter = (code, language) => {
   return result.relevance >= 5 || language ? { html: result.value, language: 'python' } : null;
 };
 
+function xhtmlSource(body: string, head = ''): string {
+  return `<?xml version="1.0" encoding="utf-8"?><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"><head><title>t</title>${head}</head><body>${body}</body></html>`;
+}
+
 function xhtml(body: string, head = ''): Document {
-  const src = `<?xml version="1.0" encoding="utf-8"?><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"><head><title>t</title>${head}</head><body>${body}</body></html>`;
-  return new window.DOMParser().parseFromString(src, 'application/xhtml+xml') as unknown as Document;
+  return new window.DOMParser().parseFromString(xhtmlSource(body, head), 'application/xhtml+xml') as unknown as Document;
 }
 
 /** Text as the web TextIndex sees it (the string highlights and Readium quotes index into). */
@@ -244,5 +251,149 @@ describe('dark ink', () => {
     expect(inkVerdict(pixels(() => [200, 120, 40, 255]))).toBe('keep');
     expect(inkVerdict(pixels((i) => (i % 5 === 0 ? [10, 10, 10, 255] : [255, 255, 255, 255])))).toBe('keep');
     expect(inkVerdict(pixels((i) => (i % 5 === 0 ? [240, 240, 240, 255] : [0, 0, 0, 0])))).toBe('keep');
+  });
+});
+
+describe('untrusted books', () => {
+  const ms = async (fn: () => unknown) => {
+    const start = performance.now();
+    await fn();
+    return performance.now() - start;
+  };
+  /** Every element and attribute in a formula's shadow root. */
+  const shadowMarkup = (doc: Document) =>
+    Array.from(bodyOf(doc).querySelectorAll('.tr-math'))
+      .flatMap((h) => (h.shadowRoot ? [h.shadowRoot, ...Array.from(h.shadowRoot.querySelectorAll('*'))] : []))
+      .flatMap((n) => ('attributes' in n ? [(n as Element).localName, ...Array.from((n as Element).attributes).map((a) => a.name)] : []));
+
+  test('temml refuses links, raw HTML, styles and images (trust: false)', () => {
+    for (const tex of ['\\href{javascript:alert(1)}{x}', '\\url{javascript:alert(1)}', '\\htmlClass{a}{x}', '\\htmlStyle{color:red}{x}',
+      '\\htmlData{a=b}{x}', '\\includegraphics{http://e/x.png}', '\\color{red;background:url(http://e)}{x}', '\\textcolor{url(x)}{y}']) {
+      expect(texToMathml(tex, false)).toBe(null);
+    }
+  });
+
+  test('a formula renders text, never markup, and loses \\ref links', async () => {
+    const doc = xhtml(`<p>$$\\text{&lt;img src=x onerror=alert(1)&gt;} + \\ref{a} + \\eqref{javascript:x}$$</p>`);
+    await enhanceAll(doc);
+    const names = shadowMarkup(doc);
+    expect(names).toContain('mtext');
+    expect(names.filter((n) => n.startsWith('on') || n === 'href' || n === 'img' || n === 'script')).toEqual([]);
+  });
+
+  test('scrubbed MathML keeps only MathML elements and no handlers or URLs', () => {
+    const parsed = new window.DOMParser().parseFromString(
+      `<math xmlns="http://www.w3.org/1998/Math/MathML" xmlns:x="http://www.w3.org/1999/xlink" onload="a()"><mi href="javascript:x" x:href="#a" onclick="b()" mathvariant="bold">x</mi>` +
+        `<semantics><annotation-xml encoding="text/html"><b xmlns="http://www.w3.org/1999/xhtml">h</b></annotation-xml></semantics>` +
+        `<svg xmlns="http://www.w3.org/2000/svg"><foreignObject/></svg><mtext src="x">t</mtext></math>`,
+      'application/xml',
+    );
+    const math = parsed.documentElement as unknown as Element;
+    expect(scrubMathml(math)).toBe(true);
+    const all = [math, ...Array.from(math.getElementsByTagNameNS('*', '*'))];
+    expect(all.map((e) => e.localName)).toEqual(['math', 'mi', 'semantics', 'mtext']);
+    expect(all.flatMap((e) => Array.from(e.attributes).map((a) => a.name)).filter((n) => !n.startsWith('xmlns'))).toEqual(['mathvariant']);
+    const html = new window.DOMParser().parseFromString('<b xmlns="http://www.w3.org/1999/xhtml">x</b>', 'application/xml');
+    expect(scrubMathml(html.documentElement as unknown as Element)).toBe(false);
+  });
+
+  test("a book's look-alike formula host keeps its own content", async () => {
+    const doc = xhtml(`<p>$$x^2$$ <span class="tr-math" data-tr-ui="" data-tr-tex="y">book text</span></p>`);
+    await enhanceAll(doc);
+    const fake = Array.from(bodyOf(doc).querySelectorAll('.tr-math')).find((h) => h.textContent === 'book text')!;
+    expect(fake.shadowRoot).toBe(null);
+    expect(bodyOf(doc).querySelectorAll('.tr-math').length).toBe(2);
+  });
+
+  test('oversized TeX is not rendered', () => {
+    expect(texToMathml(`${'x+'.repeat(MAX_TEX)}x`, false)).toBe(null);
+    expect(texToMathml('x+y', false)).not.toBe(null);
+  });
+
+  test('delimited TeX scanning matches the regex and stays linear', async () => {
+    const regex = /\$\$([^$]{1,4000}?)\$\$|\\\[([\s\S]{1,4000}?)\\\]|\\\(([\s\S]{1,4000}?)\\\)/g;
+    const alphabet = ['$', '$', '\\[', '\\]', '\\(', '\\)', 'a', ' ', '\\'];
+    let seed = 7;
+    const rand = (n: number) => (seed = (seed * 1103515245 + 12345) % 2147483648) % n;
+    for (let round = 0; round < 3000; round++) {
+      const text = Array.from({ length: 1 + rand(24) }, () => alphabet[rand(alphabet.length)]).join('');
+      const want = Array.from(text.matchAll(regex)).map((m) => [m.index, m[0]]);
+      expect(findDelimited(text).map((d) => [d.index, d.source])).toEqual(want);
+    }
+    expect(findDelimited(`a \\[${'b'.repeat(4001)}\\] \\(c\\)`).map((d) => d.source)).toEqual(['\\(c\\)']);
+    // The regex takes ~1 s here (4000 characters rescanned per opener); the scan, milliseconds.
+    expect(await ms(() => findDelimited(`${'\\['.repeat(500000)}x\\]`))).toBeLessThan(300);
+  });
+
+  test('alt text and class lists cannot make TeX detection quadratic', async () => {
+    const imgs = Array.from({ length: 800 }, () => `<img src="i.png" alt="${'{'.repeat(3990)}" style="height:1em"/>`).join('');
+    const doc = xhtml(`<div class="${'x'.repeat(200000)} equation">${imgs}</div>`);
+    expect(await ms(() => needs(doc, bodyOf(doc)))).toBeLessThan(800);
+  });
+
+  test('a huge generator meta is not rescanned', async () => {
+    const doc = xhtml('<p>x</p>', `<meta name="generator" content="${'Adobe InDesign '.repeat(14000)}"/>`);
+    expect(await ms(() => isPdfConversion(doc, bodyOf(doc)))).toBeLessThan(100);
+  });
+
+  test('a run of page anchors is not rescanned from each anchor', async () => {
+    // Counted, not timed: jsdom's own element collections are quadratic and would dominate.
+    const doc = xhtml(`${'<a id="p1"></a>'.repeat(1000)}${'<b/>'.repeat(2000)}<p>x</p>`, '<meta name="generator" content="pdftohtml"/>');
+    const proto = window.Element.prototype;
+    const real = Object.getOwnPropertyDescriptor(proto, 'nextElementSibling')!;
+    let hops = 0;
+    Object.defineProperty(proto, 'nextElementSibling', { configurable: true, get() { hops++; return real.get!.call(this); } });
+    try {
+      await enhanceContent(doc, bodyOf(doc), { tex: null, highlight: null });
+    } finally {
+      Object.defineProperty(proto, 'nextElementSibling', real);
+    }
+    // Before: every anchor walked the 3000 siblings after it (~3 million hops).
+    expect(hops).toBeLessThan(20000);
+  });
+
+  test('code blocks over the size caps are styled but not highlighted', async () => {
+    const seen: number[] = [];
+    const spy: Highlighter = (code) => {
+      seen.push(code.length);
+      return null;
+    };
+    const doc = xhtml(`<pre>${'a '.repeat(3500)}</pre><pre class="language-python">${'a '.repeat(7000)}</pre><pre class="language-python">x = 1</pre>`);
+    await prepareCode(bodyOf(doc), spy);
+    expect(seen).toEqual([5]);
+    expect(bodyOf(doc).querySelectorAll('pre.tr-code').length).toBe(3);
+  });
+
+  test('highlighting a block made of thousands of text nodes keeps every character', () => {
+    const doc = xhtml(`<pre><code class="language-python">${Array.from({ length: 4000 }, (_, i) => `<span>x${i} = "</span>s"\n`).join('')}</code></pre>`);
+    const pre = bodyOf(doc).querySelector('pre')!;
+    const before = pre.textContent;
+    const html = hljs.highlight(before!, { language: 'python' }).value;
+    expect(applyHighlight(pre, html)).toBe(true);
+    expect(pre.textContent).toBe(before);
+    // Each string token spans two of the book's text nodes: two wrapped pieces apiece.
+    expect(pre.querySelectorAll('.hljs-string').length).toBe(8000);
+  });
+
+  test('the sanitizer drops <img name> so the chapter cannot shadow document properties', async () => {
+    const zip = { readText: async () => xhtmlSource('<p><img src="a.png" name="body" id="x"/><a name="keep" id="k">t</a></p>') } as unknown as ZipArchive;
+    const res = { url: async () => 'blob:x', rewriteCss: async (css: string) => css, stylesheet: async () => '' } as unknown as Resources;
+    const item = { index: 0, href: 'c.xhtml', mediaType: 'application/xhtml+xml' } as unknown as SpineItem;
+    const chapter = await prepareChapter(zip, res, item);
+    expect(chapter.failed).toBe(false);
+    expect(chapter.body.querySelector('img')!.hasAttribute('name')).toBe(false);
+    expect(chapter.body.querySelector('a')!.getAttribute('name')).toBe('keep');
+  });
+
+  test("setTheme writes its own stylesheet, never a book element's text", async () => {
+    await import('./bundle');
+    const api = (globalThis as unknown as { TheReaderEnhance: { setTheme: (t: object, d: Document) => void } }).TheReaderEnhance;
+    const doc = xhtml('<div id="tr-theme">book text</div>');
+    api.setTheme({ panel: '#111111', border: 'red;}body{display:none' }, doc);
+    api.setTheme({ panel: '#222222' }, doc);
+    expect(bodyOf(doc).querySelector('div')!.textContent).toBe('book text');
+    const styles = Array.from(doc.getElementsByTagNameNS('*', 'style'));
+    expect(styles.length).toBe(1);
+    expect(styles[0].textContent).toBe(':root{--tr-panel:#222222;}');
   });
 });

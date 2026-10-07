@@ -24,7 +24,7 @@ import xml from 'highlight.js/lib/languages/xml';
 import yaml from 'highlight.js/lib/languages/yaml';
 import { grammarFor } from '../../lib/codeLanguages';
 import { themeDeclarations, type EnhanceTheme } from './css';
-import { darkPage, ENHANCE_VERSION, enhanceContent, fitBlocks, hydrateMath, isPaginated, watchInk, type EnhanceReport, type Highlighted } from './index';
+import { darkPage, ENHANCE_VERSION, enhanceContent, fitBlocks, hydrateMath, isPaginated, UI_ATTR, watchInk, type EnhanceReport, type Highlighted } from './index';
 import { texToMathml } from './tex';
 
 /**
@@ -109,14 +109,18 @@ function watch(doc: Document, root: Element): void {
   doc.fonts?.addEventListener?.('loadingdone', schedule);
 }
 
+const themeStyles = new WeakMap<Document, Element>();
+
 /** Theme colours for code panels and syntax (`--tr-*`); call again when the theme changes. */
 function setTheme(theme: EnhanceTheme, doc: Document = document): void {
   try {
-    let style = doc.getElementById('tr-theme');
-    if (!style) {
+    // Only our own element: a book's `id="tr-theme"` must not have its text replaced.
+    let style = themeStyles.get(doc);
+    if (!style?.isConnected) {
       style = doc.createElementNS('http://www.w3.org/1999/xhtml', 'style');
-      style.setAttribute('id', 'tr-theme');
+      style.setAttribute(UI_ATTR, '');
       (doc.head ?? doc.documentElement).append(style);
+      themeStyles.set(doc, style);
     }
     style.textContent = `:root{${themeDeclarations(theme ?? {})}}`;
   } catch {
@@ -125,7 +129,12 @@ function setTheme(theme: EnhanceTheme, doc: Document = document): void {
 }
 
 const api = { version: ENHANCE_VERSION, enhance, setTheme };
-(globalThis as unknown as { TheReaderEnhance: typeof api }).TheReaderEnhance = api;
+try {
+  // Nothing outside the page calls this; a book script that took the name first only loses the handle.
+  (globalThis as unknown as { TheReaderEnhance: typeof api }).TheReaderEnhance = api;
+} catch {
+  // Still enhance below.
+}
 
 if (typeof document !== 'undefined') {
   const start = () => void enhance(document);

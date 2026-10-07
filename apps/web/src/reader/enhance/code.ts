@@ -112,17 +112,17 @@ export function applyHighlight(pre: Element, html: string): boolean {
     .filter((r) => r.cls && r.end > r.start);
   if (!scoped.length) return true;
   // Runs are disjoint and in order. Split each text node at run edges, then
-  // wrap every piece that falls inside a run.
-  const edges = new Set<number>();
-  for (const r of scoped) {
-    edges.add(r.start);
-    edges.add(r.end);
-  }
+  // wrap every piece that falls inside a run. Segments are in order too, so
+  // one pointer walks the edges (a block can have thousands of each).
+  const edges = [...new Set(scoped.flatMap((r) => [r.start, r.end]))].sort((a, b) => a - b);
+  let e = 0;
   let k = 0;
   for (const seg of segments) {
     if (!seg.node || !seg.length) continue;
     const end = seg.start + seg.length;
-    const cuts = [...edges].filter((e) => e > seg.start && e < end).sort((a, b) => a - b);
+    while (e < edges.length && edges[e] <= seg.start) e++;
+    const cuts: number[] = [];
+    for (let i = e; i < edges.length && edges[i] < end; i++) cuts.push(edges[i]);
     const pieces: { node: Text; start: number }[] = [];
     let node = seg.node;
     let at = seg.start;
@@ -146,12 +146,23 @@ export function applyHighlight(pre: Element, html: string): boolean {
 }
 
 /**
+ * Longest block highlighted with a declared language, and with a detected one;
+ * some highlight.js grammars go superlinear on odd input (csharp, java: ~0.4 s
+ * at the cap, seconds at 20000). Longer blocks keep the plain code styling.
+ */
+const MAX_HIGHLIGHT = 12000;
+const MAX_DETECT = 6000;
+/** Characters of code a chapter may highlight in all. */
+const CHAPTER_BUDGET = 100000;
+
+/**
  * Rule 5: code blocks. Every `pre` gets the code styling from the
  * stylesheet; blocks with a declared language, or a confidently detected one,
  * are highlighted.
  */
 export async function prepareCode(root: Element, highlight: Highlighter | null): Promise<number> {
   let count = 0;
+  let budget = CHAPTER_BUDGET;
   for (const pre of Array.from(root.getElementsByTagNameNS('*', 'pre'))) {
     if (hasClass(pre, 'tr-code')) continue;
     addClass(pre, 'tr-code');
@@ -159,7 +170,8 @@ export async function prepareCode(root: Element, highlight: Highlighter | null):
     const language = declaredLanguage(pre);
     if (language === '') continue;
     const { code } = codeOf(pre);
-    if (!code.trim() || code.length > 60000) continue;
+    if (!code.trim() || code.length > (language === null ? MAX_DETECT : MAX_HIGHLIGHT) || code.length > budget) continue;
+    budget -= code.length;
     let result: Highlighted | null = null;
     try {
       result = await highlight(code, language);

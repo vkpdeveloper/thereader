@@ -143,6 +143,9 @@ async function sanitizeAndRewrite(body: Element, item: SpineItem, res: Resources
     for (const a of Array.from(el.attributes)) {
       const n = a.name.toLowerCase();
       if (n.startsWith('on') || n === 'formaction') el.removeAttribute(a.name);
+      // A named <img> becomes a property of the frame's document (`<img name="body">`
+      // shadows `document.body`) and breaks the engine; the attribute does nothing else.
+      else if (n === 'name' && name === 'img') el.removeAttribute(a.name);
       else if ((n === 'href' || n === 'xlink:href' || n === 'src') && /^\s*javascript:/i.test(a.value)) el.removeAttribute(a.name);
     }
     if (name === 'meta' || name === 'link') {

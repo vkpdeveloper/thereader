@@ -1,4 +1,5 @@
 import temml from 'temml';
+import { BoundedCache } from './dom';
 
 /**
  * TeX to MathML for book formulas (temml). The web engine loads this as its
@@ -28,8 +29,14 @@ const MACROS: Record<string, string> = {
 /** Environments temml accepts only in display mode. */
 const DISPLAY_ONLY = /\\begin\{(align|alignat|gather|equation|multline|flalign|eqnarray)\*?\}/;
 
-const cache = new Map<string, string | null>();
-const CACHE_LIMIT = 4000;
+/**
+ * Longest TeX rendered. Book formulas run to a few thousand characters; more
+ * is a hostile book (temml's output grows with the input, ~16x for flat sums).
+ */
+export const MAX_TEX = 16000;
+
+/** Rendered markup (null: did not parse), by mode and source. */
+const cache = new BoundedCache<string | null>(4000, 8_000_000);
 
 /** Strips `$$…$$`, `\[…\]`, `\(…\)` and `$…$` delimiters. */
 export function stripDelimiters(tex: string): string {
@@ -48,11 +55,13 @@ export function stripDelimiters(tex: string): string {
  * top-level relations so long ones do not overflow the column.
  */
 export function texToMathml(tex: string, display: boolean): string | null {
+  if (tex.length > MAX_TEX + 8) return null;
   const source = stripDelimiters(tex);
   if (!source) return null;
   const displayMode = display || DISPLAY_ONLY.test(source);
   const key = `${displayMode ? 'D' : 'I'}${source}`;
-  if (cache.has(key)) return cache.get(key)!;
+  const known = cache.get(key);
+  if (known !== undefined) return known;
   let out: string | null;
   try {
     out = temml.renderToString(source, {
@@ -68,7 +77,6 @@ export function texToMathml(tex: string, display: boolean): string | null {
   } catch {
     out = null;
   }
-  if (cache.size >= CACHE_LIMIT) cache.delete(cache.keys().next().value as string);
-  cache.set(key, out);
+  cache.set(key, out, key.length + (out?.length ?? 0));
   return out;
 }

@@ -1,5 +1,6 @@
 import {
   addClass,
+  BoundedCache,
   classOf,
   closest,
   create,
@@ -58,12 +59,17 @@ export function prepareMathml(root: Element): number {
 // ---------------------------------------------------------------- TeX in image alt text
 
 /** TeX commands, scripts or groups. */
-const TEX_SIGNAL = /\\[A-Za-z]+|\\[{}|,;:!]|[_^]|\{[^}]*\}/;
+const TEX_SIGNAL = /\\[A-Za-z]+|\\[{}|,;:!]|[_^]|\{[^{}]*\}/;
 /** Classes of equation containers and equation images in converted books. */
 const MATH_CONTEXT = /(^|[\s_-])(math|maths|equation|eqn|equ|formula|tex|latex|displaymath|inlinemath|inline_math|disp-formula|inline-formula|MathJax\w*)([\s_-]|$)/i;
 const DISPLAY_CONTEXT = /(^|[\s_-])(displaymath|display-math|math-display|equation|eqn|disp-formula|MathJax_SVG_Display|MathJax_Display|MathJax_CHTML_Display|mathblock|math-block)([\s_-]|$)/i;
 /** Inline-sized: a height or vertical-align in em/ex, the way TeX-to-image converters size formulas. */
 const EM_SIZED = /(height|vertical-align)\s*:\s*-?[\d.]+\s*(em|ex)/i;
+/** Real class lists are short; a huge one on a shared ancestor would be scanned once per image. */
+const classMatches = (re: RegExp) => (e: Element) => {
+  const cls = classOf(e);
+  return cls.length <= 512 && re.test(cls);
+};
 
 /**
  * Whether an image is a formula whose alt text is its TeX source. Needs
@@ -76,14 +82,14 @@ export function texOfImage(img: Element): { tex: string; display: boolean } | nu
   const src = img.getAttribute('src') ?? '';
   const stem = (src.split(/[?#]/)[0].split('/').pop() ?? '').replace(/\.[a-z0-9]+$/i, '');
   if (stem && alt === stem) return null;
-  const context = closest(img, (e) => MATH_CONTEXT.test(classOf(e)), 5);
+  const context = closest(img, classMatches(MATH_CONTEXT), 5);
   const sized = EM_SIZED.test(img.getAttribute('style') ?? '');
   const signal = TEX_SIGNAL.test(alt);
   const token = alt.length <= 12 && !/[A-Za-z]{3,}/.test(alt) && /^[\w\s+\-=<>()[\]|.,'′*/:;!]+$/.test(alt);
   if (!(signal || token) || !(context || sized)) return null;
   // A one-word alt with an underscore and no other TeX is a file name ("number_line").
   if (signal && /^[A-Za-z][\w-]*$/.test(alt) && /[A-Za-z]{3,}_|_[A-Za-z]{3,}/.test(alt)) return null;
-  const display = !!closest(img, (e) => DISPLAY_CONTEXT.test(classOf(e)), 5);
+  const display = !!closest(img, classMatches(DISPLAY_CONTEXT), 5);
   return { tex: alt, display };
 }
 
@@ -108,8 +114,59 @@ export function prepareTexImages(root: Element, tex: TexRenderer): number {
 // ---------------------------------------------------------------- raw TeX
 
 const MATH_SPAN = /(^|\s)math(\s|$)/;
-/** `$$…$$`, `\[…\]` or `\(…\)` inside one text node. */
-const DELIMITED = /\$\$([^$]{1,4000}?)\$\$|\\\[([\s\S]{1,4000}?)\\\]|\\\(([\s\S]{1,4000}?)\\\)/g;
+const MAX_DELIMITED = 4000;
+
+export interface Delimited {
+  index: number;
+  /** The formula with its delimiters. */
+  source: string;
+  body: string;
+  display: boolean;
+}
+
+function occurrences(text: string, needle: string): number[] {
+  const out: number[] = [];
+  for (let i = text.indexOf(needle); i >= 0; i = text.indexOf(needle, i + 1)) out.push(i);
+  return out;
+}
+
+/** First entry of the ascending `list` at or after `at`, or -1. */
+function firstFrom(list: number[], at: number): number {
+  let lo = 0;
+  let hi = list.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (list[mid] < at) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo < list.length ? list[lo] : -1;
+}
+
+/**
+ * `$$…$$`, `\[…\]` or `\(…\)` inside one text node, bodies of 1 to 4000
+ * characters (no `$` in a `$$` body), leftmost-shortest: what
+ * `/\$\$([^$]{1,4000}?)\$\$|\\\[([\s\S]{1,4000}?)\\\]|\\\(([\s\S]{1,4000}?)\\\)/g` finds. A
+ * scan with closers looked up by binary search, since that regex rescans up to
+ * 4000 characters at every unclosed opener.
+ */
+export function findDelimited(text: string): Delimited[] {
+  const out: Delimited[] = [];
+  const dollars = occurrences(text, '$');
+  const closers: Record<string, number[]> = { '\\[': occurrences(text, '\\]'), '\\(': occurrences(text, '\\)') };
+  const opens = [...occurrences(text, '$$'), ...occurrences(text, '\\['), ...occurrences(text, '\\(')].sort((a, b) => a - b);
+  let cursor = 0;
+  for (const i of opens) {
+    if (i < cursor) continue;
+    const open = text.slice(i, i + 2);
+    // The closer: for `$$` the first `$` after the opener, which must start `$$`.
+    const end = open === '$$' ? firstFrom(dollars, i + 2) : firstFrom(closers[open], i + 3);
+    const length = end - i - 2;
+    if (end < 0 || length < 1 || length > MAX_DELIMITED || (open === '$$' && text[end + 1] !== '$')) continue;
+    out.push({ index: i, source: text.slice(i, end + 2), body: text.slice(i + 2, end), display: open !== '\\(' });
+    cursor = end + 2;
+  }
+  return out;
+}
 
 /**
  * Rule 3: TeX a book left for MathJax. Pandoc's `span.math`, MathJax
@@ -168,23 +225,19 @@ function prepareDelimitedTex(root: Element, tex: TexRenderer): number {
   walk(root);
   for (const node of candidates) {
     let current: Text = node;
-    DELIMITED.lastIndex = 0;
-    const matches = Array.from(node.data.matchAll(DELIMITED));
     let consumed = 0;
-    for (const m of matches) {
-      const body = m[1] ?? m[2] ?? m[3] ?? '';
-      if (!TEX_SIGNAL.test(body) && body.trim().length > 3) continue;
-      const display = m[1] !== undefined || m[2] !== undefined;
-      if (tex(m[0], display) === null) continue;
+    for (const m of findDelimited(node.data)) {
+      if (!TEX_SIGNAL.test(m.body) && m.body.trim().length > 3) continue;
+      if (tex(m.source, m.display) === null) continue;
       // Split the text node around the formula; the pieces keep the same characters.
-      const start = m.index! - consumed;
+      const start = m.index - consumed;
       const source = start > 0 ? current.splitText(start) : current;
-      const rest = source.splitText(m[0].length);
+      const rest = source.splitText(m.source.length);
       const wrap = create(doc, 'span', 'tr-hidden tr-math-source');
       source.parentNode!.insertBefore(wrap, source);
       wrap.append(source);
-      wrap.parentNode!.insertBefore(makeHost(doc, m[0], display), wrap.nextSibling);
-      consumed = m.index! + m[0].length;
+      wrap.parentNode!.insertBefore(makeHost(doc, m.source, m.display), wrap.nextSibling);
+      consumed = m.index + m.source.length;
       current = rest;
       count++;
     }
@@ -212,7 +265,8 @@ function mathJaxPreview(el: Element | null): Element | null {
   return null;
 }
 
-const templates = new Map<string, Element | null>();
+/** Parsed, scrubbed formulas (null: none), by mode and source. */
+const templates = new BoundedCache<Element | null>(4000, 4_000_000);
 const sheets = new WeakMap<Document, CSSStyleSheet | null>();
 
 /**
@@ -224,34 +278,43 @@ const sheets = new WeakMap<Document, CSSStyleSheet | null>();
 export function hydrateMath(root: Element, tex: TexRenderer): number {
   const doc = root.ownerDocument;
   let count = 0;
-  for (const host of Array.from(root.querySelectorAll(`.${MATH_HOST}[${TEX_ATTR}]`))) {
-    if ((host as HTMLElement).shadowRoot || host.querySelector('math')) continue;
-    const source = host.getAttribute(TEX_ATTR) ?? '';
-    const display = host.hasAttribute(DISPLAY_ATTR);
-    const math = mathElement(doc, source, display, tex);
-    if (!math) {
-      // Prepared but not renderable here: show the book's own version again.
-      for (const sib of [host.previousElementSibling, host.nextElementSibling, mathJaxPreview(host)]) {
-        if (sib && hasClass(sib, 'tr-math-source')) sib.classList.remove('tr-hidden');
-      }
-      continue;
-    }
-    let shadow: ShadowRoot | null = null;
+  for (const host of Array.from(root.querySelectorAll(`.${MATH_HOST}[${TEX_ATTR}][${UI_ATTR}]`))) {
+    // Hosts the enhancer made are empty; a look-alike in the book keeps its content.
+    if ((host as HTMLElement).shadowRoot || host.firstChild) continue;
     try {
-      shadow = (host as HTMLElement).attachShadow({ mode: 'open' });
+      if (hydrateHost(doc, host, tex)) count++;
     } catch {
-      shadow = null;
+      // One formula failing leaves the rest (and the chapter) as they are.
     }
-    if (shadow) {
-      adoptStyles(doc, shadow);
-      shadow.append(math);
-    } else {
-      // No shadow DOM: light DOM under the UI marker, still skipped by the web TextIndex.
-      host.append(math);
-    }
-    count++;
   }
   return count;
+}
+
+function hydrateHost(doc: Document, host: Element, tex: TexRenderer): boolean {
+  const source = host.getAttribute(TEX_ATTR) ?? '';
+  const display = host.hasAttribute(DISPLAY_ATTR);
+  const math = mathElement(doc, source, display, tex);
+  if (!math) {
+    // Prepared but not renderable here: show the book's own version again.
+    for (const sib of [host.previousElementSibling, host.nextElementSibling, mathJaxPreview(host)]) {
+      if (sib && hasClass(sib, 'tr-math-source')) sib.classList.remove('tr-hidden');
+    }
+    return false;
+  }
+  let shadow: ShadowRoot | null = null;
+  try {
+    shadow = (host as HTMLElement).attachShadow({ mode: 'open' });
+  } catch {
+    shadow = null;
+  }
+  if (shadow) {
+    adoptStyles(doc, shadow);
+    shadow.append(math);
+  } else {
+    // No shadow DOM: light DOM under the UI marker, still skipped by the web TextIndex.
+    host.append(math);
+  }
+  return true;
 }
 
 function mathElement(doc: Document, source: string, display: boolean, tex: TexRenderer): Element | null {
@@ -263,12 +326,36 @@ function mathElement(doc: Document, source: string, display: boolean, tex: TexRe
     if (markup) {
       const parsed = new DOMParser().parseFromString(markup, 'application/xml');
       const el = parsed.documentElement;
-      if (el && el.namespaceURI === MATHML_NS && !parsed.getElementsByTagName('parsererror').length) template = el;
+      if (el && !parsed.getElementsByTagName('parsererror').length && scrubMathml(el)) template = el;
     }
-    if (templates.size > 4000) templates.delete(templates.keys().next().value as string);
-    templates.set(key, template);
+    templates.set(key, template, key.length + (markup?.length ?? 0));
   }
   return template ? (doc.importNode(template, true) as Element) : null;
+}
+
+const XMLNS_NS = 'http://www.w3.org/2000/xmlns/';
+
+/**
+ * Rendered formulas are inserted after the web sanitizer ran, and on mobile
+ * into the book's own page, so their markup is checked here as well as by
+ * temml's `trust: false`: MathML elements only, no links (`\ref` makes
+ * `<a href="#…">`), no handlers or other URLs. False when the root is not MathML.
+ */
+export function scrubMathml(math: Element): boolean {
+  if (math.namespaceURI !== MATHML_NS || nameOf(math) !== 'math') return false;
+  for (const el of [math, ...Array.from(math.getElementsByTagNameNS('*', '*'))]) {
+    if (el !== math && (el.namespaceURI !== MATHML_NS || nameOf(el) === 'annotation-xml')) {
+      el.remove();
+      continue;
+    }
+    for (const a of Array.from(el.attributes)) {
+      const n = a.localName.toLowerCase();
+      if (n.startsWith('on') || n === 'href' || n === 'src' || (a.namespaceURI && a.namespaceURI !== XMLNS_NS)) {
+        el.removeAttributeNode(a);
+      }
+    }
+  }
+  return true;
 }
 
 function adoptStyles(doc: Document, shadow: ShadowRoot): void {

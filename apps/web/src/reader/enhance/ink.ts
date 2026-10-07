@@ -11,6 +11,8 @@ import { addClass, hasClass } from './dom';
 export type InkVerdict = 'invert' | 'keep';
 
 const SAMPLE = 160;
+/** Larger images are never ink renders; drawing one would make the browser decode it in full. */
+const MAX_PIXELS = 4096 * 4096;
 
 /** Pixel statistics → verdict. Exposed for tests. */
 export function inkVerdict(data: Uint8ClampedArray): InkVerdict {
@@ -43,7 +45,7 @@ export function analyzeImage(img: HTMLImageElement): InkVerdict | null {
   const w = img.naturalWidth;
   const h = img.naturalHeight;
   if (!img.complete || !w || !h) return null;
-  if (w < 4 || h < 4) return 'keep';
+  if (w < 4 || h < 4 || w * h > MAX_PIXELS) return 'keep';
   const scale = Math.min(1, SAMPLE / Math.max(w, h));
   const cw = Math.max(1, Math.round(w * scale));
   const ch = Math.max(1, Math.round(h * scale));

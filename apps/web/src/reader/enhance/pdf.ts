@@ -28,7 +28,9 @@ function pageAnchors(root: Element): Element[] {
 
 export function isPdfConversion(doc: Document, root: Element): boolean {
   for (const meta of elements(doc.documentElement ?? root, 'meta')) {
-    if ((meta.getAttribute('name') ?? '').toLowerCase() === 'generator' && GENERATOR.test(meta.getAttribute('content') ?? '')) return true;
+    // A generator names itself up front; the cap keeps `.*` from rescanning a huge content attribute.
+    const content = (meta.getAttribute('content') ?? '').slice(0, 256);
+    if ((meta.getAttribute('name') ?? '').toLowerCase() === 'generator' && GENERATOR.test(content)) return true;
   }
   // No generator: many page anchors and mostly unterminated one-line paragraphs.
   const paragraphs = elements(root, 'p');
@@ -66,9 +68,11 @@ export function preparePdf(doc: Document, root: Element): number {
     const first = a.closest('p');
     let i = first ? index.get(first) : undefined;
     if (i === undefined) {
-      // Anchor between paragraphs: the header lines follow it.
+      // Anchor between paragraphs: the header lines follow it (within a few
+      // siblings; a run of thousands of anchors must not be rescanned from each).
       let next = a.nextElementSibling;
-      while (next && !index.has(next)) next = next.nextElementSibling;
+      for (let hops = 0; next && !index.has(next) && hops < 8; hops++) next = next.nextElementSibling;
+      if (next && !index.has(next)) next = null;
       i = next ? index.get(next) : undefined;
     }
     if (i !== undefined) starts.push(i);
