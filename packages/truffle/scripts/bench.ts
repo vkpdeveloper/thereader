@@ -8,8 +8,9 @@
  * caches. The runtimes take turns page by page, and the build that goes first
  * alternates by page.
  *
- * Time. Per page, each build runs one warm-up and `--runs` timed runs. A full
- * GC precedes each timed run (its own scavenges are its cost). Each run times:
+ * Time. Per page, each build runs one warm-up and `--runs` timed runs. Each
+ * timed run starts with an empty young generation (a minor GC in Chromium, a
+ * full one in Bun); the collections a run triggers are its cost. Each run times:
  *
  * - `fromDom`: the page document copied into the engine's tree;
  * - `extractTree`: that tree to an `Article` (no Markdown);
@@ -32,15 +33,16 @@
  *   `fromDom` over jsdom is mostly jsdom's own cost.
  *
  * Memory (Chromium only), with V8's sampling heap profiler over CDP
- * (`HeapProfiler.startSampling`, every `--interval` bytes on average, 64 by
+ * (`HeapProfiler.startSampling`, every `--interval` bytes on average, 1024 by
  * default), attributed to the one call that runs the phase (inputs are built
- * before sampling starts), after a warm-up run, averaged over `--mem-runs` runs:
+ * before sampling starts), after a warm-up run of each phase:
  *
  * - allocated: bytes allocated by the phase, including everything collected
- *   since (`includeObjectsCollectedByMajorGC/MinorGC`); the garbage it makes;
+ *   since (`includeObjectsCollectedByMajorGC/MinorGC`), the mean of
+ *   `--mem-runs` runs (2 by default); the garbage it makes;
  * - retained: bytes the phase allocated that are still live after a forced
  *   full GC while its result is held: the tree (`fromDom`) and the final output
- *   (`extract`, the tree and all intermediates gone). The document is dropped
+ *   (`extract`, the tree and all intermediates gone), one run. The document is dropped
  *   first, so wrappers it holds are not counted. Strings the DOM hands over
  *   are often external (their characters live in Blink); only V8 heap counts. The tree is what every
  *   later stage works on and is live through the whole extraction, so tree +
@@ -48,11 +50,12 @@
  *   allocated bytes.
  *
  * The profiler samples allocations as a Poisson process and scales each sample
- * to an unbiased estimate, so one page's figure carries a few percent of noise
- * (relative error about sqrt(interval / bytes)); over the corpus (hundreds of
- * MB) it is well under 1%. Both builds are measured the same way.
+ * to an unbiased estimate: relative error about sqrt(interval / bytes), some 3%
+ * for a page allocating 1 MB, under 0.5% over the corpus (hundreds of MB). A
+ * smaller interval is more precise and much slower (64 B: five times the time).
+ * Both builds are measured the same way.
  *
- *   bun scripts/bench.ts [--runtime chromium|bun|both] [--runs 10] [--mem-runs 2] [--interval 64]
+ *   bun scripts/bench.ts [--runtime chromium|bun|both] [--runs 10] [--mem-runs 2] [--interval 1024]
  *                        [--no-memory] [--ids id,id] [--every n] [--baseline <src>] [--json out.json]
  *   bun scripts/bench.ts --profile [next|base] [--runs 5]   # V8 CPU profile of `extract`, top functions by self time
  */
@@ -65,7 +68,7 @@ import { arg, baselineDir, bundleComparePage, call, flag, loadCorpus, openPages,
 const runtime = arg('--runtime') ?? 'both';
 const runs = Number(arg('--runs') ?? 10);
 const memRuns = Number(arg('--mem-runs') ?? 2);
-const interval = Number(arg('--interval') ?? 64);
+const interval = Number(arg('--interval') ?? 1024);
 const memory = !flag('--no-memory');
 const every = Number(arg('--every') ?? 1);
 const entries = loadCorpus(arg('--ids')?.split(',')).filter((_, i) => i % every === 0);
@@ -133,7 +136,7 @@ function timeReport(title: string, results: PageTiming[]): string {
 }
 
 function memoryReport(results: PageMemory[]): string {
-  const out = [`### Chromium: memory per page (V8 sampling heap profiler, ${interval} B interval, mean of ${memRuns} runs)`, ''];
+  const out = [`### Chromium: memory per page (V8 sampling heap profiler, ${interval} B interval; allocated: mean of ${memRuns} runs)`, ''];
   const rows: [string, keyof Memory][] = [
     ['allocated: fromDom', 'fromDom'], ['allocated: extractTree', 'extractTree'], ['allocated: markdown', 'markdown'], ['allocated: extract (full)', 'extract'],
     ['retained: tree', 'tree'], ['retained: output', 'output'],
@@ -158,7 +161,6 @@ function measuredBytes(node: { callFrame: { functionName: string }; selfSize: nu
 
 async function sampleHeap(page: Page, cdp: CDPSession, engine: EngineName, phase: Phase, collected: boolean): Promise<number> {
   if (!(await call<boolean>(page, 'prepare', engine, phase))) return 0;
-  await cdp.send('HeapProfiler.collectGarbage');
   await cdp.send('HeapProfiler.startSampling', { samplingInterval: interval, includeObjectsCollectedByMajorGC: collected, includeObjectsCollectedByMinorGC: collected } as never);
   await call(page, 'measuredRun', engine, phase);
   if (!collected) await cdp.send('HeapProfiler.collectGarbage');
@@ -170,12 +172,15 @@ async function sampleHeap(page: Page, cdp: CDPSession, engine: EngineName, phase
 /** One build's memory on the loaded page, in its own renderer. */
 async function pageMemory(page: Page, cdp: CDPSession): Promise<Memory> {
   const m: Memory = { fromDom: 0, extractTree: 0, markdown: 0, extract: 0, tree: 0, output: 0 };
-  for (const phase of PHASES) await sampleHeap(page, cdp, 'next', phase, true); // warm-up
+  for (const phase of PHASES) {
+    if (await call<boolean>(page, 'prepare', 'next', phase)) await call(page, 'measuredRun', 'next', phase); // warm-up
+    await call(page, 'release');
+  }
   for (let r = 0; r < memRuns; r++) {
     for (const phase of PHASES) m[phase] += (await sampleHeap(page, cdp, 'next', phase, true)) / memRuns;
-    m.tree += (await sampleHeap(page, cdp, 'next', 'fromDom', false)) / memRuns;
-    m.output += (await sampleHeap(page, cdp, 'next', 'extract', false)) / memRuns;
   }
+  m.tree = await sampleHeap(page, cdp, 'next', 'fromDom', false);
+  m.output = await sampleHeap(page, cdp, 'next', 'extract', false);
   return m;
 }
 

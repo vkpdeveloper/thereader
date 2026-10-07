@@ -49,12 +49,13 @@ export class VText {
 /** The attributes of every element that has none. Frozen: an element gains an attribute through `setAttr`, which gives it its own. */
 export const NO_ATTRIBUTES = Object.freeze({}) as Record<string, string>;
 
-/** Characters `toLowerCase` may change: ASCII capitals, and anything outside ASCII. */
-const NOT_LOWERCASE = /[A-Z\u0080-\uffff]/;
-
-/** `text.toLowerCase()`, without the copy when there is nothing to lower. */
+/** `text.toLowerCase()`, without the copy when there is nothing to lower: no ASCII capital and nothing outside ASCII. */
 export function lowerCase(text: string): string {
-  return NOT_LOWERCASE.test(text) ? text.toLowerCase() : text;
+  for (let i = 0; i < text.length; i++) {
+    const c = text.charCodeAt(i);
+    if ((c >= 65 && c <= 90) || c >= 0x80) return text.toLowerCase();
+  }
+  return text;
 }
 
 export class VElement {

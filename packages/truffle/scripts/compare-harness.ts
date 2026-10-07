@@ -25,7 +25,7 @@ export interface Environment {
   base: Engine;
   next: Engine;
   parse(html: string, url: string): Document;
-  /** Full garbage collection (V8 `--expose-gc`, `Bun.gc(true)`); absent where unavailable. */
+  /** Garbage collection before a timed run (a minor GC in Chromium, `Bun.gc(true)` in Bun); absent where unavailable. */
   /**
    * A document for the page. In Chromium a fresh one each call: an engine's first walk over a document creates its
    * DOM wrappers (and whatever else the DOM builds lazily), which is part of what extraction costs in the app.
@@ -118,7 +118,7 @@ export function createHarness(env: Environment) {
   }
 
   /**
-   * One run of each phase, in milliseconds, each chain on a document of its own (`parse`, not timed). A full GC (when
+   * One run of each phase, in milliseconds, each chain on a document of its own (`parse`, not timed). A GC (when
    * available) precedes the chain and the full run.
    */
   function timeOnce(e: Engine, t: Timing): void {

@@ -18,7 +18,7 @@ function parse(html: string, url: string): Document {
   return doc;
 }
 
-const g = globalThis as unknown as { gc?: () => void; harness: unknown; engines: unknown };
+const g = globalThis as unknown as { gc?: (options?: { type: 'minor' | 'major' }) => void; harness: unknown; engines: unknown };
 
 // Both builds, for ad-hoc probes from the console or `page.evaluate`.
 g.engines = { base, next };
@@ -27,5 +27,7 @@ g.harness = createHarness({
   base: base as unknown as Engine,
   next: next as unknown as Engine,
   parse,
-  gc: g.gc === undefined ? undefined : () => g.gc!(),
+  // The young generation only: every run starts with it empty. A full collection costs tens of milliseconds with the
+  // documents a page has parsed; the old generation is collected when V8 decides, so each build pays for its own garbage.
+  gc: g.gc === undefined ? undefined : () => g.gc!({ type: 'minor' }),
 });
