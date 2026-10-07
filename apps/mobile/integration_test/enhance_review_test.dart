@@ -120,7 +120,22 @@ final _stops = [
     flow: ReaderFlow.paginated,
   ),
   // apps/web/fixtures/enhance-sampler.epub
-  for (final c in ['mathml', 'tex', 'code', 'images', 'table', 'pdf'])
+  for (final c in [
+    'mathml',
+    'tex',
+    'code',
+    'images',
+    'table',
+    'pdf',
+    'katex',
+    'mathjax2',
+    'mathjax3',
+    'mathjax3svg',
+    'svg',
+    'paper',
+    'attrs',
+    'mathml2',
+  ])
     _Stop('sampler-$c', 'sampler', 'OEBPS/$c.xhtml'),
   _Stop(
     'sampler-code-paginated',
