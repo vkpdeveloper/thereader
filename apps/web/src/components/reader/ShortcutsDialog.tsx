@@ -1,5 +1,6 @@
 import { Dialog } from '../overlay';
 import type { IconProps } from '../icons';
+import { loadInkShortcuts, shortcutLabel } from '../ink/shortcuts';
 
 /** Material outlined `keyboard`. */
 export function KeyboardIcon({ size = 20, ...rest }: IconProps) {
@@ -34,6 +35,7 @@ function groups(rtl: boolean): { title: string; rows: [string[], string][] }[] {
         [['H'], 'Highlights'],
         [['/', `${mod} F`], 'Search this book'],
         [['A', `${mod} ,`], 'Typography'],
+        [[shortcutLabel(loadInkShortcuts(), 'toggle') ?? 'P'], 'Draw on the page'],
         [['M'], 'Show or hide controls'],
         [['F'], 'Full screen'],
         [['Esc'], 'Close panel, then the book'],

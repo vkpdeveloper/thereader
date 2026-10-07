@@ -1,7 +1,8 @@
 /*
- * Pen drawing in the article reader (useArticleInk.tsx): an SVG laid over
- * the whole page, which scrolls with it, and a toolbar docked at the bottom
- * that rests out of the way while drawing or scrolling.
+ * The pen (useInk.tsx): the toolbar docked at the bottom, which rests out
+ * of the way while drawing or scrolling, and the article's canvas, an SVG
+ * laid over the whole page that scrolls with it (useArticleInk.tsx). Books
+ * draw inside their own frame (reader/epub/ink.ts).
  */
 
 .article-page {

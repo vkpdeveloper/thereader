@@ -1,3 +1,5 @@
+import type { InkPen } from '../lib/inkPaths';
+import type { InkStroke } from '../lib/services/ink';
 import type { Highlight, ReaderPreferences, ReadingLocator } from '../lib/types';
 
 /**
@@ -129,6 +131,26 @@ export interface ReaderEngine {
   applyPreferences(prefs: ReaderPreferences, colors: EngineColors): void;
   /** Replaces the drawn highlights (live ones only). */
   setHighlights(highlights: Highlight[]): void;
+  /**
+   * Pen drawings: every stroke of this book. The current chapter's are
+   * drawn inside the page, so they turn and scroll with its text, and are
+   * placed again whenever a chapter is shown or laid out.
+   */
+  setInk(strokes: InkStroke[]): void;
+  /** A host viewport point in ink coordinates (the chapter document's); null off the page. */
+  inkPoint(x: number, y: number): [number, number] | null;
+  /** Shows a stroke being drawn (ink coordinates), or clears it. */
+  drawLiveInk(points: number[] | null, pen: InkPen): void;
+  /** Anchors a finished stroke (ink coordinates) to the chapter text nearest it. */
+  anchorInk(points: number[]): Pick<InkStroke, 'anchor' | 'points'> | null;
+  /** Drawn strokes passing within `reach` host pixels (beyond their half width) of an ink point. */
+  inkHits(x: number, y: number, reach: number): InkStroke[];
+  /** Drawn strokes on the page in view. */
+  inkOnScreen(): InkStroke[];
+  /** A wheel turned over a layer above the page (the pen's): pages turn or the chapter scrolls as if over the page. */
+  wheel(event: WheelEvent): void;
+  /** Scrolled flow: scrolls by pixels at once (a finger dragging under the pen). */
+  panBy(dy: number): void;
   search(query: string, signal?: AbortSignal): Promise<SearchMatch[]>;
   clearSelection(): void;
   /** Re-layout after the container size changed. */
