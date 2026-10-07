@@ -137,12 +137,9 @@ class EpubPackage {
 
   Future<void> close() => zip.closeArchive(_archive);
 
-  /// Raw bytes of a resource by normalised zip path, or null.
-  Uint8List? readBytes(String href) {
-    final f = _archive.findFile(_normalize(href));
-    if (f == null) return null;
-    return f.content;
-  }
+  /// Raw bytes of a resource by normalised zip path, or null (also when it
+  /// inflates past [maxEntryBytes]).
+  Uint8List? readBytes(String href) => _inflate(_archive, href);
 
   String? readText(String href) {
     final b = readBytes(href);
@@ -174,9 +171,26 @@ class EpubPackage {
   }
 
   static String? _readText(Archive a, String path) {
+    final b = _inflate(a, path);
+    return b == null ? null : utf8.decode(b, allowMalformed: true);
+  }
+
+  /// Largest resource inflated, as in the Readium copy's rewriter: a small
+  /// entry in a hostile book can claim (or secretly hold) gigabytes.
+  static const maxEntryBytes = 64 << 20;
+
+  /// Inflates into a capped buffer, so a forged size in the zip headers
+  /// cannot get past the limit either. Nothing is cached on the entry.
+  static Uint8List? _inflate(Archive a, String path) {
     final f = a.findFile(_normalize(path));
-    if (f == null) return null;
-    return utf8.decode(f.content as List<int>, allowMalformed: true);
+    if (f == null || f.size > maxEntryBytes) return null;
+    final out = _CappedOutput(maxEntryBytes);
+    try {
+      f.writeContent(out);
+    } on _TooLarge {
+      return null;
+    }
+    return out.getBytes();
   }
 
   static String _normalize(String path) {
@@ -276,5 +290,44 @@ class EpubPackage {
       if (map != null) walk(map, 0);
     } catch (_) {}
     return out;
+  }
+}
+
+class _TooLarge implements Exception {
+  const _TooLarge();
+}
+
+/// Fails as soon as the inflated output passes [cap].
+class _CappedOutput extends OutputMemoryStream {
+  _CappedOutput(this.cap);
+
+  final int cap;
+
+  void _grow(int more) {
+    if (length + more > cap) throw const _TooLarge();
+  }
+
+  @override
+  void writeByte(int value) {
+    _grow(1);
+    super.writeByte(value);
+  }
+
+  @override
+  void writeBytes(List<int> bytes, {int? length}) {
+    _grow(length ?? bytes.length);
+    super.writeBytes(bytes, length: length);
+  }
+
+  @override
+  void writeStream(InputStream stream) {
+    _grow(stream.length);
+    super.writeStream(stream);
+  }
+
+  @override
+  void writeBackReference(int distance, int count) {
+    _grow(count);
+    super.writeBackReference(distance, count);
   }
 }
