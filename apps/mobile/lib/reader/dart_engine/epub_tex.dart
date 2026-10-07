@@ -52,10 +52,18 @@ abstract final class EpubTex {
     return s;
   }
 
+  /// Longer formulas are left to the publisher's rendering.
+  static const maxLength = 20000;
+
+  /// Macro definitions. The parser allows a thousand expansions, so a short
+  /// definition used in a loop builds millions of nodes: 20 KB of TeX took
+  /// 1.6 s to parse. Books define their macros outside the formula anyway.
+  static final _definition = RegExp(r'\\(?:(?:re|provide)?newcommand|[gex]?def|let|futurelet|global)(?![A-Za-z])');
+
   /// The parsed formula, or null when flutter_math_fork cannot read it.
   /// Parsing up front lets callers choose a fallback before building.
   static SyntaxTree? tryParse(String tex) {
-    if (tex.trim().isEmpty) return null;
+    if (tex.trim().isEmpty || tex.length > maxLength || _definition.hasMatch(tex)) return null;
     try {
       return SyntaxTree(greenRoot: TexParser(tex, settings).parse());
     } on Object {

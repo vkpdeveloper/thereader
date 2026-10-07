@@ -449,19 +449,25 @@ abstract final class InkAnalysis {
     final bytes = package.readBytes(path);
     if (bytes == null) return false;
     try {
-      final rgba = await _sample(bytes);
+      final rgba = await sample(bytes);
       return rgba != null && isDarkInk(rgba);
     } on Object {
       return false;
     }
   }
 
+  /// Larger images are not sampled: a few kilobytes of PNG can declare a
+  /// frame of gigabytes.
+  static const maxSampledPixels = 50 << 20;
+
   /// Native resources are released even when a corrupt image fails to decode.
-  static Future<Uint8List?> _sample(Uint8List bytes) async {
+  @visibleForTesting
+  static Future<Uint8List?> sample(Uint8List bytes) async {
     final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
     try {
       final descriptor = await ui.ImageDescriptor.encoded(buffer);
       try {
+        if (descriptor.width * descriptor.height > maxSampledPixels) return null;
         final scale = descriptor.width > 96 ? 96 / descriptor.width : 1.0;
         final codec = await descriptor.instantiateCodec(
           targetWidth: (descriptor.width * scale).round().clamp(1, 96),
