@@ -59,9 +59,14 @@ export async function loadEngines(): Promise<{ base: Engine; next: Engine }> {
   return { base, next };
 }
 
-/** `compare-page.ts` with both builds in one browser script. */
-export async function bundleComparePage(): Promise<string> {
-  const engines: Record<string, string> = { 'truffle-baseline': resolve(baselineDir(), 'index.ts'), 'truffle-next': resolve(SRC, 'index.ts') };
+/**
+ * `compare-page.ts` with both builds in one browser script, or with only one (`only`; then `base` and `next` are
+ * the same module).
+ */
+export async function bundleComparePage(only?: 'base' | 'next'): Promise<string> {
+  const base = resolve(baselineDir(), 'index.ts');
+  const next = resolve(SRC, 'index.ts');
+  const engines: Record<string, string> = { 'truffle-baseline': only === 'next' ? next : base, 'truffle-next': only === 'base' ? base : next };
   const build = await Bun.build({
     entrypoints: [resolve(import.meta.dir, 'compare-page.ts')],
     target: 'browser',
@@ -76,8 +81,9 @@ export async function bundleComparePage(): Promise<string> {
  * Headless Chromium with one cross-origin-isolated page per worker (5 µs timers, as in the eval) and `gc()` exposed.
  * Each page has its own context, so its own renderer.
  */
-export async function openPages(count: number, script: string): Promise<{ browser: Browser; pages: Page[] }> {
+export async function openPages(count: number, script: string | string[]): Promise<{ browser: Browser; pages: Page[] }> {
   const browser = await chromium.launch({ args: ['--js-flags=--expose-gc'] });
+  const scripts = typeof script === 'string' ? Array.from({ length: count }, () => script) : script;
   const headers = { 'Cross-Origin-Opener-Policy': 'same-origin', 'Cross-Origin-Embedder-Policy': 'require-corp' };
   const pages = await Promise.all(
     Array.from({ length: count }, async (_, i) => {
@@ -85,7 +91,7 @@ export async function openPages(count: number, script: string): Promise<{ browse
       const origin = `http://w${i}.localhost`;
       await context.route(`${origin}/**`, (route) =>
         route.request().url().endsWith('/page.js')
-          ? route.fulfill({ contentType: 'text/javascript', headers, body: script })
+          ? route.fulfill({ contentType: 'text/javascript', headers, body: scripts[i]! })
           : route.fulfill({ contentType: 'text/html', headers, body: '<!doctype html><meta charset="utf-8"><title>compare</title><script src="/page.js"></script>' }),
       );
       const page = await context.newPage();

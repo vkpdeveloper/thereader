@@ -7,7 +7,7 @@ import * as base from 'truffle-baseline';
 import * as next from 'truffle-next';
 import { createHarness, type Engine } from './compare-harness';
 
-/** As the eval parses: a `<base href>` with the page URL when the page has none. */
+/** A fresh document each call, as the eval parses: a `<base href>` with the page URL when the page has none. */
 function parse(html: string, url: string): Document {
   const doc = new DOMParser().parseFromString(html, 'text/html');
   if (!doc.querySelector('base[href]')) {
@@ -18,11 +18,14 @@ function parse(html: string, url: string): Document {
   return doc;
 }
 
-const g = globalThis as unknown as { gc?: () => void; harness: unknown };
+const g = globalThis as unknown as { gc?: () => void; harness: unknown; engines: unknown };
+
+// Both builds, for ad-hoc probes from the console or `page.evaluate`.
+g.engines = { base, next };
 
 g.harness = createHarness({
   base: base as unknown as Engine,
   next: next as unknown as Engine,
   parse,
-  gc: g.gc,
+  gc: g.gc === undefined ? undefined : () => g.gc!(),
 });

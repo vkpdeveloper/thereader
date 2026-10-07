@@ -3,24 +3,33 @@
  * in one run on the eval corpus (`test-corpus/parity/`), so machine load hits
  * both builds alike. Prints Markdown tables.
  *
- * Time. Per page, each build runs one warm-up and `--runs` timed runs, the two
- * builds interleaved run by run, and the build that goes first alternates by
- * page and by run. A full GC precedes each timed run, so no run pays to collect
- * the other build's garbage (its own scavenges are its cost). Each run times:
+ * Each build runs in a runtime of its own (a renderer, a Bun worker): two
+ * copies of the engine in one isolate slow each other down through shared
+ * caches. The runtimes take turns page by page, and the build that goes first
+ * alternates by page.
+ *
+ * Time. Per page, each build runs one warm-up and `--runs` timed runs. A full
+ * GC precedes each timed run (its own scavenges are its cost). Each run times:
  *
  * - `fromDom`: the page document copied into the engine's tree;
  * - `extractTree`: that tree to an `Article` (no Markdown);
  * - `markdown`: `articleMarkdown` of that article;
  * - `extract`: the full `extract(doc, { url, markdown: true })`, timed on its own.
  *
- * The per-page figure is the median of the runs; tables summarize those over
- * pages (median, p95, mean, and the corpus total, which is their sum).
+ * Each chain (the first three, then `extract`) runs on a freshly parsed
+ * document in Chromium (parsing not timed), as the app extracts from a page it
+ * has just parsed: the first walk over a document also creates its DOM
+ * wrappers. A phase's time includes the garbage collection it triggers, which
+ * depends on what is live: the split phases are not an exact partition of
+ * `extract`. The per-page figure is the median of the runs; tables summarize
+ * those over pages (median, p95, mean, and the corpus total, their sum).
  *
- * - Chromium (the web app's runtime; V8): headless Chromium, both builds
- *   bundled into one cross-origin-isolated page (5 µs timers), native
- *   `DOMParser` documents with a `<base href>` as the eval adds. One renderer.
+ * - Chromium (the web app's runtime; V8): headless Chromium, one
+ *   cross-origin-isolated page (5 µs timers) per build, native `DOMParser`
+ *   documents with a `<base href>` as the eval adds.
  * - Bun (JavaScriptCore), secondary: jsdom documents, as the tests and
- *   parity tools parse. `fromDom` over jsdom is mostly jsdom's own cost.
+ *   parity tools parse, one per page (jsdom builds no wrappers lazily).
+ *   `fromDom` over jsdom is mostly jsdom's own cost.
  *
  * Memory (Chromium only), with V8's sampling heap profiler over CDP
  * (`HeapProfiler.startSampling`, every `--interval` bytes on average, 64 by
@@ -31,7 +40,9 @@
  *   since (`includeObjectsCollectedByMajorGC/MinorGC`); the garbage it makes;
  * - retained: bytes the phase allocated that are still live after a forced
  *   full GC while its result is held: the tree (`fromDom`) and the final output
- *   (`extract`, the tree and all intermediates gone). The tree is what every
+ *   (`extract`, the tree and all intermediates gone). The document is dropped
+ *   first, so wrappers it holds are not counted. Strings the DOM hands over
+ *   are often external (their characters live in Blink); only V8 heap counts. The tree is what every
  *   later stage works on and is live through the whole extraction, so tree +
  *   output bounds the long-lived part of peak heap; the transient rest is in
  *   allocated bytes.
@@ -39,23 +50,25 @@
  * The profiler samples allocations as a Poisson process and scales each sample
  * to an unbiased estimate, so one page's figure carries a few percent of noise
  * (relative error about sqrt(interval / bytes)); over the corpus (hundreds of
- * MB) it is well under 1%. Both builds are measured the same way in the same renderer.
+ * MB) it is well under 1%. Both builds are measured the same way.
  *
  *   bun scripts/bench.ts [--runtime chromium|bun|both] [--runs 10] [--mem-runs 2] [--interval 64]
- *                        [--no-memory] [--ids id,id] [--baseline <src>] [--json out.json]
+ *                        [--no-memory] [--ids id,id] [--every n] [--baseline <src>] [--json out.json]
  *   bun scripts/bench.ts --profile [next|base] [--runs 5]   # V8 CPU profile of `extract`, top functions by self time
  */
 import { writeFileSync } from 'node:fs';
 import type { CDPSession, Page } from '../../../eval/node_modules/playwright';
-import { createHarness, PHASES, type EngineName, type Phase, type Timing } from './compare-harness';
-import { arg, baselineDir, bundleComparePage, call, flag, loadCorpus, loadEngines, openPages, pageHtml, parseJsdom, type Entry } from './compare';
+import { resolve } from 'node:path';
+import { PHASES, type EngineName, type Phase, type Timing } from './compare-harness';
+import { arg, baselineDir, bundleComparePage, call, flag, loadCorpus, openPages, pageHtml, SRC, type Entry } from './compare';
 
 const runtime = arg('--runtime') ?? 'both';
 const runs = Number(arg('--runs') ?? 10);
 const memRuns = Number(arg('--mem-runs') ?? 2);
 const interval = Number(arg('--interval') ?? 64);
 const memory = !flag('--no-memory');
-const entries = loadCorpus(arg('--ids')?.split(','));
+const every = Number(arg('--every') ?? 1);
+const entries = loadCorpus(arg('--ids')?.split(',')).filter((_, i) => i % every === 0);
 const ENGINES: EngineName[] = ['base', 'next'];
 
 type PageTiming = { entry: Entry; time: Record<EngineName, Timing> };
@@ -154,54 +167,60 @@ async function sampleHeap(page: Page, cdp: CDPSession, engine: EngineName, phase
   return measuredBytes(profile.head as never);
 }
 
-async function pageMemory(page: Page, cdp: CDPSession, pageIndex: number): Promise<Record<EngineName, Memory>> {
-  const memory = {} as Record<EngineName, Memory>;
-  const order = pageIndex % 2 === 0 ? ENGINES : ENGINES.slice().reverse();
-  for (const engine of order) {
-    const m: Memory = { fromDom: 0, extractTree: 0, markdown: 0, extract: 0, tree: 0, output: 0 };
-    for (const phase of PHASES) await sampleHeap(page, cdp, engine, phase, true); // warm-up
-    for (let r = 0; r < memRuns; r++) {
-      for (const phase of PHASES) m[phase] += (await sampleHeap(page, cdp, engine, phase, true)) / memRuns;
-      m.tree += (await sampleHeap(page, cdp, engine, 'fromDom', false)) / memRuns;
-      m.output += (await sampleHeap(page, cdp, engine, 'extract', false)) / memRuns;
-    }
-    memory[engine] = m;
+/** One build's memory on the loaded page, in its own renderer. */
+async function pageMemory(page: Page, cdp: CDPSession): Promise<Memory> {
+  const m: Memory = { fromDom: 0, extractTree: 0, markdown: 0, extract: 0, tree: 0, output: 0 };
+  for (const phase of PHASES) await sampleHeap(page, cdp, 'next', phase, true); // warm-up
+  for (let r = 0; r < memRuns; r++) {
+    for (const phase of PHASES) m[phase] += (await sampleHeap(page, cdp, 'next', phase, true)) / memRuns;
+    m.tree += (await sampleHeap(page, cdp, 'next', 'fromDom', false)) / memRuns;
+    m.output += (await sampleHeap(page, cdp, 'next', 'extract', false)) / memRuns;
   }
-  return memory;
+  return m;
+}
+
+/** Page by page, each build in its own renderer; the build that goes first alternates. */
+async function eachPage<R>(pages: Record<EngineName, Page>, label: string, task: (page: Page) => Promise<R>): Promise<{ entry: Entry; result: Record<EngineName, R> }[]> {
+  const out: { entry: Entry; result: Record<EngineName, R> }[] = [];
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i]!;
+    const html = pageHtml(entry);
+    const result = {} as Record<EngineName, R>;
+    for (const name of i % 2 === 0 ? ENGINES : ENGINES.slice().reverse()) {
+      await call(pages[name], 'load', html, entry.url);
+      result[name] = await task(pages[name]);
+    }
+    out.push({ entry, result });
+    if ((i + 1) % 50 === 0) console.error(`  ${label} ${i + 1}/${entries.length}`);
+  }
+  return out;
 }
 
 async function chromiumBench(): Promise<{ time: PageTiming[]; memory: PageMemory[] }> {
-  const { browser, pages } = await openPages(1, await bundleComparePage());
-  const page = pages[0]!;
+  const { browser, pages: list } = await openPages(2, [await bundleComparePage('base'), await bundleComparePage('next')]);
+  const pages: Record<EngineName, Page> = { base: list[0]!, next: list[1]! };
   console.error(`Chromium ${browser.version()}: ${entries.length} pages, ${runs} runs`);
-  const time: PageTiming[] = [];
-  const mem: PageMemory[] = [];
   try {
-    for (let i = 0; i < entries.length; i++) {
-      const entry = entries[i]!;
-      await call(page, 'load', pageHtml(entry), entry.url);
-      time.push({ entry, time: await call(page, 'time', runs, i % 2 === 0) });
-      if ((i + 1) % 50 === 0) console.error(`  time ${i + 1}/${entries.length}`);
-    }
+    const time = (await eachPage(pages, 'time', (page) => call<Timing>(page, 'time', 'next', runs))).map(({ entry, result }) => ({ entry, time: result }));
+    let mem: PageMemory[] = [];
     if (memory) {
-      const cdp = await page.context().newCDPSession(page);
-      await cdp.send('HeapProfiler.enable');
-      for (let i = 0; i < entries.length; i++) {
-        const entry = entries[i]!;
-        await call(page, 'load', pageHtml(entry), entry.url);
-        mem.push({ entry, memory: await pageMemory(page, cdp, i) });
-        if ((i + 1) % 50 === 0) console.error(`  memory ${i + 1}/${entries.length}`);
+      const sessions = new Map<Page, CDPSession>();
+      for (const page of list) {
+        const cdp = await page.context().newCDPSession(page);
+        await cdp.send('HeapProfiler.enable');
+        sessions.set(page, cdp);
       }
+      mem = (await eachPage(pages, 'memory', (page) => pageMemory(page, sessions.get(page)!))).map(({ entry, result }) => ({ entry, memory: result }));
     }
+    return { time, memory: mem };
   } finally {
     await browser.close();
   }
-  return { time, memory: mem };
 }
 
 /** CPU profile of one build's full `extract` over the corpus; prints the top functions by self time. */
 async function profile(engine: EngineName): Promise<void> {
-  const { browser, pages } = await openPages(1, await bundleComparePage());
+  const { browser, pages } = await openPages(1, await bundleComparePage(engine));
   const page = pages[0]!;
   const cdp = await page.context().newCDPSession(page);
   await cdp.send('Profiler.enable');
@@ -235,21 +254,32 @@ async function profile(engine: EngineName): Promise<void> {
 
 // ------------------------------------------------------------------ Bun
 
+/** A `bench-worker.ts` holding one build; `ask` sends a message and waits for the answer. */
+async function bunWorker(engine: string): Promise<{ ask<T>(message: unknown): Promise<T>; worker: Worker }> {
+  const worker = new Worker(resolve(import.meta.dir, 'bench-worker.ts'));
+  const ask = <T>(message: unknown) =>
+    new Promise<T>((done, fail) => {
+      worker.onmessage = (event) => done(event.data as T);
+      worker.onerror = (event) => fail(event);
+      worker.postMessage(message);
+    });
+  await ask({ engine });
+  return { ask, worker };
+}
+
 async function bunBench(): Promise<PageTiming[]> {
-  const engines = await loadEngines();
-  let doc: Document | null = null;
-  const harness = createHarness({ ...engines, parse: () => doc!, gc: () => Bun.gc(true) });
+  const workers = { base: await bunWorker(resolve(baselineDir(), 'index.ts')), next: await bunWorker(resolve(SRC, 'index.ts')) };
   console.error(`Bun ${Bun.version}: ${entries.length} pages, ${runs} runs`);
   const out: PageTiming[] = [];
   for (let i = 0; i < entries.length; i++) {
     const entry = entries[i]!;
     const html = pageHtml(entry);
-    doc = parseJsdom(html);
-    harness.load(html, entry.url);
-    out.push({ entry, time: harness.time(runs, i % 2 === 0) });
-    doc.defaultView?.close();
+    const time = {} as Record<EngineName, Timing>;
+    for (const name of i % 2 === 0 ? ENGINES : ENGINES.slice().reverse()) time[name] = await workers[name].ask<Timing>({ html, url: entry.url, runs });
+    out.push({ entry, time });
     if ((i + 1) % 50 === 0) console.error(`  time ${i + 1}/${entries.length}`);
   }
+  for (const w of Object.values(workers)) w.worker.terminate();
   return out;
 }
 
