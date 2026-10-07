@@ -573,7 +573,8 @@ bool _operandish(_Word w) =>
 
 // ---------------------------------------------------------------- formulas
 
-/// What a dropped binary glyph most likely was, and a dropped operand (measured on the book this was written for).
+/// What a dropped binary glyph most likely was (− in 63% of resolvable cases on the
+/// book this was written for) and a dropped operand (λ); see the web decoder.
 const _droppedBinary = ('-', '−');
 const _droppedOperand = (r'\lambda', 'λ');
 

@@ -317,7 +317,12 @@ interface Part {
   sup?: boolean;
 }
 
-/** What a dropped binary glyph most likely was, and a dropped operand. */
+/**
+ * What a dropped binary glyph most likely was, and a dropped operand. Measured
+ * against a reference text on the book this was written for: where one dropped
+ * binary glyph could be resolved, it was − in 63% of cases (≤ 11%, ⊆ 5%, × 5%);
+ * a dropped operand was λ more often than any other letter.
+ */
 export const DROPPED_BINARY: [string, string] = ['-', '−'];
 export const DROPPED_OPERAND: [string, string] = ['\\lambda', 'λ'];
 /** An ordinary ⋯, so the operators beside it keep their binary spacing in MathML. */
