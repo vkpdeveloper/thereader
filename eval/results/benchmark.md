@@ -1,8 +1,8 @@
 # TypeScript, Dart and Go: the whole pipeline
 
-Generated 2026-10-07T03:11:28.252Z by `bun run bench` (see [eval/README.md](../README.md)): every page of the parity dump (325 pages, Zyte + curated), HTML to article and Markdown, 11 timed runs per page after one warm-up, medians per page; summaries are over pages. Milliseconds unless noted.
+Generated 2026-10-07T03:55:29.493Z by `bun run bench` (see [eval/README.md](../README.md)): every page of the parity dump (325 pages, Zyte + curated), HTML to article and Markdown, 11 timed runs per page after one warm-up, medians per page; summaries are over pages. Milliseconds unless noted.
 
-Machine: linux 6.18.44-fc-v77, Intel(R) Xeon(R) Processor @ 2.80GHz x4, load avg at start 0.6 1.0 1.0, at end 1.1 1.1 1.0. Engines run one after another, single-threaded.
+Machine: linux 6.18.44-fc-v77, Intel(R) Xeon(R) Processor @ 2.30GHz x4, load avg at start 0.7 0.7 0.3, at end 1.4 1.1 0.6. Engines run one after another, single-threaded.
 
 | engine | runtime |
 | --- | --- |
@@ -14,17 +14,17 @@ Machine: linux 6.18.44-fc-v77, Intel(R) Xeon(R) Processor @ 2.80GHz x4, load avg
 
 | engine | median | p90 | p95 | mean | max | pages under 1 ms |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| TypeScript | 9.05 | 28.8 | 49.3 | 17.0 | 323 | 0/325 |
-| Dart | 11.7 | 42.4 | 90.1 | 26.3 | 527 | 0/325 |
-| Go | 1.16 | 4.33 | 8.97 | 2.84 | 64.7 | 124/325 |
+| TypeScript | 4.76 | 18.0 | 31.4 | 11.1 | 271 | 0/325 |
+| Dart | 7.88 | 30.1 | 46.2 | 17.0 | 335 | 0/325 |
+| Go | 0.887 | 3.34 | 6.42 | 2.13 | 45.9 | 181/325 |
 
 ## Phases (median / p95)
 
 | engine | parse | tree | extract | Markdown |
 | --- | ---: | ---: | ---: | ---: |
-| TypeScript | 3.71 / 28.6 | 2.01 / 12.6 | 1.98 / 19.6 | 0.080 / 0.920 |
-| Dart | 7.74 / 56.2 | 1.15 / 7.51 | 1.70 / 30.4 | 0.081 / 0.994 |
-| Go | 0.311 / 1.45 | 0.089 / 0.731 | 0.723 / 5.64 | 0.024 / 0.319 |
+| TypeScript | 2.30 / 19.7 | 0.940 / 5.01 | 1.07 / 10.7 | 0.050 / 0.600 |
+| Dart | 5.64 / 41.3 | 0.645 / 3.90 | 1.20 / 14.0 | 0.060 / 0.707 |
+| Go | 0.212 / 1.06 | 0.070 / 0.591 | 0.571 / 4.30 | 0.019 / 0.239 |
 
 Parse: TypeScript uses Chromium's native parser, Dart package:html, Go its own HTML5 parser. Tree: `fromDom` / `fromDocument` / `FromTree`, the compact copy the engine runs on.
 
@@ -32,21 +32,21 @@ Parse: TypeScript uses Chromium's native parser, Dart package:html, Go its own H
 
 | engine | median MB | p90 | p95 | max | pages under 5 MB | process peak RSS | what is measured |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| TypeScript | 1.69 | 3.92 | 5.93 | 33.0 | 308/325 | – | growth of the V8 and DOM (Blink) heaps across one run whose results stay alive, after a full collection (DevTools Runtime.getHeapUsage); garbage collected during the run is not counted |
-| Dart | – | – | – | – | – | 227.3 MB | not measured per page (the Dart VM exposes no heap counter to programs); the process peak RSS is reported |
-| Go | 0.62 | 2.06 | 3.65 | 21.9 | 312/325 | 95.4 MB | every byte the pipeline allocates for the page, garbage collector paused (Markdown included) |
+| TypeScript | 1.44 | 3.13 | 4.20 | 25.5 | 312/325 | – | growth of the V8 and DOM (Blink) heaps across one run whose results stay alive, after a full collection (DevTools Runtime.getHeapUsage); garbage collected during the run is not counted |
+| Dart | – | – | – | – | – | 226.0 MB | not measured per page here (the Dart VM exposes no heap counter to programs; packages/truffle_dart/tool/bench_memory.dart samples it through the VM service); the process peak RSS is reported |
+| Go | 0.63 | 2.07 | 3.61 | 21.8 | 312/325 | 95.6 MB | every byte the pipeline allocates for the page, garbage collector paused (Markdown included) |
 
 ## Whole pipeline by HTML size (median / p95)
 
 | engine | <50KB (34) | 50-200KB (175) | 200-500KB (77) | 0.5-1MB (21) | >1MB (18) |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| TypeScript | 3.87 / 9.05 | 7.14 / 16.5 | 14.0 / 30.4 | 23.7 / 76.5 | 97.7 / 323 |
-| Dart | 3.97 / 26.8 | 8.64 / 24.0 | 20.0 / 47.3 | 33.5 / 95.4 | 181 / 527 |
-| Go | 0.723 / 2.32 | 1.01 / 3.67 | 1.44 / 5.49 | 2.28 / 11.2 | 17.6 / 64.7 |
+| TypeScript | 2.25 / 5.52 | 3.99 / 11.9 | 7.70 / 18.0 | 18.0 / 40.7 | 64.8 / 271 |
+| Dart | 2.83 / 6.84 | 6.16 / 14.3 | 14.0 / 31.1 | 25.5 / 63.9 | 106 / 335 |
+| Go | 0.524 / 1.87 | 0.746 / 2.79 | 1.12 / 4.32 | 1.71 / 8.47 | 14.6 / 45.9 |
 
 ## Go speedup per page (other engine total / Go total)
 
 | vs | median | p10 | p90 |
 | --- | ---: | ---: | ---: |
-| TypeScript | 6.3x | 4.4x | 12.3x |
-| Dart | 8.9x | 5.2x | 16.3x |
+| TypeScript | 5.1x | 3.3x | 10.7x |
+| Dart | 8.2x | 4.7x | 15.4x |

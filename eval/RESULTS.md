@@ -1,21 +1,21 @@
 # Article extraction eval results
 
-Generated 2026-10-07T03:19:37.268Z by `bun run eval` (see [eval/README.md](README.md)). Scores are re-derived from the stored outputs on every run.
+Generated 2026-10-07T04:07:43.091Z by `bun run eval` (see [eval/README.md](README.md)). Scores are re-derived from the stored outputs on every run.
 
 ## Engines
 
 | engine | version | runtime | settings | ran at |
 | --- | ---: | ---: | ---: | ---: |
-| ours | fc0c200 | Chromium DOMParser | extract(doc, { url }); text = articleText(article) | 2026-10-07 03:19 |
-| ours-md | fc0c200 | Chromium DOMParser | extract(doc, { url, markdown: true }) (timed); text and stats from article.markdown rendered by remark (GFM + math) and mdast-util-to-hast | 2026-10-07 03:19 |
-| ours-dart | fc0c200 | Dart 3.13.5 AOT, package:html 0.15.7, one process | package:html parse, then extractTree(fromDocument(doc), url) (base href added as for Chromium); text = articleText(article) | 2026-10-07 03:19 |
-| ours-go | fc0c200 | Go 1.24.7 native (PGO), own HTML5 parser, one process | ParseDocument(html), then ExtractTree(doc, { URL }) (base href added as for Chromium); text = articleText(article) | 2026-10-07 03:19 |
-| readability | 0.6.0 | Chromium DOMParser | new Readability(doc).parse() defaults; text from content HTML | 2026-10-07 03:19 |
-| defuddle | 0.19.4 | Chromium DOMParser | new Defuddle(doc, { url }).parse(), core bundle defaults; text from content HTML | 2026-10-07 03:19 |
-| trafilatura | 2.3.0 | CPython 3.12 + lxml | extract(tree, url, include_comments=False), txt output; stats from xml output | 2026-10-07 03:19 |
-| postlight | 2.2.3 | Node v22.22.0 | Parser.parse(url, { html, fetchAllPages: false }); text from content HTML | 2026-10-07 03:19 |
+| ours | bc0dae3 | Chromium DOMParser | extract(doc, { url }); text = articleText(article) | 2026-10-07 04:07 |
+| ours-md | bc0dae3 | Chromium DOMParser | extract(doc, { url, markdown: true }) (timed); text and stats from article.markdown rendered by remark (GFM + math) and mdast-util-to-hast | 2026-10-07 04:07 |
+| ours-dart | bc0dae3 | Dart 3.13.5 AOT, package:html 0.15.7, one process | package:html parse, then extractTree(fromDocument(doc), url) (base href added as for Chromium); text = articleText(article) | 2026-10-07 04:07 |
+| ours-go | bc0dae3 | Go 1.24.7 native (PGO), own HTML5 parser, one process | ParseDocument(html), then ExtractTree(doc, { URL }) (base href added as for Chromium); text = articleText(article) | 2026-10-07 04:07 |
+| readability | 0.6.0 | Chromium DOMParser | new Readability(doc).parse() defaults; text from content HTML | 2026-10-07 04:07 |
+| defuddle | 0.19.4 | Chromium DOMParser | new Defuddle(doc, { url }).parse(), core bundle defaults; text from content HTML | 2026-10-07 04:07 |
+| trafilatura | 2.3.0 | CPython 3.12 + lxml | extract(tree, url, include_comments=False), txt output; stats from xml output | 2026-10-07 04:07 |
+| postlight | 2.2.3 | Node v22.22.0 | Parser.parse(url, { html, fetchAllPages: false }); text from content HTML | 2026-10-07 04:07 |
 
-Machine: os linux 6.18.44-fc-v77, cpu Intel(R) Xeon(R) Processor @ 2.80GHz x4, chromium 153.0.8010.12, bun 1.4.2, load avg at start 1.4 1.4 1.2, load avg at end 4.1 2.8 1.9.
+Machine: os linux 6.18.44-fc-v77, cpu Intel(R) Xeon(R) Processor @ 2.30GHz x4, chromium 153.0.8010.12, bun 1.4.2, load avg at start 0.1 1.0 0.9, load avg at end 3.5 2.2 1.4.
 
 ## Zyte article-extraction-benchmark (181 pages, scrapinghub/article-extraction-benchmark@4a3bc97)
 
@@ -23,14 +23,14 @@ Official metric: 4-token shingle precision/recall per page, averaged; F1 from th
 
 | engine | F1 | F1 95% CI | precision | recall | accuracy | failed | empty | median ms |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| ours | **0.977** ± 0.002 | 0.972–0.982 | 0.967 ± 0.004 | 0.987 ± 0.003 | 0.343 ± 0.035 | 0 | 0 | 6.85 |
-| ours-md | **0.966** ± 0.003 | 0.960–0.972 | 0.948 ± 0.005 | 0.986 ± 0.003 | 0.265 ± 0.033 | 0 | 0 | 7.18 |
-| ours-dart | **0.977** ± 0.002 | 0.972–0.982 | 0.967 ± 0.004 | 0.987 ± 0.003 | 0.343 ± 0.035 | 0 | 0 | 9.60 |
-| ours-go | **0.977** ± 0.002 | 0.972–0.982 | 0.967 ± 0.004 | 0.987 ± 0.003 | 0.343 ± 0.035 | 0 | 0 | 0.95 |
-| readability | **0.952** ± 0.005 | 0.943–0.961 | 0.918 ± 0.008 | 0.988 ± 0.003 | 0.177 ± 0.028 | 0 | 0 | 7.32 |
-| defuddle | **0.932** ± 0.010 | 0.911–0.951 | 0.899 ± 0.012 | 0.968 ± 0.010 | 0.171 ± 0.028 | 0 | 0 | 23.4 |
-| trafilatura | **0.955** ± 0.007 | 0.940–0.968 | 0.938 ± 0.009 | 0.974 ± 0.008 | 0.293 ± 0.033 | 0 | 0 | 18.7 |
-| postlight | **0.920** ± 0.014 | 0.892–0.945 | 0.901 ± 0.014 | 0.940 ± 0.014 | 0.265 ± 0.032 | 0 | 0 | 30.2 |
+| ours | **0.977** ± 0.002 | 0.972–0.982 | 0.967 ± 0.004 | 0.987 ± 0.003 | 0.343 ± 0.035 | 0 | 0 | 4.37 |
+| ours-md | **0.966** ± 0.003 | 0.960–0.972 | 0.948 ± 0.005 | 0.986 ± 0.003 | 0.265 ± 0.033 | 0 | 0 | 4.54 |
+| ours-dart | **0.977** ± 0.002 | 0.972–0.982 | 0.967 ± 0.004 | 0.987 ± 0.003 | 0.343 ± 0.035 | 0 | 0 | 6.71 |
+| ours-go | **0.977** ± 0.002 | 0.972–0.982 | 0.967 ± 0.004 | 0.987 ± 0.003 | 0.343 ± 0.035 | 0 | 0 | 0.71 |
+| readability | **0.952** ± 0.005 | 0.943–0.961 | 0.918 ± 0.008 | 0.988 ± 0.003 | 0.177 ± 0.028 | 0 | 0 | 5.60 |
+| defuddle | **0.932** ± 0.010 | 0.911–0.951 | 0.899 ± 0.012 | 0.968 ± 0.010 | 0.171 ± 0.028 | 0 | 0 | 17.1 |
+| trafilatura | **0.955** ± 0.007 | 0.940–0.968 | 0.938 ± 0.009 | 0.974 ± 0.008 | 0.293 ± 0.033 | 0 | 0 | 12.0 |
+| postlight | **0.920** ± 0.014 | 0.892–0.945 | 0.901 ± 0.014 | 0.940 ± 0.014 | 0.265 ± 0.032 | 0 | 0 | 21.2 |
 
 ### Metric sanity check
 
@@ -102,24 +102,24 @@ JS engines run in headless Chromium on a fresh `DOMParser` document per run; our
 
 | engine | pages | parse median | extract median | extract p95 | extract mean | total median | total p95 | total mean |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| ours | 325 | 3.53 | 4.55 | 29.6 | 11.2 | 8.78 | 48.8 | 19.5 |
-| ours-md | 325 | 3.69 | 4.69 | 32.2 | 11.5 | 9.13 | 52.2 | 19.7 |
-| ours-dart | 325 | 8.63 | 3.07 | 37.1 | 10.9 | 12.3 | 95.1 | 29.3 |
-| ours-go | 325 | 0.43 | 0.74 | 6.13 | 1.91 | 1.21 | 8.78 | 2.82 |
-| readability | 325 | 3.35 | 6.09 | 48.0 | 18.0 | 10.2 | 66.4 | 25.3 |
-| defuddle | 325 | 3.42 | 25.9 | 158.3 | 60.5 | 30.2 | 167.0 | 68.3 |
-| trafilatura | 325 | 2.70 | 20.0 | 165.2 | 66.8 | 23.0 | 170.7 | 72.4 |
-| postlight | 325 | – | 43.0 | 431.9 | 119.4 | 43.0 | 431.9 | 119.4 |
+| ours | 325 | 2.38 | 2.50 | 17.0 | 5.80 | 5.33 | 34.0 | 10.8 |
+| ours-md | 325 | 2.42 | 2.58 | 17.8 | 5.76 | 5.28 | 30.7 | 10.7 |
+| ours-dart | 325 | 6.26 | 1.93 | 18.0 | 5.34 | 8.69 | 47.3 | 19.0 |
+| ours-go | 325 | 0.30 | 0.60 | 4.64 | 1.57 | 0.97 | 7.47 | 2.24 |
+| readability | 325 | 2.21 | 4.22 | 35.8 | 12.8 | 7.07 | 48.8 | 17.6 |
+| defuddle | 325 | 2.33 | 17.5 | 102.9 | 40.4 | 20.5 | 111.8 | 45.5 |
+| trafilatura | 325 | 1.75 | 12.4 | 127.4 | 45.1 | 14.6 | 133.0 | 49.0 |
+| postlight | 325 | – | 30.2 | 284.9 | 79.0 | 30.2 | 284.9 | 79.0 |
 
 ### Total ms by HTML size (median / p95)
 
 | engine | <50KB (34) | 50-200KB (175) | 200-500KB (77) | 0.5-1MB (21) | >1MB (18) |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| ours | 4.40 / 14.4 | 7.05 / 17.4 | 13.7 / 31.7 | 24.7 / 78.8 | 111.7 / 504.0 |
-| ours-md | 4.91 / 11.6 | 7.25 / 19.5 | 13.2 / 36.0 | 22.3 / 71.0 | 111.8 / 396.5 |
-| ours-dart | 4.20 / 22.8 | 9.76 / 26.2 | 22.2 / 50.1 | 37.2 / 104.1 | 220.5 / 610.8 |
-| ours-go | 0.75 / 2.10 | 1.06 / 3.39 | 1.50 / 5.26 | 2.22 / 12.9 | 19.1 / 64.5 |
-| readability | 5.28 / 17.6 | 7.72 / 25.9 | 15.9 / 52.8 | 28.8 / 64.7 | 205.6 / 761.9 |
-| defuddle | 15.9 / 35.6 | 23.6 / 73.0 | 41.1 / 138.6 | 92.6 / 269.5 | 495.3 / 1611.1 |
-| trafilatura | 12.3 / 38.5 | 19.9 / 63.2 | 31.4 / 114.8 | 61.4 / 367.1 | 662.9 / 2318.8 |
-| postlight | 20.3 / 69.5 | 33.8 / 141.3 | 64.0 / 323.1 | 90.3 / 501.0 | 877.9 / 2476.7 |
+| ours | 2.60 / 5.92 | 4.33 / 10.8 | 7.75 / 18.8 | 13.9 / 39.8 | 73.3 / 214.8 |
+| ours-md | 2.52 / 7.30 | 4.53 / 13.5 | 7.88 / 20.1 | 15.4 / 41.4 | 69.0 / 212.3 |
+| ours-dart | 2.87 / 8.02 | 6.63 / 17.6 | 15.8 / 37.0 | 25.9 / 84.0 | 124.7 / 374.6 |
+| ours-go | 0.58 / 1.42 | 0.82 / 2.77 | 1.16 / 4.44 | 1.81 / 8.70 | 13.7 / 42.3 |
+| readability | 3.48 / 6.33 | 5.46 / 16.8 | 10.3 / 39.0 | 21.5 / 51.9 | 123.4 / 477.2 |
+| defuddle | 11.1 / 21.2 | 17.3 / 50.8 | 29.7 / 85.3 | 58.4 / 165.5 | 329.1 / 1114.4 |
+| trafilatura | 8.26 / 20.3 | 12.6 / 50.5 | 18.9 / 86.8 | 41.2 / 242.6 | 476.8 / 1650.3 |
+| postlight | 14.1 / 49.6 | 25.4 / 78.7 | 51.5 / 211.0 | 70.1 / 325.2 | 566.0 / 1474.5 |

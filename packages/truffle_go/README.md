@@ -130,21 +130,23 @@ tree-construction tests as x/net plus one.
 `bun run bench` in `eval/` runs the three engines one after another on the 325 pages of the
 parity dump: the whole pipeline (parse, tree, extract, Markdown), 11 timed runs per page after a
 warm-up, per-page medians. Full tables in [eval/results/benchmark.md](../../eval/results/benchmark.md);
-on a 4-core 2.8 GHz Xeon (Linux):
+on a 4-core 2.3 GHz Xeon (Linux):
 
 | ms per page | median | p90 | p95 | mean | pages under 1 ms |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| TypeScript (Chromium, native DOMParser) | 9.05 | 28.8 | 49.3 | 17.0 | 0/325 |
-| Dart (AOT, package:html) | 11.7 | 42.4 | 90.1 | 26.3 | 0/325 |
-| Go (this package, PGO) | **1.16** | 4.33 | 8.97 | 2.84 | 124/325 |
+| TypeScript (Chromium, native DOMParser) | 4.76 | 18.0 | 31.4 | 11.1 | 0/325 |
+| Dart (AOT, package:html) | 7.88 | 30.1 | 46.2 | 17.0 | 0/325 |
+| Go (this package, PGO) | **0.887** | 3.34 | 6.42 | 2.13 | 181/325 |
 
-Per page, Go is a median 6.3× faster than TypeScript and 8.9× faster than Dart. The median Go
-page splits into parse 0.31 ms, tree 0.09, extract 0.72 and Markdown 0.02. Pages under 50 KB of
-HTML take a median 0.72 ms, 50 to 200 KB 1.01 ms.
+Per page, Go is a median 5.1× faster than TypeScript and 8.2× faster than Dart. The median Go
+page splits into parse 0.212 ms, tree 0.070, extract 0.571 and Markdown 0.019. Pages under 50 KB of
+HTML take a median 0.524 ms, 50 to 200 KB 0.746 ms. Absolute times depend on the machine (an earlier
+run on a 2.8 GHz Xeon of an older generation gave Go a median of 1.16 ms, TypeScript 9.05);
+compare engines within one run.
 
 Memory: every byte the pipeline allocates for a page, garbage collector paused, is a median
-0.62 MB (p95 3.65 MB); 312 of 325 pages stay under 5 MB, the rest are pages of 1 MB of HTML and
-more.
+0.63 MB (p95 3.61 MB); 312 of 325 pages stay under 5 MB, the rest are pages of 700 KB to 3 MB
+of HTML.
 
 `go test -bench Pipeline` runs `ExtractHTML` (Markdown on) on the same pages: `all` and
 `median` (50 to 200 KB). Builds of `cmd/truffle` use the CPU profile in `cmd/truffle/default.pgo`
