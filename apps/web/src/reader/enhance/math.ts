@@ -220,7 +220,13 @@ export function hydrateMath(root: Element, tex: TexRenderer): number {
     const source = host.getAttribute(TEX_ATTR) ?? '';
     const display = host.hasAttribute(DISPLAY_ATTR);
     const math = mathElement(doc, source, display, tex);
-    if (!math) continue;
+    if (!math) {
+      // Prepared but not renderable here: show the book's own version again.
+      for (const sib of [host.previousElementSibling, host.nextElementSibling]) {
+        if (sib && hasClass(sib, 'tr-math-source')) sib.classList.remove('tr-hidden');
+      }
+      continue;
+    }
     let shadow: ShadowRoot | null = null;
     try {
       shadow = (host as HTMLElement).attachShadow({ mode: 'open' });
