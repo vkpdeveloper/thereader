@@ -27,6 +27,10 @@ void main() {
       'one long PDF paragraph':
           '<meta name="generator" content="pdftohtml"/><body>'
           '${'<p>the quick brown fox jumps over the lazy dog and,</p>\n' * (size ~/ 55)}</body>',
+      'unclosed MathML attributes': '<p>x</p>${'<span data-mathml="<math> ' * (size ~/ 26)}',
+      'MathML attributes and scripts':
+          '<p>${'<span data-mathml="&lt;math&gt;&lt;mi&gt;x&lt;/mi&gt;&lt;/math&gt;">x</span>' * (size ~/ 80)}'
+          '${'<script type="math/mml"><math><mi>y</mi></math></script>' * (size ~/ 60)}</p>',
       'page anchors in one paragraph':
           '<meta name="generator" content="pdftohtml"/><body><p>'
           '${'<a id="p1"></a>12 ' * (size ~/ 20)}</p></body>',
