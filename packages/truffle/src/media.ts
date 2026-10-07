@@ -25,16 +25,18 @@ interface Candidate {
   density: number;
 }
 
+const SPACE = /\s/;
+
 /** Parses a srcset the way browsers do: URLs may contain commas, descriptors follow whitespace. */
 export function parseSrcset(value: string, base: string): Candidate[] {
   const out: Candidate[] = [];
   let i = 0;
   const n = value.length;
   while (i < n) {
-    while (i < n && (value[i] === ',' || /\s/.test(value[i]!))) i++;
+    while (i < n && (value[i] === ',' || SPACE.test(value[i]!))) i++;
     if (i >= n) break;
     let start = i;
-    while (i < n && !/\s/.test(value[i]!)) i++;
+    while (i < n && !SPACE.test(value[i]!)) i++;
     let url = value.slice(start, i);
     let descriptor = '';
     if (url.endsWith(',')) {

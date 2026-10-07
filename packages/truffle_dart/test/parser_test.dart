@@ -24,4 +24,20 @@ void main() {
     final doc = VDocument.fromJson(c['vdoc'] as Json);
     expect(jsonEncode(doc.toJson()), jsonEncode(c['vdoc']));
   });
+
+  test('attributes written on the VDocument leave the DOM unchanged', () {
+    final dom = html_parser.parse('<body><div id="a" class="x">text</div><p title="t">p</p></body>');
+    final vdoc = fromDocument(dom);
+    final div = vdoc.body.children.first as VElement;
+    expect(div.attrs, {'id': 'a', 'class': 'x'});
+    div.attrs['data-x-as-p'] = '';
+    div.attrs.remove('class');
+    expect(div.attrs, {'id': 'a', 'data-x-as-p': ''});
+    expect(div.attrs.keys, ['id', 'data-x-as-p']);
+    final domDiv = dom.body!.children.first;
+    expect(domDiv.attributes, {'id': 'a', 'class': 'x'});
+    // The whole pipeline marks div paragraphs: still nothing written to the DOM.
+    extractTree(fromDocument(dom), 'https://example.com/');
+    expect(domDiv.attributes, {'id': 'a', 'class': 'x'});
+  });
 }

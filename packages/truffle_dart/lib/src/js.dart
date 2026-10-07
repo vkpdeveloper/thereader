@@ -421,3 +421,26 @@ List<String> lettersAndNumbers(String s) {
   if (start >= 0) out.add(s.substring(start));
   return out;
 }
+
+/// Whether [s] starts with [lower] (lowercase ASCII), ASCII letters in either
+/// case: an anchored, case-insensitive literal pattern.
+bool startsWithIgnoringCase(String s, String lower) {
+  if (s.length < lower.length) return false;
+  for (var i = 0; i < lower.length; i++) {
+    final c = s.codeUnitAt(i);
+    if ((c >= 0x41 && c <= 0x5a ? c + 32 : c) != lower.codeUnitAt(i)) return false;
+  }
+  return true;
+}
+
+/// The ASCII letters [text] starts with (at most 16), lowercase: the first
+/// word of a text an anchored pattern of words may match.
+String leadingWord(String text) {
+  var end = 0;
+  while (end < text.length && end < 16) {
+    final c = text.codeUnitAt(end) | 0x20;
+    if (c < 0x61 || c > 0x7a) break;
+    end++;
+  }
+  return text.substring(0, end).toLowerCase();
+}

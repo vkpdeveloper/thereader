@@ -284,6 +284,9 @@ const RULES: [string, Rule[]][] = [
   ['json', []],
 ];
 
+/** A shell prompt opening a line: `$`, `%`, `❯`, `>`, PowerShell's `PS C:\>`, `user@host:~$`. */
+const PROMPT = /^\s*(?:[$%❯>]|PS [A-Z]:\\[^>]*>|[\w.-]+@[\w.-]+:[^$#]*[$#])\s/;
+
 function looksLikeJson(code: string): boolean {
   const first = code.charCodeAt(0);
   if (first !== 123 && first !== 91) return false;
@@ -298,6 +301,21 @@ function looksLikeJson(code: string): boolean {
   }
 }
 
+/** Index of each language in `RULES`, whose order breaks ties. */
+const LANGUAGE = new Map(RULES.map(([lang], i) => [lang, i]));
+const at = (lang: string): number => LANGUAGE.get(lang)!;
+const JAVASCRIPT = at('javascript');
+const TYPESCRIPT = at('typescript');
+const CSS = at('css');
+const SCSS = at('scss');
+const C = at('c');
+const CPP = at('cpp');
+const DIFF = at('diff');
+const SHELL = at('shell');
+const BASH = at('bash');
+const NON_SPACE = /\S/;
+const PYTHON_PROMPT = /^[^\S\n\r\u2028\u2029]*>>>/m;
+
 /** Best guess for unlabelled code, or null when the evidence is weak. */
 export function detectLanguage(source: string): string | null {
   const code = (source.length > 5000 ? source.slice(0, 5000) : source).trim();
@@ -306,54 +324,51 @@ export function detectLanguage(source: string): string | null {
   let best: string | null = null;
   let bestScore = 0;
   let second = 0;
-  const scores = new Map<string, number>();
-  for (const [lang, rules] of RULES) {
+  // Per language, in `RULES` order.
+  const scores: number[] = [];
+  for (let l = 0; l < RULES.length; l++) {
+    const rules = RULES[l]![1];
     let score = 0;
-    for (const [pattern, weight] of rules) if (pattern.test(code)) score += weight;
-    scores.set(lang, score);
+    for (let r = 0; r < rules.length; r++) if (rules[r]![0].test(code)) score += rules[r]![1];
+    scores.push(score);
   }
   // TypeScript is JavaScript with types; HTML-in-JS and CSS-in-SCSS likewise.
-  const js = scores.get('javascript') ?? 0;
-  const ts = scores.get('typescript') ?? 0;
-  if (ts >= 3) scores.set('typescript', ts + js);
-  const css = scores.get('css') ?? 0;
-  const scss = scores.get('scss') ?? 0;
-  if (scss >= 3) scores.set('scss', scss + css);
-  const c = scores.get('c') ?? 0;
-  const cpp = scores.get('cpp') ?? 0;
-  if (cpp >= 4) scores.set('cpp', cpp + c);
+  if (scores[TYPESCRIPT]! >= 3) scores[TYPESCRIPT]! += scores[JAVASCRIPT]!;
+  if (scores[SCSS]! >= 3) scores[SCSS]! += scores[CSS]!;
+  if (scores[CPP]! >= 4) scores[CPP]! += scores[C]!;
   // Unified diffs without headers: most lines start with + or -, both present.
   const lines = code.split('\n');
   let plus = 0;
   let minus = 0;
-  for (const line of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!;
     const c0 = line.charCodeAt(0);
     const c1 = line.charCodeAt(1);
     if (c0 === 43 && c1 !== 43) plus++;
     else if (c0 === 45 && c1 !== 45) minus++;
   }
-  if (plus > 0 && minus > 0 && lines.length >= 3 && plus + minus >= lines.length * 0.4) scores.set('diff', (scores.get('diff') ?? 0) + 6);
+  if (plus > 0 && minus > 0 && lines.length >= 3 && plus + minus >= lines.length * 0.4) scores[DIFF]! += 6;
   // Terminal sessions: most non-empty lines start with a prompt.
   let prompts = 0;
   let nonEmpty = 0;
   let firstIsPrompt = false;
-  for (const line of lines) {
-    if (line.trim().length === 0) continue;
-    const prompt = /^\s*(?:[$%❯>]|PS [A-Z]:\\[^>]*>|[\w.-]+@[\w.-]+:[^$#]*[$#])\s/.test(line);
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!;
+    if (!NON_SPACE.test(line)) continue;
+    const prompt = PROMPT.test(line);
     if (nonEmpty === 0) firstIsPrompt = prompt;
     nonEmpty++;
     if (prompt) prompts++;
   }
   // A session opens with a prompt; what follows may be the command's output.
-  if ((firstIsPrompt || prompts >= nonEmpty * 0.5) && prompts > 0 && !/^[^\S\n\r\u2028\u2029]*>>>/m.test(code)) scores.set('shell', (scores.get('shell') ?? 0) + 4);
-  const bash = scores.get('bash') ?? 0;
-  const shell = scores.get('shell') ?? 0;
-  if (shell >= 3) scores.set('shell', shell + bash);
-  for (const [lang, score] of scores) {
+  if ((firstIsPrompt || prompts >= nonEmpty * 0.5) && prompts > 0 && !PYTHON_PROMPT.test(code)) scores[SHELL]! += 4;
+  if (scores[SHELL]! >= 3) scores[SHELL]! += scores[BASH]!;
+  for (let l = 0; l < scores.length; l++) {
+    const score = scores[l]!;
     if (score > bestScore) {
       second = bestScore;
       bestScore = score;
-      best = lang;
+      best = RULES[l]![0];
     } else if (score > second) {
       second = score;
     }

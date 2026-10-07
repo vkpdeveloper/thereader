@@ -13,7 +13,7 @@ import 'url.dart';
 /// Placeholder sources lazy loaders put in `src` until the real image scrolls into view: a file name
 /// holding one of the words. Each name is tried once, from its start: a search from every word would
 /// rescan the rest of a name repeating it.
-final _placeholder = RegExp(
+final _placeholder = ScreenedPattern(
   r'(?:^data:image\/(?:gif|png|svg\+xml)[;,])|(?:^|[^\w-])(?=[\w-]*\.(?:gif|png|svg|jpe?g|webp)(?:$|\?))[\w-]*?(?:placeholder|blank|spacer|transparent|pixel|lazy[-_]?load|1x1|grey|gray|loading|empty|dummy|lqip|blur)',
   caseSensitive: false,
 );
@@ -46,7 +46,7 @@ const _lazySrc = [
 ];
 const _lazySrcset = ['data-srcset', 'data-lazy-srcset', 'data-original-srcset', 'data-src-set'];
 
-final _imageExt = RegExp(r'\.(?:jpe?g|png|webp|gif|avif|bmp|svg|jxl|heic)(?:$|[?#])', caseSensitive: false);
+final _imageExt = ScreenedPattern(r'\.(?:jpe?g|png|webp|gif|avif|bmp|svg|jxl|heic)(?:$|[?#])', caseSensitive: false);
 
 class _Candidate {
   _Candidate(this.url, this.width, this.density);
@@ -157,7 +157,9 @@ String? _usableSrc(String? value, String base) {
   if (value == null) return null;
   final v = jsTrim(value);
   if (v.isEmpty || _placeholder.hasMatch(v)) return null;
-  if (_dataPrefix.hasMatch(v)) return _dataBase64.hasMatch(v) && v.length > 2000 ? v : null;
+  final data = startsWithIgnoringCase(v, 'data:');
+  assert(data == _dataPrefix.hasMatch(v));
+  if (data) return _dataBase64.hasMatch(v) && v.length > 2000 ? v : null;
   return resolveHttp(v, base);
 }
 
@@ -177,8 +179,11 @@ List<_Candidate> _pictureSources(VElement picture, String base) {
   return [];
 }
 
-final _srcsetLike = RegExp(r'\.(?:jpe?g|png|webp)\s+\d+[wx]', caseSensitive: false);
-final _tracker = RegExp(r'[/.](?:pixel|beacon|tracking|tracker|spacer)[/.]|\/(?:ads?|pagead)\/', caseSensitive: false);
+final _srcsetLike = ScreenedPattern(r'\.(?:jpe?g|png|webp)\s+\d+[wx]', caseSensitive: false);
+final _tracker = ScreenedPattern(
+  r'[/.](?:pixel|beacon|tracking|tracker|spacer)[/.]|\/(?:ads?|pagead)\/',
+  caseSensitive: false,
+);
 
 VElement? _linkOf(VElement img) {
   final p = img.parent;
@@ -330,24 +335,25 @@ RegExpMatch? _firstFrom(RegExp pattern, String s, int start) {
 /// leftmost match wins).
 class _QueryPattern {
   _QueryPattern(String head, String param, [String? others])
-    : _head = RegExp(head, caseSensitive: false),
+    : _head = ScreenedPattern(head, caseSensitive: false),
       _amp = RegExp('&$param', caseSensitive: false),
       _direct = RegExp(param, caseSensitive: false),
       _whole = RegExp('$head(?:.*&)?$param', caseSensitive: false),
-      _others = others == null ? null : RegExp(others, caseSensitive: false);
+      _others = others == null ? null : ScreenedPattern(others, caseSensitive: false);
 
-  final RegExp _head;
+  final ScreenedPattern _head;
   final RegExp _amp;
   final RegExp _direct;
   final RegExp _whole;
-  final RegExp? _others;
+  final ScreenedPattern? _others;
 
   Match? firstMatch(String s) {
     final other = _others?.firstMatch(s);
     // The first `&param` at or after the head's end (-1: none, -2: not searched yet); where its line ends.
     var amp = -2;
     var end = -1;
-    for (final m in _head.allMatches(s)) {
+    if (!_head.mayMatch(s)) return other;
+    for (final m in _head.regex.allMatches(s)) {
       if (other != null && m.start >= other.start) break;
       final p = m.end;
       if (amp == -2 || (amp >= 0 && amp < p)) amp = _firstFrom(_amp, s, p)?.start ?? -1;
@@ -363,21 +369,24 @@ final _youtube = _QueryPattern(
   r'v=([\w-]{11})',
   r'(?:youtube(?:-nocookie)?\.com\/(?:embed\/|v\/|shorts\/|live\/)|youtu\.be\/)([\w-]{11})',
 );
-final _vimeo = RegExp(r'(?:player\.)?vimeo\.com\/(?:video\/)?(\d+)', caseSensitive: false);
-final _dailymotion = RegExp(r'dailymotion\.com\/(?:embed\/)?video\/([\w]+)', caseSensitive: false);
-final _loom = RegExp(r'loom\.com\/(?:embed|share)\/([\w]+)', caseSensitive: false);
-final _wistia = RegExp(r'(?:fast\.)?wistia\.(?:net|com)\/embed\/(?:iframe|medias)\/([\w]+)', caseSensitive: false);
-final _ted = RegExp(r'embed\.ted\.com\/talks\/([\w-]+)', caseSensitive: false);
+final _vimeo = ScreenedPattern(r'(?:player\.)?vimeo\.com\/(?:video\/)?(\d+)', caseSensitive: false);
+final _dailymotion = ScreenedPattern(r'dailymotion\.com\/(?:embed\/)?video\/([\w]+)', caseSensitive: false);
+final _loom = ScreenedPattern(r'loom\.com\/(?:embed|share)\/([\w]+)', caseSensitive: false);
+final _wistia = ScreenedPattern(
+  r'(?:fast\.)?wistia\.(?:net|com)\/embed\/(?:iframe|medias)\/([\w]+)',
+  caseSensitive: false,
+);
+final _ted = ScreenedPattern(r'embed\.ted\.com\/talks\/([\w-]+)', caseSensitive: false);
 final _twitch = _QueryPattern(r'player\.twitch\.tv\/\?', r'(video|channel)=([\w]+)');
-final _spotify = RegExp(
+final _spotify = ScreenedPattern(
   r'open\.spotify\.com\/(?:embed\/)?(track|episode|show|album|playlist)\/([\w]+)',
   caseSensitive: false,
 );
 final _soundcloud = _QueryPattern(r'w\.soundcloud\.com\/player\/\?', r'url=([^&]+)');
-final _applePodcasts = RegExp(r'embed\.podcasts\.apple\.com\/([^?#]+)', caseSensitive: false);
-final _codepen = RegExp(r'codepen\.io\/([\w-]+)\/(?:embed|pen)\/(?:preview\/)?([\w]+)', caseSensitive: false);
-final tweet = RegExp(r'(?:twitter|x)\.com\/(\w+)\/status(?:es)?\/(\d+)', caseSensitive: false);
-final _bandcamp = RegExp(r'bandcamp\.com\/EmbeddedPlayer', caseSensitive: false);
+final _applePodcasts = ScreenedPattern(r'embed\.podcasts\.apple\.com\/([^?#]+)', caseSensitive: false);
+final _codepen = ScreenedPattern(r'codepen\.io\/([\w-]+)\/(?:embed|pen)\/(?:preview\/)?([\w]+)', caseSensitive: false);
+final tweet = ScreenedPattern(r'(?:twitter|x)\.com\/(\w+)\/status(?:es)?\/(\d+)', caseSensitive: false);
+final _bandcamp = ScreenedPattern(r'bandcamp\.com\/EmbeddedPlayer', caseSensitive: false);
 
 VideoBlock youtubeVideo(String id, [String? title]) {
   final video = VideoBlock(
@@ -471,39 +480,39 @@ Block? mediaFromFrame(String src, String? title) {
   return null;
 }
 
-final _streamable = RegExp(r'streamable\.com\/(?:e|o|s)\/(\w+)', caseSensitive: false);
+final _streamable = ScreenedPattern(r'streamable\.com\/(?:e|o|s)\/(\w+)', caseSensitive: false);
 final _bilibili = _QueryPattern(r'player\.bilibili\.com\/player\.html\?', r'bvid=(BV\w+)');
-final _niconico = RegExp(r'embed\.nicovideo\.jp\/watch\/((?:sm|nm|so)?\d+)', caseSensitive: false);
+final _niconico = ScreenedPattern(r'embed\.nicovideo\.jp\/watch\/((?:sm|nm|so)?\d+)', caseSensitive: false);
 final _tweetFrame = _QueryPattern(r'platform\.twitter\.com\/embed\/Tweet\.html\?', r'id=(\d+)');
-final _instagram = RegExp(r'instagram\.com\/(p|reel|tv)\/([\w-]+)\/embed', caseSensitive: false);
-final _tiktok = RegExp(r'tiktok\.com\/embed(?:\/v2)?\/(\d+)', caseSensitive: false);
+final _instagram = ScreenedPattern(r'instagram\.com\/(p|reel|tv)\/([\w-]+)\/embed', caseSensitive: false);
+final _tiktok = ScreenedPattern(r'tiktok\.com\/embed(?:\/v2)?\/(\d+)', caseSensitive: false);
 
 /// Hosts of interactive content (charts, maps, sandboxes, slides, documents) that publishers embed.
-final _embedHosts = <(RegExp, String)>[
-  (RegExp(r'(?:^|\.)(?:datawrapper\.dwcdn\.net|datawrapper\.de)$'), 'datawrapper'),
-  (RegExp(r'(?:^|\.)(?:flourish\.studio|flo\.uri\.sh)$'), 'flourish'),
-  (RegExp(r'(?:^|\.)infogram\.com$'), 'infogram'),
-  (RegExp(r'(?:^|\.)observablehq\.com$'), 'observable'),
-  (RegExp(r'(?:^|\.)public\.tableau\.com$'), 'tableau'),
-  (RegExp(r'(?:^|\.)(?:plotly\.com|plot\.ly)$'), 'plotly'),
-  (RegExp(r'(?:^|\.)arcgis\.com$'), 'arcgis'),
-  (RegExp(r'(?:^|\.)openstreetmap\.org$'), 'openstreetmap'),
-  (RegExp(r'(?:^|\.)codesandbox\.io$'), 'codesandbox'),
-  (RegExp(r'(?:^|\.)stackblitz\.com$'), 'stackblitz'),
-  (RegExp(r'(?:^|\.)jsfiddle\.net$'), 'jsfiddle'),
-  (RegExp(r'(?:^|\.)replit\.com$'), 'replit'),
-  (RegExp(r'(?:^|\.)glitch\.(?:com|me)$'), 'glitch'),
-  (RegExp(r'(?:^|\.)(?:play\.rust-lang\.org|go\.dev|play\.golang\.org)$'), 'playground'),
-  (RegExp(r'(?:^|\.)airtable\.com$'), 'airtable'),
-  (RegExp(r'(?:^|\.)figma\.com$'), 'figma'),
-  (RegExp(r'(?:^|\.)slideshare\.net$'), 'slideshare'),
-  (RegExp(r'(?:^|\.)speakerdeck\.com$'), 'speakerdeck'),
-  (RegExp(r'(?:^|\.)scribd\.com$'), 'scribd'),
-  (RegExp(r'(?:^|\.)docs\.google\.com$'), 'google-docs'),
+final _embedHosts = <(ScreenedPattern, String)>[
+  (ScreenedPattern(r'(?:^|\.)(?:datawrapper\.dwcdn\.net|datawrapper\.de)$'), 'datawrapper'),
+  (ScreenedPattern(r'(?:^|\.)(?:flourish\.studio|flo\.uri\.sh)$'), 'flourish'),
+  (ScreenedPattern(r'(?:^|\.)infogram\.com$'), 'infogram'),
+  (ScreenedPattern(r'(?:^|\.)observablehq\.com$'), 'observable'),
+  (ScreenedPattern(r'(?:^|\.)public\.tableau\.com$'), 'tableau'),
+  (ScreenedPattern(r'(?:^|\.)(?:plotly\.com|plot\.ly)$'), 'plotly'),
+  (ScreenedPattern(r'(?:^|\.)arcgis\.com$'), 'arcgis'),
+  (ScreenedPattern(r'(?:^|\.)openstreetmap\.org$'), 'openstreetmap'),
+  (ScreenedPattern(r'(?:^|\.)codesandbox\.io$'), 'codesandbox'),
+  (ScreenedPattern(r'(?:^|\.)stackblitz\.com$'), 'stackblitz'),
+  (ScreenedPattern(r'(?:^|\.)jsfiddle\.net$'), 'jsfiddle'),
+  (ScreenedPattern(r'(?:^|\.)replit\.com$'), 'replit'),
+  (ScreenedPattern(r'(?:^|\.)glitch\.(?:com|me)$'), 'glitch'),
+  (ScreenedPattern(r'(?:^|\.)(?:play\.rust-lang\.org|go\.dev|play\.golang\.org)$'), 'playground'),
+  (ScreenedPattern(r'(?:^|\.)airtable\.com$'), 'airtable'),
+  (ScreenedPattern(r'(?:^|\.)figma\.com$'), 'figma'),
+  (ScreenedPattern(r'(?:^|\.)slideshare\.net$'), 'slideshare'),
+  (ScreenedPattern(r'(?:^|\.)speakerdeck\.com$'), 'speakerdeck'),
+  (ScreenedPattern(r'(?:^|\.)scribd\.com$'), 'scribd'),
+  (ScreenedPattern(r'(?:^|\.)docs\.google\.com$'), 'google-docs'),
 ];
 
 /// Frames that are never content: ads, analytics, comment and chat widgets, forms.
-final _widgetFrame = RegExp(
+final _widgetFrame = ScreenedPattern(
   r'doubleclick|googlesyndication|googletagmanager|google-analytics|adservice|adsystem|adnxs|criteo|taboola|outbrain|disqus|facebook\.com\/plugins\/(?:like|share|page|follow|comments)|sharethis|addthis|recaptcha|newsletter|subscribe|signup|sign-up|login|consent|cookie|intercom|zendesk|livechat|hotjar|survey|typeform|\/ads?\/',
   caseSensitive: false,
 );
@@ -553,7 +562,7 @@ String? _frameContent(VElement el) {
 
 final _newlines = RegExp(r'\r\n?');
 final _embedSubdomain = RegExp(r'^(?:embed|embeds|player)\.');
-final _embedPath = RegExp(r'\/embed(?:ded)?(?:-[a-z]+)?\/[^?#]', caseSensitive: false);
+final _embedPath = ScreenedPattern(r'\/embed(?:ded)?(?:-[a-z]+)?\/[^?#]', caseSensitive: false);
 
 /// Any frame in the article: players and social posts, interactive content on
 /// known hosts, link cards and other `/embed` endpoints, diagrams shipped as

@@ -44,13 +44,14 @@ Article? extractTree(VDocument doc, String url, {bool markdown = false}) {
   if (!titleMatched) title = _sectionTitle(blocks, title);
   blocks = _tidy(blocks, title, meta);
 
-  final bodyText = blocksText(blocks);
+  var text = blocksText(blocks);
   final articleBody = meta.articleBody;
-  if (articleBody != null && articleBody.length > 500 && bodyText.length < articleBody.length * 0.3) {
+  if (articleBody != null && articleBody.length > 500 && text.length < articleBody.length * 0.3) {
     blocks = _paragraphsFrom(articleBody);
+    text = blocksText(blocks);
   }
   if (blocks.isEmpty) return null;
-  if (blocksText(blocks).length < 50 &&
+  if (text.length < 50 &&
       !blocks.any((b) => b is FigureBlock || b is VideoBlock || b is CodeBlock || b is EmbedBlock)) {
     return null;
   }
@@ -59,7 +60,8 @@ Article? extractTree(VDocument doc, String url, {bool markdown = false}) {
   // The TypeScript engine reorders block keys to model.ts field order here
   // (`canonical`); the Dart model always writes them in that order.
 
-  final text = blocksText(blocks);
+  // The lead image has no caption: the text is the same.
+  assert(text == blocksText(blocks));
   final wordCount = countWords(text);
   final article = Article(
     url: meta.url,
@@ -694,12 +696,24 @@ final _promoLine = RegExp(
   caseSensitive: false,
 );
 
+/// The leading words of [_promo]'s and [_promoLine]'s alternatives: a text
+/// either matches starts with one of them, then a character that is not an
+/// ASCII letter.
+const _promoWords = {
+  'see', 'read', 'also', 'related', 'more', 'don', 'dont', 'watch', 'recommended', 'must', 'trending', 'click', //
+  'listen', 'subscribe', 'sign', 'follow', 'up', 'next', 'most', 'you', 'advertisement', 'share',
+};
+
 bool _isPromo(List<Inline> content) {
   final text = collapse(inlineText(content));
   if (text.isEmpty) return false;
   final share = _linkShare(content);
-  if (_promo.hasMatch(text) && (share > 0.4 || text.length < 120)) return true;
-  if (_promoLine.hasMatch(text)) return true;
+  if (!_promoWords.contains(leadingWord(text))) {
+    assert(!_promo.hasMatch(text) && !_promoLine.hasMatch(text), 'promo "$text"');
+  } else {
+    if (_promo.hasMatch(text) && (share > 0.4 || text.length < 120)) return true;
+    if (_promoLine.hasMatch(text)) return true;
+  }
   // A short line that is entirely a link to another page, or a stack of them.
   if (share >= 0.9 && (text.length < 160 || content.any((n) => n is LineBreak))) return true;
   return false;

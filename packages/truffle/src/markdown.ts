@@ -279,8 +279,12 @@ function mathSpan(tex: string, cell: boolean): string {
   return flat.indexOf('$') < 0 ? `$${flat}$` : `$$${flat}$$`;
 }
 
+/** What `destination` acts on: spaces and controls, angle brackets, parentheses, backslashes and `&`. */
+const DESTINATION_SYNTAX = /[\x00-\x20<>()\\&]/;
+
 /** A link or image destination: bare, or in `<…>` when it holds spaces, angle brackets or unbalanced parentheses. */
 function destination(url: string): string {
+  if (!DESTINATION_SYNTAX.test(url)) return url;
   // One pass over the address decides everything; most need nothing.
   let depth = 0;
   let bracket = false;
@@ -432,7 +436,9 @@ class Writer {
         case 'text': {
           let marks = 0;
           let code = false;
-          for (const m of node.marks ?? []) {
+          const list = node.marks;
+          for (let k = 0; list !== undefined && k < list.length; k++) {
+            const m = list[k]!;
             if (m === 'bold') marks |= BOLD;
             else if (m === 'italic') marks |= ITALIC;
             else if (m === 'strike') marks |= STRIKE;
@@ -473,7 +479,7 @@ class Writer {
   paragraph(content: readonly Inline[]): string {
     const md = this.inline(content);
     // A line of only no-break or ideographic spaces is not blank to a parser: it would be an empty-looking paragraph.
-    if (md.length === 0 || (WHITESPACE.test(md.charAt(0)) && md.trim().length === 0)) return '';
+    if (md.length === 0 || (LEADING_SPACE.test(md) && md.trim().length === 0)) return '';
     return escapeLines(md);
   }
 

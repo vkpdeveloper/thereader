@@ -2,10 +2,13 @@
 /// [VDocument]. The only platform-specific stage of the pipeline.
 library;
 
+import 'dart:collection';
+
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as html_parser;
 
 import 'js.dart';
+import 'match.dart';
 import 'tree.dart';
 
 /// Elements dropped with their content while copying the DOM.
@@ -17,8 +20,44 @@ const _drop = {
 
 final _hiddenStyle = RegExp(r'(?:^|;)\s*(?:display\s*:\s*none|visibility\s*:\s*hidden)', caseSensitive: false);
 
+/// [_hiddenStyle] by hand: the pattern runs on every inline style.
+bool _hidesByStyle(String style) {
+  for (var i = 0; ;) {
+    while (i < style.length && isJsSpace(style.codeUnitAt(i))) {
+      i++;
+    }
+    if (_declares(style, i, 'display', 'none') || _declares(style, i, 'visibility', 'hidden')) return true;
+    i = style.indexOf(';', i) + 1;
+    if (i == 0) return false;
+  }
+}
+
+/// Whether `property\s*:\s*value` (ASCII, any case) starts at [i] of [s].
+bool _declares(String s, int i, String property, String value) {
+  int word(int at, String w) {
+    if (at + w.length > s.length) return -1;
+    for (var k = 0; k < w.length; k++) {
+      if (s.codeUnitAt(at + k) | 0x20 != w.codeUnitAt(k)) return -1;
+    }
+    return at + w.length;
+  }
+
+  int spaces(int at) {
+    while (at < s.length && isJsSpace(s.codeUnitAt(at))) {
+      at++;
+    }
+    return at;
+  }
+
+  var at = word(i, property);
+  if (at < 0) return false;
+  at = spaces(at);
+  if (at >= s.length || s.codeUnitAt(at) != 0x3a) return false;
+  return word(spaces(at + 1), value) >= 0;
+}
+
 /// Screen-reader-only text: never part of what a reader sees.
-final _srOnly = RegExp(
+final _srOnly = ClassPattern(
   r'(?:^|\s)(?:sr-only|visually-hidden|visuallyhidden|screen-reader-text|screen-reader-only|screenreader-only|a11y-hidden|hide-for-sr|u-hidden-visually|vh|offscreen|is-hidden|hidden-text)(?:\s|$)',
 );
 final _decorativeKeep = RegExp(r'fallback-image|lazy|image|img|photo|figure|media', caseSensitive: false);
@@ -30,21 +69,91 @@ String _attrName(Object key) => key is String ? key : key.toString();
 String? _attr(dom.Element el, String name) => el.attributes[name];
 
 bool _isHidden(dom.Element el, String tag) {
-  final cls = _attr(el, 'class');
-  if (cls != null && cls.contains('mwe-math-mathml')) return false;
+  final attributes = el.attributes;
+  if (attributes.isEmpty) return false;
+  final cls = attributes['class'];
+  // Wikipedia's MathML copy is never hidden (asked last: most elements are not hidden anyway).
+  bool shown() => cls != null && cls.contains('mwe-math-mathml');
   // React streaming SSR parks finished Suspense boundaries in <div hidden id="S:n"> until JS swaps them in.
-  if (el.attributes.containsKey('hidden') && tag != 'input' && !_suspenseId.hasMatch(_attr(el, 'id') ?? '')) {
-    return true;
+  if (attributes.containsKey('hidden') && tag != 'input' && !_suspenseId.hasMatch(attributes['id'] ?? '')) {
+    return !shown();
   }
-  final style = _attr(el, 'style');
-  if (style != null && _hiddenStyle.hasMatch(style)) return true;
-  if (cls != null && _srOnly.hasMatch(cls)) return true;
-  if (_attr(el, 'aria-hidden') == 'true') {
+  final style = attributes['style'];
+  if (style != null) {
+    final hidden = _hidesByStyle(style);
+    assert(hidden == _hiddenStyle.hasMatch(style), 'hidden style "$style"');
+    if (hidden) return !shown();
+  }
+  if (cls != null && _srOnly.hasMatch(cls)) return !shown();
+  if (attributes['aria-hidden'] == 'true') {
     // KaTeX and MathJax hide their visual copy; the MathML copy is read instead.
     // Decorative wrappers that still hold real images or long text stay.
-    return !(cls != null && _decorativeKeep.hasMatch(cls));
+    return !(cls != null && _decorativeKeep.hasMatch(cls)) && !shown();
   }
   return false;
+}
+
+/// [el]'s attributes by name as the DOM reports them. Namespaced names
+/// (`xlink:href`, foreign content only) are copied, the first of equal names
+/// winning; otherwise package:html's own map is read through
+/// [_DomAttributes] rather than copied for every element.
+Map<String, String> _attributesOf(dom.Element el) {
+  final attributes = el.attributes;
+  for (final key in attributes.keys) {
+    if (key is String) continue;
+    final copy = <String, String>{};
+    attributes.forEach((key, value) => copy.putIfAbsent(_attrName(key), () => value));
+    return copy;
+  }
+  return _DomAttributes(attributes);
+}
+
+/// A map of attributes read from package:html's map (every key a string)
+/// until first written, then from a copy: the DOM is never changed.
+class _DomAttributes extends MapBase<String, String> {
+  _DomAttributes(this._dom);
+
+  final Map<Object, String> _dom;
+  Map<String, String>? _own;
+
+  Map<Object?, String> get _map => _own ?? _dom;
+
+  Map<String, String> get _written =>
+      _own ??= {for (final MapEntry(:key, :value) in _dom.entries) key as String: value};
+
+  @override
+  String? operator [](Object? key) => _map[key];
+
+  @override
+  void operator []=(String key, String value) => _written[key] = value;
+
+  @override
+  String? remove(Object? key) => _written.remove(key);
+
+  @override
+  void clear() => _written.clear();
+
+  @override
+  Iterable<String> get keys => _own?.keys ?? _dom.keys.cast<String>();
+
+  @override
+  int get length => _map.length;
+
+  @override
+  bool get isEmpty => _map.isEmpty;
+
+  @override
+  bool get isNotEmpty => _map.isNotEmpty;
+
+  @override
+  bool containsKey(Object? key) => _map.containsKey(key);
+
+  @override
+  void forEach(void Function(String key, String value) action) {
+    final own = _own;
+    if (own != null) return own.forEach(action);
+    _dom.forEach((key, value) => action(key as String, value));
+  }
 }
 
 /// `textContent`: the text of every descendant text node.
@@ -165,7 +274,7 @@ VDocument fromDocument(dom.Document doc) {
   VElement? head;
   VElement? body;
 
-  final documentElement = doc.documentElement;
+  final documentElement = _documentElement(doc);
   dom.Element? headEl;
   dom.Element? bodyEl;
   for (final child in documentElement?.children ?? const <dom.Element>[]) {
@@ -264,9 +373,7 @@ VDocument fromDocument(dom.Document doc) {
       return null;
     }
 
-    final attrs = <String, String>{};
-    el.attributes.forEach((key, value) => attrs.putIfAbsent(_attrName(key), () => value));
-    final v = VElement(tag, attrs);
+    final v = VElement(tag, _attributesOf(el));
 
     if (tag == 'math' || tag == 'svg') {
       // Kept as a leaf: math is serialized later; svg is dropped by the converter.
@@ -299,6 +406,18 @@ VDocument fromDocument(dom.Document doc) {
   return VDocument(root: root, head: head, body: body!, jsonLd: jsonLd, nextData: nextData, baseHref: baseHref);
 }
 
+/// `doc.documentElement` (`querySelector('html')`: the first `html` element
+/// in tree order) without parsing a selector.
+dom.Element? _documentElement(dom.Node node) {
+  for (final child in node.nodes) {
+    if (child is! dom.Element) continue;
+    if (child.localName == 'html') return child;
+    final found = _documentElement(child);
+    if (found != null) return found;
+  }
+  return null;
+}
+
 final _imageFile = RegExp(r'\.(?:svg|png|jpe?g|gif|webp|avif)(?:$|[?#])', caseSensitive: false);
 
 bool _isImageObject(dom.Element el) {
@@ -320,6 +439,15 @@ dom.Element? _texAnnotation(dom.Element el) {
 
 final _xmlAttr = RegExp(r'[&<>"]');
 final _xmlText = RegExp(r'[&<>]');
+
+/// [s] with [pattern]'s characters escaped; most text has none.
+String _escaped(String s, RegExp pattern) {
+  for (var i = 0; i < s.length; i++) {
+    final c = s.codeUnitAt(i);
+    if (c == 0x26 || c == 0x3c || c == 0x3e || c == 0x22) return s.replaceAllMapped(pattern, _xmlEscape);
+  }
+  return s;
+}
 
 String _xmlEscape(Match m) => switch (m[0]) {
   '&' => '&amp;',
@@ -367,13 +495,13 @@ String _serializeXml(dom.Element el) {
       el.attributes.forEach((key, value) {
         final name = _attrName(key);
         if (!_mathmlAttributes.contains(name) && !_dataAttr.hasMatch(name)) return;
-        out.write(' $name="${value.replaceAllMapped(_xmlAttr, _xmlEscape)}"');
+        out.write(' $name="${_escaped(value, _xmlAttr)}"');
       });
       out.write('>');
     }
     for (final child in el.nodes) {
       if (child is dom.Text) {
-        out.write(child.data.replaceAllMapped(_xmlText, _xmlEscape));
+        out.write(_escaped(child.data, _xmlText));
       } else if (child is dom.Element) {
         visit(child);
       }
