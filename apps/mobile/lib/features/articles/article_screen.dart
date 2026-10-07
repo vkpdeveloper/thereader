@@ -12,17 +12,22 @@ import '../../app_scope.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/tokens.dart';
+import '../../data/api/api_client.dart';
 import '../../data/models/article_summary.dart';
+import '../../data/models/highlight.dart';
 import '../../data/repositories/article_repository.dart';
+import '../reader/highlight_sheets.dart';
 import '../reader/reader_settings_sheet.dart';
 import '../shared/states.dart';
 import 'article_blocks.dart';
+import 'article_highlights.dart';
 import 'article_media.dart';
 import 'article_style.dart';
 
 /// Reads a saved article from its stored document: never fetches. Text is
 /// selectable, links open in the in-app browser, and the position is saved
-/// as the top block plus the offset into it.
+/// as the top block plus the offset into it. Selected text can be
+/// highlighted and annotated, as on the web.
 class ArticleScreen extends StatefulWidget {
   const ArticleScreen({super.key, required this.summary});
 
@@ -51,6 +56,8 @@ class _ArticleScreenState extends State<ArticleScreen> with WidgetsBindingObserv
   final Map<String, GlobalKey> _noteKeys = {};
   final Map<String, int> _noteBlocks = {};
   late ArticleRepository _articles;
+  late AppServices _services;
+  ArticleHighlights? _highlights;
   Article? _article;
   ArticleProgress? _latest;
   Object? _error;
@@ -73,7 +80,8 @@ class _ArticleScreenState extends State<ArticleScreen> with WidgetsBindingObserv
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _articles = AppScope.of(context).articles!;
+    _services = AppScope.of(context);
+    _articles = _services.articles!;
     if (!_started) {
       _started = true;
       _load();
@@ -95,8 +103,18 @@ class _ArticleScreenState extends State<ArticleScreen> with WidgetsBindingObserv
           }
         }
       }
+      final highlights = _services.highlights;
       setState(() {
         _article = article;
+        if (highlights != null) {
+          _highlights = ArticleHighlights(
+            repo: highlights,
+            articleId: widget.summary.id,
+            href: widget.summary.url.isNotEmpty ? widget.summary.url : 'article:${widget.summary.id}',
+            model: ArticleTextModel(article),
+            origin: _origin,
+          )..onTap = _openHighlight;
+        }
         _starts = starts;
         _total = total == 0 ? 1 : total;
         _percent.value = widget.summary.progress?.percent ?? 0;
@@ -195,6 +213,7 @@ class _ArticleScreenState extends State<ArticleScreen> with WidgetsBindingObserv
       final id = widget.summary.id;
       Future.microtask(() => articles.saveProgress(id, p));
     }
+    _highlights?.dispose();
     _scroll.dispose();
     _list.dispose();
     _percent.dispose();
@@ -246,9 +265,97 @@ class _ArticleScreenState extends State<ArticleScreen> with WidgetsBindingObserv
         builder: (_) => ReaderSettingsSheet(
           settings: AppScope.of(context).settings,
           engineName: 'Article',
-          highlights: false,
+          highlights: _highlights != null,
         ),
       );
+
+  /// The API new highlights are recorded under, as sync names it.
+  String _origin() {
+    final url = _services.settings.settings.apiBaseUrl;
+    try {
+      return ApiClient.normalizeBaseUrl(url).toString();
+    } on ApiException {
+      return url;
+    }
+  }
+
+  HighlightColor get _defaultColor => HighlightColor.parse(_services.settings.reader.highlightColor);
+
+  /// The selection toolbar: highlight, note or copy when the selection holds
+  /// article text, else the system one.
+  Widget _selectionToolbar(BuildContext context, SelectableRegionState region) {
+    final highlights = _highlights;
+    if (highlights == null || highlights.selection() == null) {
+      return AdaptiveTextSelectionToolbar.selectableRegion(selectableRegionState: region);
+    }
+    final copy = region.contextMenuButtonItems.where((b) => b.type == ContextMenuButtonType.copy).firstOrNull;
+    return HighlightSelectionToolbar(
+      anchors: region.contextMenuAnchors,
+      defaultColor: _defaultColor,
+      onHighlight: (color) => _highlightSelection(region, color),
+      onNote: () => _highlightSelection(region, _defaultColor, note: true),
+      onCopy: () {
+        copy?.onPressed?.call();
+        region.clearSelection();
+      },
+    );
+  }
+
+  Future<void> _highlightSelection(SelectableRegionState region, HighlightColor color, {bool note = false}) async {
+    final highlights = _highlights;
+    final span = highlights?.selection();
+    region.hideToolbar();
+    region.clearSelection();
+    if (highlights == null || span == null) return;
+    final h = await highlights.create(span, color);
+    if (note && mounted) await editHighlightNote(context, highlights.repo, h.id);
+  }
+
+  void _openHighlight(String id) {
+    final highlights = _highlights;
+    if (highlights != null) showHighlightActions(context, highlights.repo, id);
+  }
+
+  void _openHighlights() {
+    final highlights = _highlights;
+    if (highlights == null) return;
+    showHighlightsList(
+      context,
+      repo: highlights.repo,
+      items: () => highlights.items,
+      onOpen: _revealHighlight,
+    );
+  }
+
+  /// Scrolls the passage to the upper part of the screen and marks it for a
+  /// moment: a jump to its block, then to its first line once laid out.
+  void _revealHighlight(Highlight h) {
+    final highlights = _highlights;
+    final span = highlights?.spanOf(h.id);
+    if (highlights == null || span == null || !_list.isAttached) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't find this passage in the article.")),
+      );
+      return;
+    }
+    _list.jumpToItem(index: span.startBlock, scrollController: _scroll, alignment: 0.3);
+    void refine(int pass) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_scroll.hasClients) return;
+        final text = highlights.textAt(span.startBlock, span.start);
+        final rect = text?.rectOf(span.start - text.anchor!.base);
+        if (rect != null) {
+          final position = _scroll.position;
+          final target = _scroll.offset + rect.top - position.viewportDimension * 0.3;
+          _scroll.jumpTo(target.clamp(0.0, position.maxScrollExtent));
+        }
+        if (pass < 2) refine(pass + 1);
+      });
+    }
+
+    refine(0);
+    highlights.flash(h.id);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -282,6 +389,7 @@ class _ArticleScreenState extends State<ArticleScreen> with WidgetsBindingObserv
               onFootnoteBack: _backFromFootnote,
               onImages: (images, index) => ArticleImageViewer.open(context, images, index),
               footnoteKey: (id) => _noteKeys.putIfAbsent(id, GlobalKey.new),
+              highlights: _highlights,
               child: Stack(
                 children: [
                   _body(article, style),
@@ -308,6 +416,7 @@ class _ArticleScreenState extends State<ArticleScreen> with WidgetsBindingObserv
     final padding = MediaQuery.paddingOf(context);
     final blocks = article.blocks;
     return SelectionArea(
+      contextMenuBuilder: _selectionToolbar,
       child: Scrollbar(
         controller: _scroll,
         child: CustomScrollView(
@@ -323,6 +432,8 @@ class _ArticleScreenState extends State<ArticleScreen> with WidgetsBindingObserv
                 onPressed: () => Navigator.of(context).maybePop(),
               ),
               actions: [
+                if (_highlights != null)
+                  QuietIconButton(icon: Icons.border_color_outlined, label: 'Highlights', onPressed: _openHighlights),
                 QuietIconButton(icon: Icons.text_fields, label: 'Typography', onPressed: _openSettings),
                 QuietIconButton(icon: Icons.open_in_new, label: 'Open original', onPressed: () => _openLink(article.url)),
                 const SizedBox(width: Space.xs),

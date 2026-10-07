@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 
+import '../articles/article_anchors.dart';
 import '../models/highlight.dart';
 import '../storage/key_value_store.dart';
 
@@ -60,6 +61,25 @@ class HighlightRepository extends ChangeNotifier {
     return list;
   }
 
+  /// Live highlights of one saved article in reading order, whatever origin
+  /// they were made under (articles themselves show under any origin).
+  List<Highlight> forArticle(String articleId) {
+    final bookId = ArticleAnchors.bookIdFor(articleId);
+    final list = _items.values
+        .where(
+          (h) =>
+              !h.deleted &&
+              h.bookId == bookId &&
+              h.sha256 == ArticleAnchors.sha256,
+        )
+        .toList();
+    list.sort((a, b) {
+      final c = _position(a).compareTo(_position(b));
+      return c != 0 ? c : a.createdAt.compareTo(b.createdAt);
+    });
+    return list;
+  }
+
   static double _position(Highlight h) {
     final loc = h.locator['locations'];
     if (loc is Map) {
@@ -76,6 +96,7 @@ class HighlightRepository extends ChangeNotifier {
     required Map<String, dynamic> locator,
     required String text,
     required String color,
+    String? note,
   }) async {
     final at = _stamp();
     final h = Highlight(
@@ -86,6 +107,7 @@ class HighlightRepository extends ChangeNotifier {
       locator: locator,
       text: text.length > 4000 ? text.substring(0, 4000) : text,
       color: color,
+      note: _clipNote(note),
       createdAt: at,
       updatedAt: at,
     );
@@ -100,6 +122,29 @@ class HighlightRepository extends ChangeNotifier {
     _items[id] = h.copyWith(color: color, updatedAt: _stamp(h));
     await _changed();
   }
+
+  /// Writes or replaces the note; null or blank removes it.
+  Future<void> setNote(String id, String? note) async {
+    final h = _items[id];
+    if (h == null || h.deleted) return;
+    final next = _clipNote(note);
+    if (next == h.note) return;
+    _items[id] = h.copyWith(
+      note: next,
+      clearNote: next == null,
+      updatedAt: _stamp(h),
+    );
+    await _changed();
+  }
+
+  /// The API takes notes up to 4,000 characters.
+  static String? _clipNote(String? note) {
+    final n = note?.trim();
+    if (n == null || n.isEmpty) return null;
+    return n.length > maxNote ? n.substring(0, maxNote) : n;
+  }
+
+  static const maxNote = 4000;
 
   Future<void> delete(String id) async {
     final h = _items[id];

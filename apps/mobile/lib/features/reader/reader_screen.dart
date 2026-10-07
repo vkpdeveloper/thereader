@@ -274,8 +274,8 @@ class _ReaderScreenState extends State<ReaderScreen>
     showHighlightsList(
       context,
       repo: repo,
-      origin: widget.entry.origin,
-      sha256: widget.entry.book.sha256,
+      items: () =>
+          repo.forEdition(widget.entry.origin, widget.entry.book.sha256),
       onOpen: (h) => c.goTo(
         ReadingLocator(
           href: h.href,

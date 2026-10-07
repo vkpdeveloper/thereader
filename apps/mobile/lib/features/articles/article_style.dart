@@ -5,6 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/typography/reader_fonts.dart';
 import '../../data/models/settings.dart';
+import 'article_highlights.dart';
 
 /// Reading typography for articles, derived from the reader preferences so an
 /// article looks like a book in the same theme, face, size and measure.
@@ -128,6 +129,7 @@ class ArticleScope extends InheritedWidget {
     required this.onFootnoteBack,
     required this.onImages,
     required this.footnoteKey,
+    this.highlights,
     required super.child,
   });
 
@@ -137,6 +139,9 @@ class ArticleScope extends InheritedWidget {
   final VoidCallback onFootnoteBack;
   final void Function(List<ArticleImage> images, int index) onImages;
   final GlobalKey Function(String id) footnoteKey;
+
+  /// The article's highlights; null where there are none (no store).
+  final ArticleHighlights? highlights;
 
   static ArticleScope of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<ArticleScope>()!;
 
@@ -148,9 +153,11 @@ class ArticleScope extends InheritedWidget {
         onFootnoteBack: onFootnoteBack,
         onImages: onImages,
         footnoteKey: footnoteKey,
+        highlights: highlights,
         child: child,
       );
 
   @override
-  bool updateShouldNotify(ArticleScope oldWidget) => style != oldWidget.style;
+  bool updateShouldNotify(ArticleScope oldWidget) =>
+      style != oldWidget.style || !identical(highlights, oldWidget.highlights);
 }

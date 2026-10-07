@@ -25,7 +25,7 @@ class ReaderSettingsSheet extends StatelessWidget {
   final String engineName;
   final String? engineNote;
 
-  /// Offers the highlight colour; articles have no highlights.
+  /// Offers the default highlight colour (off where nothing can be highlighted).
   final bool highlights;
 
   @override
