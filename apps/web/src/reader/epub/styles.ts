@@ -208,8 +208,11 @@ body p, body li, body dd, body dt{
   text-align:left !important;-webkit-hyphens:manual !important;hyphens:manual !important;}
 body blockquote{margin:1em 0 1em 0 !important;padding-left:1em !important;border-left:2px solid ${colors.muted} !important;
   text-align:left !important;-webkit-hyphens:manual !important;hyphens:manual !important;}
-body ul{list-style:disc outside !important;padding-left:1.2em !important;margin:1em 0 !important;}
-body ol{list-style:decimal outside !important;padding-left:1.2em !important;margin:1em 0 !important;}
+body ul, body ol{margin:1em 0 !important;}
+/* Lists a book styles itself (a class) keep their markers and indent: maths and
+   code books draw labels like "(a)" with list-style none and a hanging indent. */
+body ul:not([class]){list-style:disc outside !important;padding-left:1.2em !important;}
+body ol:not([class]){list-style:decimal outside !important;padding-left:1.2em !important;}
 body li{margin:0.35em 0 !important;}
 body figcaption, body caption, body .figure-container > h5, body .figure-container-h5{
   color:${colors.muted} !important;font-size:0.8rem !important;font-weight:400 !important;

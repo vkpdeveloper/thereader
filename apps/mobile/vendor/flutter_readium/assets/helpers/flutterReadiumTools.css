@@ -86,11 +86,12 @@ blockquote {
   opacity: 0.85 !important;
 }
 
-/* Lists */
-:root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) body:not(.flutter-readium-spotlight-active) ul,
-ul { list-style: disc outside !important; padding-left: 1.2em !important; }
-:root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) body:not(.flutter-readium-spotlight-active) ol,
-ol { list-style: decimal outside !important; padding-left: 1.2em !important; }
+/* Lists. Lists a book styles itself (a class) keep their markers and indent:
+   maths and code books draw labels like "(a)" with list-style none. */
+:root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) body:not(.flutter-readium-spotlight-active) ul:not([class]),
+ul:not([class]) { list-style: disc outside !important; padding-left: 1.2em !important; }
+:root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) body:not(.flutter-readium-spotlight-active) ol:not([class]),
+ol:not([class]) { list-style: decimal outside !important; padding-left: 1.2em !important; }
 :root[style*="--USER__textColor"]:not(#tr-a):not(#tr-b):not(#tr-c):not(#tr-d) body:not(.flutter-readium-spotlight-active) li,
 li { margin: 0.35em 0 !important; }
 

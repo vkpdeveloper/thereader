@@ -1,7 +1,7 @@
 // Reviews maths/code rendering in the Readium engine on a simulator or
 // emulator, for before/after screenshots.
 //
-// Books are private local copies (nobs, llm, ladr3e, plus the committed
+// Books are private local copies (nobs, llm, ladr3e, ladr4e, plus the committed
 // apps/web/fixtures/enhance-sampler.epub copied as sampler.epub), served with
 // screenshots and carried highlight locators by tool/enhance_review_host.py:
 //   python3 -I tool/enhance_review_host.py <books> <out> after
@@ -97,6 +97,14 @@ final _stops = [
     'ladr3e',
     'index_split_001.html#p111',
     query: 'Two affine subsets parallel to U are equal or disjoint',
+  ),
+  // A MathML EPUB of the 4th edition, converted from the open-access PDF.
+  _Stop('ladr4e-3103', 'ladr4e', 'OEBPS/text/ch03-05.xhtml#n3.103'),
+  _Stop(
+    'ladr4e-912',
+    'ladr4e',
+    'OEBPS/text/ch09-01.xhtml#n9.12',
+    flow: ReaderFlow.paginated,
   ),
   // apps/web/fixtures/enhance-sampler.epub
   for (final c in ['mathml', 'tex', 'code', 'images', 'table', 'pdf'])
