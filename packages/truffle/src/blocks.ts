@@ -383,6 +383,8 @@ export class Converter {
   private readonly itemSources = new Map<ListItem, VElement>();
   /** Label of the first reference to each listed note. */
   private readonly refLabels = new Map<string, string>();
+  /** Link targets resolved against the base so far (pages link the same places many times). */
+  private readonly links = new Map<string, string | null>();
   /** Math nodes typeset as display (block) formulas. */
   readonly displayMath = new WeakSet<Inline>();
   /** The text holds TeX delimiters (`$$`, `\[`, `\(`), so it is parsed as math; `dollars` adds $…$ inline. */
@@ -918,7 +920,7 @@ export class Converter {
           if (anchor.length > 0 && this.pendingRefs.has(anchor)) b.anchor = anchor;
         }
         if (PERMALINK.test(el.matchString) && PERMALINK_GLYPH.test(collapse(rawText(el)))) return;
-        const resolved = href === undefined ? null : resolveUrl(href, this.base);
+        const resolved = href === undefined ? null : this.resolveLink(href);
         const linkCtx = resolved !== null && LINK_SCHEME.test(resolved) ? context(ctx.marks, resolved) : ctx;
         this.inlineChildren(el, b, linkCtx, out);
         return;
@@ -959,6 +961,15 @@ export class Converter {
       return;
     }
     this.inlineChildren(el, b, ctx, out);
+  }
+
+  private resolveLink(href: string): string | null {
+    let resolved = this.links.get(href);
+    if (resolved === undefined) {
+      resolved = resolveUrl(href, this.base);
+      this.links.set(href, resolved);
+    }
+    return resolved;
   }
 
   /**

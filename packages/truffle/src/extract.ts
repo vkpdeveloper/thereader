@@ -184,14 +184,12 @@ function chooseTitle(meta: Metadata, body: VElement, pageUrl: string): string {
     }
     return true;
   });
+  const keys = cleaned.map(comparable);
+  const headingKeys = headings.map(comparable);
   // The visible heading that matches the page's declared title is the title as written.
-  for (const candidate of cleaned) {
-    const c = comparable(candidate);
+  for (const c of keys) {
     if (c.length === 0) continue;
-    for (const h of headings) {
-      const hc = comparable(h);
-      if (hc === c) return h;
-    }
+    for (let k = 0; k < headings.length; k++) if (headingKeys[k] === c) return headings[k]!;
   }
   // Headings that are the site part of "Story - Site" (a docs menu-bar h1) never stand for the story.
   const siteParts = new Set<string>();
@@ -201,13 +199,12 @@ function chooseTitle(meta: Metadata, body: VElement, pageUrl: string): string {
     siteParts.add(segments[segments.length - 1]!);
     siteParts.add(segments[0]!);
   }
-  for (const candidate of cleaned) {
-    const c = comparable(candidate);
+  for (const c of keys) {
     if (c.length < 10) continue;
-    for (const h of headings) {
-      const hc = comparable(h);
+    for (let k = 0; k < headings.length; k++) {
+      const hc = headingKeys[k]!;
       if (siteParts.has(hc) && hc !== c) continue;
-      if (hc.length >= 10 && (c.indexOf(hc) >= 0 && hc.length > c.length * 0.6 || hc.indexOf(c) >= 0 && c.length > hc.length * 0.6)) return h;
+      if (hc.length >= 10 && (c.indexOf(hc) >= 0 && hc.length > c.length * 0.6 || hc.indexOf(c) >= 0 && c.length > hc.length * 0.6)) return headings[k]!;
     }
   }
   // A heading equal to one segment of "Story - Section - Site".
@@ -225,18 +222,18 @@ function chooseTitle(meta: Metadata, body: VElement, pageUrl: string): string {
   // heading that shares most of its words with the declared title.
   let best: string | null = null;
   let bestOverlap = 0.6;
-  for (const candidate of cleaned) {
-    const words = new Set(comparable(candidate).split(' '));
+  for (const c of keys) {
+    const words = new Set(c.split(' '));
     if (words.size < 3) continue;
-    for (const h of headings) {
-      const hw = comparable(h).split(' ');
+    for (let k = 0; k < headings.length; k++) {
+      const hw = headingKeys[k]!.split(' ');
       if (hw.length < 3) continue;
       let shared = 0;
       for (const w of hw) if (words.has(w)) shared++;
       const overlap = shared / Math.max(hw.length, words.size);
       if (overlap > bestOverlap) {
         bestOverlap = overlap;
-        best = h;
+        best = headings[k]!;
       }
     }
   }
@@ -254,8 +251,37 @@ function chooseTitle(meta: Metadata, body: VElement, pageUrl: string): string {
 
 // ------------------------------------------------------------------ tidy
 
-function blockPlain(block: Block): string {
-  return block.type === 'heading' || block.type === 'paragraph' ? inlineText(block.content) : '';
+/**
+ * Text of inline content for the rules in `tidy`, which ask several times of each paragraph: made once per content
+ * array. A rule that changes a paragraph gives it a new array.
+ */
+class Texts {
+  private readonly raw = new Map<Inline[], string>();
+  private readonly collapsed = new Map<Inline[], string>();
+
+  /** `inlineText(content)`. */
+  plain(content: Inline[]): string {
+    let text = this.raw.get(content);
+    if (text === undefined) {
+      text = inlineText(content);
+      this.raw.set(content, text);
+    }
+    return text;
+  }
+
+  /** `collapse(inlineText(content))`. */
+  line(content: Inline[]): string {
+    let text = this.collapsed.get(content);
+    if (text === undefined) {
+      text = collapse(this.plain(content));
+      this.collapsed.set(content, text);
+    }
+    return text;
+  }
+
+  block(block: Block): string {
+    return block.type === 'heading' || block.type === 'paragraph' ? this.plain(block.content) : '';
+  }
 }
 
 const DATE_LINE = /^(?:(?:published|updated|posted|last updated|modified)\s*:?\s*)?(?:on\s+)?(?:(?:mon|tue|wed|thu|fri|sat|sun)[a-z]*,?\s+)?(?:\d{1,2}\s+[a-z]{3,9}\.?,?\s+\d{4}|[a-z]{3,9}\.?\s+\d{1,2},?\s+\d{4}|\d{4}-\d{2}-\d{2}|\d{1,2}[./]\d{1,2}[./]\d{2,4})(?:,?\s+(?:at\s+)?\d{1,2}[:.]\d{2}(?:\s*[ap]\.?m\.?)?(?:\s+[a-z]{2,4})?)?$/i;
@@ -275,17 +301,24 @@ function isDateLine(lower: string): boolean {
   return lower.replace(DATE_WORDS, '').replace(/[\d\s.,:;|/·•@\-–—()]+/g, '').length < 3;
 }
 
+const STRAY_MARKS = /^[\d\s.,/#|·•]{1,6}$/;
+const BREAK_LINE = /^[\s_*~=\-–—•·]{3,}$/;
+const SENTENCE_END = /[.!?:;。！？"'”’)\]]\s*$/;
+const SENTENCE_ENDED = /[.!?:;。！？"'”’)\]]$/;
+const LOWERCASE_START = /^\s*\p{Ll}/u;
+
 function tidy(input: Block[], title: string, meta: Metadata): Block[] {
-  let blocks = input.filter((b) => !(b.type === 'paragraph' && (b.content.length === 0 || /^[\d\s.,/#|·•]{1,6}$/.test(inlineText(b.content)))));
+  const texts = new Texts();
+  let blocks = input.filter((b) => !(b.type === 'paragraph' && (b.content.length === 0 || STRAY_MARKS.test(texts.plain(b.content)))));
   // A line of underscores, dashes or asterisks is a section break.
-  blocks = blocks.map((b) => (b.type === 'paragraph' && b.content.length === 1 && b.content[0]!.type === 'text' && b.content[0]!.text.length < 100 && /^[\s_*~=\-–—•·]{3,}$/.test(b.content[0]!.text) ? { type: 'rule' } : b));
+  blocks = blocks.map((b) => (b.type === 'paragraph' && b.content.length === 1 && b.content[0]!.type === 'text' && b.content[0]!.text.length < 100 && BREAK_LINE.test(b.content[0]!.text) ? { type: 'rule' } : b));
 
   // The title (and a repeated subtitle) are drawn by the renderer, not the body.
   const t = comparable(title);
   for (let i = 0; i < Math.min(blocks.length, 4); i++) {
     const b = blocks[i]!;
     if (b.type !== 'heading' && b.type !== 'paragraph') continue;
-    const c = comparable(blockPlain(b));
+    const c = comparable(texts.block(b));
     if (c.length > 0 && (c === t || b.type === 'heading' && t.length > 10 && (c.indexOf(t) >= 0 || t.indexOf(c) >= 0 && c.length > t.length * 0.75))) {
       blocks.splice(i, 1);
       break;
@@ -305,7 +338,7 @@ function tidy(input: Block[], title: string, meta: Metadata): Block[] {
   for (let i = 0; i < Math.min(blocks.length, 3); i++) {
     const b = blocks[i]!;
     if (b.type !== 'paragraph' && b.type !== 'heading') continue;
-    const c = comparable(blockPlain(b));
+    const c = comparable(texts.block(b));
     if (c.length > 0 && (c === sub || b.type === 'heading' && c === description)) {
       blocks.splice(i, 1);
       break;
@@ -317,7 +350,7 @@ function tidy(input: Block[], title: string, meta: Metadata): Block[] {
   for (let i = 0; i < Math.min(blocks.length, 5); i++) {
     const b = blocks[i]!;
     if (b.type !== 'paragraph') continue;
-    const text = collapse(blockPlain(b));
+    const text = texts.line(b.content);
     if (text.length === 0 || text.length > 120) continue;
     const lower = text.toLowerCase();
     const isByline = BYLINE_LINE.test(text) && text.length < 100 || authors.length > 0 && authors.some((a) => lower === a || lower === 'by ' + a);
@@ -336,17 +369,17 @@ function tidy(input: Block[], title: string, meta: Metadata): Block[] {
     if (first.type !== 'paragraph') continue;
     // Cheap first: only the paragraph's last run decides whether the sentence is unfinished.
     const tail = first.content[first.content.length - 1];
-    if (tail === undefined || tail.type !== 'text' || /[.!?:;。！？"'”’)\]]\s*$/.test(tail.text)) continue;
-    const head = inlineText(first.content).trimEnd();
-    if (head.length === 0 || /[.!?:;。！？"'”’)\]]$/.test(head)) continue;
+    if (tail === undefined || tail.type !== 'text' || SENTENCE_END.test(tail.text)) continue;
+    const head = texts.plain(first.content).trimEnd();
+    if (head.length === 0 || SENTENCE_ENDED.test(head)) continue;
     let j = i + 1;
-    while (j < blocks.length && j - i <= 3 && (blocks[j]!.type === 'heading' || blocks[j]!.type === 'paragraph' && inlineText((blocks[j] as { content: Inline[] }).content).length < 200)) {
+    while (j < blocks.length && j - i <= 3 && (blocks[j]!.type === 'heading' || blocks[j]!.type === 'paragraph' && texts.plain((blocks[j] as { content: Inline[] }).content).length < 200)) {
       const next = blocks[j]!;
-      if (next.type === 'paragraph' && /^\s*\p{Ll}/u.test(inlineText(next.content)) && j > i + 1) break;
+      if (next.type === 'paragraph' && LOWERCASE_START.test(texts.plain(next.content)) && j > i + 1) break;
       j++;
     }
     const last = blocks[j];
-    if (j === i + 1 || j - i > 3 || last === undefined || last.type !== 'paragraph' || !/^\s*\p{Ll}/u.test(inlineText(last.content))) continue;
+    if (j === i + 1 || j - i > 3 || last === undefined || last.type !== 'paragraph' || !LOWERCASE_START.test(texts.plain(last.content))) continue;
     if (!blocks.slice(i + 1, j).some((b) => b.type === 'heading')) continue;
     first.content = normalizeInlines([...first.content, { type: 'text', text: ' ' }, ...last.content]);
     blocks.splice(i + 1, j - i);
@@ -356,7 +389,7 @@ function tidy(input: Block[], title: string, meta: Metadata): Block[] {
   for (let i = 0; i < blocks.length; i++) {
     if (blocks[i]!.type !== 'figure') continue;
     let j = i + 1;
-    while (j < blocks.length && isLegendLabel(blocks[j]!)) j++;
+    while (j < blocks.length && isLegendLabel(blocks[j]!, texts)) j++;
     if (j - i - 1 >= 3) blocks.splice(i + 1, j - i - 1);
   }
   // A formula alone in its paragraph is set on its own line.
@@ -371,13 +404,13 @@ function tidy(input: Block[], title: string, meta: Metadata): Block[] {
   });
 
   // Author bios ("Jane Doe is a reporter covering...") describe the writer, not the story.
-  blocks = dropBios(blocks, authors);
+  blocks = dropBios(blocks, authors, texts);
 
   // "Read more:" promos and link-only lines are navigation, not text.
-  blocks = blocks.filter((b) => !(b.type === 'paragraph' && isPromo(b.content)));
+  blocks = blocks.filter((b) => !(b.type === 'paragraph' && isPromo(b.content, texts)));
   // Calls to action opening the story (a "buy the PDF" box).
   for (let i = 0; i < Math.min(blocks.length, 3); i++) {
-    if (isCallToAction(blocks[i]!)) {
+    if (isCallToAction(blocks[i]!, texts)) {
       blocks.splice(i, 1);
       i--;
     }
@@ -388,14 +421,14 @@ function tidy(input: Block[], title: string, meta: Metadata): Block[] {
   while (blocks.length > 1) {
     const last = blocks[blocks.length - 1]!;
     const prev = blocks[blocks.length - 2]!;
-    const lastText = last.type === 'paragraph' ? collapse(inlineText(last.content)) : '';
+    const lastText = last.type === 'paragraph' ? texts.line(last.content) : '';
     if (last.type === 'paragraph' && (isContactLine(lastText) || isDateLine(lastText.toLowerCase()) || /^(?:last updated|updated|published|posted)(?: on)?:?$/i.test(lastText))) blocks.pop();
     // The lead of a topic-tag footer whose links are gone ("Explore more on these topics").
     else if (last.type === 'paragraph' && TOPICS_LEAD.test(lastText)) blocks.pop();
     else if (last.type === 'paragraph' && lastText.length < 100 && linkShare(last.content) >= 0.5 && !/[.!?]["'”’)]?$/.test(lastText)) blocks.pop();
-    else if (isCallToAction(last)) blocks.pop();
+    else if (isCallToAction(last, texts)) blocks.pop();
     // The short benefits list under a sign-up pitch ("You get articles that match your needs").
-    else if (last.type === 'list' && last.items.length <= 6 && isCallToAction(prev) && blocksText(last.items.flatMap((item) => item.blocks)).length < 400) blocks.pop();
+    else if (last.type === 'list' && last.items.length <= 6 && isCallToAction(prev, texts) && blocksText(last.items.flatMap((item) => item.blocks)).length < 400) blocks.pop();
     else if (last.type === 'list' && last.items.every((item) => item.blocks.length === 1 && item.blocks[0]!.type === 'paragraph' && linkShare((item.blocks[0] as { content: Inline[] }).content) > 0.8)) blocks.pop();
     else if (last.type === 'heading') blocks.pop();
     else break;
@@ -418,9 +451,9 @@ function tidy(input: Block[], title: string, meta: Metadata): Block[] {
       prev.items.push(...b.items);
       continue;
     }
-    if (b.type === 'heading' && prev !== undefined && prev.type === 'heading' && prev.level === b.level && inlineText(prev.content) === inlineText(b.content)) continue;
+    if (b.type === 'heading' && prev !== undefined && prev.type === 'heading' && prev.level === b.level && texts.plain(prev.content) === texts.plain(b.content)) continue;
     // The same paragraph or picture twice in a row is a rendering artifact (responsive copies, dek repeated).
-    if (b.type === 'paragraph' && prev !== undefined && prev.type === 'paragraph' && prev.content.length === b.content.length && sameFirstText(prev.content, b.content) && inlineText(b.content).length > 20 && inlineText(prev.content) === inlineText(b.content)) continue;
+    if (b.type === 'paragraph' && prev !== undefined && prev.type === 'paragraph' && prev.content.length === b.content.length && sameFirstText(prev.content, b.content) && texts.plain(b.content).length > 20 && texts.plain(prev.content) === texts.plain(b.content)) continue;
     if (b.type === 'figure' && prev !== undefined && prev.type === 'figure' && prev.images.length === b.images.length && prev.images.every((image, k) => image.src === b.images[k]!.src)) continue;
     out.push(b);
   }
@@ -432,20 +465,21 @@ function tidy(input: Block[], title: string, meta: Metadata): Block[] {
 const TOPICS_LEAD = /^(?:explore more on (?:these|this) topics?|more on (?:this|these) (?:story|stories|topics?)|(?:related )?topics|tags|filed under)\s*:?$/i;
 
 const BIO_ROLE = /\b(?:reporter|writer|editor|journalist|correspondent|columnist|contributor|author|producer|critic|fellow|researcher|consultant|engineer|developer|designer|professor|director|founder|photographer|analyst|scientist|lecturer|host|freelancer?|economist|historian|novelist|blogger|speaker|principal)\b/i;
+const ORPHAN_BIO = /^(?:is|was)\s+(?:a|an|the)\s/;
 const BIO_NAME = /^(\p{Lu}[\p{L}'’.-]*(?:\s+\p{Lu}[\p{L}'’.-]*){0,3})\s+(?:is|was|has been)\s+(?:a|an|the)\s/u;
 
 /**
  * Bios: a short paragraph naming one of the authors (or orphaned from its
  * name, "is a senior reporter...") with a job title, plus bios right next to one.
  */
-function dropBios(blocks: Block[], authors: string[]): Block[] {
+function dropBios(blocks: Block[], authors: string[], texts: Texts): Block[] {
   const bio = blocks.map((b) => {
     if (b.type !== 'paragraph') return 0;
-    const raw = inlineText(b.content);
+    const raw = texts.plain(b.content);
     if (raw.length > 900) return 0;
     // The anchored shape tests are cheap and fail fast on ordinary paragraphs; the job title is checked last.
     const head = collapse(raw.length > 200 ? raw.slice(0, 200) : raw);
-    const orphan = /^(?:is|was)\s+(?:a|an|the)\s/.test(head);
+    const orphan = ORPHAN_BIO.test(head);
     const m = orphan ? null : BIO_NAME.exec(head);
     if (!orphan && m === null || !BIO_ROLE.test(head.slice(0, 160))) return 0;
     if (orphan) return 2;
@@ -457,7 +491,7 @@ function dropBios(blocks: Block[], authors: string[]): Block[] {
     for (let j = i + step; j >= 0 && j < blocks.length; j += step) {
       if (bio[j] === 2) return true;
       const b = blocks[j]!;
-      if (!(b.type === 'figure' || b.type === 'paragraph' && inlineText(b.content).length < 60)) return false;
+      if (!(b.type === 'figure' || b.type === 'paragraph' && texts.plain(b.content).length < 60)) return false;
     }
     return false;
   };
@@ -473,10 +507,10 @@ function sameFirstText(a: Inline[], b: Inline[]): boolean {
   return x !== undefined && y !== undefined && x.type === y.type && (x.type !== 'text' || x.text === (y as typeof x).text);
 }
 
-function isLegendLabel(b: Block): boolean {
+function isLegendLabel(b: Block, texts: Texts): boolean {
   if (b.type !== 'paragraph') return false;
   if (b.content.length === 1 && b.content[0]!.type === 'math') return b.content[0]!.text.length < 40;
-  return inlineText(b.content).trim().length <= 12;
+  return texts.plain(b.content).trim().length <= 12;
 }
 
 function linkShare(content: Inline[]): number {
@@ -493,12 +527,14 @@ function linkShare(content: Inline[]): number {
 
 const PROMO = /^(?:see more|read more|read also|also read|related|more|don'?t miss|watch|watch now|recommended|must read|trending|click here|related articles?|related stories|related coverage|more on this|more from|listen|subscribe|sign up|follow us|read next|up next|next)\s*[:|>»\-–—]/i;
 
-function isPromo(content: Inline[]): boolean {
-  const text = collapse(inlineText(content));
+const PROMO_LINE = /^(?:don'?t miss|read more|related|see also|recommended|more stories|more great .* stories|trending|most popular|you may also like|advertisement|share this( article)?)$/i;
+
+function isPromo(content: Inline[], texts: Texts): boolean {
+  const text = texts.line(content);
   if (text.length === 0) return false;
   const share = linkShare(content);
   if (PROMO.test(text) && (share > 0.4 || text.length < 120)) return true;
-  if (/^(?:don'?t miss|read more|related|see also|recommended|more stories|more great .* stories|trending|most popular|you may also like|advertisement|share this( article)?)$/i.test(text)) return true;
+  if (PROMO_LINE.test(text)) return true;
   // A short line that is entirely a link to another page, or a stack of them.
   if (share >= 0.9 && (text.length < 160 || content.some((n) => n.type === 'break'))) return true;
   return false;
@@ -508,14 +544,15 @@ function isPromo(content: Inline[]): boolean {
 const CALL_TO_ACTION = /\b(?:sign(?:ing)? up (?:for|to|here|now|today)|subscribe (?:to|for|now|here|today)|our (?:free |daily |weekly )?newsletter|email list|mailing list|register (?:as|for|now|today)|create (?:a |an )?(?:free )?account|download (?:the|our)|get (?:the|our) (?:\w+ )?app|follow (?:us|topics|authors|the authors)|support (?:us|our)|patreon page|on patreon|donate (?:to|now|today|here)|become a (?:member|patron|subscriber|supporter)|buy it here|we may earn (?:a )?(?:small )?commission|affiliate (?:links?|commission)|purchase through links)\b|suscr[ií]b(?:e|ete|irte)|descarga la|boletín|abonnez-vous|inscrivez-vous|téléchargez|abonnieren sie|jetzt herunterladen|assine|inscreva-se/i;
 
 /** A short pitch to sign up, subscribe, download, follow or support (a paragraph, a list of them, or a box). */
-function isCallToAction(b: Block): boolean {
+const QUOTED = /^["“„«'‘]/;
+
+function isCallToAction(b: Block, texts: Texts): boolean {
   let text: string;
-  if (b.type === 'paragraph') text = inlineText(b.content);
-  else if (b.type === 'callout' || b.type === 'list') text = blocksText([b]);
+  if (b.type === 'paragraph') text = texts.line(b.content);
+  else if (b.type === 'callout' || b.type === 'list') text = collapse(blocksText([b]));
   else return false;
-  text = collapse(text);
   // Quoted speech that mentions subscriptions is reporting, not a pitch.
-  return text.length > 0 && text.length < 300 && !/^["“„«'‘]/.test(text) && CALL_TO_ACTION.test(text);
+  return text.length > 0 && text.length < 300 && !QUOTED.test(text) && CALL_TO_ACTION.test(text);
 }
 
 function isContactLine(text: string): boolean {

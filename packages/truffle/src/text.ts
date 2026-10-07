@@ -135,7 +135,13 @@ export function countWords(text: string): number {
   let inWord = false;
   for (let i = 0; i < text.length; i++) {
     const c = text.charCodeAt(i);
-    if (isCjk(c)) {
+    // Printable ASCII, most of any text, is neither whitespace nor CJK.
+    if (c > 0x20 && c < 0x7f) {
+      if (!inWord) {
+        words++;
+        inWord = true;
+      }
+    } else if (isCjk(c)) {
       cjk++;
       inWord = false;
     } else if (isSpace(c)) {

@@ -189,10 +189,10 @@ export function createHarness(env: Environment) {
     kept = null;
   }
 
-  /** `runs` full extractions with one build, for CPU profiles. */
+  /** `runs` full extractions with one build, each on a fresh document, for CPU profiles. */
   function repeat(name: EngineName, runs: number): void {
     const e = engine(name);
-    for (let r = 0; r < runs; r++) kept = e.extract(page(), { url, markdown: true });
+    for (let r = 0; r < runs; r++) kept = e.extract(env.parse(html, url), { url, markdown: true });
     kept = null;
   }
 

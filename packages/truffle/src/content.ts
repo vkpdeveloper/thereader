@@ -1,5 +1,5 @@
 import { isContentFrame } from './media';
-import { isBlank, lowerCase, textOf, visibleLength, VElement, walk, type VNode } from './tree';
+import { isBlank, lowerCase, rawText, textOf, visibleLength, VElement, walk, type VNode } from './tree';
 
 /**
  * Finds the article body. The scoring follows Mozilla Readability's proven
@@ -714,8 +714,11 @@ function resetMarks(el: VElement): void {
 
 // ------------------------------------------------------------- structured body
 
+const NON_WORD = /[^\p{L}\p{N}]+/u;
+
+/** Lowercase words; whitespace only separates them, so the raw text of a subtree gives what its collapsed text gives. */
 function words(text: string): string[] {
-  return text.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((w) => w.length > 0);
+  return text.toLowerCase().split(NON_WORD).filter((w) => w.length > 0);
 }
 
 /**
@@ -726,16 +729,26 @@ function words(text: string): string[] {
 function alignWithStructuredBody(body: VElement, current: VElement | null, articleBody: string): VElement | null {
   const target = words(articleBody);
   if (target.length < 80) return current;
-  const set = new Set<string>();
-  for (let i = 0; i + 2 < target.length; i++) set.add(target[i] + ' ' + target[i + 1] + ' ' + target[i + 2]);
+  // Word trigrams as one number each: the target's distinct words are numbered, and a trigram with any other word is
+  // in no set. Exact while the count cubed stays an integer a double holds; beyond that, the joined words.
+  const ids = new Map<string, number>();
+  for (const w of target) if (!ids.has(w)) ids.set(w, ids.size);
+  const n = ids.size;
+  const key = n < 200_000 ? (a: number, b: number, c: number): number | string => (a * n + b) * n + c : (a: number, b: number, c: number): number | string => a + ' ' + b + ' ' + c;
+  const set = new Set<number | string>();
+  for (let i = 0; i + 2 < target.length; i++) set.add(key(ids.get(target[i]!)!, ids.get(target[i + 1]!)!, ids.get(target[i + 2]!)!));
   if (set.size < 50) return current;
 
   const recallOf = (el: VElement): [number, number] => {
-    const w = words(textOf(el));
+    const w = words(rawText(el));
     let hit = 0;
-    const seen = new Set<string>();
+    const seen = new Set<number | string>();
     for (let i = 0; i + 2 < w.length; i++) {
-      const s = w[i] + ' ' + w[i + 1] + ' ' + w[i + 2];
+      const a = ids.get(w[i]!);
+      const b = ids.get(w[i + 1]!);
+      const c = ids.get(w[i + 2]!);
+      if (a === undefined || b === undefined || c === undefined) continue;
+      const s = key(a, b, c);
       if (set.has(s) && !seen.has(s)) {
         seen.add(s);
         hit++;

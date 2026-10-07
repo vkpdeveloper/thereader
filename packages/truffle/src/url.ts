@@ -1,5 +1,27 @@
 /** Schemes a resolved URL may carry; decided after parsing, which strips the control characters that hide a scheme. */
 const SAFE_SCHEME = /^(?:https?|mailto|tel):/i;
+const TABS_AND_NEWLINES = /[\t\n\r]/g;
+const SPACES = / /g;
+const DATA = /^data:/i;
+/** An address with its own scheme and host: the parser does not read the base for it (`http:x` alone would be relative). */
+const ABSOLUTE_HTTP = /^https?:\/\//i;
+
+let checkedBase = '';
+let baseIsValid = false;
+
+/** Whether `base` parses as a URL (an invalid base fails every resolution, absolute ones included). Remembers the last base. */
+function validBase(base: string): boolean {
+  if (base !== checkedBase) {
+    checkedBase = base;
+    try {
+      new URL(base);
+      baseIsValid = true;
+    } catch {
+      baseIsValid = false;
+    }
+  }
+  return baseIsValid;
+}
 
 /**
  * Resolves `href` against `base`. Returns an http(s), `mailto:` or `tel:` URL,
@@ -9,12 +31,13 @@ const SAFE_SCHEME = /^(?:https?|mailto|tel):/i;
  * markup.
  */
 export function resolveUrl(href: string, base: string): string | null {
-  const value = href.trim().replace(/[\t\n\r]/g, '').replace(/ /g, '%20');
+  const value = href.trim().replace(TABS_AND_NEWLINES, '').replace(SPACES, '%20');
   if (value.length === 0) return null;
-  if (/^data:/i.test(value)) return value;
+  if (DATA.test(value)) return value;
   let url: string;
   try {
-    url = new URL(value, base).href;
+    // Parsing the base again for an absolute address is half the work of resolving it.
+    url = (ABSOLUTE_HTTP.test(value) && validBase(base) ? new URL(value) : new URL(value, base)).href;
   } catch {
     return null;
   }

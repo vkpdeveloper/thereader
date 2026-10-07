@@ -14,11 +14,31 @@ export class VText {
   constructor(public text: string) {}
 
   get length(): number {
-    if (this.len < 0) {
-      this.len = visibleLength(this.text);
-      this.commaCount = this.len > 0 ? countCommas(this.text) : 0;
-    }
+    if (this.len < 0) this.measure();
     return this.len;
+  }
+
+  /** `visibleLength` and `countCommas` of the text, in one pass. */
+  private measure(): void {
+    const text = this.text;
+    let n = 0;
+    let commas = 0;
+    let space = true;
+    for (let i = 0; i < text.length; i++) {
+      const c = text.charCodeAt(i);
+      if (c === 32 || c === 10 || c === 9 || c === 13 || c === 12) {
+        if (!space) {
+          n++;
+          space = true;
+        }
+      } else {
+        n++;
+        space = false;
+        if (c === 0x2c || (c >= 0x60c && isOtherComma(c))) commas++;
+      }
+    }
+    this.len = space && n > 0 ? n - 1 : n;
+    this.commaCount = this.len > 0 ? commas : 0;
   }
 
   get commas(): number {
@@ -392,11 +412,14 @@ export function countCommas(text: string): number {
   let n = 0;
   for (let i = 0; i < text.length; i++) {
     const c = text.charCodeAt(i);
-    if (c === 0x2c) n++;
-    // ، 、 ， ﹐ ﹑ ､ ⸲ ⸴ ⹁ ⹌ ⹎ ߸ ᠂ ᠈ ꓾ ꘍ ꛵ ︑ (none below U+060C)
-    else if (c >= 0x60c && (c === 0x60c || c === 0x3001 || c === 0xff0c || c === 0xfe50 || c === 0xfe51 || c === 0xff64 || c === 0x2e32 || c === 0x2e34 || c === 0x2e41 || c === 0x2e4c || c === 0x2e4e || c === 0x7f8 || c === 0x1802 || c === 0x1808 || c === 0xa4fe || c === 0xa60d || c === 0xa6f5 || c === 0xfe11)) n++;
+    if (c === 0x2c || (c >= 0x60c && isOtherComma(c))) n++;
   }
   return n;
+}
+
+/** ، 、 ， ﹐ ﹑ ､ ⸲ ⸴ ⹁ ⹌ ⹎ ߸ ᠂ ᠈ ꓾ ꘍ ꛵ ︑: the commas of other scripts (none below U+060C). */
+function isOtherComma(c: number): boolean {
+  return c === 0x60c || c === 0x3001 || c === 0xff0c || c === 0xfe50 || c === 0xfe51 || c === 0xff64 || c === 0x2e32 || c === 0x2e34 || c === 0x2e41 || c === 0x2e4c || c === 0x2e4e || c === 0x7f8 || c === 0x1802 || c === 0x1808 || c === 0xa4fe || c === 0xa60d || c === 0xa6f5 || c === 0xfe11;
 }
 
 /** Depth-first pre-order walk over elements. Return false from `visit` to skip children. */
