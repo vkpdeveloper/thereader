@@ -33,6 +33,9 @@ void main() {
     expect(pkg.readText('OEBPS/chapter-2.xhtml'), contains('A page is a room with two walls'));
     expect(pkg.resolve('OEBPS/chapter-1.xhtml', '../images/a.png'), 'images/a.png');
     expect(pkg.spineItemFor('OEBPS/chapter-3.xhtml#top')?.index, 2);
+    // A malformed escape in a book's src names nothing rather than throwing.
+    expect(pkg.resolve('OEBPS/chapter-1.xhtml', 'eq%zz.png'), 'OEBPS/eq%zz.png');
+    expect(pkg.readBytes(pkg.resolve('OEBPS/chapter-1.xhtml', 'eq%zz.png')), isNull);
   });
 
   test('rejects a non-EPUB file honestly', () async {

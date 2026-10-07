@@ -275,10 +275,16 @@ class _EpubWidgetFactory extends WidgetFactory {
     return MemoryImage(Uint8List.fromList(bytes));
   }
 
+  /// Null for remote and inline images, and for a `src` with a malformed
+  /// escape, which names nothing in the book.
   String? _pathFor(String url) {
     if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return null;
-    return url.startsWith('epub:///')
-        ? Uri.decodeComponent(url.substring('epub:///'.length).split('#').first)
-        : package.resolve(fromHref, url);
+    try {
+      return url.startsWith('epub:///')
+          ? Uri.decodeComponent(url.substring('epub:///'.length).split('#').first)
+          : package.resolve(fromHref, url);
+    } on ArgumentError {
+      return null;
+    }
   }
 }

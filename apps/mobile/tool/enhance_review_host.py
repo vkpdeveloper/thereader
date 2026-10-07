@@ -35,6 +35,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_GET(self):
+        # Loopback only, and only by address: a web page that rebinds its own
+        # name to 127.0.0.1 must not read the books or write files here.
+        host = (self.headers.get('Host') or '').rsplit(':', 1)[0]
+        if host not in ('127.0.0.1', 'localhost', '10.0.2.2'):
+            return self.reply(403, b'forbidden')
         url = urllib.parse.urlparse(self.path)
         parts = url.path.strip('/').split('/')
         query = urllib.parse.parse_qs(url.query)

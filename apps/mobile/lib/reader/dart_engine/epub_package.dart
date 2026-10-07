@@ -156,7 +156,13 @@ class EpubPackage {
     final clean = relative.split('#').first.split('?').first;
     if (clean.isEmpty) return _normalize(fromHref);
     final base = p.posix.dirname(fromHref);
-    return _normalize(p.posix.join(base == '.' ? '' : base, Uri.decodeComponent(clean)));
+    String decoded;
+    try {
+      decoded = Uri.decodeComponent(clean);
+    } on ArgumentError {
+      decoded = clean; // A malformed escape: names nothing, found nowhere.
+    }
+    return _normalize(p.posix.join(base == '.' ? '' : base, decoded));
   }
 
   SpineItem? spineItemFor(String href) {
