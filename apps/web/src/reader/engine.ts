@@ -1,6 +1,7 @@
 import type { InkPen } from '../lib/inkPaths';
 import type { InkStroke } from '../lib/services/ink';
 import type { Highlight, ReaderPreferences, ReadingLocator } from '../lib/types';
+import type { EnhanceTheme } from './enhance';
 
 /**
  * The EPUB engine boundary. UI code never touches engine internals; it calls
@@ -39,6 +40,8 @@ export interface EngineColors {
   selection: string;
   /** Highlight colour key (`yellow`, ...) -> opaque CSS tint for this paper. */
   highlightTints: Record<string, string>;
+  /** Code panels and syntax colours for enhanced content; absent falls back to mixes of the ink. */
+  content?: EnhanceTheme;
 }
 
 export interface SelectionInfo {

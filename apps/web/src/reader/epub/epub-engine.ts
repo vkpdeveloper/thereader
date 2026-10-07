@@ -11,6 +11,7 @@ import type {
   SearchMatch,
   TocEntry,
 } from '../engine';
+import { darkPage, enhanceCss, fitBlocks, hydrateMath, MATH_FONT_FILE, watchInk, type InkVerdict } from '../enhance';
 import { parseMarkup, prepareChapter, type PreparedChapter } from './chapter';
 import { InkLayer } from './ink';
 import { clearMarks, drawMarks, type MarkSpan } from './marks';
@@ -50,7 +51,7 @@ const SHELL = (origin: string) =>
   `<!DOCTYPE html><html><head><meta charset="utf-8">` +
   `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'none'; object-src 'none'; ` +
   `img-src blob: data:; media-src blob: data:; font-src blob: data: ${origin}; style-src 'unsafe-inline' blob: data:">` +
-  `<style id="reader-dir"></style><style id="reader-fonts"></style><style id="reader-prefs"></style><style id="reader-fixed"></style>` +
+  `<style id="reader-dir"></style><style id="reader-fonts"></style><style id="reader-enhance"></style><style id="reader-prefs"></style><style id="reader-fixed"></style>` +
   `</head><body></body></html>`;
 
 function num(v: unknown): number | null {
@@ -140,6 +141,9 @@ export class EpubEngine implements ReaderEngine {
   private readonly reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   private readonly cleanup: (() => void)[] = [];
   private readonly ink: InkLayer;
+  /** Dark-ink image verdicts by URL, so a remounted chapter does not flash. */
+  private readonly imageVerdicts = new Map<string, InkVerdict>();
+  private stopImageWatch: (() => void) | null = null;
 
   constructor(
     private readonly zip: ZipArchive,
@@ -219,6 +223,7 @@ export class EpubEngine implements ReaderEngine {
         this.doc = this.frame.contentDocument!;
         this.win = this.frame.contentWindow!;
         this.doc.getElementById('reader-fonts')!.textContent = fontFaceCss(location.origin);
+        this.doc.getElementById('reader-enhance')!.textContent = enhanceCss({ mathFontUrl: `${location.origin}/fonts/${MATH_FONT_FILE}` });
         resolve();
       };
       this.frame.addEventListener('load', done, { once: true });
@@ -430,9 +435,25 @@ export class EpubEngine implements ReaderEngine {
 
     const body = doc.importNode(chapter.body, true) as HTMLElement;
     html.replaceChild(body, doc.body);
+    // Shadow roots do not survive the import: formulas render on the live body.
+    if (chapter.tex) hydrateMath(body, chapter.tex);
     this.layout();
+    this.watchImages();
     this.drawHighlights();
     this.ink.redraw();
+  }
+
+  /** Dark ink on transparent images turns light on a dark page (paint only, no relayout). */
+  private watchImages(): void {
+    this.stopImageWatch?.();
+    this.stopImageWatch = darkPage(this.doc) ? watchInk(this.doc.body, { cache: this.imageVerdicts }) : null;
+  }
+
+  /** Paginated: code and tables taller than a page wrap, since a scroll box cannot continue on the next page. */
+  private fitBlocks(): void {
+    const g = this.geometry;
+    if (!this.current || g.mode === 'fixed') return;
+    fitBlocks(this.doc.body, g.mode === 'paginated' ? Math.max(80, g.height - g.padTop - g.padBottom) : null);
   }
 
   /** Applies geometry and preference CSS to the mounted chapter. */
@@ -451,6 +472,7 @@ export class EpubEngine implements ReaderEngine {
     this.layoutFixed();
     this.ensureNextButton();
     this.fragmentPositions.clear();
+    this.fitBlocks();
     this.measure();
   }
 
@@ -1032,6 +1054,7 @@ export class EpubEngine implements ReaderEngine {
         this.ink.redraw();
         return;
       }
+      this.fitBlocks();
       this.measure();
       if (this.sticky) {
         this.position(this.sticky);
@@ -1411,6 +1434,8 @@ export class EpubEngine implements ReaderEngine {
       }
     }
     this.cleanup.length = 0;
+    this.stopImageWatch?.();
+    this.stopImageWatch = null;
     this.turnAnimation?.cancel();
     this.wrapper.remove();
     this.cache.clear();

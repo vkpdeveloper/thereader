@@ -16,6 +16,7 @@ import '../../data/models/library.dart';
 import '../../data/models/settings.dart';
 import '../../data/storage/book_store.dart';
 import '../engine/reader_engine.dart';
+import '../enhance/enhanced_epub.dart';
 
 /// Native Readium engine via the `flutter_readium` plugin (swift-toolkit 3.9
 /// on iOS, kotlin-toolkit 3.2 on Android). Paginated and scrolled flows,
@@ -63,7 +64,27 @@ class ReadiumReaderEngine implements ReaderEngine {
       readium.setDefaultPreferences(
         ReadiumReaderController.toEpubPreferences(prefs, colors),
       );
-      final publication = await readium.openPublication(path);
+      // Stored books open as a derived copy with the content enhancer linked
+      // into every document (maths, code, dark-ink images). Same hrefs, so
+      // locators and highlights carry over. A streaming lease has no complete
+      // file to derive from and opens as is.
+      final source = file.isProvisional
+          ? path
+          : await EnhancedEpubCache.resolve(path);
+      rd.Publication publication;
+      try {
+        publication = await readium.openPublication(source);
+      } catch (error) {
+        if (source == path) rethrow;
+        // Whatever the derived copy trips over, the book itself still opens.
+        debugPrint(
+          '[readium] enhanced copy failed, opening the original: $error',
+        );
+        try {
+          await readium.closePublication();
+        } catch (_) {}
+        publication = await readium.openPublication(path);
+      }
       return ReadiumReaderController(
         readium: readium,
         publication: publication,
@@ -295,7 +316,10 @@ class ReadiumReaderController
   /// save, or one from another edition) is dropped rather than handed to
   /// Readium, which cannot place it.
   @visibleForTesting
-  static rd.Locator? resolveLocator(rd.Publication publication, ReadingLocator? l) {
+  static rd.Locator? resolveLocator(
+    rd.Publication publication,
+    ReadingLocator? l,
+  ) {
     if (l == null) return null;
     final raw = l.raw;
     if (l.engine == ReadiumReaderEngine.engineId && raw != null) {
@@ -308,7 +332,9 @@ class ReadiumReaderController
     // container), so Readium can resolve it plus a progression fraction.
     final link = _spineLink(publication, l.href);
     if (link == null) return null;
-    final progression = l.progression.isFinite ? l.progression.clamp(0.0, 1.0) : 0.0;
+    final progression = l.progression.isFinite
+        ? l.progression.clamp(0.0, 1.0)
+        : 0.0;
     return rd.Locator(
       href: link.href,
       type: link.type ?? 'application/xhtml+xml',
@@ -480,9 +506,8 @@ class _ReadiumView extends StatelessWidget {
           // is opaque and swallows touches.
           loadingWidget: ValueListenableBuilder(
             valueListenable: controller.pageVisible,
-            builder: (_, visible, _) => visible
-                ? const SizedBox.shrink()
-                : ColoredBox(color: paper),
+            builder: (_, visible, _) =>
+                visible ? const SizedBox.shrink() : ColoredBox(color: paper),
           ),
           allowedDefaultActions: const {rd.DefaultSelectionAction.copy},
           selectionActions: ReadiumReaderController.selectionActions,

@@ -1,5 +1,6 @@
 import type { ReaderPreferences } from '../../lib/types';
 import type { EngineColors } from '../engine';
+import { themeDeclarations } from '../enhance';
 
 /**
  * Reader typography. Families mirror the mobile app's `ReaderFonts`
@@ -177,6 +178,7 @@ reader-hl[data-hl-id]{background-color:${fallbackTint} !important;color:inherit 
   -webkit-box-decoration-break:clone;box-decoration-break:clone;cursor:pointer;}
 ${tints}
 ::highlight(reader-flash){background-color:${colors.selection};}
+:root{${themeDeclarations(colors.content ?? {})}}
 [data-reader-ui]{all:initial;}
 `;
 
@@ -206,8 +208,11 @@ body p, body li, body dd, body dt{
   text-align:left !important;-webkit-hyphens:manual !important;hyphens:manual !important;}
 body blockquote{margin:1em 0 1em 0 !important;padding-left:1em !important;border-left:2px solid ${colors.muted} !important;
   text-align:left !important;-webkit-hyphens:manual !important;hyphens:manual !important;}
-body ul{list-style:disc outside !important;padding-left:1.2em !important;margin:1em 0 !important;}
-body ol{list-style:decimal outside !important;padding-left:1.2em !important;margin:1em 0 !important;}
+body ul, body ol{margin:1em 0 !important;}
+/* Lists a book styles itself (a class) keep their markers and indent: maths and
+   code books draw labels like "(a)" with list-style none and a hanging indent. */
+body ul:not([class]){list-style:disc outside !important;padding-left:1.2em !important;}
+body ol:not([class]){list-style:decimal outside !important;padding-left:1.2em !important;}
 body li{margin:0.35em 0 !important;}
 body figcaption, body caption, body .figure-container > h5, body .figure-container-h5{
   color:${colors.muted} !important;font-size:0.8rem !important;font-weight:400 !important;
@@ -217,7 +222,6 @@ body caption{caption-side:top !important;margin-top:0 !important;margin-bottom:0
 body a[href], body a[href] *{color:${colors.link} !important;text-decoration:underline !important;text-decoration-color:color-mix(in srgb, ${colors.link} 50%, transparent);}
 body hr{background-color:${colors.muted} !important;border-color:${colors.muted} !important;}
 body img, body svg, body video, body picture{background-color:transparent !important;}
-body pre{white-space:pre-wrap !important;overflow-wrap:anywhere;}
 body table{max-width:100%;border-collapse:collapse !important;margin:1em 0;}
 body td, body th{border:1px solid color-mix(in srgb, ${colors.muted} 25%, transparent) !important;padding:0.6em 0.8em !important;text-align:left !important;}
 body img, body video{width:auto !important;max-width:100% !important;height:auto;box-sizing:border-box;}
