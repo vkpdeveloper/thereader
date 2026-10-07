@@ -138,6 +138,7 @@
   --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 
   --sidebar-width: 224px;
+  --sidebar-rail: 61px;
   --tab-height: 50px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -522,6 +523,10 @@ kbd {
   :root {
     --gutter: 40px;
   }
+  /* Set before first paint from localStorage (AppShell); device-local. */
+  html[data-sidebar='collapsed'] {
+    --sidebar-width: var(--sidebar-rail);
+  }
   .tab-row {
     display: none;
   }
@@ -533,26 +538,47 @@ kbd {
     bottom: 0;
     left: 0;
     width: var(--sidebar-width);
-    padding: 28px 16px;
+    padding: 28px 12px 16px;
     border-right: 1px solid var(--border);
     background: var(--bg);
     z-index: 20;
+    overflow: hidden;
+    transition: width var(--motion-base) var(--ease);
   }
   .shell-main {
     margin-left: var(--sidebar-width);
     padding-bottom: 0;
+    transition: margin-left var(--motion-base) var(--ease);
   }
 }
 
+/*
+ * Rows keep their icon in one 36px column in both widths, so collapsing only
+ * narrows the panel and fades the labels: nothing jumps.
+ */
 .sidebar-brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 4px 8px 28px;
+  padding: 4px 5px 28px;
   font-family: var(--serif);
   font-size: 17px;
   font-weight: 500;
   letter-spacing: -0.2px;
+  white-space: nowrap;
+}
+.sidebar-brand svg {
+  flex: none;
+}
+.sidebar-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: opacity var(--motion-fast) var(--ease);
+}
+html[data-sidebar='collapsed'] .sidebar-label {
+  opacity: 0;
+  pointer-events: none;
 }
 .sidebar-list {
   display: flex;
@@ -560,15 +586,23 @@ kbd {
   gap: 2px;
 }
 .sidebar-link {
-  display: block;
-  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 36px;
+  padding: 0 9px;
   border-radius: var(--radius-md);
   font-size: 14px;
   font-weight: 500;
   color: var(--subtle);
+  white-space: nowrap;
   transition:
     color var(--motion-fast) var(--ease),
-    background-color var(--motion-fast) var(--ease);
+    background-color var(--motion-fast) var(--ease),
+    box-shadow var(--motion-fast) var(--ease);
+}
+.sidebar-icon {
+  flex: none;
 }
 .sidebar-link:hover {
   color: var(--muted);
@@ -576,6 +610,45 @@ kbd {
 }
 .sidebar-link.is-active {
   color: var(--fg);
+}
+.sidebar-footer {
+  flex: none;
+  padding-top: 12px;
+}
+.sidebar-toggle,
+.sidebar-add {
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-md);
+  color: var(--subtle);
+  transition:
+    color var(--motion-fast) var(--ease),
+    background-color var(--motion-fast) var(--ease);
+}
+.sidebar-toggle {
+  width: 36px;
+  height: 36px;
+}
+.sidebar-toggle:hover,
+.sidebar-add:hover {
+  color: var(--fg);
+  background: var(--panel);
+}
+.sidebar-tooltip {
+  position: fixed;
+  z-index: 260;
+  transform: translateY(-50%);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--element);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.3;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: page-in var(--motion-fast) var(--ease);
 }
 
 .desktop-only {
