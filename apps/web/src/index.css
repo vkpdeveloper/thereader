@@ -1594,6 +1594,104 @@ html[data-sidebar='collapsed'] .sidebar-label {
   font-weight: 500;
   color: var(--muted);
 }
+
+/*
+ * An article standing among books: a printed page, so it never reads as a
+ * blank cover. Paper lightly tinted with `--cat` (a category's colour on a
+ * shelf, neutral elsewhere); sized in container units like covers.
+ */
+.article-thumb.is-paper {
+  container-type: inline-size;
+  border: 0;
+  background: color-mix(in srgb, var(--fg) 94%, var(--cat));
+}
+.article-paper {
+  --ink: color-mix(in srgb, var(--bg) 88%, var(--cat));
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 10cqi 9cqi 9cqi;
+  color: var(--ink);
+  /* A little light from the top edge, like a sheet off the press. */
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.35), transparent 40%);
+}
+.article-paper-image {
+  position: relative;
+  flex: none;
+  height: 46%;
+  margin: -10cqi -9cqi 8cqi;
+  overflow: hidden;
+  background: var(--element);
+}
+.article-paper-site {
+  display: flex;
+  align-items: center;
+  gap: 3.5cqi;
+  min-width: 0;
+  padding-bottom: 6cqi;
+  margin-bottom: 7cqi;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 16%, transparent);
+}
+.article-thumb.is-paper .article-paper-site img,
+.article-paper-site .article-thumb-initial {
+  position: static;
+  flex: none;
+  width: 13cqi;
+  height: 13cqi;
+  border-radius: 2.5cqi;
+}
+.article-paper-site .article-thumb-initial {
+  display: grid;
+  place-items: center;
+  font-size: 9cqi;
+  line-height: 1;
+  font-weight: 600;
+  color: var(--fg);
+  background: var(--ink);
+}
+.article-paper-site-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 7.6cqi;
+  font-weight: 600;
+  line-height: 1.2;
+  color: color-mix(in srgb, var(--ink) 62%, transparent);
+}
+.article-paper-title {
+  flex: none;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  font-family: var(--serif);
+  font-size: 12.5cqi;
+  font-weight: 600;
+  line-height: 1.16;
+  letter-spacing: -0.01em;
+  /* Room for the last line's descenders inside the clamp. */
+  padding-bottom: 0.14em;
+}
+.article-paper.has-image .article-paper-title {
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+/* Body copy, set in grey. */
+.article-paper-lines {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-top: 8cqi;
+  background:
+    linear-gradient(currentColor, currentColor) 0 0 / 100% 2.6cqi no-repeat,
+    linear-gradient(currentColor, currentColor) 0 7.5cqi / 100% 2.6cqi no-repeat,
+    linear-gradient(currentColor, currentColor) 0 15cqi / 64% 2.6cqi no-repeat;
+  color: color-mix(in srgb, var(--ink) 13%, transparent);
+}
 .article-more {
   position: absolute;
   top: 50%;
