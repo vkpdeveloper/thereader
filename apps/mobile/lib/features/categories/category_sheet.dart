@@ -19,24 +19,23 @@ Future<void> showCategoryPicker(BuildContext context, FiledItem item) async {
   final messenger = ScaffoldMessenger.maybeOf(context);
   final fg = context.colors.fg;
   final before = store.categoryOf(item.ref);
-  final after = await _show<Category?>(
-    context,
-    (_) => _CategorySheet(store: store, item: item),
-  );
+  final after = await _show<Category?>(context, (_) => _CategorySheet(store: store, item: item));
   // Null means dismissed; the sheet returns [_removed] for "Remove".
   if (after == null || after.id == before?.id) return;
   final removed = identical(after, _removed);
-  messenger?.showSnackBar(
-    _snack(
-      fg,
-      removed
-          ? 'Removed from ${before!.name}'
-          : before == null
-          ? 'Added to ${after.name}'
-          : 'Moved to ${after.name}',
-      undo: () => store.assign(item.ref, before?.id),
-    ),
-  );
+  messenger
+    ?..hideCurrentSnackBar()
+    ..showSnackBar(
+      _snack(
+        fg,
+        removed
+            ? 'Removed from ${before!.name}'
+            : before == null
+            ? 'Added to ${after.name}'
+            : 'Moved to ${after.name}',
+        undo: () => store.assign(item.ref, before?.id),
+      ),
+    );
 }
 
 /// Takes [item] out of its category, back to the Library home.
@@ -47,7 +46,9 @@ Future<void> removeFromCategory(BuildContext context, FiledItem item) async {
   final messenger = ScaffoldMessenger.maybeOf(context);
   final snack = _snack(context.colors.fg, 'Removed from ${before.name}', undo: () => store.assign(item.ref, before.id));
   await store.assign(item.ref, null);
-  messenger?.showSnackBar(snack);
+  messenger
+    ?..hideCurrentSnackBar()
+    ..showSnackBar(snack);
 }
 
 /// Create a category without filing anything yet.
@@ -61,10 +62,7 @@ Future<Category?> showCreateCategory(BuildContext context) {
 Future<void> showEditCategory(BuildContext context, Category category, {bool focusName = true}) async {
   final store = AppScope.of(context).categories;
   if (store == null) return;
-  await _show<Category?>(
-    context,
-    (_) => _CategorySheet(store: store, editing: category, focusName: focusName),
-  );
+  await _show<Category?>(context, (_) => _CategorySheet(store: store, editing: category, focusName: focusName));
 }
 
 Future<T?> _show<T>(BuildContext context, WidgetBuilder builder) => showModalBottomSheet<T>(
@@ -76,14 +74,12 @@ Future<T?> _show<T>(BuildContext context, WidgetBuilder builder) => showModalBot
 );
 
 /// Undo is best effort: if the old category was deleted meanwhile, the item
-/// simply stays where it is.
+/// simply stays where it is. A confirmation with an action would otherwise
+/// stay up until dismissed; this one times out like any other.
 SnackBar _snack(Color actionColor, String message, {required Future<void> Function() undo}) => SnackBar(
   content: Text(message),
-  action: SnackBarAction(
-    label: 'Undo',
-    textColor: actionColor,
-    onPressed: () => undo().catchError((Object _) {}),
-  ),
+  persist: false,
+  action: SnackBarAction(label: 'Undo', textColor: actionColor, onPressed: () => undo().catchError((Object _) {})),
 );
 
 /// Sentinel result: the item was taken out of its category.
@@ -150,8 +146,7 @@ class _CategorySheetState extends State<_CategorySheet> {
     if (mounted) Navigator.of(context).pop(_removed);
   }
 
-  void _fail(String message) =>
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(message)));
+  void _fail(String message) => ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(message)));
 
   Future<void> _submit(String name, CategoryColor color) async {
     final editing = widget.editing;
@@ -207,10 +202,8 @@ class _CategorySheetState extends State<_CategorySheet> {
                   duration: duration,
                   switchInCurve: Motion.curve,
                   switchOutCurve: Curves.easeInCubic,
-                  layoutBuilder: (current, previous) => Stack(
-                    alignment: Alignment.topCenter,
-                    children: [...previous, ?current],
-                  ),
+                  layoutBuilder: (current, previous) =>
+                      Stack(alignment: Alignment.topCenter, children: [...previous, ?current]),
                   transitionBuilder: (child, animation) {
                     final incoming = child.key == ValueKey(_step);
                     final dx = (incoming == _forward ? 1 : -1) * 0.08;
@@ -238,9 +231,7 @@ class _CategorySheetState extends State<_CategorySheet> {
                       item: widget.item,
                       editing: widget.editing,
                       autofocus: widget.focusName,
-                      onBack: widget.item != null && widget.store.categories.isNotEmpty
-                          ? () => _go(_Step.pick)
-                          : null,
+                      onBack: widget.item != null && widget.store.categories.isNotEmpty ? () => _go(_Step.pick) : null,
                       onSubmit: _submit,
                     ),
                   },
@@ -492,8 +483,7 @@ class _CreateForm extends StatefulWidget {
 
 class _CreateFormState extends State<_CreateForm> {
   late final TextEditingController _name = TextEditingController(text: widget.editing?.name);
-  late CategoryColor _color =
-      widget.editing?.color ?? CategoryColor.next(widget.store.categories.map((c) => c.color));
+  late CategoryColor _color = widget.editing?.color ?? CategoryColor.next(widget.store.categories.map((c) => c.color));
   bool _tried = false;
   bool _busy = false;
 
@@ -556,9 +546,7 @@ class _CreateFormState extends State<_CreateForm> {
     final colors = context.colors;
     final editing = widget.editing;
     final item = widget.item;
-    final previewItems = editing != null
-        ? filedItems(AppScope.of(context), editing.id).take(3).toList()
-        : [?item];
+    final previewItems = editing != null ? filedItems(AppScope.of(context), editing.id).take(3).toList() : [?item];
     final count = editing != null ? filedItems(AppScope.of(context), editing.id).length : previewItems.length;
     final warning = _warning;
     final length = _trimmed.length;
@@ -694,10 +682,7 @@ class _Swatches extends StatelessWidget {
                         padding: EdgeInsets.all(color == selected ? 4 : 0),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(
-                            color: color == selected ? color.hue : Colors.transparent,
-                            width: 2,
-                          ),
+                          border: Border.all(color: color == selected ? color.hue : Colors.transparent, width: 2),
                         ),
                         child: DecoratedBox(
                           decoration: BoxDecoration(color: color.hue, shape: BoxShape.circle),

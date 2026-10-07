@@ -20,9 +20,8 @@ class CategoryScreen extends StatelessWidget {
 
   final String categoryId;
 
-  static Future<void> open(BuildContext context, String categoryId) => Navigator.of(
-    context,
-  ).push(MaterialPageRoute(builder: (_) => CategoryScreen(categoryId: categoryId)));
+  static Future<void> open(BuildContext context, String categoryId) =>
+      Navigator.of(context).push(MaterialPageRoute(builder: (_) => CategoryScreen(categoryId: categoryId)));
 
   @override
   Widget build(BuildContext context) {
@@ -117,11 +116,7 @@ class CategoryScreen extends StatelessWidget {
     context,
     title: category.name,
     actions: [
-      ItemAction(
-        icon: Icons.edit_outlined,
-        label: 'Rename',
-        onSelected: () => showEditCategory(context, category),
-      ),
+      ItemAction(icon: Icons.edit_outlined, label: 'Rename', onSelected: () => showEditCategory(context, category)),
       ItemAction(
         icon: Icons.palette_outlined,
         label: 'Change colour',
@@ -165,15 +160,17 @@ class CategoryScreen extends StatelessWidget {
     // Leave first so this screen never shows its own "gone" state.
     Navigator.of(context).pop();
     await store.delete(category.id);
-    messenger?.showSnackBar(
-      SnackBar(
-        content: Text(
-          count == 0
-              ? 'Deleted ${category.name}.'
-              : 'Deleted ${category.name}. ${count == 1 ? '1 item is' : '$count items are'} back in your library.',
+    messenger
+      ?..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            count == 0
+                ? 'Deleted ${category.name}.'
+                : 'Deleted ${category.name}. ${count == 1 ? '1 item is' : '$count items are'} back in your library.',
+          ),
         ),
-      ),
-    );
+      );
   }
 }
 
@@ -187,7 +184,8 @@ class _Header extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final colors = context.colors;
     final hue = category.color.hue;
-    final top = MediaQuery.paddingOf(context).top + kToolbarHeight;
+    // The app bar floats over the wash; the body's top padding includes it.
+    final top = MediaQuery.paddingOf(context).top;
     return DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -240,7 +238,9 @@ class _EmptyShelf extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ExcludeSemantics(child: ShelfCase(color: color, items: const [], width: 200)),
+          ExcludeSemantics(
+            child: ShelfCase(color: color, items: const [], width: 200),
+          ),
           const SizedBox(height: Space.lg),
           Text('Nothing on this shelf yet.', style: text.headlineMedium),
           const SizedBox(height: Space.sm),

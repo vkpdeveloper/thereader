@@ -36,11 +36,7 @@ Future<void> showItemActions(
         onSelected: () => showCategoryPicker(context, item),
       ),
     if (current != null)
-      ItemAction(
-        icon: Icons.close,
-        label: 'Remove from category',
-        onSelected: () => removeFromCategory(context, item),
-      ),
+      ItemAction(icon: Icons.close, label: 'Remove from category', onSelected: () => removeFromCategory(context, item)),
     ...actions,
   ];
   await showItemActionsFor(
