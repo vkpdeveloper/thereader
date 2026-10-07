@@ -1,4 +1,4 @@
-/* The Reader content enhancer v2. Pair with enhance.js; TheReaderMath.woff2 sits next to this file.
+/* The Reader content enhancer v3. Pair with enhance.js; TheReaderMath.woff2 sits next to this file.
  * GENERATED from apps/web/src/reader/enhance by `cd apps/web && bun run build:enhance`; do not edit.
  * Includes temml (MIT) and highlight.js (BSD-3-Clause). */
 @font-face{font-family:"TheReader Math";src:url("TheReaderMath.woff2") format("woff2");font-style:normal;font-weight:400;font-display:swap;}
