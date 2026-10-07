@@ -71,8 +71,16 @@ function hasBlockChild(el: VElement): boolean {
   return false;
 }
 
-/** Bottom-up statistics over non-skipped nodes. */
-export function measure(el: VElement): void {
+/**
+ * Bottom-up statistics over non-skipped nodes. With `reset`, first clears every mark (skip, score) in the subtree, in
+ * the same pass: an attempt starts from a clean tree, all of which is then measured.
+ */
+function measure(el: VElement, reset = false): void {
+  if (reset) {
+    el.skip = false;
+    el.scored = false;
+    el.score = 0;
+  }
   let text = 0;
   let link = 0;
   let commas = 0;
@@ -83,8 +91,8 @@ export function measure(el: VElement): void {
     if (child.kind === 0) {
       text += child.length;
       commas += child.commas;
-    } else if (!child.skip) {
-      measure(child);
+    } else if (reset || !child.skip) {
+      measure(child, reset);
       text += child.textLen;
       link += child.linkLen;
       commas += child.commas;
@@ -316,15 +324,18 @@ function countNestedArticles(parent: VElement): number {
 
 /** Text of paragraphs inside `el` that is not link text (uses the attempt's fresh `measure`). */
 function proseLength(el: VElement): number {
-  let n = 0;
-  walk(el, (e) => {
-    if (e.skip) return false;
-    if (e.tag === 'p') {
-      n += e.textLen - e.linkLen;
-      return false;
-    }
-    return true;
-  });
+  return addProse(el, 0);
+}
+
+/** `n` plus the prose under `el`, added in document order (a sum of fractions depends on its order). */
+function addProse(el: VElement, n: number): number {
+  if (el.skip) return n;
+  if (el.tag === 'p') return n + (el.textLen - el.linkLen);
+  const children = el.children;
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i]!;
+    if (child.kind === 1) n = addProse(child, n);
+  }
   return n;
 }
 
@@ -381,8 +392,7 @@ interface Attempt {
 }
 
 function grab(body: VElement, flags: Flags, articleBody: string | null): Attempt {
-  resetMarks(body);
-  measure(body);
+  measure(body, true);
   markUnlikely(body, flags, { bylineRemoved: false });
   measure(body);
 
@@ -701,16 +711,6 @@ function liveChildren(el: VElement): number {
   return n;
 }
 
-function resetMarks(el: VElement): void {
-  el.skip = false;
-  el.scored = false;
-  el.score = 0;
-  const children = el.children;
-  for (let i = 0; i < children.length; i++) {
-    const child = children[i]!;
-    if (child.kind === 1) resetMarks(child);
-  }
-}
 
 // ------------------------------------------------------------- structured body
 

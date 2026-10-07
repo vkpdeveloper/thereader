@@ -26,15 +26,14 @@ export class VText {
     let space = true;
     for (let i = 0; i < text.length; i++) {
       const c = text.charCodeAt(i);
-      if (c === 32 || c === 10 || c === 9 || c === 13 || c === 12) {
-        if (!space) {
-          n++;
-          space = true;
-        }
-      } else {
+      // Whitespace is all at or below the space.
+      if (c > 32 || (c !== 32 && c !== 10 && c !== 9 && c !== 13 && c !== 12)) {
         n++;
         space = false;
         if (c === 0x2c || (c >= 0x60c && isOtherComma(c))) commas++;
+      } else if (!space) {
+        n++;
+        space = true;
       }
     }
     this.len = space && n > 0 ? n - 1 : n;
