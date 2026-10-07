@@ -2,6 +2,8 @@
 /// [VDocument]. The only platform-specific stage of the pipeline.
 library;
 
+import 'dart:collection';
+
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as html_parser;
 
@@ -89,6 +91,69 @@ bool _isHidden(dom.Element el, String tag) {
     return !(cls != null && _decorativeKeep.hasMatch(cls)) && !shown();
   }
   return false;
+}
+
+/// [el]'s attributes by name as the DOM reports them. Namespaced names
+/// (`xlink:href`, foreign content only) are copied, the first of equal names
+/// winning; otherwise package:html's own map is read through
+/// [_DomAttributes] rather than copied for every element.
+Map<String, String> _attributesOf(dom.Element el) {
+  final attributes = el.attributes;
+  for (final key in attributes.keys) {
+    if (key is String) continue;
+    final copy = <String, String>{};
+    attributes.forEach((key, value) => copy.putIfAbsent(_attrName(key), () => value));
+    return copy;
+  }
+  return _DomAttributes(attributes);
+}
+
+/// A map of attributes read from package:html's map (every key a string)
+/// until first written, then from a copy: the DOM is never changed.
+class _DomAttributes extends MapBase<String, String> {
+  _DomAttributes(this._dom);
+
+  final Map<Object, String> _dom;
+  Map<String, String>? _own;
+
+  Map<Object?, String> get _map => _own ?? _dom;
+
+  Map<String, String> get _written =>
+      _own ??= {for (final MapEntry(:key, :value) in _dom.entries) key as String: value};
+
+  @override
+  String? operator [](Object? key) => _map[key];
+
+  @override
+  void operator []=(String key, String value) => _written[key] = value;
+
+  @override
+  String? remove(Object? key) => _written.remove(key);
+
+  @override
+  void clear() => _written.clear();
+
+  @override
+  Iterable<String> get keys => _own?.keys ?? _dom.keys.cast<String>();
+
+  @override
+  int get length => _map.length;
+
+  @override
+  bool get isEmpty => _map.isEmpty;
+
+  @override
+  bool get isNotEmpty => _map.isNotEmpty;
+
+  @override
+  bool containsKey(Object? key) => _map.containsKey(key);
+
+  @override
+  void forEach(void Function(String key, String value) action) {
+    final own = _own;
+    if (own != null) return own.forEach(action);
+    _dom.forEach((key, value) => action(key as String, value));
+  }
 }
 
 /// `textContent`: the text of every descendant text node.
@@ -308,18 +373,7 @@ VDocument fromDocument(dom.Document doc) {
       return null;
     }
 
-    final attrs = <String, String>{};
-    // The first of equal names wins; only a namespaced name (`xlink:href`) can equal another.
-    var namespaced = false;
-    el.attributes.forEach((key, value) {
-      if (key is String) {
-        if (!namespaced || !attrs.containsKey(key)) attrs[key] = value;
-      } else {
-        namespaced = true;
-        attrs.putIfAbsent(_attrName(key), () => value);
-      }
-    });
-    final v = VElement(tag, attrs);
+    final v = VElement(tag, _attributesOf(el));
 
     if (tag == 'math' || tag == 'svg') {
       // Kept as a leaf: math is serialized later; svg is dropped by the converter.

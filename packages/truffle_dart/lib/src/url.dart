@@ -20,7 +20,8 @@ final _safeScheme = RegExp(r'^(?:https?|mailto|tel):', caseSensitive: false);
 /// percent-encoded first so both implementations agree on sloppy publisher
 /// markup.
 String? resolveUrl(String href, String base) {
-  final value = _withoutTabsAndNewlines(jsTrim(href)).replaceAll(' ', '%20');
+  var value = _withoutTabsAndNewlines(jsTrim(href));
+  if (value.contains(' ')) value = value.replaceAll(' ', '%20');
   if (value.isEmpty) return null;
   final data = startsWithIgnoringCase(value, 'data:');
   assert(data == _dataScheme.hasMatch(value));
