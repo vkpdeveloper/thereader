@@ -1,6 +1,8 @@
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as html;
 
+import 'garbled_math.dart';
+
 /// Markers the preparation pass leaves for the view's builders. They are
 /// data attributes, so the colour stripping below never touches them.
 abstract final class EpubMarks {
@@ -10,6 +12,9 @@ abstract final class EpubMarks {
   /// Equation image height and baseline shift in em, from its inline style.
   static const emHeight = 'data-tr-em-h';
   static const emShift = 'data-tr-em-va';
+
+  /// MathML source of a formula kept as a string, URI-encoded.
+  static const mathml = 'data-tr-mml';
 }
 
 /// Turns a spine document into the HTML the Dart engine renders: body only,
@@ -31,9 +36,12 @@ abstract final class EpubChapter {
   );
   static final _styleAttr = RegExp(r'''\sstyle\s*=\s*(?:"([^"]*)"|'([^']*)')''', caseSensitive: false);
   static final _mathScriptType = RegExp(
-    r'''type\s*=\s*["']math/tex(;\s*mode=display)?["']''',
+    r'''type\s*=\s*["']math/(tex|mml|mathml)(;\s*mode=display)?["']''',
     caseSensitive: false,
   );
+
+  /// Longest MathML kept from a `math/mml` script.
+  static const _maxScriptMathml = 64000;
 
   // Chapters are untrusted and arbitrarily long. Every scan below is linear:
   // no lazy `[\s\S]*?` search that each unclosed opener would rerun to the
@@ -43,6 +51,7 @@ abstract final class EpubChapter {
     var s = xhtml;
     final pdf = _looksLikePdfConversion(s);
     s = _body(s);
+    s = _encodeMathmlAttributes(s);
     s = _dropRawText(s);
     if (pdf || _needsDom(s)) s = _enhance(s, pdf: pdf);
     // Artwork keeps its own colours, as in the native readers.
@@ -85,9 +94,16 @@ abstract final class EpubChapter {
       if (tagEnd > closeStart) continue;
       final type = _mathScriptType.firstMatch(s.substring(run.start, tagEnd));
       if (type == null) continue;
-      final source = s.substring(tagEnd, closeStart);
-      final tex = _escape(_unescape(source.replaceAll(RegExp(r'^\s*<!\[CDATA\[|\]\]>\s*$'), '')));
-      out.write('<span class="math ${type[1] == null ? 'inline' : 'display'}" data-tr-tex="script">$tex</span>');
+      final source = s.substring(tagEnd, closeStart).replaceAll(RegExp(r'^\s*<!\[CDATA\[|\]\]>\s*$'), '');
+      final mode = type[2] == null ? 'inline' : 'display';
+      if (type[1]!.toLowerCase() != 'tex') {
+        // MathJax's MathML input: the markup stays text in an attribute until the math builder parses it.
+        if (source.length > _maxScriptMathml) continue;
+        out.write('<span class="math $mode" data-tr-tex="script" ${EpubMarks.mathml}="${Uri.encodeComponent(source.trim())}"></span>');
+        continue;
+      }
+      final tex = _escape(_unescape(source));
+      out.write('<span class="math $mode" data-tr-tex="script">$tex</span>');
     }
     out.write(s.substring(at, unclosed ?? s.length));
     return out.toString();
@@ -165,7 +181,7 @@ abstract final class EpubChapter {
     if (style != null) {
       final css = (style[1] ?? style[2] ?? '').toLowerCase();
       if (RegExp(r'(^|;)\s*display\s*:\s*none').hasMatch(css)) marks.add(EpubMarks.hidden);
-      if (tag.toLowerCase().startsWith('<img')) {
+      if (RegExp(r'^<(img|object|embed)\b', caseSensitive: false).hasMatch(tag)) {
         final h = RegExp(r'(?:^|;)\s*height\s*:\s*([\d.]+)em').firstMatch(css);
         final va = RegExp(r'vertical-align\s*:\s*(-?[\d.]+)em').firstMatch(css);
         if (h != null) marks.add('${EpubMarks.emHeight}="${h[1]}"');
@@ -182,6 +198,16 @@ abstract final class EpubChapter {
       s.replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&quot;', '"').replaceAll('&amp;', '&');
 
   static String _escape(String s) => s.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+
+  static final _mathmlAttribute = RegExp(r'''\sdata-mathml\s*=\s*(?:"([^"]*)"|'([^']*)')''', caseSensitive: false);
+
+  /// MathML kept in a `data-mathml` attribute (MathJax 2 frames, hand-made
+  /// markup) is carried URI-encoded: re-serialized HTML writes `<` raw in
+  /// attribute values, where the tag and formula scans would read it as markup.
+  static String _encodeMathmlAttributes(String s) => s.replaceAllMapped(
+        _mathmlAttribute,
+        (m) => m[0]!.length > 64100 ? '' : ' ${EpubMarks.mathml}="${Uri.encodeComponent(_unescape(m[1] ?? m[2]!).replaceAll('&#160;', '\u00a0'))}"',
+      );
 
   static bool _needsDom(String s) =>
       s.contains('epub:switch') ||
@@ -208,6 +234,8 @@ abstract final class EpubChapter {
     if (pdf) {
       _unwrapInlineAroundBlocks(root);
       _hidePageFurniture(root);
+      // Line by line, before lines join into paragraphs.
+      if (GarbledMath.isGarbled(root.text)) GarbledMath.prepare(root);
       _joinBrokenLines(root);
     }
     return root.innerHtml;
@@ -283,7 +311,7 @@ abstract final class EpubChapter {
     walk(root);
   }
 
-  static final _mathJaxOutput = RegExp(r'^(MathJax(_Preview|_Display|_CHTML|_SVG|_SVG_Display)?|MJX_Assistive_MathML)$');
+  static final _mathJaxOutput = RegExp(r'^(MathJax(_Preview|_Display|_CHTML|_SVG|_SVG_Display)?|MJX_Assistive_MathML|MJXc-display|mjx-chtml)$');
 
   /// Where MathJax sources were kept (`script[type=math/tex]`), the publisher's
   /// pre-rendered output and previews next to them would duplicate them.

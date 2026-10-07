@@ -1,7 +1,10 @@
 import { prepareCode, type Highlighter } from './code';
 import { ENHANCED_ATTR } from './dom';
+import { prepareFormats } from './formats';
+import { isGarbledMath, prepareGarbled } from './garbled';
 import { prepareMathml, prepareRawTex, prepareTexImages, texOfImage, type TexRenderer } from './math';
 import { preparePdf } from './pdf';
+import { prepareSvgInk } from './svg';
 import { prepareTables } from './tables';
 
 /**
@@ -20,13 +23,13 @@ import { prepareTables } from './tables';
  * Bump whenever the output changes (rules, CSS, bundled libraries): mobile
  * keys its enhanced copy of each EPUB on it.
  */
-export const ENHANCE_VERSION = '2';
+export const ENHANCE_VERSION = '4';
 
 export { UI_ATTR, ENHANCED_ATTR } from './dom';
 export { enhanceCss, themeDeclarations, MATH_FONT_FILE, type EnhanceTheme } from './css';
 export { fitBlocks, isPaginated, type Highlighter, type Highlighted } from './code';
 export { hydrateMath, type TexRenderer } from './math';
-export { watchInk, darkPage, type InkVerdict } from './ink';
+export { watchInk, darkPage, INK_CLASS, type InkVerdict } from './ink';
 
 export interface EnhanceDeps {
   /** TeX → MathML; null skips the TeX rules (the web engine loads it only when needed). */
@@ -42,6 +45,8 @@ export interface EnhanceReport {
 }
 
 const RAW_TEX = /\$\$|\\\(|\\\[/;
+/** Formulas kept as TeX in attributes (see formats.ts). */
+const TEX_ATTRIBUTES = '[data-tex], [data-latex], [data-equation], [data-formula], [data-math]';
 
 /** What a chapter needs loaded before `enhanceContent`, cheaply. */
 export function needs(doc: Document, root: Element): { tex: boolean; code: boolean } {
@@ -62,6 +67,7 @@ export function needs(doc: Document, root: Element): { tex: boolean; code: boole
       }
     }
   }
+  if (!tex && root.querySelector(TEX_ATTRIBUTES)) tex = true;
   if (!tex) {
     for (const img of Array.from(root.getElementsByTagNameNS('*', 'img'))) {
       if (texOfImage(img)) {
@@ -70,6 +76,7 @@ export function needs(doc: Document, root: Element): { tex: boolean; code: boole
       }
     }
   }
+  if (!tex) tex = isGarbledMath(doc, root);
   return { tex, code: root.getElementsByTagNameNS('*', 'pre').length > 0 };
 }
 
@@ -90,12 +97,16 @@ export async function enhanceContent(doc: Document, root: Element, deps: Enhance
     }
   };
   report.pdf = run(() => preparePdf(doc, root), 0);
-  report.math = run(() => prepareMathml(root), 0);
+  report.math = run(() => prepareFormats(root, deps.tex), 0);
+  report.math += run(() => prepareMathml(root), 0);
   if (deps.tex) {
     const tex = deps.tex;
+    // After the PDF rule: whether a line was joined into a paragraph decides inline or display.
+    report.math += run(() => prepareGarbled(doc, root), 0);
     report.math += run(() => prepareRawTex(root, tex), 0);
     report.math += run(() => prepareTexImages(root, tex), 0);
   }
+  report.math += run(() => prepareSvgInk(root), 0);
   report.tables = run(() => prepareTables(root), 0);
   try {
     report.code = await prepareCode(root, deps.highlight);

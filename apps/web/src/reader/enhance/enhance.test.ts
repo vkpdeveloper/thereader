@@ -12,7 +12,10 @@ import type { ZipArchive } from '../epub/zip';
 import { applyHighlight, declaredLanguage, prepareCode, tokensOf, type Highlighter } from './code';
 import { enhanceContent, hydrateMath, needs } from './index';
 import { inkVerdict } from './ink';
+import { parseMarkup } from './formats';
 import { findDelimited, scrubMathml, texOfImage } from './math';
+import { MAX_MATHML_NODES, needsRebuild, rebuildMathml, styled } from './mathml';
+import { paintOf } from './svg';
 import { isPdfConversion } from './pdf';
 import { MAX_TEX, texToMathml } from './tex';
 
@@ -24,7 +27,7 @@ const expect = bunTest.expect as unknown as (actual: unknown) => any;
 
 const window = new JSDOM('').window;
 const g = globalThis as Record<string, unknown>;
-for (const name of ['Node', 'NodeFilter', 'DOMParser']) g[name] ??= (window as unknown as Record<string, unknown>)[name];
+for (const name of ['Node', 'NodeFilter', 'DOMParser', 'XMLSerializer']) g[name] ??= (window as unknown as Record<string, unknown>)[name];
 
 hljs.registerLanguage('python', python);
 const highlight: Highlighter = (code, language) => {
@@ -152,6 +155,166 @@ describe('math', () => {
   });
 });
 
+describe('other maths formats', () => {
+  const M = 'xmlns="http://www.w3.org/1998/Math/MathML"';
+  /** Shadow MathML of every formula host, serialized. */
+  const rendered = (doc: Document) =>
+    Array.from(bodyOf(doc).querySelectorAll('.tr-math')).map((h) => h.shadowRoot?.querySelector('math')?.outerHTML ?? null);
+  const classes = (doc: Document, selector: string) => Array.from(bodyOf(doc).querySelectorAll(selector)).map((e) => e.getAttribute('class'));
+
+  test('KaTeX shows its MathML and hides its HTML', async () => {
+    const doc = xhtml(`<p>A <span class="katex"><span class="katex-mathml"><math ${M}><semantics><mi>x</mi><annotation encoding="application/x-tex">x</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="mord mathnormal">x</span></span></span>.</p>`);
+    const before = bookText(doc);
+    await enhanceAll(doc);
+    expect(classes(doc, '.katex-html')).toEqual(['katex-html tr-hidden']);
+    expect(classes(doc, '.katex-mathml')).toEqual(['katex-mathml tr-shown']);
+    expect(bookText(doc)).toBe(before);
+  });
+
+  test('MathJax 3 shows its assistive MathML instead of CHTML or SVG', async () => {
+    const doc = xhtml(`<p><mjx-container class="MathJax" jax="CHTML"><mjx-math class="MJX-TEX" aria-hidden="true"><mjx-mi><mjx-c class="mjx-c1D465 TEX-I"></mjx-c></mjx-mi></mjx-math><mjx-assistive-mml display="inline"><math ${M}><mi>x</mi></math></mjx-assistive-mml></mjx-container>
+<mjx-container class="MathJax" jax="SVG"><svg xmlns="http://www.w3.org/2000/svg" width="1.3ex" height="1ex"><g fill="currentColor"><path d="M0 0h10"/></g></svg><mjx-assistive-mml><math ${M}><mi>y</mi></math></mjx-assistive-mml></mjx-container></p>`);
+    await enhanceAll(doc);
+    expect(classes(doc, 'mjx-assistive-mml')).toEqual(['tr-shown', 'tr-shown']);
+    expect(classes(doc, 'mjx-math')).toEqual(['MJX-TEX tr-hidden']);
+    expect(bodyOf(doc).querySelector('svg')!.getAttribute('class')).toContain('tr-hidden');
+  });
+
+  test('MathJax 2 frames: assistive MathML, then data-mathml, then the script source', async () => {
+    const frame = (id: number, inner: string, attrs = '') => `<span class="MathJax_Preview"></span><span id="MathJax-Element-${id}-Frame" class="mjx-chtml MathJax_CHTML"${attrs}><span class="mjx-math"><span class="mjx-char">v</span></span>${inner}</span><script type="math/tex" id="MathJax-Element-${id}">v_${id}</script>`;
+    const doc = xhtml(`<p>${frame(1, `<span class="MJX_Assistive_MathML"><math ${M}><mi>a</mi></math></span>`)}</p>
+<p>${frame(2, '', ` data-mathml="&lt;math ${M.replace(/"/g, '&quot;')}&gt;&lt;mi&gt;b&lt;/mi&gt;&lt;/math&gt;"`)}</p>
+<p>${frame(3, '')}</p>`);
+    const before = bookText(doc);
+    await enhanceAll(doc);
+    const [p1, p2, p3] = Array.from(bodyOf(doc).querySelectorAll('p'));
+    // 1: the assistive MathML shows; the glyph spans and the script do not render.
+    expect(p1.querySelector('.MJX_Assistive_MathML')!.getAttribute('class')).toContain('tr-shown');
+    expect(p1.querySelector('.mjx-math')!.getAttribute('class')).toContain('tr-hidden');
+    expect(p1.querySelectorAll('.tr-math').length).toBe(0);
+    // 2: data-mathml renders in a host; the frame hides.
+    expect(p2.querySelector('[id$="-Frame"]')!.getAttribute('class')).toContain('tr-hidden');
+    expect(p2.querySelector('.tr-math')!.shadowRoot!.querySelector('mi')!.textContent).toBe('b');
+    // 3: only TeX: the frame hides and the script renders.
+    expect(p3.querySelector('[id$="-Frame"]')!.getAttribute('class')).toContain('tr-hidden');
+    expect(p3.querySelector('.tr-math')!.getAttribute('data-tr-tex')).toBe('v_3');
+    for (const p of [p1, p2, p3]) expect(p.querySelector('.MathJax_Preview')!.getAttribute('class')).toContain('tr-hidden');
+    expect(bookText(doc)).toBe(before);
+  });
+
+  test('formulas in data attributes and math/mml scripts render; numbers and native MathML do not', async () => {
+    const doc = xhtml(`<p><span class="math" data-tex="\\frac{a}{b}">a/b</span> <span data-latex="x^2">x2</span></p>
+<div class="equation" data-equation="\\mathbf{A}\\mathbf{x}">Ax</div>
+<p data-equation="3.1">An equation number (3.1).</p>
+<p><span data-latex="y"><math ${M}><mi>y</mi></math></span></p>
+<p><span data-mathml="&lt;math&gt;&lt;mi&gt;z&lt;/mi&gt;&lt;/math&gt;">z</span>
+<script type="math/mml"><![CDATA[<math ${M} display="block"><mi>w</mi></math>]]></script></p>`);
+    const before = bookText(doc);
+    await enhanceAll(doc);
+    const hosts = Array.from(bodyOf(doc).querySelectorAll('.tr-math'));
+    expect(hosts.map((h) => h.getAttribute('data-tr-tex') ?? h.shadowRoot?.querySelector('mi')?.textContent)).toEqual(['\\frac{a}{b}', 'x^2', '\\mathbf{A}\\mathbf{x}', 'z', 'w']);
+    expect(hosts.map((h) => h.classList.contains('tr-math-display'))).toEqual([false, false, true, false, true]);
+    expect(bodyOf(doc).querySelector('p[data-equation]')!.hasAttribute('class')).toBe(false);
+    expect(rendered(doc).every(Boolean)).toBe(true);
+    expect(bookText(doc)).toBe(before);
+    expect(needs(xhtml('<p><span data-latex="x">x</span></p>'), bodyOf(xhtml('<p><span data-latex="x">x</span></p>'))).tex).toBe(true);
+  });
+
+  test('an object or embed showing a book image becomes an image the ink rule sees', async () => {
+    const doc = xhtml(`<p><object data="eq.svg" type="image/svg+xml" style="height:1em">fallback</object>
+<object data="https://example.com/x.svg" type="image/svg+xml">remote</object><object data="movie.mp4">clip</object><embed src="eq2.png"/></p>`);
+    const before = bookText(doc);
+    await enhanceAll(doc);
+    const imgs = Array.from(bodyOf(doc).querySelectorAll('img'));
+    expect(imgs.map((i) => [i.getAttribute('src'), i.hasAttribute('data-tr-ui'), i.getAttribute('style')])).toEqual([['eq.svg', true, 'height:1em'], ['eq2.png', true, null]]);
+    expect(classes(doc, 'object')).toEqual(['tr-hidden', null, null]);
+    expect(bookText(doc)).toBe(before);
+  });
+
+  test('black formula SVGs follow the text colour; artwork keeps its paint', async () => {
+    const S = 'xmlns="http://www.w3.org/2000/svg"';
+    const doc = xhtml(`<p>Inline <svg ${S} width="6ex" height="2ex"><path d="M0 0h1" fill="#000"/><path d="M0 0h1" style="stroke:black;stroke-width:2"/><path d="M0 0h1" fill="none"/></svg>.</p>
+<p>Unpainted <svg ${S} width="40" height="16"><path d="M0 0h1"/></svg> in text.</p>
+<p><svg ${S} width="200" height="120"><circle r="9" fill="#f2a541"/><path d="M0 0" fill="#000"/></svg></p>
+<p><svg ${S} width="300" height="300"><path d="M0 0h1" fill="#000"/></svg></p>
+<p>Styled <svg ${S} width="5ex" height="2ex"><style>.a{fill:#000}</style><path class="a" d="M0 0"/></svg>.</p>
+<p>Boxed <svg ${S} width="5ex" height="2ex"><rect width="9" height="9" fill="#fff"/><path d="M0 0" fill="#000"/></svg>.</p>`);
+    const markup = bodyOf(doc).innerHTML;
+    const before = bookText(doc);
+    await enhanceAll(doc);
+    const svgs = Array.from(bodyOf(doc).getElementsByTagNameNS('http://www.w3.org/2000/svg', 'svg'));
+    expect(svgs.map((s) => s.getAttribute('class'))).toEqual(['tr-svg-ink', 'tr-svg-ink', null, null, null, null]);
+    const paths = Array.from(svgs[0].children) as SVGElement[];
+    expect(paths.map((p) => p.getAttribute('fill'))).toEqual(['currentColor', null, 'none']);
+    expect(paths[1].getAttribute('style')!.toLowerCase()).toContain('stroke: currentcolor');
+    expect(svgs[1].getAttribute('fill')).toBe('currentColor');
+    expect(bodyOf(doc).innerHTML.length).toBeGreaterThan(markup.length);
+    expect(bookText(doc)).toBe(before);
+    expect(['#000', 'black', 'rgb(20, 20, 20)', '#222f', 'grey'].map(paintOf)).toEqual(['dark', 'dark', 'dark', 'dark', 'colour']);
+    expect(['none', 'currentColor', '#fff', '#c0392b', 'url(#g)'].map(paintOf)).toEqual(['none', 'none', 'light', 'colour', 'colour']);
+  });
+});
+
+describe('MathML for MathML Core browsers', () => {
+  const M = 'xmlns="http://www.w3.org/1998/Math/MathML"';
+  const parse = (markup: string) => new window.DOMParser().parseFromString(markup, 'application/xml').documentElement as unknown as Element;
+  const rebuilt = (markup: string) => {
+    const doc = xhtml('');
+    return rebuildMathml(parse(markup), doc)!;
+  };
+
+  test('only formulas that need it are rebuilt', () => {
+    expect(needsRebuild(parse(`<math ${M}><mi mathvariant="normal">x</mi><mfrac><mn>1</mn><mn>2</mn></mfrac></math>`))).toBe(false);
+    expect(needsRebuild(parse(`<math ${M}><semantics><mi>x</mi><annotation-xml encoding="text/html"><b xmlns="http://www.w3.org/1999/xhtml">x</b></annotation-xml></semantics></math>`))).toBe(false);
+    for (const inner of ['<mfenced><mi>a</mi></mfenced>', '<mi mathvariant="bold">v</mi>', '<menclose notation="box"><mi>x</mi></menclose>', '<mtable><mlabeledtr><mtd><mtext>(1)</mtext></mtd><mtd><mi>x</mi></mtd></mlabeledtr></mtable>']) {
+      expect(needsRebuild(parse(`<math ${M}>${inner}</math>`))).toBe(true);
+    }
+    expect(needsRebuild(parse('<math><mi>x</mi></math>'))).toBe(true);
+  });
+
+  test('fences, letter styles, enclosures and labels become MathML Core', () => {
+    const fenced = rebuilt(`<math ${M}><mfenced open="[" separators=";"><mi>a</mi><mi>b</mi><mi>c</mi></mfenced></math>`);
+    expect(Array.from(fenced.getElementsByTagName('mo')).map((m) => m.textContent)).toEqual(['[', ';', ';', ')']);
+    expect(rebuilt(`<math ${M}><mstyle mathvariant="double-struck"><mi>R</mi><mn>1</mn></mstyle><mi mathvariant="bold">x</mi><mi mathvariant="script">L</mi></math>`).textContent).toBe('ℝ𝟙𝐱ℒ');
+    expect(styled('αβ', 'bold')).toBe('𝛂𝛃');
+    expect(styled('h', 'italic', true)).toBe('h');
+    expect(styled('h', 'italic')).toBe('ℎ');
+    expect(styled('ab', 'italic')).toBe('𝑎𝑏');
+    expect(rebuilt(`<math ${M}><menclose notation="box"><mi>x</mi></menclose></math>`).firstElementChild!.getAttribute('style')).toContain('border');
+    const row = rebuilt(`<math ${M}><mtable><mlabeledtr><mtd><mtext>(1)</mtext></mtd><mtd><mi>x</mi></mtd></mlabeledtr></mtable></math>`).getElementsByTagName('mtr')[0];
+    expect(Array.from(row.children).map((c) => c.textContent)).toEqual(['x', '(1)']);
+  });
+
+  test('a rebuilt formula holds only MathML, text and presentation attributes', () => {
+    const math = rebuilt(`<math ${M} onload="a()"><mi href="javascript:x" style="color:red" class="c" id="i" mathvariant="normal">x</mi><script xmlns="http://www.w3.org/1999/xhtml">alert(1)</script><mo stretchy="false">(</mo></math>`);
+    const all = [math, ...Array.from(math.getElementsByTagNameNS('*', '*'))];
+    expect(all.every((e) => e.namespaceURI === 'http://www.w3.org/1998/Math/MathML')).toBe(true);
+    expect(all.map((e) => e.localName)).toEqual(['math', 'mi', 'mrow', 'mo']);
+    expect(all.flatMap((e) => Array.from(e.attributes).map((a) => a.name))).toEqual(['class', 'mathvariant', 'stretchy']);
+    expect(scrubMathml(math)).toBe(true);
+  });
+
+  test('prefixed MathML read as HTML and MathML without its namespace render from a rebuilt copy', async () => {
+    const html = new window.DOMParser().parseFromString('<p>A <m:math xmlns:m="http://www.w3.org/1998/Math/MathML"><m:mfenced><m:mi>x</m:mi></m:mfenced></m:math> and <math><mi>y</mi></math>.</p>', 'text/html') as unknown as Document;
+    const kf8 = xhtml('<p>B <math><msup><mi>z</mi><mn>2</mn></msup></math>.</p>');
+    for (const doc of [html, kf8]) {
+      const before = bookText(doc);
+      await enhanceAll(doc);
+      expect(bookText(doc)).toBe(before);
+      const hosts = Array.from(bodyOf(doc).querySelectorAll('.tr-math'));
+      expect(hosts.length).toBeGreaterThan(0);
+      for (const h of hosts) expect(h.shadowRoot!.querySelector('math')!.namespaceURI).toBe('http://www.w3.org/1998/Math/MathML');
+    }
+    expect(Array.from(bodyOf(html).querySelectorAll('.tr-math'))[0].shadowRoot!.querySelector('math')!.textContent).toBe('(x)');
+  });
+
+  test('book MathML strings parse inertly or not at all', () => {
+    expect(parseMarkup('<math><mi>x&nbsp;</mi></math>')!.textContent).toBe('x\u00a0');
+    expect(parseMarkup('<b>not maths</b>')).toBe(null);
+    expect(parseMarkup(`<math>${'<mi>x</mi>'.repeat(10000)}</math>`)).toBe(null);
+  });
+});
+
 describe('code', () => {
   test('declared languages', () => {
     const pre = (html: string) => xhtml(html).getElementsByTagNameNS('*', 'pre')[0];
@@ -252,6 +415,24 @@ describe('dark ink', () => {
     expect(inkVerdict(pixels((i) => (i % 5 === 0 ? [10, 10, 10, 255] : [255, 255, 255, 255])))).toBe('keep');
     expect(inkVerdict(pixels((i) => (i % 5 === 0 ? [240, 240, 240, 255] : [0, 0, 0, 0])))).toBe('keep');
   });
+  /** A 20x20 sample: white border, `ink` inside. */
+  const framed = (ink: (i: number) => [number, number, number, number]) =>
+    pixels((i) => {
+      const x = i % 20;
+      const y = Math.floor(i / 20);
+      return x === 0 || y === 0 || x === 19 || y === 19 ? [255, 255, 255, 255] : ink(i);
+    });
+  test('black on opaque white turns light; colour, photos and unknown widths stay', () => {
+    const text = framed((i) => (i % 7 === 0 ? [15, 15, 15, 255] : [255, 255, 255, 255]));
+    expect(inkVerdict(text, 20)).toBe('paper');
+    expect(inkVerdict(text)).toBe('keep');
+    expect(inkVerdict(framed((i) => (i % 7 === 0 ? [200, 30, 30, 255] : [255, 255, 255, 255])), 20)).toBe('keep');
+    // Greyscale tones over a third of the frame, or mostly mid-grey: a photo.
+    expect(inkVerdict(framed((i) => (i % 3 === 0 ? [(i * 37) % 200, (i * 37) % 200, (i * 37) % 200, 255] : [250, 250, 250, 255])), 20)).toBe('keep');
+    expect(inkVerdict(framed((i) => (i % 7 === 0 ? [150, 150, 150, 255] : i % 23 === 0 ? [20, 20, 20, 255] : [250, 250, 250, 255])), 20)).toBe('keep');
+    // Dark background: not paper.
+    expect(inkVerdict(pixels((i) => (i % 7 === 0 ? [255, 255, 255, 255] : [0, 0, 0, 255])), 20)).toBe('keep');
+  });
 });
 
 describe('untrusted books', () => {
@@ -303,6 +484,17 @@ describe('untrusted books', () => {
     const fake = Array.from(bodyOf(doc).querySelectorAll('.tr-math')).find((h) => h.textContent === 'book text')!;
     expect(fake.shadowRoot).toBe(null);
     expect(bodyOf(doc).querySelectorAll('.tr-math').length).toBe(2);
+  });
+
+  test('rebuilding MathML is capped and linear', async () => {
+    const doc = xhtml('');
+    const parse = (m: string) => new window.DOMParser().parseFromString(m, 'application/xml').documentElement as unknown as Element;
+    const M = 'xmlns="http://www.w3.org/1998/Math/MathML"';
+    expect(rebuildMathml(parse(`<math ${M}>${'<mi>x</mi>'.repeat(MAX_MATHML_NODES)}</math>`), doc)).toBe(null);
+    expect(rebuildMathml(parse(`<math ${M}>${'<mrow>'.repeat(5000)}x${'</mrow>'.repeat(5000)}</math>`), doc)?.textContent ?? '').toBe('');
+    // jsdom's live collections make DOM edits cost O(n) here; a browser does 3000 of these in ~100 ms.
+    const many = xhtml(Array.from({ length: 400 }, () => `<p><math ${M}><mfenced><mi>a</mi></mfenced></math><object data="a.svg">f</object><span data-latex="\\alpha">a</span></p>`).join(''));
+    expect(await ms(() => enhanceContent(many, bodyOf(many), { tex: texToMathml, highlight: null }))).toBeLessThan(3000);
   });
 
   test('oversized TeX is not rendered', () => {

@@ -29,9 +29,10 @@ math{font-family:var(--tr-math-font, ${MATH_STACK});font-style:normal;font-weigh
   direction:ltr;color:inherit;font-feature-settings:"dtls" off;}
 math *{border-color:currentColor;}
 math.tml-display{display:block;}
+/* temml's line wrapping; a rebuilt book formula (.tr-mml) keeps MathML layout and its operator spacing. */
 @supports (not (-moz-appearance:none)){
-  math{display:inline-flex;flex-wrap:wrap;align-items:baseline;}
-  math.tml-display{display:block math;}
+  math:not(.tr-mml){display:inline-flex;flex-wrap:wrap;align-items:baseline;}
+  math.tml-display, math.tr-mml[display="block"]{display:block math;}
   .tml-sml-pad{padding-left:0.05em;}
   .tml-med-pad{padding-left:0.10em;}
   .tml-lrg-pad{padding-left:0.15em;}
@@ -83,6 +84,12 @@ ${P} .tr-math{display:inline;text-indent:0;color:inherit !important;font-style:n
   white-space:normal !important;background-color:transparent !important;}
 ${P} .tr-math-display{display:block !important;}
 ${P} .tr-switch-case{display:inline;}
+/* MathML a library hid for screen readers (KaTeX, MathJax assistive MathML), shown in place of its rendering. */
+${P} .tr-shown{position:static !important;clip:auto !important;clip-path:none !important;width:auto !important;height:auto !important;
+  max-width:100% !important;overflow:visible !important;padding:0 !important;margin:0 !important;border:0 !important;opacity:1 !important;
+  display:inline !important;top:auto !important;left:auto !important;line-height:normal !important;font-size:inherit !important;
+  -webkit-user-select:text !important;user-select:text !important;}
+${P} .tr-shown > math[display="block"], ${P} .tr-shown > .tr-math-scroll, ${P} .tr-shown > .tr-math-display{display:block !important;}
 
 /* ---- code (rule 5) */
 ${P} pre{display:block !important;white-space:pre !important;word-break:normal !important;overflow-wrap:normal !important;
@@ -126,6 +133,9 @@ ${P} .tr-table-scroll.tr-wrap > table{table-layout:fixed !important;width:100% !
 
 /* ---- dark-ink images (rule 4) */
 ${P} :is(img, image).tr-ink{filter:invert(1) hue-rotate(180deg) !important;}
+/* Black on white: the white turns black and screens into whatever the page colour is. */
+${P} img.tr-ink-paper{filter:invert(1) hue-rotate(180deg) !important;mix-blend-mode:screen;background-color:transparent !important;}
+${P} svg.tr-svg-ink{background-color:transparent !important;}
 
 /* ---- PDF conversions (rule 7) */
 ${P} .tr-pdf-neutral{font-style:normal !important;font-weight:normal !important;text-decoration:none !important;}

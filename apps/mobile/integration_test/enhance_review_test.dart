@@ -98,6 +98,19 @@ final _stops = [
     'index_split_001.html#p111',
     query: 'Two affine subsets parallel to U are equal or disjoint',
   ),
+  // The calibre 6 conversion of the same book (garbled TeX-font math).
+  _Stop(
+    'ladr3e-v2-13',
+    'ladr3e-v2',
+    'index_split_000.html',
+    query: 'Properties of complex arithmetic',
+  ),
+  _Stop(
+    'ladr3e-v2-385',
+    'ladr3e-v2',
+    'index_split_001.html#p111',
+    query: 'Two affine subsets parallel to U are equal or disjoint',
+  ),
   // A MathML EPUB of the 4th edition, converted from the open-access PDF.
   _Stop('ladr4e-3103', 'ladr4e', 'OEBPS/text/ch03-05.xhtml#n3.103'),
   _Stop(
@@ -107,7 +120,22 @@ final _stops = [
     flow: ReaderFlow.paginated,
   ),
   // apps/web/fixtures/enhance-sampler.epub
-  for (final c in ['mathml', 'tex', 'code', 'images', 'table', 'pdf'])
+  for (final c in [
+    'mathml',
+    'tex',
+    'code',
+    'images',
+    'table',
+    'pdf',
+    'katex',
+    'mathjax2',
+    'mathjax3',
+    'mathjax3svg',
+    'svg',
+    'paper',
+    'attrs',
+    'mathml2',
+  ])
     _Stop('sampler-$c', 'sampler', 'OEBPS/$c.xhtml'),
   _Stop(
     'sampler-code-paginated',

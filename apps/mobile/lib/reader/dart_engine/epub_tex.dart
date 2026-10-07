@@ -81,7 +81,14 @@ abstract final class EpubTex {
   static bool looksLikeTex(String alt, {required bool mathContext}) {
     final s = alt.trim();
     if (s.isEmpty || s.length > 4000 || _fileName.hasMatch(s)) return false;
-    if (mathContext) return _command.hasMatch(s) || !_prose.hasMatch(s);
+    if (mathContext) return _command.hasMatch(s) || !(_prose.hasMatch(s) || _word.hasMatch(s));
     return _command.hasMatch(s) && !_prose.hasMatch(s);
   }
+
+  /// A word that is not a function name: "equation", "Equation 3.2" and
+  /// "formula" label an image, they are not its TeX.
+  static final _word = RegExp(
+    r'(?<![A-Za-z\\])(?!(?:sin|cos|tan|cot|sec|csc|log|ln|exp|lim|max|min|sup|inf|det|dim|ker|deg|gcd|arg|mod|Pr)\b)[A-Za-z]{3,}',
+  );
+
 }

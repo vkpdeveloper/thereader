@@ -1,0 +1,29 @@
+{
+  "_comment": "Imitations of PDF-converted math with unmapped TeX fonts (not text from any book). Each line, with ‹…› marking italic text, and how the garbled-math decoders (web garbled.ts, Dart garbled_math.dart) must read it: formulas as ⟦plain reading⟧. Both test suites run every case.",
+  "cases": [
+    ["Note that x C y D y C x for all x; y 2 C.", "Note that ⟦x+y=y+x⟧ for all ⟦x,y∈C⟧."],
+    ["Then ˛ C Ď 0 for some ˇ 2 R.", "Then ⟦α+β=0⟧ for some ⟦β∈R⟧."],
+    ["ˇ C 2 D ąnd so on", "⟦β+2=α and⟧ so on"],
+    ["Let S D fx 2 R W x > 0g.", "Let ⟦S={x∈R:x>0}⟧."],
+    ["hx; ‹y› i D 0 and kxk2 D hx; xi", "⟦⟨x,y⟩=0⟧ and ⟦‖x‖²=⟨x,x⟩⟧"],
+    ["the space V =U and 1=˛ here", "the space ⟦V/U⟧ and ⟦1/α⟧ here"],
+    [".x C y/ \\ .y C z/ ¤ ¿", "⟦(x+y)∩(y+z)≠∅⟧"],
+    ["a point of R4 and a list y1; : : : ; ym", "a point of ⟦R⁴⟧ and a list ⟦y₁,…,yₘ⟧"],
+    ["y1 C    C ym D 0", "⟦y₁+⋯+yₘ=0⟧"],
+    ["so a  b 2 U holds", "so ⟦a−b∈U⟧ holds"],
+    ["C 1 D  and more", "⟦λ+1=λ⟧  and more"],
+    ["Here 4Š and nŠ grow.", "Here ⟦4!⟧ and ⟦n!⟧ grow."],
+    ["Then jdet Sj D 1 and T D D C N.", "Then ⟦|detS|=1⟧ and ⟦T=D+N⟧."],
+    ["dim ‹P› m.F/ D m C 1", "⟦dimPₘ(F)=m+1⟧"],
+    ["so S 1 D S and T 2 D 0", "so ⟦S⁻¹=S⟧ and ⟦T²=0⟧"],
+    ["Vitamin C is good for you.", "Vitamin C is good for you."],
+    ["Plan D failed, so we tried Plan E.", "Plan D failed, so we tried Plan E."],
+    ["Mix 2 cups of flour with 1 egg.", "Mix 2 cups of flour with 1 egg."],
+    ["René Descartes, Jørgen Gram and Eduard Čech wrote about it.", "René Descartes, Jørgen Gram and Eduard Čech wrote about it."],
+    ["Is this the right answer ?", "Is this the right answer ?"],
+    ["See page 12 and Chapter 2 for more.", "See page 12 and Chapter 2 for more."],
+    ["A I a", "A I a"],
+    ["undergraduate!", "undergraduate!"],
+    ["[ This note is in brackets. ]", "[ This note is in brackets. ]"]
+  ]
+}

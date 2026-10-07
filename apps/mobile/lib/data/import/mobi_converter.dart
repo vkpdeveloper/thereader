@@ -970,6 +970,8 @@ const _voidTags = {
   'wbr',
 };
 
+const _foreignNamespaces = {'svg': 'http://www.w3.org/2000/svg', 'math': 'http://www.w3.org/1998/Math/MathML'};
+
 void _writeXhtml(dom.Node node, StringBuffer out) {
   if (node is dom.Text) {
     out.write(_escapeXml(node.text));
@@ -987,6 +989,11 @@ void _writeXhtml(dom.Node node, StringBuffer out) {
     if (tag == 'html') {
       out.write(' xmlns="http://www.w3.org/1999/xhtml"');
       out.write(' xmlns:xlink="http://www.w3.org/1999/xlink"');
+    }
+    // HTML puts these in their own namespace without saying so; XHTML needs it written.
+    final foreign = _foreignNamespaces[tag];
+    if (foreign != null && !node.attributes.keys.any((k) => k.toString() == 'xmlns')) {
+      out.write(' xmlns="$foreign"');
     }
     for (final entry in node.attributes.entries) {
       final name = entry.key.toString();
