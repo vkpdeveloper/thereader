@@ -940,18 +940,20 @@ final _uiText = RegExp(
   caseSensitive: false,
 );
 
-/// [_uiText], run only on text that starts like one of its alternatives
-/// (two in three short texts do not).
+/// The leading words of [_uiText]'s alternatives: a text it matches starts
+/// with one of them and then a character that is not an ASCII letter, or with
+/// a digit or `×`.
+const _uiWords = {
+  'text', 'caption', 'image', 'photo', 'photos', 'gallery', 'enlarge', 'view', 'advertisement', 'ad', 'sponsored', //
+  'share', 'tweet', 'email', 'print', 'copy', 'copied', 'loading', 'read', 'continue', 'subscribe', 'sign', 'follow',
+  'listen', 'save', 'bookmark', 'comment', 'comments', 'reply', 'related', 'you', 'recommended', 'more', 'skip', 'back',
+  'top', 'close', 'menu', 'toggle', 'show', 'load', 'see',
+};
+
+/// [_uiText], run only on text that starts like one of its alternatives.
 bool _isUiText(String text) {
   final first = text.isEmpty ? -1 : text.codeUnitAt(0);
-  final c = first >= 0x41 && first <= 0x5a ? first + 32 : first;
-  final possible = switch (c) {
-    0x74 || 0x63 || 0x69 || 0x70 || 0x67 || 0x65 || 0x76 || 0x61 || 0x73 || 0x72 || 0x6c || 0x66 || 0x62 => true,
-    0x79 || 0x6d => true, // t c i p g e v a s r l f b, y m
-    >= 0x30 && <= 0x39 => true,
-    0xd7 => true, // ×
-    _ => false,
-  };
+  final possible = (first >= 0x30 && first <= 0x39) || first == 0xd7 || _uiWords.contains(leadingWord(text));
   if (possible) return _uiText.hasMatch(text);
   assert(!_uiText.hasMatch(text), 'UI text "$text"');
   return false;

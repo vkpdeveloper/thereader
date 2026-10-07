@@ -432,3 +432,15 @@ bool startsWithIgnoringCase(String s, String lower) {
   }
   return true;
 }
+
+/// The ASCII letters [text] starts with (at most 16), lowercase: the first
+/// word of a text an anchored pattern of words may match.
+String leadingWord(String text) {
+  var end = 0;
+  while (end < text.length && end < 16) {
+    final c = text.codeUnitAt(end) | 0x20;
+    if (c < 0x61 || c > 0x7a) break;
+    end++;
+  }
+  return text.substring(0, end).toLowerCase();
+}

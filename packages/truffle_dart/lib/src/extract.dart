@@ -44,13 +44,14 @@ Article? extractTree(VDocument doc, String url, {bool markdown = false}) {
   if (!titleMatched) title = _sectionTitle(blocks, title);
   blocks = _tidy(blocks, title, meta);
 
-  final bodyText = blocksText(blocks);
+  var text = blocksText(blocks);
   final articleBody = meta.articleBody;
-  if (articleBody != null && articleBody.length > 500 && bodyText.length < articleBody.length * 0.3) {
+  if (articleBody != null && articleBody.length > 500 && text.length < articleBody.length * 0.3) {
     blocks = _paragraphsFrom(articleBody);
+    text = blocksText(blocks);
   }
   if (blocks.isEmpty) return null;
-  if (blocksText(blocks).length < 50 &&
+  if (text.length < 50 &&
       !blocks.any((b) => b is FigureBlock || b is VideoBlock || b is CodeBlock || b is EmbedBlock)) {
     return null;
   }
@@ -59,7 +60,8 @@ Article? extractTree(VDocument doc, String url, {bool markdown = false}) {
   // The TypeScript engine reorders block keys to model.ts field order here
   // (`canonical`); the Dart model always writes them in that order.
 
-  final text = blocksText(blocks);
+  // The lead image has no caption: the text is the same.
+  assert(text == blocksText(blocks));
   final wordCount = countWords(text);
   final article = Article(
     url: meta.url,
@@ -706,7 +708,7 @@ bool _isPromo(List<Inline> content) {
   final text = collapse(inlineText(content));
   if (text.isEmpty) return false;
   final share = _linkShare(content);
-  if (!_promoWords.contains(_leadingWord(text))) {
+  if (!_promoWords.contains(leadingWord(text))) {
     assert(!_promo.hasMatch(text) && !_promoLine.hasMatch(text), 'promo "$text"');
   } else {
     if (_promo.hasMatch(text) && (share > 0.4 || text.length < 120)) return true;
@@ -715,17 +717,6 @@ bool _isPromo(List<Inline> content) {
   // A short line that is entirely a link to another page, or a stack of them.
   if (share >= 0.9 && (text.length < 160 || content.any((n) => n is LineBreak))) return true;
   return false;
-}
-
-/// The ASCII letters [text] starts with, lowercase.
-String _leadingWord(String text) {
-  var end = 0;
-  while (end < text.length && end < 16) {
-    final c = text.codeUnitAt(end) | 0x20;
-    if (c < 0x61 || c > 0x7a) break;
-    end++;
-  }
-  return text.substring(0, end).toLowerCase();
 }
 
 /// Sign-up, subscribe, app, membership and affiliate pitches, in the languages publishers use most.
