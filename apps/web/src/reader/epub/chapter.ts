@@ -1,3 +1,5 @@
+import type { TexRenderer } from '../enhance';
+import { enhanceChapter } from '../enhance/web';
 import type { SpineItem } from './package';
 import { resolveRef } from './path';
 import type { Resources } from './resources';
@@ -13,6 +15,8 @@ export interface PreparedChapter {
   styles: { css: string; media: string | null }[];
   /** Fixed-layout viewport from `<meta name=viewport>`, if any. */
   viewport: { width: number; height: number } | null;
+  /** Renders the chapter's prepared formulas on mount (see `hydrateMath`); null without any. */
+  tex: TexRenderer | null;
   failed: boolean;
 }
 
@@ -39,7 +43,7 @@ export async function prepareChapter(zip: ZipArchive, res: Resources, item: Spin
       const img = doc.createElement('img');
       if (url) img.src = url;
       doc.body.append(img);
-      return { index: item.index, href: item.href, body: doc.body, htmlAttrs: [], styles: [], viewport: null, failed: !url };
+      return { index: item.index, href: item.href, body: doc.body, htmlAttrs: [], styles: [], viewport: null, tex: null, failed: !url };
     }
     const text = await zip.readText(item.href);
     if (text === null) return failedChapter(item);
@@ -76,6 +80,8 @@ export async function prepareChapter(zip: ZipArchive, res: Resources, item: Spin
       }
     }
 
+    // Before sanitizing: MathJax's `script type=math/tex` is TeX the enhancer renders.
+    const { tex } = await enhanceChapter(doc, body);
     await sanitizeAndRewrite(body, item, res);
 
     const htmlAttrs: [string, string][] = [];
@@ -84,7 +90,7 @@ export async function prepareChapter(zip: ZipArchive, res: Resources, item: Spin
         htmlAttrs.push([a.name === 'xml:lang' ? 'lang' : a.name, a.value]);
       }
     }
-    return { index: item.index, href: item.href, body, htmlAttrs, styles, viewport, failed: false };
+    return { index: item.index, href: item.href, body, htmlAttrs, styles, viewport, tex, failed: false };
   } catch {
     return failedChapter(item);
   }
@@ -101,7 +107,7 @@ export function failedChapter(item: SpineItem): PreparedChapter {
   p.className = 'reader-error';
   p.textContent = 'This section could not be displayed.';
   doc.body.append(p);
-  return { index: item.index, href: item.href, body: doc.body, htmlAttrs: [], styles: [], viewport: null, failed: true };
+  return { index: item.index, href: item.href, body: doc.body, htmlAttrs: [], styles: [], viewport: null, tex: null, failed: true };
 }
 
 async function sanitizeAndRewrite(body: Element, item: SpineItem, res: Resources): Promise<void> {
