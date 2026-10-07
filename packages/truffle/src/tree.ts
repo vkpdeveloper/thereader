@@ -14,17 +14,48 @@ export class VText {
   constructor(public text: string) {}
 
   get length(): number {
-    if (this.len < 0) {
-      this.len = visibleLength(this.text);
-      this.commaCount = this.len > 0 ? countCommas(this.text) : 0;
-    }
+    if (this.len < 0) this.measure();
     return this.len;
+  }
+
+  /** `visibleLength` and `countCommas` of the text, in one pass. */
+  private measure(): void {
+    const text = this.text;
+    let n = 0;
+    let commas = 0;
+    let space = true;
+    for (let i = 0; i < text.length; i++) {
+      const c = text.charCodeAt(i);
+      // Whitespace is all at or below the space.
+      if (c > 32 || (c !== 32 && c !== 10 && c !== 9 && c !== 13 && c !== 12)) {
+        n++;
+        space = false;
+        if (c === 0x2c || (c >= 0x60c && isOtherComma(c))) commas++;
+      } else if (!space) {
+        n++;
+        space = true;
+      }
+    }
+    this.len = space && n > 0 ? n - 1 : n;
+    this.commaCount = this.len > 0 ? commas : 0;
   }
 
   get commas(): number {
     if (this.len < 0) void this.length;
     return this.commaCount;
   }
+}
+
+/** The attributes of every element that has none. Frozen: an element gains an attribute through `setAttr`, which gives it its own. */
+export const NO_ATTRIBUTES = Object.freeze({}) as Record<string, string>;
+
+/** `text.toLowerCase()`, without the copy when there is nothing to lower: no ASCII capital and nothing outside ASCII. */
+export function lowerCase(text: string): string {
+  for (let i = 0; i < text.length; i++) {
+    const c = text.charCodeAt(i);
+    if ((c >= 65 && c <= 90) || c >= 0x80) return text.toLowerCase();
+  }
+  return text;
 }
 
 export class VElement {
@@ -62,7 +93,12 @@ export class VElement {
   ) {
     this.className = attrs['class'] ?? '';
     this.id = attrs['id'] ?? '';
-    this.matchString = (this.className + ' ' + this.id).toLowerCase();
+    this.matchString = this.className.length === 0 && this.id.length === 0 ? ' ' : lowerCase(this.className + ' ' + this.id);
+  }
+
+  setAttr(name: string, value: string): void {
+    if (this.attrs === NO_ATTRIBUTES) this.attrs = {};
+    this.attrs[name] = value;
   }
 
   attr(name: string): string | null {
@@ -108,19 +144,71 @@ const HIDDEN_STYLE = /(?:^|;)\s*(?:display\s*:\s*none|visibility\s*:\s*hidden)/i
 /** Screen-reader-only text: never part of what a reader sees. */
 const SR_ONLY = /(?:^|\s)(?:sr-only|visually-hidden|visuallyhidden|screen-reader-text|screen-reader-only|screenreader-only|a11y-hidden|hide-for-sr|u-hidden-visually|vh|offscreen|is-hidden|hidden-text)(?:\s|$)/;
 
-function isHidden(el: Element, tag: string): boolean {
+/** Judged on the attributes `attributes` read (the id as the DOM reflects it). */
+function isHidden(el: Element, attrs: Record<string, string>, tag: string): boolean {
+  const cls = attrs['class'];
+  if (cls !== undefined && cls.indexOf('mwe-math-mathml') >= 0) return false;
+  // React streaming SSR parks finished Suspense boundaries in <div hidden id="S:n"> until JS swaps them in.
+  if (attrs['hidden'] !== undefined && tag !== 'input' && !/^S:\d+$/.test(el.id)) return true;
+  const style = attrs['style'];
+  if (style !== undefined && HIDDEN_STYLE.test(style)) return true;
+  if (cls !== undefined && SR_ONLY.test(cls)) return true;
+  if (attrs['aria-hidden'] === 'true') {
+    // KaTeX and MathJax hide their visual copy; the MathML copy is read instead.
+    // Decorative wrappers that still hold real images or long text stay.
+    return !(cls !== undefined && /fallback-image|lazy|image|img|photo|figure|media/i.test(cls));
+  }
+  return false;
+}
+
+const UPPERCASE = /[A-Z]/;
+const XHTML = 'http://www.w3.org/1999/xhtml';
+
+/**
+ * An element's attributes in source order, read by name rather than through `el.attributes`: indexing that list makes
+ * the DOM build an `Attr` node (and a wrapper) for every attribute, which costs about twice the copy itself. Null for
+ * an element whose attributes cannot all be read by name, which only script makes: capitals in a name on an HTML
+ * element (`getAttribute` lowers the name it is given), or one name twice (in two namespaces). `fromDom` reads those
+ * through the attribute nodes.
+ */
+function attributes(el: Element): Record<string, string> | null {
+  if (!el.hasAttributes()) return NO_ATTRIBUTES;
+  const attrs: Record<string, string> = {};
+  const names = el.getAttributeNames();
+  for (let i = 0; i < names.length; i++) {
+    const name = names[i]!;
+    // `attrs[name]` is defined for a repeated name, and for names `Object.prototype` has: those take the long way too.
+    if (attrs[name] !== undefined || (UPPERCASE.test(name) && el.namespaceURI === XHTML)) return null;
+    const value = el.getAttribute(name);
+    if (value === null) return null;
+    setAttribute(attrs, name, value);
+  }
+  return attrs;
+}
+
+/** An attribute named "__proto__" is an attribute, not the object's prototype. */
+function setAttribute(attrs: Record<string, string>, name: string, value: string): void {
+  if (name === '__proto__') Object.defineProperty(attrs, name, { value, enumerable: true, writable: true, configurable: true });
+  else attrs[name] = value;
+}
+
+/** Attributes through the attribute nodes (the last of a repeated name wins). */
+function attributeNodes(el: Element): Record<string, string> {
+  const attrs: Record<string, string> = {};
+  const list = el.attributes;
+  for (let i = 0; i < list.length; i++) setAttribute(attrs, list[i]!.name, list[i]!.value);
+  return attrs;
+}
+
+/** `isHidden` through the DOM, for elements `attributes` cannot read by name (`getAttribute` finds the first of a name). */
+function isHiddenElement(el: Element, tag: string): boolean {
   const cls = el.getAttribute('class');
   if (cls !== null && cls.indexOf('mwe-math-mathml') >= 0) return false;
-  // React streaming SSR parks finished Suspense boundaries in <div hidden id="S:n"> until JS swaps them in.
   if (el.hasAttribute('hidden') && tag !== 'input' && !/^S:\d+$/.test(el.id)) return true;
   const style = el.getAttribute('style');
   if (style !== null && HIDDEN_STYLE.test(style)) return true;
   if (cls !== null && SR_ONLY.test(cls)) return true;
-  if (el.getAttribute('aria-hidden') === 'true') {
-    // KaTeX and MathJax hide their visual copy; the MathML copy is read instead.
-    // Decorative wrappers that still hold real images or long text stay.
-    return !(cls !== null && /fallback-image|lazy|image|img|photo|figure|media/i.test(cls));
-  }
+  if (el.getAttribute('aria-hidden') === 'true') return !(cls !== null && /fallback-image|lazy|image|img|photo|figure|media/i.test(cls));
   return false;
 }
 
@@ -131,6 +219,9 @@ export function fromDom(doc: Document): VDocument {
   let baseHref: string | null = null;
   let head: VElement | null = null;
   let body: VElement | null = null;
+  // Children are gathered on one stack and moved into arrays of their exact length (a first `push` reserves 16 slots).
+  const stack: VNode[] = [];
+  let top = 0;
 
   function copy(el: Element, parent: VElement | null, inHead: boolean): VElement | null {
     const tag = el.localName;
@@ -163,43 +254,43 @@ export function fromDom(doc: Document): VDocument {
     }
     if (DROP.has(tag)) return null;
     if (inHead && tag !== 'title' && tag !== 'meta' && tag !== 'link' && tag !== 'noscript') return null;
+    const named = attributes(el);
     // Streaming renderers (React 19, Next.js) emit <title>, <meta> and <link> inside <body>; keep them for metadata.
     if (tag === 'meta' || tag === 'link' || tag === 'title') {
       if (!inHead && tag === 'meta' && !el.hasAttribute('itemprop') && !el.hasAttribute('property') && !el.hasAttribute('name')) return null;
-    } else if (!inHead && isHidden(el, tag)) {
+    } else if (!inHead && (named !== null ? isHidden(el, named, tag) : isHiddenElement(el, tag))) {
       return null;
     }
 
-    const attrs: Record<string, string> = {};
-    const list = el.attributes;
-    for (let i = 0; i < list.length; i++) {
-      const a = list[i]!;
-      // An attribute named "__proto__" is an attribute, not the object's prototype.
-      if (a.name === '__proto__') Object.defineProperty(attrs, a.name, { value: a.value, enumerable: true, writable: true, configurable: true });
-      else attrs[a.name] = a.value;
-    }
-    const v = new VElement(tag, attrs);
+    const v = new VElement(tag, named ?? attributeNodes(el));
 
     if (tag === 'math' || tag === 'svg') {
       // Kept as a leaf: math is serialized later; svg is dropped by the converter.
       v.append(new VText(el.textContent ?? ''));
       if (tag === 'math') {
-        v.attrs['data-xml'] = serializeXml(el);
+        v.setAttr('data-xml', serializeXml(el));
         const annotation = el.querySelector('annotation[encoding="application/x-tex"]');
-        if (annotation !== null && annotation.textContent) v.attrs['data-tex'] = annotation.textContent.trim();
+        if (annotation !== null && annotation.textContent) v.setAttr('data-tex', annotation.textContent.trim());
       }
       return v;
     }
 
     const childInHead = inHead || tag === 'head';
+    const start = top;
     for (let child = el.firstChild; child !== null; child = child.nextSibling) {
       if (child.nodeType === 3) {
         const text = (child as Text).data;
-        if (text.length > 0) v.append(new VText(text));
+        if (text.length > 0) stack[top++] = new VText(text);
       } else if (child.nodeType === 1) {
         const c = copy(child as Element, v, childInHead);
-        if (c !== null) v.append(c);
+        if (c !== null) stack[top++] = c;
       }
+    }
+    if (top > start) {
+      const children = stack.slice(start, top);
+      for (let i = 0; i < children.length; i++) children[i]!.parent = v;
+      v.children = children;
+      top = start;
     }
     if (tag === 'head') head = v;
     else if (tag === 'body') body = v;
@@ -256,11 +347,11 @@ function serializeXml(el: Element): string {
   let out = '';
   if (kept) {
     out += '<' + tag;
-    const list = el.attributes;
-    for (let i = 0; i < list.length; i++) {
-      const a = list[i]!;
-      if (!MATHML_ATTRIBUTES.has(a.name) && !/^data-[a-z0-9-]+$/.test(a.name)) continue;
-      out += ' ' + a.name + '="' + a.value.replace(/[&<>"]/g, (c) => XML_ESCAPE[c]!) + '"';
+    const names = el.getAttributeNames();
+    for (let i = 0; i < names.length; i++) {
+      const name = names[i]!;
+      if (!MATHML_ATTRIBUTES.has(name) && !/^data-[a-z0-9-]+$/.test(name)) continue;
+      out += ' ' + name + '="' + el.getAttribute(name)!.replace(/[&<>"]/g, (c) => XML_ESCAPE[c]!) + '"';
     }
     out += '>';
   }
@@ -278,7 +369,8 @@ export function rawText(node: VNode): string {
   if (node.kind === 0) return node.text;
   if (node.skip) return '';
   let out = '';
-  for (const child of node.children) out += rawText(child);
+  const children = node.children;
+  for (let i = 0; i < children.length; i++) out += rawText(children[i]!);
   return out;
 }
 
@@ -287,8 +379,25 @@ export function textOf(node: VNode): string {
   return collapse(rawText(node));
 }
 
+const SPACE_RUNS = /[\t\n\f\r ]+/g;
+/** Whitespace that `SPACE_RUNS → ' '` changes: a tab, line feed, form feed or return, or two spaces in a row. */
+const UNCOLLAPSED = /[\t\n\f\r]| {2}/;
+
+/** `text` with each run of HTML whitespace as one space. Most text has none to change, and is returned as it is. */
+export function collapseSpaces(text: string): string {
+  // Otherwise every run is a single space, which the replacement would copy over one by one.
+  return UNCOLLAPSED.test(text) ? text.replace(SPACE_RUNS, ' ') : text;
+}
+
 export function collapse(text: string): string {
-  return text.replace(/[\t\n\f\r ]+/g, ' ').trim();
+  return collapseSpaces(text).trim();
+}
+
+const NON_SPACE = /\S/;
+
+/** `text.trim().length === 0`, without making the trimmed copy. */
+export function isBlank(text: string): boolean {
+  return !NON_SPACE.test(text);
 }
 
 /**
@@ -335,10 +444,14 @@ export function countCommas(text: string): number {
   let n = 0;
   for (let i = 0; i < text.length; i++) {
     const c = text.charCodeAt(i);
-    // , ، 、 ， ﹐ ﹑ ､ ⸲ ⸴ ⹁ ⹌ ⹎ ߸ ᠂ ᠈ ꓾ ꘍ ꛵ ︑
-    if (c === 0x2c || c === 0x60c || c === 0x3001 || c === 0xff0c || c === 0xfe50 || c === 0xfe51 || c === 0xff64 || c === 0x2e32 || c === 0x2e34 || c === 0x2e41 || c === 0x2e4c || c === 0x2e4e || c === 0x7f8 || c === 0x1802 || c === 0x1808 || c === 0xa4fe || c === 0xa60d || c === 0xa6f5 || c === 0xfe11) n++;
+    if (c === 0x2c || (c >= 0x60c && isOtherComma(c))) n++;
   }
   return n;
+}
+
+/** ، 、 ， ﹐ ﹑ ､ ⸲ ⸴ ⹁ ⹌ ⹎ ߸ ᠂ ᠈ ꓾ ꘍ ꛵ ︑: the commas of other scripts (none below U+060C). */
+function isOtherComma(c: number): boolean {
+  return c === 0x60c || c === 0x3001 || c === 0xff0c || c === 0xfe50 || c === 0xfe51 || c === 0xff64 || c === 0x2e32 || c === 0x2e34 || c === 0x2e41 || c === 0x2e4c || c === 0x2e4e || c === 0x7f8 || c === 0x1802 || c === 0x1808 || c === 0xa4fe || c === 0xa60d || c === 0xa6f5 || c === 0xfe11;
 }
 
 /** Depth-first pre-order walk over elements. Return false from `visit` to skip children. */

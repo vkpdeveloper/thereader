@@ -1,5 +1,5 @@
 import { isContentFrame } from './media';
-import { textOf, visibleLength, VElement, walk, type VNode } from './tree';
+import { isBlank, lowerCase, rawText, textOf, visibleLength, VElement, walk, type VNode } from './tree';
 
 /**
  * Finds the article body. The scoring follows Mozilla Readability's proven
@@ -51,7 +51,7 @@ export interface Flags {
 }
 
 function isWhitespace(node: VNode): boolean {
-  return node.kind === 0 ? node.text.trim().length === 0 : node.tag === 'br';
+  return node.kind === 0 ? isBlank(node.text) : node.tag === 'br';
 }
 
 export function isPhrasing(node: VNode): boolean {
@@ -63,7 +63,9 @@ export function isPhrasing(node: VNode): boolean {
 
 /** Post-order: children were visited first, so their `containsBlock` is known. */
 function hasBlockChild(el: VElement): boolean {
-  for (const child of el.children) {
+  const children = el.children;
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i]!;
     if (child.kind === 1 && (BLOCKS.has(child.tag) || child.containsBlock)) return true;
   }
   return false;
@@ -75,7 +77,9 @@ export function measure(el: VElement): void {
   let link = 0;
   let commas = 0;
   const isLink = el.tag === 'a';
-  for (const child of el.children) {
+  const children = el.children;
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i]!;
     if (child.kind === 0) {
       text += child.length;
       commas += child.commas;
@@ -109,8 +113,8 @@ function linkDensity(el: VElement): number {
 function classWeight(el: VElement, flags: Flags): number {
   if (!flags.weightClasses) return 0;
   let weight = 0;
-  const cls = el.className.toLowerCase();
-  const id = el.id.toLowerCase();
+  const cls = lowerCase(el.className);
+  const id = lowerCase(el.id);
   if (cls.length > 0) {
     if (NEGATIVE.test(cls)) weight -= 25;
     if (POSITIVE.test(cls)) weight += 25;
@@ -176,13 +180,19 @@ export function normalize(body: VElement): void {
     const tag = el.tag;
     if (tag === 'div' || tag === 'section' || tag === 'article' || tag === 'main' || tag === 'center' || tag === 'form' || tag === 'body') {
       if (!el.containsBlock) {
-        if (tag === 'div') el.attrs['data-x-as-p'] = '';
+        if (tag === 'div') el.setAttr('data-x-as-p', '');
         return;
       }
-      // Wrap phrasing runs between blocks in synthetic paragraphs.
-      const out: VNode[] = [];
+      // Wrap phrasing runs between blocks in synthetic paragraphs. Children before the first visible phrasing child stay
+      // as they are, so a container without one keeps its list.
+      const children = el.children;
+      let first = 0;
+      while (first < children.length && !(isPhrasing(children[first]!) && !isWhitespace(children[first]!))) first++;
+      if (first === children.length) return;
+      const out: VNode[] = children.slice(0, first);
       let p: VElement | null = null;
-      for (const child of el.children) {
+      for (let i = first; i < children.length; i++) {
+        const child = children[i]!;
         if (isPhrasing(child)) {
           if (p !== null) p.append(child);
           else if (!isWhitespace(child)) {
@@ -214,9 +224,11 @@ export function normalize(body: VElement): void {
 function isEmptyContainer(el: VElement): boolean {
   const tag = el.tag;
   if (tag !== 'div' && tag !== 'section' && tag !== 'header' && tag !== 'h1' && tag !== 'h2' && tag !== 'h3' && tag !== 'h4' && tag !== 'h5' && tag !== 'h6') return false;
-  for (const child of el.children) {
+  const children = el.children;
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i]!;
     if (child.kind === 0) {
-      if (child.text.trim().length > 0) return false;
+      if (!isBlank(child.text)) return false;
     } else if (child.tag !== 'br' && child.tag !== 'hr') {
       return false;
     }
@@ -238,7 +250,7 @@ function markUnlikely(body: VElement, flags: Flags, state: { bylineRemoved: bool
   walk(body, (el) => {
     if (el === body) return true;
     // A heading's id is a slug of its own words ("highlighting-with-comments"): judge headings by class.
-    const match = HEADINGS.has(el.tag) ? el.className.toLowerCase() : el.matchString;
+    const match = HEADINGS.has(el.tag) ? lowerCase(el.className) : el.matchString;
     if (el.attrs['aria-modal'] === 'true' && el.attrs['role'] === 'dialog') {
       el.skip = true;
       return false;
@@ -304,15 +316,18 @@ function countNestedArticles(parent: VElement): number {
 
 /** Text of paragraphs inside `el` that is not link text (uses the attempt's fresh `measure`). */
 function proseLength(el: VElement): number {
-  let n = 0;
-  walk(el, (e) => {
-    if (e.skip) return false;
-    if (e.tag === 'p') {
-      n += e.textLen - e.linkLen;
-      return false;
-    }
-    return true;
-  });
+  return addProse(el, 0);
+}
+
+/** `n` plus the prose under `el`, added in document order (a sum of fractions depends on its order). */
+function addProse(el: VElement, n: number): number {
+  if (el.skip) return n;
+  if (el.tag === 'p') return n + (el.textLen - el.linkLen);
+  const children = el.children;
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i]!;
+    if (child.kind === 1) n = addProse(child, n);
+  }
   return n;
 }
 
@@ -344,13 +359,17 @@ function isFootnoteList(el: VElement): boolean {
   return false;
 }
 
+const FOOTNOTE_CLASS = /(?:^|\s)footnote(?:\s|$)/;
+
 /** A footnote list or one of its notes: kept even when marked up as <aside>. */
 function isNoteMarkup(el: VElement): boolean {
-  return isFootnotes(el) || el.attrs['role'] === 'doc-footnote' || el.attrs['role'] === 'doc-endnote' || /(?:^|\s)footnote(?:\s|$)/.test(el.className);
+  return isFootnotes(el) || el.attrs['role'] === 'doc-footnote' || el.attrs['role'] === 'doc-endnote' || FOOTNOTE_CLASS.test(el.className);
 }
 
+const CALLOUT = /(?:^|[\s_-])(?:note|tip|warning|caution|important|admonition|callout|alert|info|danger|notice|hint|notecard)(?:$|[\s_-])|(?:^|[\s_-])(?:callout|admonition)(?:wrapper|box|container|block)(?:$|[\s_-])/;
+
 export function isCallout(el: VElement): boolean {
-  return /(?:^|[\s_-])(?:note|tip|warning|caution|important|admonition|callout|alert|info|danger|notice|hint|notecard)(?:$|[\s_-])|(?:^|[\s_-])(?:callout|admonition)(?:wrapper|box|container|block)(?:$|[\s_-])/.test(el.matchString);
+  return CALLOUT.test(el.matchString);
 }
 
 function ancestors(el: VElement, max: number): VElement[] {
@@ -380,11 +399,10 @@ function grab(body: VElement, flags: Flags, articleBody: string | null): Attempt
   const candidates: VElement[] = [];
   for (const el of toScore) {
     if (el.parent === null || el.textLen < 25) continue;
-    const ups = ancestors(el, 5);
-    if (ups.length === 0) continue;
     const score = 1 + (el.commas + 1) + Math.min(Math.floor(el.textLen / 100), 3);
-    for (let level = 0; level < ups.length; level++) {
-      const a = ups[level]!;
+    // Up to five ancestors.
+    let level = 0;
+    for (let a = el.parent; a !== null && level < 5; a = a.parent, level++) {
       if (a.parent === null) break;
       if (!a.scored) {
         initialize(a, flags);
@@ -689,13 +707,20 @@ function resetMarks(el: VElement): void {
   el.skip = false;
   el.scored = false;
   el.score = 0;
-  for (const child of el.children) if (child.kind === 1) resetMarks(child);
+  const children = el.children;
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i]!;
+    if (child.kind === 1) resetMarks(child);
+  }
 }
 
 // ------------------------------------------------------------- structured body
 
+const NON_WORD = /[^\p{L}\p{N}]+/u;
+
+/** Lowercase words; whitespace only separates them, so the raw text of a subtree gives what its collapsed text gives. */
 function words(text: string): string[] {
-  return text.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((w) => w.length > 0);
+  return text.toLowerCase().split(NON_WORD).filter((w) => w.length > 0);
 }
 
 /**
@@ -706,16 +731,26 @@ function words(text: string): string[] {
 function alignWithStructuredBody(body: VElement, current: VElement | null, articleBody: string): VElement | null {
   const target = words(articleBody);
   if (target.length < 80) return current;
-  const set = new Set<string>();
-  for (let i = 0; i + 2 < target.length; i++) set.add(target[i] + ' ' + target[i + 1] + ' ' + target[i + 2]);
+  // Word trigrams as one number each: the target's distinct words are numbered, and a trigram with any other word is
+  // in no set. Exact while the count cubed stays an integer a double holds; beyond that, the joined words.
+  const ids = new Map<string, number>();
+  for (const w of target) if (!ids.has(w)) ids.set(w, ids.size);
+  const n = ids.size;
+  const key = n < 200_000 ? (a: number, b: number, c: number): number | string => (a * n + b) * n + c : (a: number, b: number, c: number): number | string => a + ' ' + b + ' ' + c;
+  const set = new Set<number | string>();
+  for (let i = 0; i + 2 < target.length; i++) set.add(key(ids.get(target[i]!)!, ids.get(target[i + 1]!)!, ids.get(target[i + 2]!)!));
   if (set.size < 50) return current;
 
   const recallOf = (el: VElement): [number, number] => {
-    const w = words(textOf(el));
+    const w = words(rawText(el));
     let hit = 0;
-    const seen = new Set<string>();
+    const seen = new Set<number | string>();
     for (let i = 0; i + 2 < w.length; i++) {
-      const s = w[i] + ' ' + w[i + 1] + ' ' + w[i + 2];
+      const a = ids.get(w[i]!);
+      const b = ids.get(w[i + 1]!);
+      const c = ids.get(w[i + 2]!);
+      if (a === undefined || b === undefined || c === undefined) continue;
+      const s = key(a, b, c);
       if (set.has(s) && !seen.has(s)) {
         seen.add(s);
         hit++;
@@ -839,7 +874,7 @@ function prepare(root: VElement, flags: Flags): void {
       return false;
     }
     // A heading's id is a slug of its own words ("nav_relaxing-in-...") and says nothing about it.
-    const match = HEADINGS.has(tag) ? el.className.toLowerCase() : el.matchString;
+    const match = HEADINGS.has(tag) ? lowerCase(el.className) : el.matchString;
     if (match.length > 1 && el.textLen < Math.max(500, rootLen * 0.3)) {
       if (SHARE.test(match) && el.textLen < 500 || BOILERPLATE.test(match) && !MAYBE_CONTENT.test(match)) {
         el.skip = true;
@@ -861,7 +896,7 @@ function prepare(root: VElement, flags: Flags): void {
       return false;
     }
     // Negative words in a heading's class drop it, unless it anchors a section (an id that is not negative itself).
-    if ((tag === 'h1' || tag === 'h2') && classWeight(el, flags) < 0 && (el.id.length === 0 || NEGATIVE.test(el.id.toLowerCase()))) {
+    if ((tag === 'h1' || tag === 'h2') && classWeight(el, flags) < 0 && (el.id.length === 0 || NEGATIVE.test(lowerCase(el.id)))) {
       el.skip = true;
       return false;
     }
@@ -953,24 +988,34 @@ class Counts {
   figures = 0;
   figureText = 0;
   figureLink = 0;
+
+  reset(): void {
+    this.text = this.link = this.commas = this.p = this.img = this.li = this.input = this.protected = this.embeds = 0;
+    this.headingText = this.listText = this.textishText = this.figures = this.figureText = this.figureLink = 0;
+  }
 }
 
 function cleanConditionally(root: VElement, flags: Flags): void {
-  const visit = (el: VElement, inProtected: boolean): Counts => {
-    const c = new Counts();
+  // One `Counts` per depth, reused: a child's counts are folded into its parent's before the next child is visited.
+  const pool: Counts[] = [];
+  const visit = (el: VElement, inProtected: boolean, depth: number): Counts => {
+    const c = (pool[depth] ??= new Counts());
+    c.reset();
     const tag = el.tag;
     const isDataTable = tag === 'table' && isDataTableCached(el);
     // Footnote lists are link-heavy by nature; they are never clutter.
     const notes = isFootnotes(el);
     const protectedHere = inProtected || CODE_LIKE.has(tag) || isDataTable || notes;
-    for (const child of el.children) {
+    const children = el.children;
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i]!;
       if (child.kind === 0) {
         c.text += child.length;
         c.commas += child.commas;
         continue;
       }
       if (child.skip) continue;
-      const k = visit(child, protectedHere);
+      const k = visit(child, protectedHere, depth + 1);
       if (child.skip) continue;
       const ct = child.tag;
       c.text += k.text;
@@ -1001,7 +1046,7 @@ function cleanConditionally(root: VElement, flags: Flags): void {
     if (el !== root && CONDITIONAL.has(tag) && !inProtected && !notes && shouldRemove(el, c, flags)) el.skip = true;
     return c;
   };
-  visit(root, false);
+  visit(root, false, 0);
 }
 
 function shouldRemove(el: VElement, c: Counts, flags: Flags): boolean {

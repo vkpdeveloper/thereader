@@ -85,7 +85,9 @@ bool isPhrasing(VNode node) {
 
 /// Post-order: children were visited first, so their `containsBlock` is known.
 bool _hasBlockChild(VElement el) {
-  for (final child in el.children) {
+  final children = el.children;
+  for (var i = 0; i < children.length; i++) {
+    final child = children[i];
     if (child is VElement && (_blocks.contains(child.tag) || child.containsBlock)) return true;
   }
   return false;
@@ -97,7 +99,9 @@ void measure(VElement el) {
   var link = 0.0;
   var commas = 0;
   final isLink = el.tag == 'a';
-  for (final child in el.children) {
+  final children = el.children;
+  for (var i = 0; i < children.length; i++) {
+    final child = children[i];
     if (child is VText) {
       text += child.length;
       commas += child.commas;
@@ -821,7 +825,9 @@ void _resetMarks(VElement el) {
   el.skip = false;
   el.scored = false;
   el.score = 0;
-  for (final child in el.children) {
+  final children = el.children;
+  for (var i = 0; i < children.length; i++) {
+    final child = children[i];
     if (child is VElement) _resetMarks(child);
   }
 }
@@ -934,6 +940,25 @@ final _uiText = RegExp(
   caseSensitive: false,
 );
 
+/// The leading words of [_uiText]'s alternatives: a text it matches starts
+/// with one of them and then a character that is not an ASCII letter, or with
+/// a digit or `×`.
+const _uiWords = {
+  'text', 'caption', 'image', 'photo', 'photos', 'gallery', 'enlarge', 'view', 'advertisement', 'ad', 'sponsored', //
+  'share', 'tweet', 'email', 'print', 'copy', 'copied', 'loading', 'read', 'continue', 'subscribe', 'sign', 'follow',
+  'listen', 'save', 'bookmark', 'comment', 'comments', 'reply', 'related', 'you', 'recommended', 'more', 'skip', 'back',
+  'top', 'close', 'menu', 'toggle', 'show', 'load', 'see',
+};
+
+/// [_uiText], run only on text that starts like one of its alternatives.
+bool _isUiText(String text) {
+  final first = text.isEmpty ? -1 : text.codeUnitAt(0);
+  final possible = (first >= 0x30 && first <= 0x39) || first == 0xd7 || _uiWords.contains(leadingWord(text));
+  if (possible) return _uiText.hasMatch(text);
+  assert(!_uiText.hasMatch(text), 'UI text "$text"');
+  return false;
+}
+
 /// Names, affiliations and emails above the article's text (LaTeXML's `ltx_authors`, author lists too long for a
 /// byline): the byline's job, not a paragraph. No headings or prose inside, under 200 characters of text before it.
 bool _isAuthorBlock(VElement el, VElement root) {
@@ -1027,7 +1052,7 @@ void _prepare(VElement root, Flags flags) {
     if (el.textLen < 40 &&
         el.textLen > 0 &&
         (tag == 'p' || tag == 'div' || tag == 'span' || tag == 'a' || tag == 'li') &&
-        _uiText.hasMatch(textOf(el))) {
+        _isUiText(textOf(el))) {
       el.skip = true;
       return false;
     }

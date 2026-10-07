@@ -15,58 +15,60 @@ final class VText extends VNode {
 
   String text;
 
-  /// Cached [visibleLength] of [text]; -1 until first asked.
-  int _len = -1;
-  int _commaCount = 0;
-  bool _texMarks = false;
+  /// Cached [visibleLength] of [text] (low 32 bits), commas (the next 30)
+  /// and TeX marks (bit 62) in one field; -1 until first asked.
+  int _stats = -1;
 
-  int get length {
-    if (_len < 0) _scan();
-    return _len;
-  }
+  int get _scanned => _stats >= 0 ? _stats : _scan();
 
-  int get commas {
-    if (_len < 0) _scan();
-    return _commaCount;
-  }
+  int get length => _scanned & 0xffffffff;
+
+  int get commas => (_scanned >> 32) & 0x3fffffff;
 
   /// Whether [text] holds a `$` or a `\` (every TeX delimiter starts with
   /// one), found in the pass that counts commas.
-  bool get texMarks {
-    if (_len < 0) _scan();
-    return _texMarks;
-  }
+  bool get texMarks => (_scanned >> 62) & 1 == 1;
 
-  void _scan() {
-    _len = visibleLength(text);
-    if (_len == 0) return;
+  /// [visibleLength], commas and TeX marks in one pass.
+  int _scan() {
+    final text = this.text;
     var n = 0;
+    var space = true;
+    var commas = 0;
     var tex = false;
     for (var i = 0; i < text.length; i++) {
       final c = text.codeUnitAt(i);
+      if (c == 32 || c == 10 || c == 9 || c == 13 || c == 12) {
+        if (!space) {
+          n++;
+          space = true;
+        }
+        continue;
+      }
+      n++;
+      space = false;
       if (c == 0x24 || c == 0x5c) {
         tex = true;
-      } else if (_isComma(c)) {
-        n++;
+      } else if (c == 0x2c || c >= 0x60c && _isComma(c)) {
+        commas++;
       }
     }
-    _commaCount = n;
-    _texMarks = tex;
+    final length = space && n > 0 ? n - 1 : n;
+    assert(length == visibleLength(text) && length < 1 << 30);
+    return _stats = length | commas << 32 | (tex ? 1 << 62 : 0);
   }
 }
 
 final class VElement extends VNode {
-  VElement(this.tag, this.attrs)
-    : className = attrs['class'] ?? '',
-      id = attrs['id'] ?? '',
-      matchString = jsLower('${attrs['class'] ?? ''} ${attrs['id'] ?? ''}');
+  VElement(this.tag, this.attrs) : className = attrs['class'] ?? '', id = attrs['id'] ?? '';
 
   String tag;
   Map<String, String> attrs;
   List<VNode> children = [];
 
-  /// Lowercase class + id, for pattern matching.
-  final String matchString;
+  /// Lowercase class + id, for pattern matching (computed when first asked:
+  /// most elements are never matched).
+  late final String matchString = className.isEmpty && id.isEmpty ? ' ' : jsLower('$className $id');
   final String className;
   final String id;
 
@@ -81,25 +83,56 @@ final class VElement extends VNode {
 
   /// Readability-style content score, valid while [scored].
   double score = 0;
-  bool scored = false;
+  bool get scored => _flag(_scored);
+  set scored(bool value) => _setFlag(_scored, value);
 
   /// Excluded from scoring and output (boilerplate, hidden).
-  bool skip = false;
+  bool get skip => _flag(_skip);
+  set skip(bool value) => _setFlag(_skip, value);
 
   /// Cached: has a block-level descendant (-1 unknown, 0 no, 1 yes).
-  int blockState = -1;
+  int get blockState => _state(_blockShift);
+  set blockState(int value) => _setState(_blockShift, value);
 
   /// Cached: data table (-1 unknown, 0 layout, 1 data).
-  int tableState = -1;
+  int get tableState => _state(_tableShift);
+  set tableState(int value) => _setState(_tableShift, value);
 
   /// Cached: footnote list container (-1 unknown, 0 no, 1 yes).
-  int notesState = -1;
+  int get notesState => _state(_notesShift);
+  set notesState(int value) => _setState(_notesShift, value);
 
   /// Cached `isContentFrame` (-1 unknown, 0 no, 1 yes); the TypeScript engine recomputes it.
-  int frameState = -1;
+  int get frameState => _state(_frameShift);
+  set frameState(int value) => _setState(_frameShift, value);
 
   /// Set by content normalization: has a block-level descendant.
-  bool containsBlock = false;
+  bool get containsBlock => _flag(_containsBlock);
+  set containsBlock(bool value) => _setFlag(_containsBlock, value);
+
+  // The flags and cached states above, packed into one field (there is an
+  // element per tag of the page): a bit per flag, two bits per state holding
+  // the state + 1.
+  int _bits = 0;
+
+  static const _scored = 1 << 0;
+  static const _skip = 1 << 1;
+  static const _containsBlock = 1 << 2;
+  static const _blockShift = 3;
+  static const _tableShift = 5;
+  static const _notesShift = 7;
+  static const _frameShift = 9;
+
+  bool _flag(int bit) => _bits & bit != 0;
+
+  void _setFlag(int bit, bool value) => _bits = value ? _bits | bit : _bits & ~bit;
+
+  int _state(int shift) => ((_bits >> shift) & 3) - 1;
+
+  void _setState(int shift, int value) {
+    assert(value >= -1 && value <= 1);
+    _bits = (_bits & ~(3 << shift)) | ((value + 1) << shift);
+  }
 
   String? attr(String name) => attrs[name];
 
@@ -232,7 +265,9 @@ String rawText(VNode node) {
 }
 
 void _rawText(VElement el, StringBuffer out) {
-  for (final child in el.children) {
+  final children = el.children;
+  for (var i = 0; i < children.length; i++) {
+    final child = children[i];
     if (child is VText) {
       out.write(child.text);
     } else if (!(child as VElement).skip) {

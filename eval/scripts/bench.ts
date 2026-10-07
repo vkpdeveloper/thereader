@@ -105,9 +105,18 @@ if (!skip.has('dart')) {
     engine: 'dart',
     label: 'Dart',
     runtime: `Dart ${data.version} ${data.mode}, package:html`,
-    memoryNote: 'not measured per page (the Dart VM exposes no heap counter to programs); the process peak RSS is reported',
+    memoryNote: 'not measured per page here (the Dart VM exposes no heap counter to programs; packages/truffle_dart/tool/bench_memory.dart samples it through the VM service); the process peak RSS is reported',
     maxRss: data.maxRss,
-    rows: data.rows,
+    // tool/bench.dart's phases: parse (package:html), convert (fromDocument), engine (extractTree), markdown.
+    rows: data.pages.map((p: { key: string; bytes: number; parse: number; convert: number; engine: number; markdown: number }) => ({
+      key: p.key,
+      bytes: p.bytes,
+      parseMs: p.parse,
+      treeMs: p.convert,
+      extractMs: p.engine,
+      markdownMs: p.markdown,
+      totalMs: p.parse + p.convert + p.engine + p.markdown,
+    })),
   });
 }
 

@@ -1,6 +1,11 @@
-import { memo, useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { memo, useCallback, useEffect, useRef, useState, type DragEvent as ReactDragEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { AddArticleDialog } from '../components/AddArticleDialog';
+import { BookcaseTile } from '../components/categories/Bookcase';
+import { categoryActions, useDeleteCategory } from '../components/categories/categoryActions';
+import { useCategoryDialog } from '../components/categories/CategoryDialog';
+import { articleRef, bookRef, droppedItem, startItemDrag, useCategoryContents } from '../components/categories/model';
+import type { Category } from '../lib/categories';
 import { ArticleRow, ArticleThumb } from '../components/ArticleRow';
 import { CoverArt } from '../components/CoverArt';
 import { IconButton, QuietButton } from '../components/buttons';
@@ -55,7 +60,7 @@ const isUnfinished = (fraction: number | null) => (fraction ?? 0) < 0.995;
 const importExtensions = /\.(epub|mobi|azw3?|prc)$/i;
 
 /** Mobile breakpoints (2/3/4/5 by width) measured on the content column, plus 6 on wide desktops. */
-function columnsFor(width: number): number {
+export function columnsFor(width: number): number {
   if (width >= 1100) return 6;
   if (width >= 860) return 5;
   if (width >= 560) return 4;
@@ -87,6 +92,9 @@ export function LibraryScreen() {
   const [addArticle, setAddArticle] = useState<{ open: boolean; url: string }>({ open: false, url: '' });
   const { info: storage } = useStorageInfo();
   const importingRef = useRef(false);
+  const contents = useCategoryContents();
+  const filing = useCategoryDialog();
+  const deletion = useDeleteCategory();
 
   /** Local copy, then straight to the book page; the upload is queued, not awaited. */
   const importFiles = async (files: File[]) => {
@@ -184,19 +192,36 @@ export function LibraryScreen() {
   // Stable across renders so memoised tiles don't re-render for unrelated changes.
   const showMenu = menu.show;
   const askRemove = removal.ask;
+  const fileMenu = filing.menuItems;
   const openMenu = useCallback(
     (entry: LibraryEntry, at: MenuPoint) => {
-      showMenu({ ...at, label: entry.book.title, items: entryActions(services, entry, navigate, askRemove) });
+      const filingItems = fileMenu({ ...bookRef(entry), title: entry.book.title });
+      showMenu({ ...at, label: entry.book.title, items: entryActions(services, entry, navigate, askRemove, filingItems) });
     },
-    [services, navigate, showMenu, askRemove],
+    [services, navigate, showMenu, askRemove, fileMenu],
   );
   const askRemoveArticle = articleRemoval.ask;
   const openArticleMenu = useCallback(
     (article: ArticleSummary, at: MenuPoint) => {
-      showMenu({ ...at, label: article.title, items: articleActions(article, navigate, askRemoveArticle, toast.show) });
+      const filingItems = fileMenu({ ...articleRef(article), title: article.title });
+      showMenu({ ...at, label: article.title, items: articleActions(article, navigate, askRemoveArticle, toast.show, filingItems) });
     },
-    [navigate, showMenu, askRemoveArticle, toast.show],
+    [navigate, showMenu, askRemoveArticle, toast.show, fileMenu],
   );
+  const openCategoryMenu = (category: Category, e: ReactMouseEvent) =>
+    showMenu({
+      ...menuPoint(e),
+      label: category.name,
+      items: categoryActions(category, {
+        open: () => void navigate({ to: '/library/category/$id', params: { id: category.id } }),
+        edit: filing.edit,
+        askDelete: deletion.ask,
+      }),
+    });
+  const dropOnCategory = (category: Category, e: ReactDragEvent) => {
+    const item = droppedItem(e);
+    if (item) void filing.file(item, category.id);
+  };
   const openAddArticle = () => setAddArticle({ open: true, url: '' });
 
   const header = (
@@ -246,7 +271,10 @@ export function LibraryScreen() {
     );
   }
 
-  const all = [...lib.entries].sort((a, b) => b.addedAt.localeCompare(a.addedAt));
+  const everything = [...lib.entries].sort((a, b) => b.addedAt.localeCompare(a.addedAt));
+  // Filed items live in their category; the home shows the rest.
+  const all = everything.filter((e) => !contents.isFiled(bookRef(e)));
+  const looseArticles = articles.items.filter((a) => !contents.isFiled(articleRef(a)));
   const book = lib.continueReading[0];
   const article = articles.items
     .filter((a) => a.lastOpenedAt != null && isUnfinished(a.progress))
@@ -262,9 +290,9 @@ export function LibraryScreen() {
           : [];
   const shownArticles =
     filter === 'all' || filter === 'articles'
-      ? articles.items
+      ? looseArticles
       : filter === 'inProgress'
-        ? articles.items.filter((a) => a.lastOpenedAt != null && isUnfinished(a.progress))
+        ? looseArticles.filter((a) => a.lastOpenedAt != null && isUnfinished(a.progress))
         : [];
   const shownCount = shown.length + shownArticles.length;
   const countNoun = filter === 'articles' ? (shownCount === 1 ? 'article' : 'articles') : shownCount === 1 ? 'item' : 'items';
@@ -277,7 +305,7 @@ export function LibraryScreen() {
     <div className="page-wide library">
       {input}
       {header}
-      {all.length === 0 && articles.items.length === 0 ? (
+      {everything.length === 0 && articles.items.length === 0 ? (
         <StateMessage
           title="Nothing here yet."
           body="Browse the library and download a book, import an EPUB or MOBI with the upload button, or save any article from a link with the plus button. You can also drop a book file or paste a link onto this page. Everything is kept on this device for offline reading."
@@ -288,6 +316,30 @@ export function LibraryScreen() {
       ) : (
         <>
           {continueArticle ? <ContinueArticle article={continueArticle} /> : book && <ContinueReading entry={book} />}
+          {contents.categories.length > 0 && (
+            <section className="library-categories" aria-labelledby="categories-eyebrow">
+              <div className="library-categories-head">
+                <Eyebrow as="h2" id="categories-eyebrow">
+                  Categories
+                </Eyebrow>
+                <button type="button" className="library-categories-new" onClick={filing.create}>
+                  <AddIcon size={14} />
+                  New category
+                </button>
+              </div>
+              <div className="bookcases">
+                {contents.categories.map((c) => (
+                  <BookcaseTile
+                    key={c.id}
+                    category={c}
+                    items={contents.items.get(c.id) ?? []}
+                    onMenu={openCategoryMenu}
+                    onDropItem={dropOnCategory}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
           <div className="library-filters">
             <div className="filter-links" role="group" aria-label="Filter library">
               {filters.map((f) => (
@@ -327,6 +379,11 @@ export function LibraryScreen() {
                 actionLabel="Add article from link"
                 onAction={openAddArticle}
               />
+            ) : filter === 'all' ? (
+              <StateMessage
+                title="Everything is filed."
+                body="All your books and articles are in categories. New downloads, imports and saved articles show up here."
+              />
             ) : (
               <StateMessage title="Nothing matches." body="Try another filter." />
             )
@@ -365,17 +422,20 @@ export function LibraryScreen() {
       <ContextMenu request={menu.request} onClose={menu.close} />
       {removal.dialog}
       {articleRemoval.dialog}
+      {filing.dialog}
+      {deletion.dialog}
       {addDialog}
     </div>
   );
 }
 
 /** Actions for a saved article (context menu, long press and its ⋯ button). */
-function articleActions(
+export function articleActions(
   article: ArticleSummary,
   navigate: ReturnType<typeof useNavigate>,
   askRemove: (article: ArticleSummary) => void,
   notify: (message: string) => void,
+  filing: MenuItem[] = [],
 ): MenuItem[] {
   return [
     {
@@ -399,16 +459,18 @@ function articleActions(
           () => notify("Couldn't copy the link."),
         ),
     },
+    ...filing.map((item, i) => (i === 0 ? { ...item, separated: true } : item)),
     { label: 'Remove article…', icon: DeleteOutlineIcon, danger: true, separated: true, onSelect: () => askRemove(article) },
   ];
 }
 
 /** Actions for a library book: the same ones its tile and book page offer. */
-function entryActions(
+export function entryActions(
   services: AppServices,
   entry: LibraryEntry,
   navigate: ReturnType<typeof useNavigate>,
   askRemove: (entry: LibraryEntry) => void,
+  filing: MenuItem[] = [],
 ): MenuItem[] {
   const d = entry.download;
   const items: MenuItem[] = [];
@@ -431,6 +493,7 @@ function entryActions(
       onSelect: () => void services.library.downloadEntry(entry.id),
     });
   }
+  items.push(...filing.map((item, i) => (i === 0 ? { ...item, separated: true } : item)));
   if (canRemove(services, entry)) {
     items.push({ label: `${removeLabel}…`, icon: DeleteOutlineIcon, danger: true, separated: true, onSelect: () => askRemove(entry) });
   }
@@ -483,7 +546,7 @@ function ContinueArticle({ article }: { article: ArticleSummary }) {
 
 const longPressMs = 500;
 
-const GridItem = memo(function GridItem({
+export const GridItem = memo(function GridItem({
   entry,
   readable,
   onMenu,
@@ -561,6 +624,7 @@ const GridItem = memo(function GridItem({
       onPointerUp={cancelPress}
       onPointerCancel={cancelPress}
       onClickCapture={onClickCapture}
+      onDragStart={(e) => startItemDrag(e, { ...bookRef(entry), title: entry.book.title })}
     >
       <Link {...(readable ? readLink(entry) : bookLink(entry))} className="grid-link" aria-label={label}>
         <div className="grid-cover">

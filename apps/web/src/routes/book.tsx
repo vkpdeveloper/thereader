@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
+import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
+import { hueStyle } from '../components/categories/Bookcase';
+import { useCategoryDialog } from '../components/categories/CategoryDialog';
+import { bookRef } from '../components/categories/model';
 import { CoverArt } from '../components/CoverArt';
 import { IconButton, QuietButton } from '../components/buttons';
-import { ArrowBackIcon, ArrowDownwardIcon, CheckIcon, CloseIcon, DeleteOutlineIcon } from '../components/icons';
+import { ArrowBackIcon, ArrowDownwardIcon, CheckIcon, CloseIcon, DeleteOutlineIcon, MoveToFolderIcon, NewFolderIcon } from '../components/icons';
 import { hasOpenOverlay } from '../components/overlay';
 import { canRemove, removeLabel, useRemoveBook } from '../components/RemoveBook';
 import { RichText } from '../components/RichText';
@@ -123,6 +126,10 @@ function BookDetail({
 }) {
   const services = useServices();
   const removal = useRemoveBook();
+  const filing = useCategoryDialog();
+  // Observed so the category chip and button follow filing.
+  useStore(services.categories);
+  const category = entry ? services.categories.categoryOf(bookRef(entry)) : null;
   const current = entry?.book ?? book;
   const d = entry?.download ?? emptyDownload;
   const origin = entry?.origin ?? services.settings.currentOrigin();
@@ -131,9 +138,20 @@ function BookDetail({
   return (
     <div className="book-page">
       {topBar(
-        canRemove(services, entry) ? (
-          <IconButton icon={DeleteOutlineIcon} label={removeLabel} tone="muted" tooltipSide="left" onClick={() => removal.ask(entry)} />
-        ) : null,
+        <>
+          {entry && (
+            <IconButton
+              icon={category ? MoveToFolderIcon : NewFolderIcon}
+              label={category ? 'Move to category…' : 'Add to category…'}
+              tone="muted"
+              tooltipSide="left"
+              onClick={() => filing.addTo({ ...bookRef(entry), title: entry.book.title })}
+            />
+          )}
+          {canRemove(services, entry) && (
+            <IconButton icon={DeleteOutlineIcon} label={removeLabel} tone="muted" tooltipSide="left" onClick={() => removal.ask(entry)} />
+          )}
+        </>,
       )}
       <article className="book-layout">
         <div className="book-cover">
@@ -143,6 +161,12 @@ function BookDetail({
           <h1 className="t-display-sm book-title">{current.title}</h1>
           <p className="t-body-lg book-author">{current.author}</p>
           <div className="tag-row">
+            {category && (
+              <Link to="/library/category/$id" params={{ id: category.id }} className="category-chip" style={hueStyle(category.color)}>
+                <span className="category-dot" />
+                {category.name}
+              </Link>
+            )}
             {current.subjects.map((s) => (
               <Tag key={s}>{s}</Tag>
             ))}
@@ -168,6 +192,7 @@ function BookDetail({
         </div>
       </article>
       {removal.dialog}
+      {filing.dialog}
     </div>
   );
 }

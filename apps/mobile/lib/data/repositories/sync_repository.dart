@@ -7,17 +7,20 @@ import 'package:flutter/widgets.dart';
 import '../api/api_client.dart';
 import '../models/article_summary.dart';
 import '../models/book.dart';
+import '../models/category.dart';
 import '../models/highlight.dart';
 import '../models/library.dart';
 import '../storage/key_value_store.dart';
 import 'article_repository.dart';
+import 'category_repository.dart';
 import 'highlight_repository.dart';
 import 'library_repository.dart';
 import 'settings_repository.dart';
 
 /// One personal cloud profile, with an origin-scoped durable outbox. Device
 /// identifiers deduplicate reading sessions; they are not authentication.
-/// Books, reading progress and sessions, highlights and articles sync; reader
+/// Books, reading progress and sessions, highlights, articles and categories
+/// sync; reader
 /// settings (theme, typeface, sizes) stay on the device that set them.
 ///
 /// The API runs on a metered free tier, so traffic follows one schedule: a
@@ -33,6 +36,7 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
     required this.settings,
     this.highlights,
     this.articles,
+    this.categories,
     ApiClient Function(String)? clientFactory,
     bool Function(String)? isUploadPending,
     this.pollInterval = syncInterval,
@@ -69,6 +73,9 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
   /// Same for articles, against a server without article sync.
   static const articlesRetry = Duration(hours: 6);
 
+  /// Same for categories, against a server without category sync.
+  static const categoriesRetry = Duration(hours: 6);
+
   /// Article documents uploaded per cycle; the rest wait for the next one.
   static const articleUploadsPerCycle = 5;
 
@@ -77,6 +84,9 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
 
   /// Article changes use a sentinel edition; the article is `articleId`.
   static const _articlesBookId = '_articles';
+
+  /// Category and assignment changes use their own sentinel edition.
+  static const _categoriesBookId = '_categories';
   static final _articleImage = RegExp(r'^(?:https?://|data:image/)\S+$', caseSensitive: false);
   static final _articleUrl = RegExp(r'^https?://\S+$', caseSensitive: false);
 
@@ -85,6 +95,7 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
   final SettingsRepository settings;
   final HighlightRepository? highlights;
   final ArticleRepository? articles;
+  final CategoryRepository? categories;
   final ApiClient Function(String) _clientFactory;
   final bool Function(String) _isUploadPending;
   final Duration pollInterval;
@@ -198,6 +209,7 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
     settings.addListener(_capture);
     highlights?.addListener(_capture);
     articles?.addListener(_capture);
+    categories?.addListener(_capture);
     WidgetsBinding.instance.addObserver(this);
     _capture();
     await _persist();
@@ -246,6 +258,7 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
     }
     if (_captureHighlights(origin, state)) changed = true;
     if (_captureArticles(state)) changed = true;
+    if (_captureCategories(state)) changed = true;
     if (changed) {
       unawaited(_persist());
       requestSync();
@@ -338,9 +351,12 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
     return changed;
   }
 
-  Map<String, dynamic> _articleChange(String kind, DateTime updatedAt, Map<String, dynamic> payload) => {
+  Map<String, dynamic> _articleChange(String kind, DateTime updatedAt, Map<String, dynamic> payload) =>
+      _sentinelChange(_articlesBookId, kind, updatedAt, payload);
+
+  Map<String, dynamic> _sentinelChange(String bookId, String kind, DateTime updatedAt, Map<String, dynamic> payload) => {
     'id': _uuid(),
-    'bookId': _articlesBookId,
+    'bookId': bookId,
     'sha256': '0' * 64,
     'kind': kind,
     'updatedAt': updatedAt.toUtc().toIso8601String(),
@@ -348,6 +364,59 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
   };
 
   static bool _isArticleKind(Object? kind) => kind == 'article' || kind == 'articleProgress';
+
+  static bool _isCategoryKind(Object? kind) => kind == 'category' || kind == 'categoryItem';
+
+  /// Categories (with their tombstones) and assignments (with removals),
+  /// each queued once per edit. An item whose id the API cannot take stays
+  /// on this device.
+  bool _captureCategories(_OriginState state) {
+    final store = categories;
+    if (store == null || !store.loaded) return false;
+    var changed = false;
+    for (final r in store.records) {
+      final key = 'category:${r.id}';
+      final stamp = _categoryStamp(r);
+      if (state.seen[key] == stamp) continue;
+      state.seen[key] = stamp;
+      state.pending[key] = _sentinelChange(_categoriesBookId, 'category', r.updatedAt, categoryPayload(r));
+      changed = true;
+    }
+    for (final a in store.assignments) {
+      if (!CategoryRepository.syncableItem(a.item)) continue;
+      final key = 'categoryItem:${a.item.key}';
+      final stamp = _assignmentStamp(a);
+      if (state.seen[key] == stamp) continue;
+      state.seen[key] = stamp;
+      state.pending[key] = _sentinelChange(_categoriesBookId, 'categoryItem', a.updatedAt, categoryItemPayload(a));
+      changed = true;
+    }
+    return changed;
+  }
+
+  static String _categoryStamp(CategoryRecord r) =>
+      '${r.deleted ? 'deleted' : 'live'}:${r.updatedAt.toUtc().toIso8601String()}';
+
+  static String _assignmentStamp(CategoryAssignment a) =>
+      '${a.categoryId}:${a.updatedAt.toUtc().toIso8601String()}';
+
+  /// A `category` change payload (docs/categories.md).
+  static Map<String, dynamic> categoryPayload(CategoryRecord r) => r.deleted
+      ? {'categoryId': r.id, 'deleted': true}
+      : {
+          'categoryId': r.id,
+          'name': r.name,
+          'color': r.color,
+          'createdAt': r.createdAt.toUtc().toIso8601String(),
+          'deleted': false,
+        };
+
+  /// A `categoryItem` change payload; a null `categoryId` is a removal.
+  static Map<String, dynamic> categoryItemPayload(CategoryAssignment a) => {
+    'itemType': a.item.type.name,
+    'itemId': a.item.id,
+    'categoryId': a.categoryId,
+  };
 
   /// Whether an article syncs: one whose document exceeds the upload limit,
   /// or whose URL the API cannot take, stays on this device.
@@ -653,6 +722,9 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
     var withArticles =
         articles != null &&
         state.articlesUnsupportedUntil?.isAfter(_now()) != true;
+    var withCategories =
+        categories != null &&
+        state.categoriesUnsupportedUntil?.isAfter(_now()) != true;
     try {
       // Bound both count and encoded body; huge locator payloads must not block
       // every other queued change behind the API's request-size limit.
@@ -661,7 +733,9 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
       for (final item in state.pending.entries) {
         final value = Map<String, dynamic>.from(item.value);
         if (value['kind'] == 'highlight' && !withHighlights) continue;
-        if (_isArticleKind(value['kind'])) {
+        if (_isCategoryKind(value['kind'])) {
+          if (!withCategories) continue;
+        } else if (_isArticleKind(value['kind'])) {
           if (!withArticles) continue;
         } else {
           final entry = library.entries
@@ -690,18 +764,23 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
             changes: submitted.values.toList(),
             highlightsSince: withHighlights ? state.highlightCursor ?? 0 : null,
             articlesSince: withArticles ? state.articleCursor ?? 0 : null,
+            categoriesSince: withCategories ? state.categoryCursor ?? 0 : null,
           );
           break;
         } on ApiException catch (e) {
-          if (!(withHighlights || withArticles) ||
+          if (!(withHighlights || withArticles || withCategories) ||
               e.statusCode != 400 ||
               e.code != 'INVALID_SYNC') {
             rethrow;
           }
-          // A server without article (or highlight) sync rejects the whole
-          // atomic batch. Keep everything else syncing and try that part
-          // again later: articles first, as the newer feature.
-          if (withArticles) {
+          // A server without category, article (or highlight) sync rejects
+          // the whole atomic batch. Keep everything else syncing and try that
+          // part again later: the newest feature first.
+          if (withCategories) {
+            withCategories = false;
+            state.categoriesUnsupportedUntil = _now().add(categoriesRetry);
+            submitted.removeWhere((_, v) => _isCategoryKind(v['kind']));
+          } else if (withArticles) {
             withArticles = false;
             state.articlesUnsupportedUntil = _now().add(articlesRetry);
             submitted.removeWhere((_, v) => _isArticleKind(v['kind']));
@@ -827,6 +906,10 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
         if (withArticles && pulledArticles is Map) {
           await _applyArticles(state, pulledArticles);
         }
+        final pulledCategories = response['categories'];
+        if (withCategories && pulledCategories is Map) {
+          await _applyCategories(state, pulledCategories);
+        }
       } finally {
         _applying = false;
       }
@@ -844,7 +927,8 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
           submitted.length == 100 ||
           bytes > 200 * 1024 ||
           (withHighlights && (response['highlights'] as Map?)?['more'] == true) ||
-          (withArticles && (response['articles'] as Map?)?['more'] == true);
+          (withArticles && (response['articles'] as Map?)?['more'] == true) ||
+          (withCategories && (response['categories'] as Map?)?['more'] == true);
       if (withArticles && origin == _origin) {
         unawaited(articles!.prefetch(articlePrefetchPerCycle).catchError((Object _) {}));
       }
@@ -964,6 +1048,55 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
     }
     final cursor = pulled['cursor'];
     if (cursor is num) state.articleCursor = cursor.toInt();
+  }
+
+  /// Stores categories and assignments changed on other devices and advances
+  /// the pull cursor. Rows that fail to parse are skipped; the cursor still
+  /// moves past them.
+  Future<void> _applyCategories(_OriginState state, Map pulled) async {
+    final store = categories!;
+    final remote = <CategoryRecord>[];
+    for (final raw in (pulled['items'] as List?) ?? const []) {
+      try {
+        final row = (raw as Map).cast<String, dynamic>();
+        final id = row['id'];
+        if (id is! String || id.isEmpty) continue;
+        final updatedAt = DateTime.parse(row['updatedAt'] as String);
+        remote.add(
+          CategoryRecord(
+            id: id,
+            name: row['name'] as String? ?? '',
+            color: row['color'] as String? ?? CategoryColor.gray.name,
+            createdAt: DateTime.tryParse(row['createdAt'] as String? ?? '') ?? updatedAt,
+            updatedAt: updatedAt,
+            deleted: row['deleted'] == true,
+          ),
+        );
+      } catch (_) {
+        continue;
+      }
+    }
+    final assigned = <CategoryAssignment>[];
+    for (final raw in (pulled['assignments'] as List?) ?? const []) {
+      try {
+        final parsed = CategoryAssignment.fromJson((raw as Map).cast());
+        if (parsed != null) assigned.add(parsed);
+      } catch (_) {
+        continue;
+      }
+    }
+    await store.applyRemote(categories: remote, assignments: assigned);
+    // Matching copies need no upload; a newer local edit stays queued.
+    for (final r in remote) {
+      final local = store.recordFor(r.id);
+      if (local != null && local.sameAs(r)) state.seen['category:${r.id}'] = _categoryStamp(local);
+    }
+    for (final a in assigned) {
+      final local = store.assignmentFor(a.item);
+      if (local != null && local.sameAs(a)) state.seen['categoryItem:${a.item.key}'] = _assignmentStamp(local);
+    }
+    final cursor = pulled['cursor'];
+    if (cursor is num) state.categoryCursor = cursor.toInt();
   }
 
   static RemoteArticle? _parseRemoteArticle(Object? raw) {
@@ -1118,6 +1251,7 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
     settings.removeListener(_capture);
     highlights?.removeListener(_capture);
     articles?.removeListener(_capture);
+    categories?.removeListener(_capture);
     WidgetsBinding.instance.removeObserver(this);
     _next?.cancel();
     _flushTimer?.cancel();
@@ -1169,6 +1303,12 @@ class _OriginState {
   /// Set when the server rejected article sync (not yet deployed).
   DateTime? articlesUnsupportedUntil;
 
+  /// Server category rev already pulled; null means never pulled.
+  int? categoryCursor;
+
+  /// Set when the server rejected category sync (not yet deployed).
+  DateTime? categoriesUnsupportedUntil;
+
   /// Article documents this device saved and still has to upload: id to
   /// SHA-256.
   final Map<String, String> articleUploads = {};
@@ -1189,6 +1329,11 @@ class _OriginState {
           .toUtc()
           .toIso8601String(),
     if (articleUploads.isNotEmpty) 'articleUploads': articleUploads,
+    if (categoryCursor != null) 'categoryCursor': categoryCursor,
+    if (categoriesUnsupportedUntil != null)
+      'categoriesUnsupportedUntil': categoriesUnsupportedUntil!
+          .toUtc()
+          .toIso8601String(),
   };
   _OriginState();
   factory _OriginState.fromJson(Map<String, dynamic> json) {
@@ -1220,6 +1365,10 @@ class _OriginState {
     state.articleCursor = (json['articleCursor'] as num?)?.toInt();
     state.articlesUnsupportedUntil = DateTime.tryParse(
       json['articlesUnsupportedUntil'] as String? ?? '',
+    );
+    state.categoryCursor = (json['categoryCursor'] as num?)?.toInt();
+    state.categoriesUnsupportedUntil = DateTime.tryParse(
+      json['categoriesUnsupportedUntil'] as String? ?? '',
     );
     state.articleUploads.addAll(
       ((json['articleUploads'] as Map?) ?? const {}).cast<String, String>(),

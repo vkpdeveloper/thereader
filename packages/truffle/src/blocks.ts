@@ -2,9 +2,11 @@ import { isCallout, isDataTableCached, isFootnotes } from './content';
 import { detectLanguage, languageFromClass, normalizeLanguage } from './languages';
 import { frameBlock, imageFrom, isDecorativeImage, isSmallImage, lazyVideo, mediaFromElement, socialProvider, TWEET } from './media';
 import type { Block, Callout, Definition, Figure, Footnote, Image, Inline, ListItem, Mark, Table, TableCell, TableRow, TextRun } from './model';
-import { collapse, firstElement, rawText, walk, type VElement, type VNode } from './tree';
+import { collapse, collapseSpaces, firstElement, lowerCase, rawText, walk, type VElement, type VNode } from './tree';
 import { resolveHttp, resolveUrl } from './url';
 
+/** `$$`, `\\(` or `\\[` somewhere in the text: one scan rather than three searches. */
+const TEX_DELIMITER = /\$\$|\\[([]/;
 /** $$…$$ display TeX: the delimiters of `texMatches` that start with a dollar. */
 const TEX_DOLLARS = /\$\$([^$]+?)\$\$/g;
 /** The same plus $…$ inline, for pages that show they use TeX (never "$5 and $10"). */
@@ -102,13 +104,28 @@ const CODE_CHROME = /(?:^|[\s_-])(?:code-toolbar|toolbar|code-language|code-lang
 const LINE_ELEMENT = /(?:^|[\s_-])(?:line|code-line|cm-line|ec-line|token-line|highlight-line|view-line|line-content)(?:$|[\s_-])/;
 const ABSOLUTE = /position\s*:\s*absolute/i;
 const PULL_QUOTE = /(?:^|[\s_-])(?:pullquote|pull-quote|wp-block-pullquote|pull_quote|blockquote--pull)(?:$|[\s_-])/;
+/** Wikipedia's fallback image for a formula (the formula is read from its MathML). */
+const MATH_FALLBACK_IMAGE = /mwe-math-fallback-image/;
+const FOOTNOTE_CLASS = /(?:^|\s)footnote(?:\s|$)/;
+/** Schemes a link keeps on its text. */
+const LINK_SCHEME = /^(?:https?|mailto|tel):/i;
+const PERMALINK_GLYPH = /^[#¶§🔗]?$/u;
+const BOLD_STYLE = /font-weight\s*:\s*(?:bold|[6-9]00)/i;
+const ITALIC_STYLE = /font-style\s*:\s*italic/i;
 /** Zero-width characters, and private-use code points (icon-font glyphs that show as boxes without their font). */
 const ZERO_WIDTH = /[\u200b\ufeff\u2060\ue000-\uf8ff]/g;
-const SPACES = /[\t\n\f\r ]+/g;
+/** Anything but HTML whitespace. */
+const VISIBLE = /[^\t\n\f\r ]/;
 
 interface Ctx {
   marks: Mark[];
   href: string | null;
+  /** `marks` in model order, made on first use and shared by the runs in this context (nothing mutates them). */
+  sorted: Mark[] | null;
+}
+
+function context(marks: Mark[], href: string | null): Ctx {
+  return { marks, href, sorted: null };
 }
 
 /** Builds inline content with whitespace normalized the way a browser renders it. */
@@ -144,10 +161,10 @@ class InlineBuilder {
         last.text += ' ';
       }
     }
-    if (this.breaks > 0 && text.replace(SPACES, '').length === 0) return;
+    if (this.breaks > 0 && !VISIBLE.test(text)) return;
     this.breaks = 0;
     const run: TextRun = { type: 'text', text };
-    if (ctx.marks.length > 0) run.marks = sortMarks(ctx.marks);
+    if (ctx.marks.length > 0) run.marks = ctx.sorted ??= sortMarks(ctx.marks);
     if (ctx.href !== null) run.href = ctx.href;
     this.nodes.push(run);
   }
@@ -227,10 +244,12 @@ function sortMarks(marks: Mark[]): Mark[] {
 
 function sameFormat(a: TextRun, b: TextRun): boolean {
   if (a.href !== b.href) return false;
-  const am = a.marks ?? [];
-  const bm = b.marks ?? [];
-  if (am.length !== bm.length) return false;
-  for (let i = 0; i < am.length; i++) if (am[i] !== bm[i]) return false;
+  const am = a.marks;
+  const bm = b.marks;
+  // No marks and an empty list are the same.
+  const n = am === undefined ? 0 : am.length;
+  if (n !== (bm === undefined ? 0 : bm.length)) return false;
+  for (let i = 0; i < n; i++) if (am![i] !== bm![i]) return false;
   return true;
 }
 
@@ -238,9 +257,10 @@ function sameFormat(a: TextRun, b: TextRun): boolean {
 export function normalizeInlines(nodes: Inline[]): Inline[] {
   const out: Inline[] = [];
   let spaceBefore = true;
-  for (const node of nodes) {
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i]!;
     if (node.type === 'text') {
-      let text = node.text.replace(SPACES, ' ');
+      let text = collapseSpaces(node.text);
       if (spaceBefore && text.charCodeAt(0) === 32) text = text.slice(1);
       if (text.length === 0) continue;
       spaceBefore = text.charCodeAt(text.length - 1) === 32;
@@ -269,16 +289,23 @@ export function normalizeInlines(nodes: Inline[]): Inline[] {
     trimEnd(out);
   }
   // A run of only spaces between two breaks or at the start carries nothing.
-  return out.filter((n) => n.type !== 'text' || n.text.length > 0);
+  for (let i = 0; i < out.length; i++) {
+    const n = out[i]!;
+    if (n.type === 'text' && n.text.length === 0) return out.filter((n) => n.type !== 'text' || n.text.length > 0);
+  }
+  return out;
 }
 
+/** Drops trailing spaces (`/ +$/`) from the last runs, and runs left empty. */
 function trimEnd(out: Inline[]): void {
   while (out.length > 0) {
     const last = out[out.length - 1]!;
     if (last.type !== 'text') return;
-    const trimmed = last.text.replace(/ +$/, '');
-    if (trimmed.length > 0) {
-      last.text = trimmed;
+    const text = last.text;
+    let end = text.length;
+    while (end > 0 && text.charCodeAt(end - 1) === 32) end--;
+    if (end > 0) {
+      if (end < text.length) last.text = text.slice(0, end);
       return;
     }
     out.pop();
@@ -288,7 +315,9 @@ function trimEnd(out: Inline[]): void {
 function hasBlock(el: VElement): boolean {
   if (el.blockState >= 0) return el.blockState === 1;
   let found = false;
-  for (const child of el.children) {
+  const children = el.children;
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i]!;
     if (child.kind === 1 && !child.skip && (BLOCK_TAGS.has(child.tag) || hasBlock(child))) {
       found = true;
       break;
@@ -356,6 +385,8 @@ export class Converter {
   private readonly itemSources = new Map<ListItem, VElement>();
   /** Label of the first reference to each listed note. */
   private readonly refLabels = new Map<string, string>();
+  /** Link targets resolved against the base so far (pages link the same places many times). */
+  private readonly links = new Map<string, string | null>();
   /** Math nodes typeset as display (block) formulas. */
   readonly displayMath = new WeakSet<Inline>();
   /** The text holds TeX delimiters (`$$`, `\[`, `\(`), so it is parsed as math; `dollars` adds $…$ inline. */
@@ -485,9 +516,11 @@ export class Converter {
   private scanTex(root: VElement): void {
     const visit = (el: VElement): void => {
       if (this.tex || el.skip || el.tag === 'pre' || el.tag === 'code' || el.tag === 'math' || el.tag === 'math-tex') return;
-      for (const child of el.children) {
+      const children = el.children;
+      for (let i = 0; i < children.length; i++) {
+        const child = children[i]!;
         if (child.kind === 1) visit(child);
-        else if (child.text.indexOf('$$') >= 0 || child.text.indexOf('\\(') >= 0 || child.text.indexOf('\\[') >= 0) {
+        else if (TEX_DELIMITER.test(child.text)) {
           if (!texMatches(child.text, false).next().done) this.tex = true;
         }
         if (this.tex) return;
@@ -518,7 +551,7 @@ export class Converter {
         return false;
       }
       // Substack-style notes: <div class="footnote"><a class="footnote-number" id="footnote-1">1</a>...
-      if (/(?:^|\s)footnote(?:\s|$)/.test(el.className)) {
+      if (FOOTNOTE_CLASS.test(el.className)) {
         const number = firstElement(el, (e) => /footnote-number/.test(e.matchString) && e.id.length > 0);
         if (number !== null) {
           counter++;
@@ -563,7 +596,7 @@ export class Converter {
   }
 
   private substackFootnote(el: VElement, out: Block[]): boolean {
-    if (!/(?:^|\s)footnote(?:\s|$)/.test(el.className)) return false;
+    if (!FOOTNOTE_CLASS.test(el.className)) return false;
     const number = firstElement(el, (e) => /footnote-number/.test(e.matchString) && e.id.length > 0);
     const id = number !== null ? number.id : el.id;
     if (id.length === 0 || !this.notes.has(id)) return false;
@@ -589,7 +622,7 @@ export class Converter {
       return;
     }
     const inline = new InlineBuilder(this, out);
-    const ctx: Ctx = { marks: [], href: null };
+    const ctx = context([], null);
     const kids = el.children;
     for (let i = 0; i < kids.length; i++) {
       const child = kids[i]!;
@@ -828,7 +861,7 @@ export class Converter {
       case 'img':
       case 'picture': {
         const img = tag === 'picture' ? firstElement(el, (e) => e.tag === 'img') : el;
-        if (img === null || /mwe-math-fallback-image/.test(img.className)) return;
+        if (img === null || MATH_FALLBACK_IMAGE.test(img.className)) return;
         const image = imageFrom(img, this.base) ?? this.noscriptImage(img);
         if (image === null || isDecorativeImage(img, image, this.base)) return;
         if (isSmallImage(img, image)) {
@@ -868,7 +901,7 @@ export class Converter {
           const linkText = collapse(rawText(el));
           if (BACKLINK.test(el.matchString) || /^[↩↑^]/.test(linkText)) return;
           // Permalink glyphs go; a permalink wrapping the heading's own words keeps them.
-          if (/^[#¶§🔗]?$/u.test(linkText)) return;
+          if (PERMALINK_GLYPH.test(linkText)) return;
           // "[1]" pointing at a plain anchor: a note reference until proven otherwise (see `resolveRefs`).
           const number = /^\[?(\d{1,3})\]?$/.exec(linkText);
           if (number !== null && id.length > 0 && !this.inNote) {
@@ -888,9 +921,9 @@ export class Converter {
           const anchor = el.attrs['name'] ?? el.id;
           if (anchor.length > 0 && this.pendingRefs.has(anchor)) b.anchor = anchor;
         }
-        if (PERMALINK.test(el.matchString) && /^[#¶§🔗]?$/u.test(collapse(rawText(el)))) return;
-        const resolved = href === undefined ? null : resolveUrl(href, this.base);
-        const linkCtx: Ctx = resolved !== null && /^(?:https?|mailto|tel):/i.test(resolved) ? { marks: ctx.marks, href: resolved } : ctx;
+        if (PERMALINK.test(el.matchString) && PERMALINK_GLYPH.test(collapse(rawText(el)))) return;
+        const resolved = href === undefined ? null : this.resolveLink(href);
+        const linkCtx = resolved !== null && LINK_SCHEME.test(resolved) ? context(ctx.marks, resolved) : ctx;
         this.inlineChildren(el, b, linkCtx, out);
         return;
       }
@@ -914,10 +947,10 @@ export class Converter {
         const style = el.attrs['style'];
         if (style !== undefined) {
           const marks = ctx.marks.slice();
-          if (/font-weight\s*:\s*(?:bold|[6-9]00)/i.test(style)) marks.push('bold');
-          if (/font-style\s*:\s*italic/i.test(style)) marks.push('italic');
+          if (BOLD_STYLE.test(style)) marks.push('bold');
+          if (ITALIC_STYLE.test(style)) marks.push('italic');
           if (marks.length !== ctx.marks.length) {
-            this.inlineChildren(el, b, { marks, href: ctx.href }, out);
+            this.inlineChildren(el, b, context(marks, ctx.href), out);
             return;
           }
         }
@@ -926,10 +959,19 @@ export class Converter {
     }
     const mark = TAG_MARK[tag];
     if (mark !== undefined && ctx.marks.indexOf(mark) < 0) {
-      this.inlineChildren(el, b, { marks: ctx.marks.concat(mark), href: ctx.href }, out);
+      this.inlineChildren(el, b, context(ctx.marks.concat(mark), ctx.href), out);
       return;
     }
     this.inlineChildren(el, b, ctx, out);
+  }
+
+  private resolveLink(href: string): string | null {
+    let resolved = this.links.get(href);
+    if (resolved === undefined) {
+      resolved = resolveUrl(href, this.base);
+      this.links.set(href, resolved);
+    }
+    return resolved;
   }
 
   /**
@@ -965,7 +1007,9 @@ export class Converter {
   }
 
   private inlineChildren(el: VElement, b: InlineBuilder, ctx: Ctx, out: Block[]): void {
-    for (const child of el.children) {
+    const children = el.children;
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i]!;
       if (child.kind === 0) b.text(child.text, ctx);
       else if (!child.skip) {
         if (isInline(child)) this.inline(child, b, ctx, out);
@@ -982,7 +1026,9 @@ export class Converter {
     const b = new InlineBuilder(this, null);
     const sink: Block[] = [];
     const visit = (node: VElement, ctx: Ctx): void => {
-      for (const child of node.children) {
+      const children = node.children;
+      for (let i = 0; i < children.length; i++) {
+        const child = children[i]!;
         if (child.kind === 0) {
           b.text(child.text, ctx);
           continue;
@@ -991,7 +1037,7 @@ export class Converter {
         const tag = child.tag;
         if (tag === 'img' || tag === 'picture') {
           const img = tag === 'picture' ? firstElement(child, (e) => e.tag === 'img') : child;
-          if (img === null || /mwe-math-fallback-image/.test(img.className)) continue;
+          if (img === null || MATH_FALLBACK_IMAGE.test(img.className)) continue;
           const image = imageFrom(img, this.base);
           if (image !== null && !isDecorativeImage(img, image, this.base) && isSmallImage(img, image)) {
             const node: Inline = { type: 'image', src: image.src, alt: image.alt };
@@ -1022,7 +1068,7 @@ export class Converter {
         if (BLOCK_TAGS.has(tag)) b.lineBreak();
       }
     };
-    visit(el, { marks: [], href: null });
+    visit(el, context([], null));
     return b.result();
   }
 
@@ -1374,7 +1420,7 @@ export class Converter {
 
   private standaloneImage(el: VElement, out: Block[]): void {
     const img = el.tag === 'picture' ? firstElement(el, (e) => e.tag === 'img') : el;
-    if (img === null || /mwe-math-fallback-image/.test(img.className)) return;
+    if (img === null || MATH_FALLBACK_IMAGE.test(img.className)) return;
     const image = imageFrom(img, this.base) ?? this.noscriptImage(img);
     if (image === null || isDecorativeImage(img, image, this.base)) return;
     if (isStillOf(out[out.length - 1], image)) return;
@@ -1408,7 +1454,7 @@ export class Converter {
       if (e !== el && e.textLen > 0 && e.textLen < 100 && ABSOLUTE.test(e.attrs['style'] ?? '')) overlays.push(e);
       switch (e.tag) {
         case 'img': {
-          if (/mwe-math-fallback-image/.test(e.className)) return false;
+          if (MATH_FALLBACK_IMAGE.test(e.className)) return false;
           const image = imageFrom(e, this.base) ?? this.noscriptImage(e);
           if (image !== null && !isDecorativeImage(e, image, this.base) && !images.some((i) => i.src === image.src)) images.push(image);
           return false;
@@ -1668,7 +1714,9 @@ function closestHeading(el: VElement): VElement | null {
 
 function loneCode(el: VElement): VElement | null {
   let any = false;
-  for (const child of el.children) {
+  const children = el.children;
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i]!;
     if (child.kind === 1 && child.tag === 'code') {
       any = true;
       break;
@@ -1699,7 +1747,7 @@ const CODE_WRAPPER = /(?:^|[\s_-])(?:code-?block|highlight|codehilite|sourcecode
 
 function isNoteItem(el: VElement): boolean {
   if (el.id.length === 0) return false;
-  return el.tag === 'li' || el.attrs['role'] === 'doc-footnote' || el.attrs['role'] === 'doc-endnote' || (el.tag !== 'a' && NOTE_ITEM.test(el.className.toLowerCase()));
+  return el.tag === 'li' || el.attrs['role'] === 'doc-footnote' || el.attrs['role'] === 'doc-endnote' || (el.tag !== 'a' && NOTE_ITEM.test(lowerCase(el.className)));
 }
 
 /** Note text compared across copies: whitespace collapsed, a leading "5:" / "[5]" label dropped. */
@@ -1838,15 +1886,19 @@ function decodeFragment(value: string): string {
 }
 
 function hasDescendant(el: VElement, tag: string, maxDepth = 64): boolean {
-  const visit = (node: VElement, depth: number): boolean => {
-    if (depth > maxDepth) return false;
-    for (const child of node.children) {
-      if (child.kind !== 1 || child.skip) continue;
-      if (child.tag === tag || visit(child, depth + 1)) return true;
-    }
-    return false;
-  };
-  return visit(el, 1);
+  return descendantWithin(el, tag, maxDepth - 1);
+}
+
+/** A `tag` element at most `levels` levels below the children of `el` (skipped subtrees excluded). */
+function descendantWithin(el: VElement, tag: string, levels: number): boolean {
+  if (levels < 0) return false;
+  const children = el.children;
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i]!;
+    if (child.kind !== 1 || child.skip) continue;
+    if (child.tag === tag || descendantWithin(child, tag, levels - 1)) return true;
+  }
+  return false;
 }
 
 function countTag(el: VElement, tag: string): number {

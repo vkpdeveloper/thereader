@@ -442,6 +442,53 @@ String _mathSpan(String tex, bool cell) {
 final _destinationEntity = RegExp(r'&(?=(?:#[0-9]{1,7}|#[xX][0-9a-fA-F]{1,6}|[A-Za-z][A-Za-z0-9]{1,31});)');
 final _angle = RegExp(r'[<>]');
 
+/// `s.replace(_destinationEntity, '\\&')`: a backslash before every `&` that
+/// starts a character reference (`&#38;`, `&#x26;`, `&amp;`).
+String _escapeEntities(String s) {
+  StringBuffer? out;
+  var from = 0;
+  for (var i = s.indexOf('&'); i >= 0; i = s.indexOf('&', i + 1)) {
+    if (!_startsReference(s, i + 1)) continue;
+    (out ??= StringBuffer())
+      ..write(s.substring(from, i))
+      ..write(r'\');
+    from = i;
+  }
+  final result = out == null ? s : (out..write(s.substring(from))).toString();
+  assert(result == s.replaceAll(_destinationEntity, r'\&'), 'entities in $s');
+  return result;
+}
+
+/// `(?:#[0-9]{1,7}|#[xX][0-9a-fA-F]{1,6}|[A-Za-z][A-Za-z0-9]{1,31});` at [i].
+bool _startsReference(String s, int i) {
+  bool digit(int c) => c >= 0x30 && c <= 0x39;
+  bool hex(int c) => digit(c) || (c | 0x20) >= 0x61 && (c | 0x20) <= 0x66;
+  bool letter(int c) => (c | 0x20) >= 0x61 && (c | 0x20) <= 0x7a;
+  int run(int from, bool Function(int) test, int max) {
+    var j = from;
+    while (j < s.length && j - from < max && test(s.codeUnitAt(j))) {
+      j++;
+    }
+    return j;
+  }
+
+  bool semicolonAt(int j) => j < s.length && s.codeUnitAt(j) == 0x3b;
+  if (i >= s.length) return false;
+  final c = s.codeUnitAt(i);
+  if (c == 0x23) {
+    final decimal = run(i + 1, digit, 7);
+    if (decimal > i + 1 && semicolonAt(decimal)) return true;
+    if (i + 1 < s.length && (s.codeUnitAt(i + 1) | 0x20) == 0x78) {
+      final end = run(i + 2, hex, 6);
+      return end > i + 2 && semicolonAt(end);
+    }
+    return false;
+  }
+  if (!letter(c)) return false;
+  final end = run(i + 1, (c) => letter(c) || digit(c), 31);
+  return end > i + 1 && semicolonAt(end);
+}
+
 /// A link or image destination: bare, or in `<…>` when it holds spaces, angle brackets or unbalanced parentheses.
 String _destination(String url) {
   // One pass over the address decides everything; most need nothing.
@@ -465,7 +512,7 @@ String _destination(String url) {
   var out = url;
   if (escape) {
     out = out.replaceAll(r'\', r'\\');
-    out = out.replaceAll(_destinationEntity, r'\&');
+    out = _escapeEntities(out);
   }
   if (!bracket && depth == 0) return out;
   return '<${out.replaceAllMapped(_angle, (m) => '\\${m[0]}')}>';

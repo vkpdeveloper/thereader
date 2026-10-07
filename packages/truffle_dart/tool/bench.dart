@@ -7,12 +7,13 @@
 //   dart run tool/bench.dart [--runs 5] [--ids key,key]              (JIT)
 //   dart compile exe tool/bench.dart -o /tmp/bench && /tmp/bench     (AOT)
 //
-// `--json <file>` also writes the per-page medians and the process's peak RSS
-// for `eval/scripts/bench.ts`, which compares the TypeScript, Dart and Go engines.
-//
 // Per page: one warm-up run, then `--runs` timed runs; each phase is the
 // median of its runs. Summaries are over the per-page medians. `articleMarkdown`
-// (what `markdown: true` adds) is timed on its own and left out of the totals.
+// (what `markdown: true` adds) is timed on its own and left out of the totals;
+// `extractHtml(html, url, markdown: true)`, the whole pipeline as the app runs
+// it, is timed in a separate call. `--json file` also writes the per-page
+// medians and the process's peak RSS, which `tool/bench_compare.dart` and
+// `eval/scripts/bench.ts` (TypeScript, Dart and Go side by side) read.
 import 'dart:convert';
 import 'dart:io';
 
@@ -27,6 +28,7 @@ void main(List<String> args) {
 
   final runs = int.parse(option('--runs') ?? '5');
   final ids = option('--ids')?.split(',').toSet();
+  final jsonOut = option('--json');
   final corpus = _findCorpus();
   final root = '$corpus/parity/';
   final manifest = (jsonDecode(File('${root}manifest.json').readAsStringSync()) as List).cast<Map<String, dynamic>>();
@@ -43,6 +45,7 @@ void main(List<String> args) {
     final convert = <double>[];
     final engine = <double>[];
     final markdown = <double>[];
+    final full = <double>[];
     for (var r = 0; r <= runs; r++) {
       final t0 = watch.elapsedMicroseconds;
       final doc = html_parser.parse(html);
@@ -53,11 +56,14 @@ void main(List<String> args) {
       final t3 = watch.elapsedMicroseconds;
       if (article != null) articleMarkdown(article);
       final t4 = watch.elapsedMicroseconds;
+      extractHtml(html, url, markdown: true);
+      final t5 = watch.elapsedMicroseconds;
       if (r == 0) continue;
       parse.add((t1 - t0) / 1000);
       convert.add((t2 - t1) / 1000);
       engine.add((t3 - t2) / 1000);
       markdown.add((t4 - t3) / 1000);
+      full.add((t5 - t4) / 1000);
     }
     rows.add(
       _Row(
@@ -67,6 +73,7 @@ void main(List<String> args) {
         convert: _median(convert),
         engine: _median(engine),
         markdown: _median(markdown),
+        full: _median(full),
         tsBun: (page['tsMs'] as num).toDouble(),
         chromium: chromium[key],
       ),
@@ -74,25 +81,24 @@ void main(List<String> args) {
   }
 
   final mode = const bool.fromEnvironment('dart.vm.product') ? 'AOT' : 'JIT';
-  final jsonPath = option('--json');
-  if (jsonPath != null) {
-    File(jsonPath).writeAsStringSync(
+  if (jsonOut != null) {
+    File(jsonOut).writeAsStringSync(
       jsonEncode({
-        'engine': 'dart',
-        'version': Platform.version.split(' ').first,
         'mode': mode,
+        'version': Platform.version.split(' ').first,
         'runs': runs,
+        'load': _loadAverage(),
         'maxRss': ProcessInfo.maxRss,
-        'rows': [
+        'pages': [
           for (final r in rows)
             {
               'key': r.key,
               'bytes': r.bytes,
-              'parseMs': r.parse,
-              'treeMs': r.convert,
-              'extractMs': r.engine,
-              'markdownMs': r.markdown,
-              'totalMs': r.total + r.markdown,
+              'parse': r.parse,
+              'convert': r.convert,
+              'engine': r.engine,
+              'markdown': r.markdown,
+              'full': r.full,
             },
         ],
       }),
@@ -116,6 +122,7 @@ void main(List<String> args) {
   line('Dart extract (fromDocument + extractTree)', rows.map((r) => r.convert + r.engine));
   line('Dart total', rows.map((r) => r.total));
   line('Dart articleMarkdown (not in the totals)', rows.map((r) => r.markdown));
+  line('Dart extractHtml(markdown: true), separate call', rows.map((r) => r.full));
   final withChromium = rows.where((r) => r.chromium != null).toList();
   line('TS Chromium parse (DOMParser)', withChromium.map((r) => r.chromium!.parse));
   line('TS Chromium extract (fromDom + extractTree)', withChromium.map((r) => r.chromium!.extract));
@@ -170,6 +177,7 @@ class _Row {
     required this.convert,
     required this.engine,
     required this.markdown,
+    required this.full,
     required this.tsBun,
     required this.chromium,
   });
@@ -180,6 +188,7 @@ class _Row {
   final double convert;
   final double engine;
   final double markdown;
+  final double full;
   final double tsBun;
   final ({double parse, double extract})? chromium;
 

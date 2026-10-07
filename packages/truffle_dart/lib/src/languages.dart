@@ -7,6 +7,7 @@ library;
 import 'dart:convert';
 
 import 'js.dart';
+import 'match.dart';
 
 const Map<String, String> _aliases = {
   "js": 'javascript',
@@ -957,6 +958,11 @@ final List<(String, List<(RegExp, num)>)> _rules = [
   ('json', []),
 ];
 
+/// [requiredLiterals] of every pattern in [_rules].
+final _ruleLiterals = [
+  for (final (_, rules) in _rules) [for (final (pattern, _) in rules) requiredLiterals(pattern)],
+];
+
 final _jsonKey = RegExp(r'^[{[]\s*"[\w$@-]+"\s*:');
 
 bool _looksLikeJson(String code) {
@@ -982,10 +988,18 @@ String? detectLanguage(String source) {
   if (code.length < 8) return null;
   if (_looksLikeJson(code)) return 'json';
   final scores = <String, num>{};
-  for (final (lang, rules) in _rules) {
+  // Most rules require a literal the code lacks: rule those out before running their patterns.
+  final screen = LiteralScreen(code);
+  for (var l = 0; l < _rules.length; l++) {
+    final (lang, rules) = _rules[l];
+    final literals = _ruleLiterals[l];
     num score = 0;
-    for (final (pattern, weight) in rules) {
-      if (pattern.hasMatch(code)) score += weight;
+    for (var r = 0; r < rules.length; r++) {
+      final (pattern, weight) = rules[r];
+      final required = literals[r];
+      final possible = required == null || screen.containsAny(required, ignoreCase: !pattern.isCaseSensitive);
+      assert(possible || !pattern.hasMatch(code), 'required literals $required of ${pattern.pattern}');
+      if (possible && pattern.hasMatch(code)) score += weight;
     }
     scores[lang] = score;
   }
