@@ -1,5 +1,6 @@
 import { prepareCode, type Highlighter } from './code';
 import { ENHANCED_ATTR } from './dom';
+import { isGarbledMath, prepareGarbled } from './garbled';
 import { prepareMathml, prepareRawTex, prepareTexImages, texOfImage, type TexRenderer } from './math';
 import { preparePdf } from './pdf';
 import { prepareTables } from './tables';
@@ -20,7 +21,7 @@ import { prepareTables } from './tables';
  * Bump whenever the output changes (rules, CSS, bundled libraries): mobile
  * keys its enhanced copy of each EPUB on it.
  */
-export const ENHANCE_VERSION = '2';
+export const ENHANCE_VERSION = '3';
 
 export { UI_ATTR, ENHANCED_ATTR } from './dom';
 export { enhanceCss, themeDeclarations, MATH_FONT_FILE, type EnhanceTheme } from './css';
@@ -70,6 +71,7 @@ export function needs(doc: Document, root: Element): { tex: boolean; code: boole
       }
     }
   }
+  if (!tex) tex = isGarbledMath(doc, root);
   return { tex, code: root.getElementsByTagNameNS('*', 'pre').length > 0 };
 }
 
@@ -93,6 +95,8 @@ export async function enhanceContent(doc: Document, root: Element, deps: Enhance
   report.math = run(() => prepareMathml(root), 0);
   if (deps.tex) {
     const tex = deps.tex;
+    // After the PDF rule: whether a line was joined into a paragraph decides inline or display.
+    report.math += run(() => prepareGarbled(doc, root), 0);
     report.math += run(() => prepareRawTex(root, tex), 0);
     report.math += run(() => prepareTexImages(root, tex), 0);
   }

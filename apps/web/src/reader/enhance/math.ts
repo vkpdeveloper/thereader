@@ -247,13 +247,14 @@ function prepareDelimitedTex(root: Element, tex: TexRenderer): number {
 
 // ---------------------------------------------------------------- hosts
 
-function makeHost(doc: Document, tex: string, display: boolean): HTMLElement {
+/** An empty host for `hydrateMath`; `label` is what assistive technology reads (default: the TeX). */
+export function makeHost(doc: Document, tex: string, display: boolean, label = tex): HTMLElement {
   const host = create(doc, display ? 'div' : 'span', display ? `${MATH_HOST} tr-math-display` : MATH_HOST);
   host.setAttribute(UI_ATTR, '');
   host.setAttribute(TEX_ATTR, tex);
   if (display) host.setAttribute(DISPLAY_ATTR, '');
   host.setAttribute('role', 'math');
-  host.setAttribute('aria-label', tex);
+  host.setAttribute('aria-label', label);
   return host;
 }
 
