@@ -9,6 +9,7 @@
 // host network). No sync and no app storage are involved: books go to a
 // temporary IoBookStore and open through ReadiumReaderEngine directly, the
 // same path ReaderScreen uses.
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -110,6 +111,13 @@ final _stops = [
     'OEBPS/mathml.xhtml',
     flow: ReaderFlow.paginated,
   ),
+];
+
+/// Highlights carried across builds: (book, quoted text).
+const _carried = [
+  ('ladr3e', 'Two affine subsets parallel to U are equal or disjoint'),
+  ('llm', 'split input text into individual tokens'),
+  ('sampler', 'Work through the list from left to right'),
 ];
 
 Future<String> _get(String path) async {
@@ -265,6 +273,46 @@ void main() {
       await _get('/shot/${stop.name}');
     }
     if (current != null) await close(current);
+
+    // Highlights made before the enhancer must land on the same words. The
+    // first run (e.g. a build without the enhancer) stores each search
+    // locator on the host; later runs apply that stored locator as is.
+    if (!_shotsOnly && (only == null || only.contains('carry'))) {
+      for (final (book, query) in _carried) {
+        if (!await fetch(book)) continue;
+        final controller = await open(book, const ReaderPreferences());
+        final key = 'carry-$book';
+        var raw = await _get('/get?k=$key');
+        if (raw.isEmpty) {
+          final matches = await controller.search(query);
+          expect(matches, isNotEmpty, reason: '$book: search finds "$query"');
+          raw = jsonEncode(matches.first.locator.toJson());
+          await _get('/put?k=$key&v=${Uri.encodeQueryComponent(raw)}');
+        }
+        final locator = ReadingLocator.fromJson(
+          (jsonDecode(raw) as Map).cast<String, dynamic>(),
+        );
+        await controller.goTo(locator);
+        await settle(1500);
+        final now = DateTime.now();
+        controller.setHighlights([
+          Highlight(
+            id: key,
+            bookId: book,
+            sha256: '',
+            origin: 'local',
+            locator: locator.raw!,
+            text: query,
+            color: 'green',
+            createdAt: now,
+            updatedAt: now,
+          ),
+        ]);
+        await settle();
+        await _get('/shot/$key');
+        await close(controller);
+      }
+    }
 
     if (_shotsOnly || (only != null && !only.contains('checks'))) {
       await root.delete(recursive: true);
