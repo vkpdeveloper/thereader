@@ -3,7 +3,7 @@ import { accuracyScore, f1Score, precisionScore, recallScore, shingleMatch } fro
 import type { Stats } from './page';
 import { canonicalLanguage, matchKey } from './text';
 
-export const ENGINES = ['ours', 'ours-md', 'ours-dart', 'readability', 'defuddle', 'trafilatura', 'postlight'] as const;
+export const ENGINES = ['ours', 'ours-md', 'ours-dart', 'ours-go', 'readability', 'defuddle', 'trafilatura', 'postlight'] as const;
 export type EngineName = (typeof ENGINES)[number];
 
 /** One engine's output for one page, as stored in `test-corpus/eval-out/` (with text). */

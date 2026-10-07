@@ -13,6 +13,8 @@ readable from their local copy. No login or accounts.
 - `apps/api`: Cloudflare Worker, local R2 fixtures, and Bun development tooling.
 - `packages/truffle`: Truffle, the article extraction engine (TypeScript, npm name `truffle`).
 - `packages/truffle_dart`: its Dart port, the engine the mobile app runs (pub name `truffle`).
+- `packages/truffle_go`: its Go port, a library and the `truffle` command-line tool (Go module
+  `github.com/vkpdeveloper/thereader/packages/truffle_go`); no app uses it.
 - `eval`: extraction quality and speed against other engines.
 - `docs/api-contract.md`: shared HTTP contract and application scope.
 
@@ -24,6 +26,7 @@ Apps use Truffle as an installed package, through two workspaces at the reposito
   `truffle: ^0.1.0` and `import 'package:truffle/truffle.dart'`. One `pubspec.lock` at the root.
 
 `apps/api` does not use Truffle and stays outside the Bun workspace with its own lockfile.
+`packages/truffle_go` is a Go module of its own (`go.mod` in that directory).
 
 ## Runtime boundary
 

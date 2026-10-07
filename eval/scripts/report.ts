@@ -10,6 +10,7 @@ const COLORS: Record<EngineName, string> = {
   ours: '#38bdf8',
   'ours-md': '#818cf8',
   'ours-dart': '#2dd4bf',
+  'ours-go': '#60a5fa',
   readability: '#f472b6',
   defuddle: '#a3e635',
   trafilatura: '#fbbf24',

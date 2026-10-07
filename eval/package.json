@@ -12,6 +12,7 @@
     "failures": "bun run scripts/failures.ts",
     "dump": "bun run scripts/dump.ts",
     "markdown-cost": "bun run scripts/markdown-cost.ts",
+    "bench": "bun run scripts/bench.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

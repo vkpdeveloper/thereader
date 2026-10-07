@@ -12,7 +12,8 @@
 // (what `markdown: true` adds) is timed on its own and left out of the totals;
 // `extractHtml(html, url, markdown: true)`, the whole pipeline as the app runs
 // it, is timed in a separate call. `--json file` also writes the per-page
-// medians, which `tool/bench_compare.dart` reads.
+// medians and the process's peak RSS, which `tool/bench_compare.dart` and
+// `eval/scripts/bench.ts` (TypeScript, Dart and Go side by side) read.
 import 'dart:convert';
 import 'dart:io';
 
@@ -84,8 +85,10 @@ void main(List<String> args) {
     File(jsonOut).writeAsStringSync(
       jsonEncode({
         'mode': mode,
+        'version': Platform.version.split(' ').first,
         'runs': runs,
         'load': _loadAverage(),
+        'maxRss': ProcessInfo.maxRss,
         'pages': [
           for (final r in rows)
             {

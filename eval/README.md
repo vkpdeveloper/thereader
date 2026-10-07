@@ -1,7 +1,8 @@
 # Article extraction eval
 
-Quality and speed of `truffle` (`packages/truffle`) and its Dart port
-(`packages/truffle_dart`, the engine the mobile app runs) against Mozilla Readability,
+Quality and speed of `truffle` (`packages/truffle`), its Dart port
+(`packages/truffle_dart`, the engine the mobile app runs) and its Go port (`packages/truffle_go`)
+against Mozilla Readability,
 Defuddle, Trafilatura and Postlight Parser, on the Zyte article-extraction benchmark and on a
 hand-annotated live corpus. Results: [RESULTS.md](RESULTS.md) and `results/latest.json`.
 
@@ -22,11 +23,12 @@ first use; Python 3.12). Postlight runs under `node` (22+).
 | --- | --- |
 | `bun run snapshot [--refresh] [--only id,id]` | Fetches every curated URL with the app's request headers into `test-corpus/live/` (raw bytes + `{finalUrl, status, contentType, fetchedAt}`); skips existing snapshots. |
 | `bun run validate [--ids id,id] [--file batch.json]` | Checks every curated annotation: schema, snippet lengths, and that each `mustInclude`/`mustExclude` snippet occurs in the snapshot's page text. Exits 1 on any failure. |
-| `bun run eval [--engines ours,ours-md,ours-dart,readability,defuddle,trafilatura,postlight] [--dataset zyte\|curated\|all] [--runs 5] [--workers 4] [--ids id,id] [--timeout 60]` | Runs the engines, stores raw outputs in `test-corpus/eval-out/<dataset>/<engine>.json`, re-derives `results/latest.json` and `RESULTS.md`. `--ids` prints per-page results without saving. |
+| `bun run eval [--engines ours,ours-md,ours-dart,ours-go,readability,defuddle,trafilatura,postlight] [--dataset zyte\|curated\|all] [--runs 5] [--workers 4] [--ids id,id] [--timeout 60]` | Runs the engines, stores raw outputs in `test-corpus/eval-out/<dataset>/<engine>.json`, re-derives `results/latest.json` and `RESULTS.md`. `--ids` prints per-page results without saving. |
 | `bun run report` | Re-derives the results and writes a self-contained dark HTML report to `$TMPDIR/extract-eval-report.html`. |
 | `bun run failures [--engine ours] [--dataset zyte\|curated\|all] [--limit 20] [--snippets 4]` | Worst pages for an engine, sorted by the gap to the best other engine, with missed and leaked snippets, failed structure checks, and the text it missed or added. |
 | `bun run dump <id>` | Annotation aid: a snapshot's text blocks with DOM paths. |
 | `bun run markdown-cost [--dataset zyte\|curated\|all] [--runs 21] [--workers 4] [--ids id,id]` | What `markdown: true` adds to `extract` in Chromium: both variants on every page in the same renderer, alternating which runs first, per-page medians compared. |
+| `bun run bench [--runs 11] [--ids key,key] [--skip go,dart,ts] [--keep go,dart,ts]` | The TypeScript, Dart and Go engines on the same pages (the parity dump, `bun scripts/parity-dump.ts` in `packages/truffle`): the whole pipeline (parse, tree, extract, Markdown) timed per phase, and memory per page. `--keep` reuses an engine's last results instead of running it. Writes `results/bench.json` and [results/benchmark.md](results/benchmark.md). |
 
 The engine import is live: every `eval` run re-bundles `src/page.ts` together with
 `packages/truffle/src` (about 50 ms), so after editing the engine just run
@@ -40,6 +42,7 @@ score is re-derived from the stored outputs, so annotation fixes need no re-run 
 | ours | git HEAD of `packages/truffle` (`+dirty` if modified) | Chromium, `DOMParser` | `extract(doc, { url })`, text = `articleText(article)` |
 | ours-md | same as ours | Chromium, `DOMParser` | `extract(doc, { url, markdown: true })` (timed); text and stats from `article.markdown` rendered to HTML by remark's parser (GFM + math) and mdast-util-to-hast |
 | ours-dart | git HEAD of `packages/truffle_dart` (`+dirty` if modified) | Dart AOT (`dart compile exe`), package:html | `extractTree(fromDocument(parse(html)), url)`, summarized in Chromium exactly like ours |
+| ours-go | git HEAD of `packages/truffle_go` (`+dirty` if modified) | Go native binary (`go build`, profile-guided with `cmd/truffle/default.pgo`), its own HTML5 parser | `ExtractTree(Parser.ParseDocument(html), {URL})`, summarized in Chromium exactly like ours |
 | Readability | `@mozilla/readability` 0.6.0 | Chromium, `DOMParser` | `new Readability(doc).parse()` defaults |
 | Defuddle | `defuddle` 0.19.4 (core bundle) | Chromium, `DOMParser` | `new Defuddle(doc, { url }).parse()` defaults |
 | Trafilatura | 2.3.0 | CPython 3.12 + lxml | `extract(tree, url=url, include_comments=False)`, txt output (comments off as in the Zyte runner) |
@@ -63,10 +66,15 @@ Versions are pinned in `package.json`, the root `bun.lock`, `python/pyproject.to
   are summarized in Chromium with the `ours` code path. On identical page trees the port's
   output equals the TypeScript engine's byte for byte (`packages/truffle_dart/README.md`); here
   the parsers differ (Chromium vs package:html), so small differences are parser differences.
+- ours-go: `packages/truffle_go/tools/evalcli`, built with `go build` on every run (needs Go
+  1.24+), the same contract as the Dart runner: all pages in one process, parse
+  (`ParseDocument`) and extraction (`ExtractTree`) timed separately (warm-up + `--runs`, median),
+  the same `<base href>`, articles summarized in Chromium with the `ours` code path. On the jsdom
+  trees the port's output equals the TypeScript engine's byte for byte (`packages/truffle_go/README.md`).
 - Trafilatura: `load_html` (lxml parse) and `extract` timed separately with
   `time.perf_counter`, warm-up + `--runs`, median. Postlight parses with cheerio internally, so
   only its total is timed (reported as extraction).
-- Phases run one after another (Chromium, then ours-dart, Trafilatura, Postlight), each with
+- Phases run one after another (Chromium, then ours-dart, ours-go, Trafilatura, Postlight), each with
   `--workers` parallel workers. `latest.json` records the machine and its load average at the
   start and end of the run; timings on a loaded machine are inflated, so use `--workers 2` on a
   busy machine and compare engines within one run.
@@ -82,6 +90,30 @@ shows them. Its text differs from ours by design: Markdown keeps figure captions
 that `articleText` leaves out, and math as TeX. Its timing is `extract` with the option, so the
 gap between ours and ours-md is the export's cost. Measured in one run, though, the two are
 affected by run order and load; `bun run markdown-cost` measures the cost directly.
+
+### TypeScript, Dart and Go side by side (`bun run bench`)
+
+`bun run eval` times each engine the way it runs in production next to the competitors;
+`bun run bench` compares the three Truffle engines on their own, on the same machine and pages,
+phase by phase, with the Markdown export included: HTML in, article and Markdown out.
+
+- Pages: every page of the parity dump (`test-corpus/parity/html/`, the decoded HTML the eval
+  uses), no `<base>` added. Per page: one warm-up, then `--runs` timed runs (default 11); each
+  phase is the median of its runs, and summaries are over pages.
+- Phases: parse (Chromium's native `DOMParser` / package:html / the Go port's own HTML5 parser),
+  tree (`fromDom` / `fromDocument` / `FromTree`: the compact copy the engine runs on), extract
+  (`extractTree` / `ExtractTree`) and Markdown (`articleMarkdown` / `ArticleMarkdown`).
+- Runtimes: TypeScript in headless Chromium (one renderer), Dart AOT
+  (`packages/truffle_dart/tool/bench.dart --json`), Go native (`packages/truffle_go/tools/bench`,
+  built with the CLI's profile for profile-guided optimization; the timed runs reuse one
+  `truffle.Parser`, as a batch would). They run one after another, single-threaded.
+- Memory per page: Go counts every byte the pipeline allocates for the page, from a fresh parse,
+  with the garbage collector paused (`runtime.MemStats.TotalAlloc`): an upper bound on the heap the
+  page needs. TypeScript reports how much the V8 heap and Blink's (the DOM) grow across one run
+  whose results stay alive, after a full collection (DevTools `Runtime.getHeapUsage`;
+  `performance.memory` does not move within a task); what V8 collects during the run is not
+  counted. The Dart VM gives programs no heap counter, so Dart (and Go) also report the
+  process's peak RSS for the whole run.
 
 ### Output normalization
 

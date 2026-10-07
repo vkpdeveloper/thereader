@@ -2,7 +2,7 @@ import { resolve } from 'node:path';
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
 
 /** The page script's API as seen from Node (it lives on `globalThis.evalPage` in the renderer). */
-export type PageApi = Pick<typeof import('./page'), 'load' | 'runEngine' | 'timeMarkdown' | 'summarizeHtml' | 'summarizeArticle' | 'pageText' | 'pageBlocks' | 'meta'>;
+export type PageApi = Pick<typeof import('./page'), 'load' | 'runEngine' | 'timeMarkdown' | 'benchPipeline' | 'benchKeep' | 'summarizeHtml' | 'summarizeArticle' | 'pageText' | 'pageBlocks' | 'meta'>;
 
 /** Bundles `src/page.ts` (and the engine sources it imports, live) into one browser script. */
 export async function bundlePage(): Promise<string> {
@@ -31,8 +31,9 @@ export class BrowserPool {
     private workers: Worker[],
   ) {}
 
-  static async open(size: number, script?: string): Promise<BrowserPool> {
-    const browser = await chromium.launch();
+  /** `args`: extra Chromium flags. */
+  static async open(size: number, script?: string, args: string[] = []): Promise<BrowserPool> {
+    const browser = await chromium.launch({ args });
     const pool = new BrowserPool(browser, script ?? (await bundlePage()), []);
     pool.workers = await Promise.all(Array.from({ length: size }, (_, index) => pool.openWorker(index)));
     return pool;
