@@ -1,0 +1,310 @@
+// Reviews maths/code rendering in the Readium engine on a simulator.
+//
+// Books are private local copies served by a host helper; never bundled or
+// committed. The helper answers:
+//   GET /books/<name>.epub  the book
+//   GET /shot/<name>        takes a simulator screenshot, then returns 200
+//   GET /log?m=<text>       prints a progress line on the host
+// Run with `--dart-define=REVIEW_HOST=127.0.0.1:8931` (simulator shares the
+// host network). No sync and no app storage are involved: books go to a
+// temporary IoBookStore and open through ReadiumReaderEngine directly, the
+// same path ReaderScreen uses.
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_readium/flutter_readium.dart' as rd;
+import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
+import 'package:thereader/core/theme/app_theme.dart';
+import 'package:thereader/data/models/highlight.dart';
+import 'package:thereader/data/models/library.dart';
+import 'package:thereader/data/models/settings.dart';
+import 'package:thereader/data/storage/book_store_io.dart';
+import 'package:thereader/reader/readium_engine/readium_reader_engine.dart';
+
+const _host = String.fromEnvironment(
+  'REVIEW_HOST',
+  defaultValue: '127.0.0.1:8931',
+);
+
+/// Comma-separated stop names to run; empty runs all.
+const _only = String.fromEnvironment('REVIEW_ONLY');
+
+/// Extra wait on NOBS chapters, whose ~1,000 images each load before Readium
+/// shows the page.
+const _nobsSettle = int.fromEnvironment(
+  'REVIEW_NOBS_SETTLE',
+  defaultValue: 8000,
+);
+
+/// Skips highlight, resume and ToC checks (screenshots only).
+const _shotsOnly = bool.fromEnvironment('REVIEW_SHOTS_ONLY');
+
+class _Stop {
+  const _Stop(
+    this.name,
+    this.book,
+    this.href, {
+    this.flow = ReaderFlow.scrolled,
+    this.theme,
+    this.query,
+  });
+  final String name;
+  final String book;
+  final String href;
+  final ReaderFlow flow;
+  final String? theme;
+
+  /// Text to search for and jump to after arriving at [href].
+  final String? query;
+}
+
+const _stops = [
+  _Stop(
+    'nobs-ch1',
+    'nobs',
+    'OEBPS/Text/01_math_fundamentals_fragment.xhtml#sec-solving_equations',
+  ),
+  _Stop(
+    'nobs-ch5',
+    'nobs',
+    'OEBPS/Text/05_linear_transformations_fragment.xhtml#sec-finding_matrix_representations',
+  ),
+  _Stop(
+    'nobs-ch5-paginated',
+    'nobs',
+    'OEBPS/Text/05_linear_transformations_fragment.xhtml#sec-finding_matrix_representations',
+    flow: ReaderFlow.paginated,
+  ),
+  _Stop('llm-tokenizing', 'llm', 'OEBPS/Text/chapter-2.xhtml#p24'),
+  _Stop(
+    'llm-tokenizing-paginated',
+    'llm',
+    'OEBPS/Text/chapter-2.xhtml#p28',
+    flow: ReaderFlow.paginated,
+  ),
+  _Stop(
+    'llm-tokenizing-nord',
+    'llm',
+    'OEBPS/Text/chapter-2.xhtml#p28',
+    theme: 'nord',
+  ),
+  _Stop(
+    'ladr-385',
+    'ladr3e',
+    'index_split_001.html#p111',
+    query: 'Two affine subsets parallel to U are equal or disjoint',
+  ),
+  _Stop('sampler-1', 'sampler', ''),
+  _Stop('sampler-1-paginated', 'sampler', '', flow: ReaderFlow.paginated),
+];
+
+Future<String> _get(String path) async {
+  final client = HttpClient();
+  try {
+    final response = await (await client.getUrl(
+      Uri.parse('http://$_host$path'),
+    )).close();
+    final body = await response
+        .transform(const SystemEncoding().decoder)
+        .join();
+    if (response.statusCode != 200) {
+      throw HttpException('$path: ${response.statusCode} $body');
+    }
+    return body;
+  } finally {
+    client.close();
+  }
+}
+
+Future<void> _log(String m) async {
+  debugPrint('[review] $m');
+  try {
+    await _get('/log?m=${Uri.encodeQueryComponent(m)}');
+  } catch (_) {}
+}
+
+void main() {
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+
+  testWidgets('maths and code review stops', (tester) async {
+    final root = await Directory.systemTemp.createTemp('enhance-review');
+    final store = IoBookStore(root);
+    const engine = ReadiumReaderEngine();
+    final only = _only.isEmpty ? null : _only.split(',').toSet();
+
+    Future<bool> fetch(String book) async {
+      final file = File('${root.path}/$book.epub');
+      if (await file.exists()) return true;
+      final client = HttpClient();
+      try {
+        final response = await (await client.getUrl(
+          Uri.parse('http://$_host/books/$book.epub'),
+        )).close();
+        if (response.statusCode != 200) return false;
+        await response.pipe(file.openWrite());
+        return true;
+      } finally {
+        client.close();
+      }
+    }
+
+    Future<ReadiumReaderController> open(
+      String book,
+      ReaderPreferences prefs, {
+      ReadingLocator? at,
+    }) async {
+      final watch = Stopwatch()..start();
+      final controller =
+          await engine.open(
+                file: await store.open('$book.epub'),
+                prefs: prefs,
+                initialLocator: at,
+              )
+              as ReadiumReaderController;
+      await _log('$book opened in ${watch.elapsedMilliseconds}ms');
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.dark,
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => engine.buildView(context, controller),
+            ),
+          ),
+        ),
+      );
+      final dynamic state = tester.state(find.byType(rd.ReadiumReaderWidget));
+      while ((!controller.pageVisible.value ||
+              state.isReady != true ||
+              controller.locator.value == null) &&
+          watch.elapsed < const Duration(seconds: 90)) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      await _log(
+        '$book ready in ${watch.elapsedMilliseconds}ms at ${controller.locator.value?.href}',
+      );
+      return controller;
+    }
+
+    Future<void> settle([int ms = 2500]) async {
+      for (var i = 0; i < ms ~/ 50; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+    }
+
+    Future<void> close(ReadiumReaderController controller) async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      controller.dispose();
+      await settle(800);
+    }
+
+    for (final stop in _stops) {
+      if (only != null && !only.contains(stop.name)) continue;
+      if (!await fetch(stop.book)) {
+        await _log('${stop.name}: no ${stop.book}.epub on the host, skipped');
+        continue;
+      }
+      final prefs = ReaderPreferences(flow: stop.flow, themeId: stop.theme);
+      final controller = await open(stop.book, prefs);
+      if (stop.href.isNotEmpty) {
+        // Fragment as a location, not in the href: Readium Swift looks the
+        // href up in the reading order verbatim.
+        final [path, ...rest] = stop.href.split('#');
+        final ok = await controller.readium.goToLocator(
+          rd.Locator(
+            href: path,
+            type: 'application/xhtml+xml',
+            locations: rd.Locations(
+              fragments: rest,
+              cssSelector: rest.isEmpty ? null : '#${rest.first}',
+            ),
+          ),
+        );
+        final watch = Stopwatch()..start();
+        while (controller.locator.value?.href != path &&
+            watch.elapsed < const Duration(seconds: 90)) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        await _log(
+          '${stop.name}: goTo $ok -> ${controller.locator.value?.href} in ${watch.elapsedMilliseconds}ms',
+        );
+        // Large chapters (NOBS: 1.5 MB, ~1,000 equations) lay out slowly.
+        await settle(stop.book == 'nobs' ? _nobsSettle : 1500);
+      }
+      final query = stop.query;
+      if (query != null) {
+        final matches = await controller.search(query);
+        if (matches.isNotEmpty) await controller.goTo(matches.first.locator);
+        await settle(1500);
+      }
+      await settle();
+      await _log('${stop.name}: at ${controller.locator.value?.toJson()}');
+      await _get('/shot/${stop.name}');
+      await close(controller);
+    }
+
+    if (_shotsOnly || (only != null && !only.contains('checks'))) {
+      await root.delete(recursive: true);
+      return;
+    }
+
+    // Existing behaviour on the derived copy: highlight anchoring, resume,
+    // table of contents.
+    if (await fetch('llm')) {
+      const prefs = ReaderPreferences();
+      var controller = await open('llm', prefs);
+      final matches = await controller.search(
+        'split input text into individual tokens',
+      );
+      expect(matches, isNotEmpty, reason: 'search finds the sentence');
+      final match = matches.first;
+      final now = DateTime.now();
+      final highlight = Highlight(
+        id: 'review-1',
+        bookId: 'llm',
+        sha256: '',
+        origin: 'local',
+        locator: match.locator.raw!,
+        text: 'split input text into individual tokens',
+        color: 'yellow',
+        createdAt: now,
+        updatedAt: now,
+      );
+      await controller.goTo(match.locator);
+      await settle(1500);
+      controller.setHighlights([highlight]);
+      await settle();
+      await _get('/shot/check-highlight');
+      final saved = controller.locator.value!;
+      await _log('saved ${saved.toJson()}');
+      await close(controller);
+
+      controller = await open('llm', prefs, at: saved);
+      controller.setHighlights([highlight]);
+      await settle();
+      final restored = controller.locator.value!;
+      await _log('restored ${restored.toJson()}');
+      expect(restored.href, saved.href);
+      expect(restored.progression, closeTo(saved.progression, .03));
+      await _get('/shot/check-highlight-reopen');
+
+      final toc = controller.info.toc;
+      final target = toc.firstWhere(
+        (t) => t.title.contains('Working with text data'),
+        orElse: () => toc[toc.length ~/ 2],
+      );
+      await controller.goToHref(target.href);
+      await settle();
+      await _log(
+        'toc ${target.title} ${target.href} -> ${controller.locator.value?.href}',
+      );
+      expect(
+        controller.locator.value?.href.split('#').first,
+        target.href.split('#').first,
+      );
+      await _get('/shot/check-toc');
+      await close(controller);
+    }
+    await root.delete(recursive: true);
+  }, timeout: const Timeout(Duration(minutes: 30)));
+}

@@ -32,6 +32,15 @@ Local changes:
   colours once per document. iOS injects it as a document-end user script in
   `EPUBReaderView+JSBridge.swift`; Android injects it as a head `<script>` in
   `ReadiumExtensions.kt`.
+- The theme enforcement defers to the app's content enhancer
+  (`apps/mobile/assets/reader/enhance.{js,css}`, linked into Readium's derived
+  EPUB copies by `lib/reader/enhance/`). Its output is exempt from the forced
+  colours, background reset and left alignment: syntax-highlight spans
+  (`[class*="hljs-"]`), `pre`/`code` panels once `<html data-tr-enhanced>` is
+  set, inserted formula hosts (`[data-tr-ui]`) and the `.tr-math-scroll` /
+  `.tr-table-scroll` boxes (display maths stays centred, wide tables scroll).
+  Images it inverts (`.tr-ink`) get no light backing, and equation images in
+  MathJax/inline/display maths wrappers keep the publisher's inline height.
 - Host fonts: the `fontFamilies` creation param (accepted by all three
   `ReadiumReaderWidget` variants) lists the app's bundled fonts.
   `HostFontFamilies.kt` and `HostFontFamilies.swift` validate those entries

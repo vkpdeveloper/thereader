@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:thereader/reader/enhance/enhanced_epub.dart';
 import 'package:thereader/reader/enhance/epub_rewrite.dart';
+import 'package:thereader/reader/enhance/readium_theme_css.dart';
 
 final _bundle = {
   'enhance.css': Uint8List.fromList(utf8.encode('pre { white-space: pre; }')),
@@ -309,6 +310,19 @@ void main() {
         source,
       );
     });
+  });
+
+  test('theme roles are keyed on each preset\'s paper and ink', () {
+    final css = readiumThemeCss();
+    expect(
+      css,
+      contains(
+        ':root[style*="#000000" i][style*="#ededed" i], '
+        ':root[style*="rgb(0, 0, 0)" i][style*="rgb(237, 237, 237)" i]',
+      ),
+    );
+    expect(css, contains('--tr-panel:#101010;'));
+    expect(css, contains('/* nord */'));
   });
 
   // Local copies of real books (never committed). Skipped when absent.
