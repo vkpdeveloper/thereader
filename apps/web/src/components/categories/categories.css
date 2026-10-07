@@ -250,10 +250,10 @@ html[data-sidebar='collapsed'] .sidebar-add {
   position: absolute;
   bottom: 0;
   left: 50%;
-  width: 27%;
-  margin-left: -13.5%;
+  width: 31%;
+  margin-left: -15.5%;
   border-radius: var(--radius-sm);
-  transform-origin: calc(50% - var(--x)) 150%;
+  transform-origin: calc(50% - var(--x)) 135%;
   transform: translateX(var(--x)) translateY(var(--y)) rotate(var(--r)) scale(var(--s));
   box-shadow: 0 6px 14px -4px rgba(0, 0, 0, 0.6);
   transition:
@@ -314,6 +314,20 @@ html[data-sidebar='collapsed'] .sidebar-add {
 .bookcase-book.is-ghost.is-mid {
   border-color: color-mix(in srgb, var(--cat) 50%, transparent);
 }
+/* Outlines stand apart, not overlapping like books do. */
+.bookcase-books.is-empty .bookcase-book {
+  width: 22%;
+  margin-left: -11%;
+  filter: none;
+}
+.bookcase-books.is-empty .bookcase-book.is-left {
+  --x: -112%;
+  --s: 0.92;
+}
+.bookcase-books.is-empty .bookcase-book.is-right {
+  --x: 112%;
+  --s: 0.92;
+}
 
 .bookcase-caption {
   padding: 10px 2px 0;
@@ -336,25 +350,25 @@ html[data-sidebar='collapsed'] .sidebar-add {
   }
   .bookcase:focus-visible .bookcase-book.is-mid,
   .bookcase.is-drop-target .bookcase-book.is-mid {
-    --y: -9%;
-    --s: 1.05;
+    --y: -8%;
+    --s: 1.04;
   }
   .bookcase:focus-visible .bookcase-book:is(.is-left, .is-right),
   .bookcase.is-drop-target .bookcase-book:is(.is-left, .is-right) {
-    --y: -13%;
-    --s: 0.96;
+    --y: -21%;
+    --s: 0.95;
     filter: none;
     transition-delay: 40ms;
   }
   .bookcase:focus-visible .bookcase-book.is-left,
   .bookcase.is-drop-target .bookcase-book.is-left {
-    --x: -74%;
-    --r: -16deg;
+    --x: -70%;
+    --r: -14deg;
   }
   .bookcase:focus-visible .bookcase-book.is-right,
   .bookcase.is-drop-target .bookcase-book.is-right {
-    --x: 74%;
-    --r: 16deg;
+    --x: 70%;
+    --r: 14deg;
   }
   .bookcase:focus-visible .bookcase-book.is-left:first-child:nth-last-child(2),
   .bookcase.is-drop-target .bookcase-book.is-left:first-child:nth-last-child(2) {
@@ -378,22 +392,22 @@ html[data-sidebar='collapsed'] .sidebar-add {
         box-shadow 320ms var(--ease);
     }
     .bookcase:hover .bookcase-book.is-mid {
-      --y: -9%;
-      --s: 1.05;
+      --y: -8%;
+      --s: 1.04;
     }
     .bookcase:hover .bookcase-book:is(.is-left, .is-right) {
-      --y: -13%;
-      --s: 0.96;
+      --y: -21%;
+      --s: 0.95;
       filter: none;
       transition-delay: 40ms;
     }
     .bookcase:hover .bookcase-book.is-left {
-      --x: -74%;
-      --r: -16deg;
+      --x: -70%;
+      --r: -14deg;
     }
     .bookcase:hover .bookcase-book.is-right {
-      --x: 74%;
-      --r: 16deg;
+      --x: 70%;
+      --r: 14deg;
     }
     .bookcase:hover .bookcase-book.is-left:first-child:nth-last-child(2) {
       --x: -44%;
@@ -507,7 +521,7 @@ html[data-sidebar='collapsed'] .sidebar-add {
   transition: background-color var(--motion-fast) var(--ease);
 }
 .category-option:hover,
-.category-option:focus-visible {
+.category-option:focus {
   background: var(--element);
   outline: none;
 }
@@ -632,8 +646,11 @@ html[data-sidebar='collapsed'] .sidebar-add {
   outline-offset: 0;
 }
 .category-status {
-  min-height: 20px;
-  margin-top: var(--space-sm);
+  min-height: 18px;
+  margin-top: 6px;
+}
+.category-status:empty {
+  min-height: 0;
 }
 .category-form .dialog-actions {
   margin-top: var(--space-md);
@@ -722,11 +739,12 @@ html[data-sidebar='collapsed'] .sidebar-add {
 .category-chip {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  height: 22px;
-  padding: 0 9px 0 8px;
-  border-radius: 999px;
-  font-size: 11.5px;
+  gap: 6px;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  line-height: 1;
   font-weight: 500;
   color: var(--fg);
   background: color-mix(in srgb, var(--cat) 12%, transparent);
@@ -739,4 +757,18 @@ html[data-sidebar='collapsed'] .sidebar-add {
 .category-chip .category-dot {
   width: 6px;
   height: 6px;
+}
+
+/* An empty shelf opens a little too, its outlines staying apart. */
+@media (prefers-reduced-motion: no-preference) {
+  .bookcase:is(:hover, :focus-visible, .is-drop-target) .bookcase-books.is-empty .bookcase-book.is-left {
+    --x: -118%;
+    --y: -6%;
+    --r: -8deg;
+  }
+  .bookcase:is(:hover, :focus-visible, .is-drop-target) .bookcase-books.is-empty .bookcase-book.is-right {
+    --x: 118%;
+    --y: -6%;
+    --r: 8deg;
+  }
 }

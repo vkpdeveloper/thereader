@@ -115,14 +115,14 @@ export function CategoryScreen() {
           onClick={(e) => showMenu({ ...menuPoint(e, 'below'), label: category.name, items: actions })}
         />
       </header>
-      <p className="t-body-sm category-count tabular">{items.length === 0 ? 'Nothing filed yet' : describeCount(items)}</p>
+      <p className="t-body-sm category-count tabular">{describeCount(items)}</p>
       <hr className="divider category-divider" />
       {items.length === 0 ? (
         <div className="category-empty">
           <ShelfScene items={[]} color={category.color} className="is-empty-state" />
           <StateMessage
             title={`Nothing in ${category.name} yet.`}
-            body="Right-click a book or article in your Library and choose Add to…, or drag its cover onto this category in the sidebar."
+            body={`Right-click a book or article in your Library and choose “Add to”, or drag its cover onto ${category.name} in the sidebar.`}
             tone="var(--cat)"
             actionLabel="Go to Library"
             onAction={() => void navigate({ to: '/library' })}
