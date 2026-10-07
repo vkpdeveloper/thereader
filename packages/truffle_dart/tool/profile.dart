@@ -32,7 +32,7 @@ Future<void> main(List<String> args) async {
   final ids = option('--ids')?.split(',').toSet();
   final phase = option('--phase') ?? 'all';
   final top = int.parse(option('--top') ?? '60');
-  // `--callers name`: for samples inside [name], the nearest caller in lib/src/.
+  // `--callers name`: for samples inside [name], the nearest caller outside the core libraries.
   final callersOf = option('--callers');
   // `--within name`: only samples inside [name].
   final within = option('--within');
@@ -96,16 +96,7 @@ Future<void> main(List<String> args) async {
               final caller = stack
                   .skip(at + 1)
                   .map((i) => functions[i])
-                  .firstWhere(
-                    (f) =>
-                        !f.contains('dart:') &&
-                        !f.contains('_patch.dart') &&
-                        !f.contains('(iterable.dart)') &&
-                        !f.contains('(list.dart)') &&
-                        !f.contains('string_buffer') &&
-                        !f.contains('growable_array'),
-                    orElse: () => '?',
-                  );
+                  .firstWhere((f) => !_isRuntime(f), orElse: () => '?');
               callers.update(caller, (n) => n + 1, ifAbsent: () => 1);
             }
           }
@@ -132,9 +123,14 @@ Future<void> main(List<String> args) async {
   table('Inclusive', inclusive);
 }
 
-bool _isEngine(String name) => RegExp(
-  r'\((dom|tree|blocks|content|extract|metadata|media|markdown|text|languages|url|js|match)\.dart\)',
-).hasMatch(name);
+/// Core library code (string, list and map internals), skipped when looking for a caller.
+bool _isRuntime(String name) =>
+    name.contains('dart:') ||
+    name.contains('_patch.dart') ||
+    name.contains('(iterable.dart)') ||
+    name.contains('(list.dart)') ||
+    name.contains('(string_buffer.dart)') ||
+    name.contains('(growable_array.dart)');
 
 String _name(Map<String, dynamic> function) {
   final name = function['name'] as String? ?? '?';
