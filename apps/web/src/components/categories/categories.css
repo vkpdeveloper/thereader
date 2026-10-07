@@ -196,7 +196,7 @@ html[data-sidebar='collapsed'] .sidebar-add {
 /* The shelf: a panel lit from below in the category colour. */
 .bookcase-scene {
   position: relative;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 5 / 4;
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--panel);
@@ -218,9 +218,9 @@ html[data-sidebar='collapsed'] .sidebar-add {
 }
 .bookcase-shelf {
   position: absolute;
-  left: 9%;
-  right: 9%;
-  bottom: 17%;
+  left: 7%;
+  right: 7%;
+  bottom: 13%;
   height: 3px;
   border-radius: 2px;
   background: color-mix(in srgb, var(--cat) 70%, #000);
@@ -232,7 +232,7 @@ html[data-sidebar='collapsed'] .sidebar-add {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: calc(17% + 3px);
+  bottom: calc(13% + 3px);
   height: 0;
 }
 
@@ -250,8 +250,8 @@ html[data-sidebar='collapsed'] .sidebar-add {
   position: absolute;
   bottom: 0;
   left: 50%;
-  width: 31%;
-  margin-left: -15.5%;
+  width: 42%;
+  margin-left: -21%;
   border-radius: var(--radius-sm);
   transform-origin: calc(50% - var(--x)) 135%;
   transform: translateX(var(--x)) translateY(var(--y)) rotate(var(--r)) scale(var(--s));
@@ -277,26 +277,26 @@ html[data-sidebar='collapsed'] .sidebar-add {
   z-index: 3;
 }
 .bookcase-book.is-left {
-  --x: -64%;
-  --s: 0.9;
+  --x: -50%;
+  --s: 0.86;
   z-index: 2;
   filter: brightness(0.62);
 }
 .bookcase-book.is-right {
-  --x: 64%;
-  --s: 0.9;
+  --x: 50%;
+  --s: 0.86;
   z-index: 1;
   filter: brightness(0.62);
 }
 /* Two books stand closer, the newer in front. */
 .bookcase-book.is-left:first-child:nth-last-child(2) {
-  --x: -34%;
+  --x: -30%;
   --s: 1;
   z-index: 2;
   filter: none;
 }
 .bookcase-book.is-right:nth-child(2):last-child {
-  --x: 34%;
+  --x: 30%;
   --s: 0.94;
   filter: brightness(0.62);
 }
@@ -316,16 +316,16 @@ html[data-sidebar='collapsed'] .sidebar-add {
 }
 /* Outlines stand apart, not overlapping like books do. */
 .bookcase-books.is-empty .bookcase-book {
-  width: 22%;
-  margin-left: -11%;
+  width: 27%;
+  margin-left: -13.5%;
   filter: none;
 }
 .bookcase-books.is-empty .bookcase-book.is-left {
-  --x: -112%;
+  --x: -110%;
   --s: 0.92;
 }
 .bookcase-books.is-empty .bookcase-book.is-right {
-  --x: 112%;
+  --x: 110%;
   --s: 0.92;
 }
 
@@ -350,35 +350,35 @@ html[data-sidebar='collapsed'] .sidebar-add {
   }
   .bookcase:focus-visible .bookcase-book.is-mid,
   .bookcase.is-drop-target .bookcase-book.is-mid {
-    --y: -8%;
-    --s: 1.04;
+    --y: -5%;
+    --s: 1.03;
   }
   .bookcase:focus-visible .bookcase-book:is(.is-left, .is-right),
   .bookcase.is-drop-target .bookcase-book:is(.is-left, .is-right) {
-    --y: -21%;
-    --s: 0.95;
+    --y: -9%;
+    --s: 0.88;
     filter: none;
     transition-delay: 40ms;
   }
   .bookcase:focus-visible .bookcase-book.is-left,
   .bookcase.is-drop-target .bookcase-book.is-left {
-    --x: -70%;
-    --r: -14deg;
+    --x: -45%;
+    --r: -9deg;
   }
   .bookcase:focus-visible .bookcase-book.is-right,
   .bookcase.is-drop-target .bookcase-book.is-right {
-    --x: 70%;
-    --r: 14deg;
+    --x: 45%;
+    --r: 9deg;
   }
   .bookcase:focus-visible .bookcase-book.is-left:first-child:nth-last-child(2),
   .bookcase.is-drop-target .bookcase-book.is-left:first-child:nth-last-child(2) {
-    --x: -44%;
-    --r: -11deg;
+    --x: -38%;
+    --r: -7deg;
   }
   .bookcase:focus-visible .bookcase-book.is-right:nth-child(2):last-child,
   .bookcase.is-drop-target .bookcase-book.is-right:nth-child(2):last-child {
-    --x: 44%;
-    --r: 11deg;
+    --x: 38%;
+    --r: 7deg;
   }
   .bookcase:focus-visible .bookcase-book:not(.is-ghost),
   .bookcase.is-drop-target .bookcase-book:not(.is-ghost) {
@@ -392,30 +392,30 @@ html[data-sidebar='collapsed'] .sidebar-add {
         box-shadow 320ms var(--ease);
     }
     .bookcase:hover .bookcase-book.is-mid {
-      --y: -8%;
-      --s: 1.04;
+      --y: -5%;
+      --s: 1.03;
     }
     .bookcase:hover .bookcase-book:is(.is-left, .is-right) {
-      --y: -21%;
-      --s: 0.95;
+      --y: -9%;
+      --s: 0.88;
       filter: none;
       transition-delay: 40ms;
     }
     .bookcase:hover .bookcase-book.is-left {
-      --x: -70%;
-      --r: -14deg;
+      --x: -45%;
+      --r: -9deg;
     }
     .bookcase:hover .bookcase-book.is-right {
-      --x: 70%;
-      --r: 14deg;
+      --x: 45%;
+      --r: 9deg;
     }
     .bookcase:hover .bookcase-book.is-left:first-child:nth-last-child(2) {
-      --x: -44%;
-      --r: -11deg;
+      --x: -38%;
+      --r: -7deg;
     }
     .bookcase:hover .bookcase-book.is-right:nth-child(2):last-child {
-      --x: 44%;
-      --r: 11deg;
+      --x: 38%;
+      --r: 7deg;
     }
     .bookcase:hover .bookcase-book:not(.is-ghost) {
       box-shadow: 0 14px 22px -8px rgba(0, 0, 0, 0.75);
@@ -478,7 +478,7 @@ html[data-sidebar='collapsed'] .sidebar-add {
 }
 .category-form .bookcase-scene.is-preview {
   aspect-ratio: auto;
-  height: 128px;
+  height: 156px;
   margin: calc(-1 * var(--space-lg)) calc(-1 * var(--space-lg)) var(--space-lg);
   border: 0;
   border-bottom: 1px solid var(--border);
@@ -486,8 +486,12 @@ html[data-sidebar='collapsed'] .sidebar-add {
   background: var(--bg);
 }
 .bookcase-scene.is-preview .bookcase-book {
-  width: 62px;
-  margin-left: -31px;
+  width: 80px;
+  margin-left: -40px;
+}
+.bookcase-scene.is-preview .bookcase-books.is-empty .bookcase-book {
+  width: 56px;
+  margin-left: -28px;
 }
 .bookcase-scene.is-preview .bookcase-shelf {
   left: 22%;
@@ -602,7 +606,6 @@ html[data-sidebar='collapsed'] .sidebar-add {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   justify-items: center;
-  row-gap: 4px;
   margin-top: var(--space-md);
 }
 .category-swatch {
@@ -647,13 +650,15 @@ html[data-sidebar='collapsed'] .sidebar-add {
 }
 .category-status {
   min-height: 18px;
-  margin-top: 6px;
+  margin-top: 4px;
 }
 .category-status:empty {
   min-height: 0;
 }
+/* The swatches and text buttons carry their own air; the actions sit close under them. */
 .category-form .dialog-actions {
-  margin-top: var(--space-md);
+  margin-top: var(--space-xs);
+  margin-bottom: calc(-1 * var(--space-xs));
 }
 
 /* ------------------------------------------------------------ category view */
@@ -762,13 +767,13 @@ html[data-sidebar='collapsed'] .sidebar-add {
 /* An empty shelf opens a little too, its outlines staying apart. */
 @media (prefers-reduced-motion: no-preference) {
   .bookcase:is(:hover, :focus-visible, .is-drop-target) .bookcase-books.is-empty .bookcase-book.is-left {
-    --x: -118%;
-    --y: -6%;
+    --x: -114%;
+    --y: -5%;
     --r: -8deg;
   }
   .bookcase:is(:hover, :focus-visible, .is-drop-target) .bookcase-books.is-empty .bookcase-book.is-right {
-    --x: 118%;
-    --y: -6%;
+    --x: 114%;
+    --y: -5%;
     --r: 8deg;
   }
 }
