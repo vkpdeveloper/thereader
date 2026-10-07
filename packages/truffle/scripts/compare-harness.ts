@@ -31,13 +31,15 @@ export const PHASE_FRAMES: Record<Phase, string> = { fromDom: 'measureFromDom', 
 export interface Environment {
   base: Engine;
   next: Engine;
-  parse(html: string, url: string): Document;
-  /** Garbage collection before a timed run (a minor GC in Chromium, `Bun.gc(true)` in Bun); absent where unavailable. */
   /**
    * A document for the page. In Chromium a fresh one each call: an engine's first walk over a document creates its
    * DOM wrappers (and whatever else the DOM builds lazily), which is part of what extraction costs in the app.
    */
+  parse(html: string, url: string): Document;
+  /** Garbage collection before a timed run (a minor GC in Chromium, `Bun.gc(true)` in Bun); absent where unavailable. */
   gc?: () => void;
+  /** A full collection when a page is loaded, so that no page inherits the documents the last one parsed. */
+  collect?: () => void;
 }
 
 /** One output both builds produce for the page, as the string compared byte for byte. */
@@ -81,6 +83,7 @@ export function createHarness(env: Environment) {
     doc = null;
     fresh = fresh2 = null;
     kept = null;
+    env.collect?.();
     return html.length;
   }
 

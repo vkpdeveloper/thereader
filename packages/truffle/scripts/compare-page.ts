@@ -30,4 +30,6 @@ g.harness = createHarness({
   // The young generation only: every run starts with it empty. A full collection costs tens of milliseconds with the
   // documents a page has parsed; the old generation is collected when V8 decides, so each build pays for its own garbage.
   gc: g.gc === undefined ? undefined : () => g.gc!({ type: 'minor' }),
+  // Parsed documents live in Blink's heap, which only a full collection empties: once per page, or they pile up.
+  collect: g.gc === undefined ? undefined : () => g.gc!(),
 });

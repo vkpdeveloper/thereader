@@ -77,29 +77,31 @@ export async function bundleComparePage(only?: 'base' | 'next'): Promise<string>
   return build.outputs[0]!.text();
 }
 
-/**
- * Headless Chromium with one cross-origin-isolated page per worker (5 µs timers, as in the eval) and `gc()` exposed.
- * Each page has its own context, so its own renderer.
- */
-export async function openPages(count: number, script: string | string[]): Promise<{ browser: Browser; pages: Page[] }> {
-  const browser = await chromium.launch({ args: ['--js-flags=--expose-gc'] });
-  const scripts = typeof script === 'string' ? Array.from({ length: count }, () => script) : script;
+/** Headless Chromium with `gc()` exposed. */
+export function launchChromium(): Promise<Browser> {
+  return chromium.launch({ args: ['--js-flags=--expose-gc'] });
+}
+
+/** A cross-origin-isolated page (5 µs timers, as in the eval) running `script`, in a context, so a renderer, of its own. */
+export async function openPage(browser: Browser, index: number, script: string): Promise<Page> {
   const headers = { 'Cross-Origin-Opener-Policy': 'same-origin', 'Cross-Origin-Embedder-Policy': 'require-corp' };
-  const pages = await Promise.all(
-    Array.from({ length: count }, async (_, i) => {
-      const context = await browser.newContext();
-      const origin = `http://w${i}.localhost`;
-      await context.route(`${origin}/**`, (route) =>
-        route.request().url().endsWith('/page.js')
-          ? route.fulfill({ contentType: 'text/javascript', headers, body: scripts[i]! })
-          : route.fulfill({ contentType: 'text/html', headers, body: '<!doctype html><meta charset="utf-8"><title>compare</title><script src="/page.js"></script>' }),
-      );
-      const page = await context.newPage();
-      page.on('pageerror', (error) => console.error(`[w${i}] ${error.message}`));
-      await page.goto(`${origin}/`);
-      return page;
-    }),
+  const context = await browser.newContext();
+  const origin = `http://w${index}.localhost`;
+  await context.route(`${origin}/**`, (route) =>
+    route.request().url().endsWith('/page.js')
+      ? route.fulfill({ contentType: 'text/javascript', headers, body: script })
+      : route.fulfill({ contentType: 'text/html', headers, body: '<!doctype html><meta charset="utf-8"><title>compare</title><script src="/page.js"></script>' }),
   );
+  const page = await context.newPage();
+  page.on('pageerror', (error) => console.error(`[w${index}] ${error.message}`));
+  await page.goto(`${origin}/`);
+  return page;
+}
+
+/** `count` pages in one browser, each running `script` (or its own entry of it). */
+export async function openPages(count: number, script: string | string[]): Promise<{ browser: Browser; pages: Page[] }> {
+  const browser = await launchChromium();
+  const pages = await Promise.all(Array.from({ length: count }, (_, i) => openPage(browser, i, typeof script === 'string' ? script : script[i]!)));
   return { browser, pages };
 }
 

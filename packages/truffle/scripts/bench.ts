@@ -61,10 +61,10 @@
  *   bun scripts/bench.ts --profile [next|base] [--runs 5]   # V8 CPU profile of `extract`, top functions by self time
  */
 import { writeFileSync } from 'node:fs';
-import type { CDPSession, Page } from '../../../eval/node_modules/playwright';
+import type { Browser, CDPSession, Page } from '../../../eval/node_modules/playwright';
 import { resolve } from 'node:path';
 import { PHASE_FRAMES, PHASES, type EngineName, type MemoryRun, type Phase, type Timing } from './compare-harness';
-import { arg, baselineDir, bundleComparePage, call, flag, loadCorpus, openPages, pageHtml, SRC, type Entry } from './compare';
+import { arg, baselineDir, bundleComparePage, call, flag, launchChromium, loadCorpus, openPage, openPages, pageHtml, SRC, type Entry } from './compare';
 
 const runtime = arg('--runtime') ?? 'both';
 const runs = Number(arg('--runs') ?? 10);
@@ -194,39 +194,57 @@ async function pageMemory(page: Page, cdp: CDPSession): Promise<Memory> {
   return m;
 }
 
-/** Page by page, each build in its own renderer; the build that goes first alternates. */
-async function eachPage<R>(pages: Record<EngineName, Page>, label: string, task: (page: Page) => Promise<R>): Promise<{ entry: Entry; result: Record<EngineName, R> }[]> {
+/** A renderer holding one build, with a CDP session for heap profiles. */
+interface Renderer {
+  page: Page;
+  cdp: CDPSession;
+}
+
+/** Pages a renderer serves before both are replaced: its memory only grows, and the machine may not have it to spare. */
+const RENDERER_PAGES = 50;
+
+/**
+ * Page by page, each build in its own renderer (both renewed every `RENDERER_PAGES` pages, and for each pass); the
+ * build that goes first alternates.
+ */
+async function eachPage<R>(browser: Browser, scripts: Record<EngineName, string>, label: string, task: (r: Renderer) => Promise<R>): Promise<{ entry: Entry; result: Record<EngineName, R> }[]> {
   const out: { entry: Entry; result: Record<EngineName, R> }[] = [];
-  for (let i = 0; i < entries.length; i++) {
-    const entry = entries[i]!;
-    const html = pageHtml(entry);
-    const result = {} as Record<EngineName, R>;
-    for (const name of i % 2 === 0 ? ENGINES : ENGINES.slice().reverse()) {
-      await call(pages[name], 'load', html, entry.url);
-      result[name] = await task(pages[name]);
+  let renderers: Record<EngineName, Renderer> | null = null;
+  try {
+    for (let i = 0; i < entries.length; i++) {
+      if (i % RENDERER_PAGES === 0) {
+        if (renderers !== null) for (const r of Object.values(renderers)) await r.page.context().close();
+        renderers = {} as Record<EngineName, Renderer>;
+        for (const [k, name] of ENGINES.entries()) {
+          const page = await openPage(browser, k, scripts[name]);
+          const cdp = await page.context().newCDPSession(page);
+          await cdp.send('HeapProfiler.enable');
+          renderers[name] = { page, cdp };
+        }
+      }
+      const entry = entries[i]!;
+      const html = pageHtml(entry);
+      const result = {} as Record<EngineName, R>;
+      for (const name of i % 2 === 0 ? ENGINES : ENGINES.slice().reverse()) {
+        await call(renderers![name].page, 'load', html, entry.url);
+        result[name] = await task(renderers![name]);
+      }
+      out.push({ entry, result });
+      if ((i + 1) % 50 === 0) console.error(`  ${label} ${i + 1}/${entries.length}`);
     }
-    out.push({ entry, result });
-    if ((i + 1) % 50 === 0) console.error(`  ${label} ${i + 1}/${entries.length}`);
+  } finally {
+    if (renderers !== null) for (const r of Object.values(renderers)) await r.page.context().close();
   }
   return out;
 }
 
 async function chromiumBench(): Promise<{ time: PageTiming[]; memory: PageMemory[] }> {
-  const { browser, pages: list } = await openPages(2, [await bundleComparePage('base'), await bundleComparePage('next')]);
-  const pages: Record<EngineName, Page> = { base: list[0]!, next: list[1]! };
+  const browser = await launchChromium();
+  const scripts = { base: await bundleComparePage('base'), next: await bundleComparePage('next') };
   console.error(`Chromium ${browser.version()}: ${entries.length} pages, ${runs} runs`);
   try {
-    const time = (await eachPage(pages, 'time', (page) => call<Timing>(page, 'time', 'next', runs))).map(({ entry, result }) => ({ entry, time: result }));
-    let mem: PageMemory[] = [];
-    if (memory) {
-      const sessions = new Map<Page, CDPSession>();
-      for (const page of list) {
-        const cdp = await page.context().newCDPSession(page);
-        await cdp.send('HeapProfiler.enable');
-        sessions.set(page, cdp);
-      }
-      mem = (await eachPage(pages, 'memory', (page) => pageMemory(page, sessions.get(page)!))).map(({ entry, result }) => ({ entry, memory: result }));
-    }
+    const time = (await eachPage(browser, scripts, 'time', (r) => call<Timing>(r.page, 'time', 'next', runs))).map(({ entry, result }) => ({ entry, time: result }));
+    const mem = memory ? (await eachPage(browser, scripts, 'memory', (r) => pageMemory(r.page, r.cdp))).map(({ entry, result }) => ({ entry, memory: result })) : [];
     return { time, memory: mem };
   } finally {
     await browser.close();
