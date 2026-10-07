@@ -2,12 +2,15 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
+import 'package:html/dom.dart' as dom;
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/typography/reader_fonts.dart';
 import '../../data/models/settings.dart';
 import 'dart_reader_engine.dart';
+import 'epub_blocks.dart';
+import 'epub_chapter.dart';
 import 'epub_package.dart';
 
 /// Renders the current spine document on a pure black canvas. Images are
@@ -22,7 +25,13 @@ class DartReaderView extends StatefulWidget {
 
   /// Element styles for the active preset. Visible for tests.
   @visibleForTesting
-  static Map<String, String>? stylesFor(String tag, ReaderPreferences prefs, AppColors colors, {bool figureCaption = false}) {
+  static Map<String, String>? stylesFor(
+    String tag,
+    ReaderPreferences prefs,
+    AppColors colors, {
+    bool figureCaption = false,
+    bool inPre = false,
+  }) {
     final ink = colors.ink.toCssHex();
     final muted = colors.muted.toCssHex();
     final link = colors.primary.toCssHex();
@@ -50,7 +59,7 @@ class DartReaderView extends StatefulWidget {
         return caption;
       case 'th':
       case 'td':
-        return {'color': ink, 'border-color': border};
+        return {'color': ink, 'border-color': border, 'padding': '0.25em 0.6em'};
       case 'p':
         return {'margin': '0 0 1em', ...justify};
       case 'blockquote':
@@ -58,9 +67,10 @@ class DartReaderView extends StatefulWidget {
       case 'a':
         return {'color': link, 'text-decoration': 'none'};
       case 'pre':
-        return {'font-family': 'monospace', 'font-size': '0.82em', 'background-color': panel, 'padding': '12px', 'margin': '1em 0', 'white-space': 'pre-wrap', 'color': ink};
+        // Code blocks normally render as [EpubCodeBlock]; this is the fallback.
+        return {'font-family': 'monospace', 'font-size': '0.82em', 'background-color': panel, 'padding': '12px', 'margin': '1em 0', 'white-space': 'pre', 'color': ink};
       case 'code':
-        return {'font-family': 'monospace', 'font-size': '0.9em', 'color': ink};
+        return {'font-family': 'monospace', 'font-size': '0.86em', 'color': ink, if (!inPre) 'background-color': colors.element.toCssHex()};
       case 'hr':
         return {'border-color': border, 'margin': '1.6em 0'};
       case 'img':
@@ -79,31 +89,15 @@ class DartReaderView extends StatefulWidget {
     return null;
   }
 
-  static final _tag = RegExp(r'<[A-Za-z][^>]*>');
-  static final _artwork = RegExp(r'<(svg|math)\b[\s\S]*?</\1>', caseSensitive: false);
-  static final _colorAttrs = RegExp(
-    r'''\s(?:style|color|bgcolor|text|link|vlink|alink)\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)''',
-    caseSensitive: false,
-  );
-
   /// Keeps only the body and removes every publisher colour source this
   /// renderer honours: `<style>`, inline `style` (either quote style, which
   /// also covers inline `!important`) and legacy colour attributes. Only
   /// start tags are rewritten, so code samples such as `color="red"` in text
-  /// survive. Inline SVG and MathML are left untouched. Visible for tests.
+  /// survive. Inline SVG and MathML are left untouched. Math sources,
+  /// equation sizing and PDF-conversion repairs are prepared for the
+  /// builders (see [EpubChapter]). Visible for tests.
   @visibleForTesting
-  static String prepareHtml(String xhtml) {
-    var s = xhtml;
-    final body = RegExp(r'<body[^>]*>([\s\S]*?)</body>', caseSensitive: false).firstMatch(s);
-    if (body != null) s = body.group(1)!;
-    s = s.replaceAll(RegExp(r'<style[\s\S]*?</style>', caseSensitive: false), '');
-    s = s.replaceAll(RegExp(r'<script[\s\S]*?</script>', caseSensitive: false), '');
-    // Artwork keeps its own colours, as in the native readers.
-    return s.splitMapJoin(
-      _artwork,
-      onNonMatch: (text) => text.replaceAllMapped(_tag, (m) => m[0]!.replaceAll(_colorAttrs, '')),
-    );
-  }
+  static String prepareHtml(String xhtml) => EpubChapter.prepare(xhtml);
 }
 
 class _DartReaderViewState extends State<DartReaderView> {
@@ -169,6 +163,8 @@ class _DartReaderViewState extends State<DartReaderView> {
   /// white background or fight the reader's typography.
   static String _prepare(String xhtml) => DartReaderView.prepareHtml(xhtml);
 
+  EpubContentBuilder? _builder;
+
   @override
   Widget build(BuildContext context) {
     final controller = widget.controller;
@@ -197,8 +193,9 @@ class _DartReaderViewState extends State<DartReaderView> {
                 key: ValueKey('${item.href}#${family.id}#${colors.hashCode}'),
                 textStyle: base,
                 baseUrl: Uri.parse('epub:///${item.href}'),
-                factoryBuilder: () => _EpubWidgetFactory(controller.package, item.href),
+                factoryBuilder: () => _EpubWidgetFactory(controller.package, item.href, colors.ink),
                 customStylesBuilder: (element) => _styles(element, prefs, colors),
+                customWidgetBuilder: (element) => _contentBuilder(item.href, base, colors).build(element),
                 renderMode: RenderMode.column,
               );
         return ColoredBox(
@@ -227,19 +224,37 @@ class _DartReaderViewState extends State<DartReaderView> {
     );
   }
 
-  static Map<String, String>? _styles(dynamic element, ReaderPreferences prefs, AppColors colors) {
-    final tag = (element.localName as String?) ?? '';
+  EpubContentBuilder _contentBuilder(String href, TextStyle base, AppColors colors) {
+    final current = _builder;
+    if (current != null && current.href == href && current.textStyle == base && current.colors == colors) return current;
+    return _builder = EpubContentBuilder(package: widget.controller.package, href: href, textStyle: base, colors: colors);
+  }
+
+  static Map<String, String>? _styles(dom.Element element, ReaderPreferences prefs, AppColors colors) {
+    if (element.attributes.containsKey(EpubMarks.hidden)) return const {'display': 'none'};
+    final tag = element.localName ?? '';
     final figureCaption = tag == 'h5' &&
         (element.classes.contains('figure-container-h5') || element.parent?.classes.contains('figure-container') == true);
-    return DartReaderView.stylesFor(tag, prefs, colors, figureCaption: figureCaption);
+    final inPre = tag == 'code' && element.parent?.localName == 'pre';
+    return DartReaderView.stylesFor(tag, prefs, colors, figureCaption: figureCaption, inPre: inPre);
   }
 }
 
 class _EpubWidgetFactory extends WidgetFactory {
-  _EpubWidgetFactory(this.package, this.fromHref);
+  _EpubWidgetFactory(this.package, this.fromHref, this.ink);
 
   final EpubPackage package;
   final String fromHref;
+  final Color ink;
+
+  /// Dark-ink figures on transparency are inverted to read on the canvas.
+  @override
+  Widget? buildImageWidget(BuildTree tree, ImageSource src) {
+    final image = super.buildImageWidget(tree, src);
+    final path = _pathFor(src.url);
+    if (image == null || path == null || !InkAdaptiveImage.canHaveAlpha(path)) return image;
+    return InkAdaptiveImage(package: package, path: path, ink: ink, child: image);
+  }
 
   @override
   ImageProvider? imageProviderFromNetwork(String url) => _fromPackage(url) ?? super.imageProviderFromNetwork(url);
@@ -253,12 +268,17 @@ class _EpubWidgetFactory extends WidgetFactory {
   /// Relative `src` values are resolved by the HTML widget against the
   /// synthetic `epub:///` base URL, then served from the container here.
   ImageProvider? _fromPackage(String url) {
-    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return null;
-    final path = url.startsWith('epub:///')
-        ? Uri.decodeComponent(url.substring('epub:///'.length).split('#').first)
-        : package.resolve(fromHref, url);
+    final path = _pathFor(url);
+    if (path == null) return null;
     final bytes = package.readBytes(path);
     if (bytes == null) return null;
     return MemoryImage(Uint8List.fromList(bytes));
+  }
+
+  String? _pathFor(String url) {
+    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return null;
+    return url.startsWith('epub:///')
+        ? Uri.decodeComponent(url.substring('epub:///'.length).split('#').first)
+        : package.resolve(fromHref, url);
   }
 }
