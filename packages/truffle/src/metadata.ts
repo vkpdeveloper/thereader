@@ -406,6 +406,11 @@ function titleSite(title: string | null, pageUrl: string): string | null {
   return host.indexOf(key) >= 0 ? last : null;
 }
 
+/** A `rel` or `itemprop` token. */
+const AUTHOR_TOKEN = /(?:^|\s)author(?:\s|$)/;
+/** The name inside a byline widget. */
+const NAME_CLASS = /(?:^|[\s_-])(?:name|username|user-name|author-name|authorname|fn|byline__name|ltx_personname|nickname)(?:$|[\s_-])/;
+
 const BYLINE_CLASS = /(?:^|[\s_-])(?:byline|by-line|author|authors|author-name|authorname|writer|contributor|byline__name|post-author|entry-author|article-author|meta-author|c-byline)(?:$|[\s_-])/;
 
 function findByline(body: VElement): string | null {
@@ -415,15 +420,15 @@ function findByline(body: VElement): string | null {
     const rel = el.attrs['rel'];
     const itemprop = el.attrs['itemprop'];
     const isAuthor =
-      (rel !== undefined && /(?:^|\s)author(?:\s|$)/.test(rel)) ||
-      (itemprop !== undefined && /(?:^|\s)author(?:\s|$)/.test(itemprop)) ||
+      (rel !== undefined && AUTHOR_TOKEN.test(rel)) ||
+      (itemprop !== undefined && AUTHOR_TOKEN.test(itemprop)) ||
       BYLINE_CLASS.test(el.matchString);
     if (!isAuthor) return true;
     // Prefer the name inside a byline widget (avatar, karma and buttons are not the name).
     let target = el;
     walk(el, (child) => {
       if (target !== el) return false;
-      if (child !== el && (child.attrs['itemprop'] === 'name' || /(?:^|[\s_-])(?:name|username|user-name|author-name|authorname|fn|byline__name|ltx_personname|nickname)(?:$|[\s_-])/.test(child.matchString))) {
+      if (child !== el && (child.attrs['itemprop'] === 'name' || NAME_CLASS.test(child.matchString))) {
         target = child;
         return false;
       }

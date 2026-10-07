@@ -432,7 +432,9 @@ class Writer {
         case 'text': {
           let marks = 0;
           let code = false;
-          for (const m of node.marks ?? []) {
+          const list = node.marks;
+          for (let k = 0; list !== undefined && k < list.length; k++) {
+            const m = list[k]!;
             if (m === 'bold') marks |= BOLD;
             else if (m === 'italic') marks |= ITALIC;
             else if (m === 'strike') marks |= STRIKE;

@@ -42,17 +42,18 @@ export function extractTree(doc: VDocument, options: ExtractOptions): Article | 
   if (!titleMatched) title = sectionTitle(blocks, title);
   blocks = tidy(blocks, title, meta);
 
-  const bodyText = blocksText(blocks);
-  if (meta.articleBody !== null && meta.articleBody.length > 500 && bodyText.length < meta.articleBody.length * 0.3) {
+  let text = blocksText(blocks);
+  if (meta.articleBody !== null && meta.articleBody.length > 500 && text.length < meta.articleBody.length * 0.3) {
     blocks = paragraphsFrom(meta.articleBody);
+    text = blocksText(blocks);
   }
   if (blocks.length === 0) return null;
-  if (blocksText(blocks).length < 50 && !blocks.some((b) => b.type === 'figure' || b.type === 'video' || b.type === 'code' || b.type === 'embed')) return null;
+  if (text.length < 50 && !blocks.some((b) => b.type === 'figure' || b.type === 'video' || b.type === 'code' || b.type === 'embed')) return null;
 
+  // Neither changes the text: the lead image has no caption, and `canonical` only orders keys.
   addLeadImage(blocks, meta.leadImage);
   blocks = blocks.map(canonical);
 
-  const text = blocksText(blocks);
   const wordCount = countWords(text);
   const article: Article = {
     schema: ARTICLE_SCHEMA,

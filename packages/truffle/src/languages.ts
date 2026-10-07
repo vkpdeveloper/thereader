@@ -284,6 +284,9 @@ const RULES: [string, Rule[]][] = [
   ['json', []],
 ];
 
+/** A shell prompt opening a line: `$`, `%`, `❯`, `>`, PowerShell's `PS C:\>`, `user@host:~$`. */
+const PROMPT = /^\s*(?:[$%❯>]|PS [A-Z]:\\[^>]*>|[\w.-]+@[\w.-]+:[^$#]*[$#])\s/;
+
 function looksLikeJson(code: string): boolean {
   const first = code.charCodeAt(0);
   if (first !== 123 && first !== 91) return false;
@@ -339,7 +342,7 @@ export function detectLanguage(source: string): string | null {
   let firstIsPrompt = false;
   for (const line of lines) {
     if (line.trim().length === 0) continue;
-    const prompt = /^\s*(?:[$%❯>]|PS [A-Z]:\\[^>]*>|[\w.-]+@[\w.-]+:[^$#]*[$#])\s/.test(line);
+    const prompt = PROMPT.test(line);
     if (nonEmpty === 0) firstIsPrompt = prompt;
     nonEmpty++;
     if (prompt) prompts++;

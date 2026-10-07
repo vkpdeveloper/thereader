@@ -114,12 +114,36 @@ export function articleText(article: Article): string {
   return blocksText(article.blocks);
 }
 
-const cjk = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uac00-\ud7af]/g;
+/** Kana, CJK ideographs and Hangul: `[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uac00-\ud7af]`. */
+function isCjk(c: number): boolean {
+  return (c >= 0x3040 && c <= 0x30ff) || (c >= 0x3400 && c <= 0x4dbf) || (c >= 0x4e00 && c <= 0x9fff) || (c >= 0xf900 && c <= 0xfaff) || (c >= 0xac00 && c <= 0xd7af);
+}
 
-/** Words for reading time: whitespace-separated tokens, CJK characters counted at two per word. */
+/** What regex `\s` and `trim` count as whitespace. */
+function isSpace(c: number): boolean {
+  if (c <= 0x20) return c === 0x20 || (c >= 0x09 && c <= 0x0d);
+  return c === 0xa0 || c === 0x1680 || (c >= 0x2000 && c <= 0x200a) || c === 0x2028 || c === 0x2029 || c === 0x202f || c === 0x205f || c === 0x3000 || c === 0xfeff;
+}
+
+/**
+ * Words for reading time: whitespace-separated tokens, CJK characters counted at two per word. One pass, nothing
+ * allocated: a token is a run of characters that are neither whitespace nor CJK (each CJK character splits tokens).
+ */
 export function countWords(text: string): number {
-  const cjkChars = text.match(cjk)?.length ?? 0;
-  const rest = text.replace(cjk, ' ').trim();
-  const words = rest.length === 0 ? 0 : rest.split(/\s+/).length;
-  return words + Math.ceil(cjkChars / 2);
+  let words = 0;
+  let cjk = 0;
+  let inWord = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text.charCodeAt(i);
+    if (isCjk(c)) {
+      cjk++;
+      inWord = false;
+    } else if (isSpace(c)) {
+      inWord = false;
+    } else if (!inWord) {
+      words++;
+      inWord = true;
+    }
+  }
+  return words + Math.ceil(cjk / 2);
 }
