@@ -374,6 +374,17 @@ void main() {
         target.href.split('#').first,
       );
       await _get('/shot/check-toc');
+
+      // A live theme change recolours code panels and syntax without a
+      // reload (thereader-themes.css keys on ReadiumCSS's colours).
+      final code = (await controller.search(
+        'urllib.request.urlretrieve',
+      )).first;
+      await controller.goTo(code.locator);
+      await settle(1500);
+      controller.applyPreferences(const ReaderPreferences(themeId: 'dracula'));
+      await settle();
+      await _get('/shot/check-theme-live');
       await close(controller);
     }
     await root.delete(recursive: true);
