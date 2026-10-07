@@ -217,6 +217,7 @@ function classify(text: string): { cls: WordClass; strong: boolean } {
     const lower = core.toLowerCase();
     if (core.length === 1) return { cls: 'weak', strong: false };
     if (FUNCTIONS.has(core)) return { cls: 'func', strong: false };
+    if (/^[jkh](det|dim|trace|Re|Im)$/.test(core)) return { cls: 'math', strong: true };
     if (/^[kj][A-Za-z]{1,2}[kj]$/.test(core) || /^[RCF][nm]$/.test(core)) return { cls: 'math', strong: true };
     if (WORDS.has(lower) && !(core.length > 1 && /^[A-Z][A-Z]$/.test(core))) return { cls: 'prose', strong: false };
     // "ui": an operand and the closing ⟨ ⟩ bracket.
@@ -224,7 +225,7 @@ function classify(text: string): { cls: WordClass; strong: boolean } {
     // Letters with indices run together: "anen" is a_n e_n, "enien" e_n⟩e_n, "kukk" ‖u‖‖.
     if (/^([a-z][jkmn])+$/.test(core) || /^[a-z][jkmn]i[a-z][jkmn]$/.test(core) || /^k[a-z]kk?$/.test(core)) return { cls: 'math', strong: true };
     if (core.length >= 4) return { cls: 'prose', strong: false };
-    if (/^(f[a-z0-9]|h[A-Za-z]|[kj][A-Z])/.test(core) || /[a-zA-Z]g$/.test(core) || /^[A-Z][A-Z]$/.test(core)) return { cls: 'math', strong: false };
+    if (/^(f[a-z0-9]$|h[A-Za-z]|[kj][A-Z])/.test(core) || /[a-zA-Z]g$/.test(core) || /^[A-Z][A-Z]$/.test(core)) return { cls: 'math', strong: false };
     return { cls: 'unknown', strong: false };
   }
   // Letters with digits, dots and slashes: "u1;", "R3", ".a", "f0g", "nC1", "kuk2".
@@ -484,7 +485,7 @@ function formula(atoms: Atom[], lastOfLine: boolean, droppedAfter: boolean): { t
           continue;
         }
       }
-      if (s === 'D' && n > 1 && !glued(k + 1)) {
+      if (s === 'D' && n > 1 && !glued(k + 1) && !opLetter(k + 1)) {
         // A continuation line of a display ("D 8 C 10i"), or = after a dropped operand.
         if (k > 0) b.push(DROPPED_OPERAND[0], DROPPED_OPERAND[1], 'x');
         b.push(tex, plain, 'op');
