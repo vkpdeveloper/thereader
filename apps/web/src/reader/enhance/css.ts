@@ -23,7 +23,7 @@ const MONO_STACK = `ui-monospace, "SF Mono", SFMono-Regular, Menlo, "JetBrains M
 
 /** Inside each formula's shadow root (temml's layout rules, trimmed). */
 export const SHADOW_CSS = `
-:host{color:inherit;}
+:host{color:inherit;position:relative;}
 math{font-family:var(--tr-math-font, ${MATH_STACK});font-style:normal;font-weight:normal;line-height:normal;
   font-size-adjust:none;text-indent:0;text-transform:none;letter-spacing:normal;word-spacing:normal;word-wrap:normal;
   direction:ltr;color:inherit;font-feature-settings:"dtls" off;}
@@ -41,7 +41,8 @@ math > mrow{padding:0.25ex 0;}
 .tml-left{text-align:left;text-align:-webkit-left;}
 mtable.tml-jot > mtr > mtd{padding-top:0.7ex;padding-bottom:0.7ex;}
 mtable.tml-small mtd{padding-top:0.35ex;padding-bottom:0.35ex;}
-.menclose{display:inline-block;position:relative;padding:0.5ex 0;}
+/* Strikes (cancel, not) are absolutely positioned inside their enclosure. */
+menclose, .menclose{display:inline-block;position:relative;padding:0.5ex 0;}
 .tml-overline{padding:0.1em 0 0 0;border-top:0.065em solid;}
 .tml-underline{padding:0 0 0.1em 0;border-bottom:0.065em solid;}
 .tml-fbox{padding:3pt;border:1px solid;}
