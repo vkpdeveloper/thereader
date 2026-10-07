@@ -20,17 +20,38 @@ final _safeScheme = RegExp(r'^(?:https?|mailto|tel):', caseSensitive: false);
 /// percent-encoded first so both implementations agree on sloppy publisher
 /// markup.
 String? resolveUrl(String href, String base) {
-  final value = jsTrim(href).replaceAll(_strip, '').replaceAll(' ', '%20');
+  final value = _withoutTabsAndNewlines(jsTrim(href)).replaceAll(' ', '%20');
   if (value.isEmpty) return null;
-  if (_dataScheme.hasMatch(value)) return value;
+  final data = startsWithIgnoringCase(value, 'data:');
+  assert(data == _dataScheme.hasMatch(value));
+  if (data) return value;
   final url = whatwgHref(value, base);
-  return url != null && _safeScheme.hasMatch(url) ? url : null;
+  if (url == null) return null;
+  final safe =
+      startsWithIgnoringCase(url, 'https:') ||
+      startsWithIgnoringCase(url, 'http:') ||
+      startsWithIgnoringCase(url, 'mailto:') ||
+      startsWithIgnoringCase(url, 'tel:');
+  assert(safe == _safeScheme.hasMatch(url));
+  return safe ? url : null;
+}
+
+/// `value.replace(/[\t\n\r]/g, '')`.
+String _withoutTabsAndNewlines(String value) {
+  for (var i = 0; i < value.length; i++) {
+    final c = value.codeUnitAt(i);
+    if (c == 0x09 || c == 0x0a || c == 0x0d) return value.replaceAll(_strip, '');
+  }
+  return value;
 }
 
 /// http(s) only.
 String? resolveHttp(String href, String base) {
   final url = resolveUrl(href, base);
-  return url != null && _httpScheme.hasMatch(url) ? url : null;
+  if (url == null) return null;
+  final http = startsWithIgnoringCase(url, 'https://') || startsWithIgnoringCase(url, 'http://');
+  assert(http == _httpScheme.hasMatch(url));
+  return http ? url : null;
 }
 
 final _hostPattern = RegExp(r'^[a-z][a-z0-9+.-]*:\/\/(?:[^/?#]*@)?([^/:?#]+)', caseSensitive: false);
@@ -98,11 +119,14 @@ _Url? _lastParsed;
 _Base? _lastFast;
 
 /// The common relative and absolute http(s) references that need no
-/// normalization (no dot segments, nothing to percent-encode, a plain
-/// lowercase host), resolved by concatenation. Everything else goes through
-/// the full parser.
+/// normalization (no dot segments, nothing to percent-encode but non-ASCII
+/// characters, a plain lowercase host), resolved by concatenation. Everything
+/// else goes through the full parser.
 class _Base {
-  _Base(this.origin, this.directory, this.withoutFragment);
+  _Base(this.scheme, this.origin, this.directory, this.withoutFragment);
+
+  /// `https` or `http`.
+  final String scheme;
 
   /// `https://host[:port]`.
   final String origin;
@@ -124,15 +148,21 @@ class _Base {
     dir.write('/');
     final href = base.href;
     final hash = href.indexOf('#');
-    return _Base(origin, dir.toString(), hash >= 0 ? href.substring(0, hash) : href);
+    return _Base(base.scheme, origin, dir.toString(), hash >= 0 ? href.substring(0, hash) : href);
   }
 
   String? resolve(String input) {
     final n = input.length;
     if (n == 0) return null;
-    // Only printable ASCII that no percent-encode set touches.
+    // Only printable ASCII that no percent-encode set touches, and non-ASCII
+    // characters (every set encodes them as UTF-8; not in the host).
+    var ascii = true;
     for (var i = 0; i < n; i++) {
       final c = input.codeUnitAt(i);
+      if (c >= 0x80 && (c < 0xd800 || c > 0xdfff)) {
+        ascii = false;
+        continue;
+      }
       if (c <= 0x20 ||
           c >= 0x7f ||
           c == 0x22 ||
@@ -148,33 +178,21 @@ class _Base {
         return null;
       }
     }
+    final href = _resolve(input);
+    return href == null || ascii ? href : _encodeNonAscii(href);
+  }
+
+  String? _resolve(String input) {
+    final n = input.length;
     final first = input.codeUnitAt(0);
     if (first == 0x23) return '$withoutFragment$input';
     if (first == 0x2f) {
-      if (n > 1 && input.codeUnitAt(1) == 0x2f) return null;
+      // `//host/path` takes the base's scheme.
+      if (n > 1 && input.codeUnitAt(1) == 0x2f) return _absolute('$scheme:$input');
       return _plainPath(input, 0) ? '$origin$input' : null;
     }
     if (first == 0x3f) return null;
-    if (input.startsWith('https://') || input.startsWith('http://')) {
-      final hostStart = input.indexOf('//') + 2;
-      var i = hostStart;
-      var lastDot = hostStart - 1;
-      while (i < n) {
-        final c = input.codeUnitAt(i);
-        if (c == 0x2f || c == 0x3f || c == 0x23) break;
-        // Lowercase letters, digits, '-' and '.' only: no port, userinfo or IP-ish host.
-        if (!((c >= 0x61 && c <= 0x7a) || (c >= 0x30 && c <= 0x39) || c == 0x2d || c == 0x2e)) return null;
-        if (c == 0x2e) lastDot = i;
-        i++;
-      }
-      if (i == hostStart || lastDot == i - 1 || input.substring(hostStart, i).contains('xn--')) return null;
-      // A host ending in a number is an IPv4 address.
-      final last = input.codeUnitAt(lastDot + 1);
-      if (last >= 0x30 && last <= 0x39) return null;
-      if (i == n) return '$input/';
-      if (input.codeUnitAt(i) != 0x2f) return null;
-      return _plainPath(input, i) ? input : null;
-    }
+    if (input.startsWith('https://') || input.startsWith('http://')) return _absolute(input);
     // A path relative to the base directory; anything with a colon may be a scheme.
     for (var i = 0; i < n; i++) {
       final c = input.codeUnitAt(i);
@@ -183,6 +201,56 @@ class _Base {
     }
     return _plainPath('/$input', 0) ? '$directory$input' : null;
   }
+
+  /// `http(s)://host...` with a plain host.
+  static String? _absolute(String input) {
+    final n = input.length;
+    final hostStart = input.indexOf('//') + 2;
+    var i = hostStart;
+    var lastDot = hostStart - 1;
+    while (i < n) {
+      final c = input.codeUnitAt(i);
+      if (c == 0x2f || c == 0x3f || c == 0x23) break;
+      // Lowercase letters, digits, '-' and '.' only: no port, userinfo or IP-ish host.
+      if (!((c >= 0x61 && c <= 0x7a) || (c >= 0x30 && c <= 0x39) || c == 0x2d || c == 0x2e)) return null;
+      if (c == 0x2e) lastDot = i;
+      i++;
+    }
+    if (i == hostStart || lastDot == i - 1 || input.substring(hostStart, i).contains('xn--')) return null;
+    // A host ending in a number is an IPv4 address.
+    final last = input.codeUnitAt(lastDot + 1);
+    if (last >= 0x30 && last <= 0x39) return null;
+    if (i == n) return '$input/';
+    if (input.codeUnitAt(i) != 0x2f) return null;
+    return _plainPath(input, i) ? input : null;
+  }
+
+  /// Non-ASCII characters (no surrogates) as percent-encoded UTF-8.
+  static String _encodeNonAscii(String s) {
+    final out = StringBuffer();
+    var from = 0;
+    void byte(int b) => out
+      ..writeCharCode(0x25)
+      ..writeCharCode(_hexDigit(b >> 4))
+      ..writeCharCode(_hexDigit(b & 15));
+    for (var i = 0; i < s.length; i++) {
+      final c = s.codeUnitAt(i);
+      if (c < 0x80) continue;
+      out.write(s.substring(from, i));
+      from = i + 1;
+      if (c < 0x800) {
+        byte(0xc0 | c >> 6);
+      } else {
+        byte(0xe0 | c >> 12);
+        byte(0x80 | (c >> 6) & 0x3f);
+      }
+      byte(0x80 | c & 0x3f);
+    }
+    out.write(s.substring(from));
+    return out.toString();
+  }
+
+  static int _hexDigit(int d) => d < 10 ? 0x30 + d : 0x37 + d;
 
   /// The path part of [s] from [start] has no dot segments.
   static bool _plainPath(String s, int start) {

@@ -307,6 +307,61 @@ List<String>? requiredLiterals(RegExp regex) {
   }
 }
 
+/// A [RegExp] whose [requiredLiterals] are looked for first: a subject
+/// without any of them cannot match and is answered without running the
+/// pattern (with assertions enabled, the pattern is checked as well).
+class ScreenedPattern {
+  ScreenedPattern(String source, {bool caseSensitive = true})
+    : regex = RegExp(source, caseSensitive: caseSensitive),
+      _byFirst = _index(requiredLiterals(RegExp(source, caseSensitive: caseSensitive)));
+
+  final RegExp regex;
+
+  /// The literals by first code unit (lowercase when ignoring case); null
+  /// when there are none, or one starts outside ASCII.
+  final List<List<String>?>? _byFirst;
+
+  static List<List<String>?>? _index(List<String>? literals) {
+    if (literals == null || literals.any((w) => w.codeUnitAt(0) >= 0x80)) return null;
+    final out = List<List<String>?>.filled(128, null);
+    for (final literal in literals) {
+      (out[literal.codeUnitAt(0)] ??= []).add(literal);
+    }
+    return out;
+  }
+
+  bool hasMatch(String subject) {
+    final byFirst = _byFirst;
+    if (byFirst == null || _containsAny(subject, byFirst)) return regex.hasMatch(subject);
+    assert(!regex.hasMatch(subject), '${regex.pattern} matches "$subject" without its literals');
+    return false;
+  }
+
+  bool _containsAny(String s, List<List<String>?> byFirst) {
+    final ignoreCase = !regex.isCaseSensitive;
+    for (var i = 0; i < s.length; i++) {
+      var c = s.codeUnitAt(i);
+      if (ignoreCase) c = _asciiLower(c);
+      if (c >= 0x80) continue;
+      final candidates = byFirst[c];
+      if (candidates == null) continue;
+      for (final literal in candidates) {
+        if (i + literal.length > s.length) continue;
+        var k = 1;
+        while (k < literal.length) {
+          final d = s.codeUnitAt(i + k);
+          if ((ignoreCase ? _asciiLower(d) : d) != literal.codeUnitAt(k)) break;
+          k++;
+        }
+        if (k == literal.length) return true;
+      }
+    }
+    return false;
+  }
+}
+
+int _asciiLower(int c) => c >= 0x41 && c <= 0x5a ? c + 32 : c;
+
 /// What a regular expression node implies about the text it matches.
 class _Info {
   _Info(this.exact, Set<String>? required)

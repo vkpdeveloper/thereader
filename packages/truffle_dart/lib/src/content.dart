@@ -934,6 +934,23 @@ final _uiText = RegExp(
   caseSensitive: false,
 );
 
+/// [_uiText], run only on text that starts like one of its alternatives
+/// (two in three short texts do not).
+bool _isUiText(String text) {
+  final first = text.isEmpty ? -1 : text.codeUnitAt(0);
+  final c = first >= 0x41 && first <= 0x5a ? first + 32 : first;
+  final possible = switch (c) {
+    0x74 || 0x63 || 0x69 || 0x70 || 0x67 || 0x65 || 0x76 || 0x61 || 0x73 || 0x72 || 0x6c || 0x66 || 0x62 => true,
+    0x79 || 0x6d => true, // t c i p g e v a s r l f b, y m
+    >= 0x30 && <= 0x39 => true,
+    0xd7 => true, // ×
+    _ => false,
+  };
+  if (possible) return _uiText.hasMatch(text);
+  assert(!_uiText.hasMatch(text), 'UI text "$text"');
+  return false;
+}
+
 /// Names, affiliations and emails above the article's text (LaTeXML's `ltx_authors`, author lists too long for a
 /// byline): the byline's job, not a paragraph. No headings or prose inside, under 200 characters of text before it.
 bool _isAuthorBlock(VElement el, VElement root) {
@@ -1027,7 +1044,7 @@ void _prepare(VElement root, Flags flags) {
     if (el.textLen < 40 &&
         el.textLen > 0 &&
         (tag == 'p' || tag == 'div' || tag == 'span' || tag == 'a' || tag == 'li') &&
-        _uiText.hasMatch(textOf(el))) {
+        _isUiText(textOf(el))) {
       el.skip = true;
       return false;
     }

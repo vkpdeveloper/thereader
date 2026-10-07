@@ -13,7 +13,7 @@ import 'url.dart';
 /// Placeholder sources lazy loaders put in `src` until the real image scrolls into view: a file name
 /// holding one of the words. Each name is tried once, from its start: a search from every word would
 /// rescan the rest of a name repeating it.
-final _placeholder = RegExp(
+final _placeholder = ScreenedPattern(
   r'(?:^data:image\/(?:gif|png|svg\+xml)[;,])|(?:^|[^\w-])(?=[\w-]*\.(?:gif|png|svg|jpe?g|webp)(?:$|\?))[\w-]*?(?:placeholder|blank|spacer|transparent|pixel|lazy[-_]?load|1x1|grey|gray|loading|empty|dummy|lqip|blur)',
   caseSensitive: false,
 );
@@ -46,7 +46,7 @@ const _lazySrc = [
 ];
 const _lazySrcset = ['data-srcset', 'data-lazy-srcset', 'data-original-srcset', 'data-src-set'];
 
-final _imageExt = RegExp(r'\.(?:jpe?g|png|webp|gif|avif|bmp|svg|jxl|heic)(?:$|[?#])', caseSensitive: false);
+final _imageExt = ScreenedPattern(r'\.(?:jpe?g|png|webp|gif|avif|bmp|svg|jxl|heic)(?:$|[?#])', caseSensitive: false);
 
 class _Candidate {
   _Candidate(this.url, this.width, this.density);
@@ -157,7 +157,9 @@ String? _usableSrc(String? value, String base) {
   if (value == null) return null;
   final v = jsTrim(value);
   if (v.isEmpty || _placeholder.hasMatch(v)) return null;
-  if (_dataPrefix.hasMatch(v)) return _dataBase64.hasMatch(v) && v.length > 2000 ? v : null;
+  final data = startsWithIgnoringCase(v, 'data:');
+  assert(data == _dataPrefix.hasMatch(v));
+  if (data) return _dataBase64.hasMatch(v) && v.length > 2000 ? v : null;
   return resolveHttp(v, base);
 }
 
@@ -177,8 +179,11 @@ List<_Candidate> _pictureSources(VElement picture, String base) {
   return [];
 }
 
-final _srcsetLike = RegExp(r'\.(?:jpe?g|png|webp)\s+\d+[wx]', caseSensitive: false);
-final _tracker = RegExp(r'[/.](?:pixel|beacon|tracking|tracker|spacer)[/.]|\/(?:ads?|pagead)\/', caseSensitive: false);
+final _srcsetLike = ScreenedPattern(r'\.(?:jpe?g|png|webp)\s+\d+[wx]', caseSensitive: false);
+final _tracker = ScreenedPattern(
+  r'[/.](?:pixel|beacon|tracking|tracker|spacer)[/.]|\/(?:ads?|pagead)\/',
+  caseSensitive: false,
+);
 
 VElement? _linkOf(VElement img) {
   final p = img.parent;
