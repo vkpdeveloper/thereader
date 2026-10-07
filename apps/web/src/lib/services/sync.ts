@@ -2,6 +2,7 @@ import type { ArticleSummary, Book, Highlight, LibraryEntry, ReadingLocator, Rea
 import { ApiError, type SyncSnapshot, type SyncStore } from './contract';
 import type { SyncResponse } from './api';
 import { MAX_ARTICLE_BODY_BYTES, positionFromFraction, type ArticleStoreImpl, type RemoteArticle } from './articles';
+import { parseAssignmentRecord, parseCategoryRecord, validCategoryName, type CategoryRecord, type CategoryStoreImpl } from './categories';
 import { randomId } from './hash';
 import { articleIdOf } from '../articleAnchors';
 import type { HighlightStoreImpl } from './highlights';
@@ -44,6 +45,8 @@ const DRAIN_DELAY_MS = 5_000;
 export const HIGHLIGHTS_RETRY_MS = 6 * 60 * 60_000;
 /** Same for articles, against a server without article sync. */
 export const ARTICLES_RETRY_MS = 6 * 60 * 60_000;
+/** Same for categories, against a server without category sync. */
+export const CATEGORIES_RETRY_MS = 6 * 60 * 60_000;
 /** Article documents uploaded per cycle; the rest wait for the next one. */
 export const ARTICLE_UPLOADS_PER_CYCLE = 5;
 /** Small synced documents downloaded per cycle, so they open offline. */
@@ -74,12 +77,19 @@ const HIGHLIGHT_COLOR = /^[a-z]{1,16}$/;
 const ARTICLES_BOOK_ID = '_articles';
 const ARTICLES_SHA = '0'.repeat(64);
 const ARTICLE_IMAGE = /^(?:https?:\/\/|data:image\/)\S+$/i;
+/** Category changes use a sentinel edition too; the API checks item ids like these. */
+const CATEGORIES_BOOK_ID = '_categories';
+const CATEGORIES_SHA = '0'.repeat(64);
+const CATEGORY_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+const CATEGORY_COLOR = /^[a-z]{1,20}$/;
+const BOOK_ITEM_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const ARTICLE_ITEM_ID = /^[0-9a-f]{32}$/;
 
 export interface SyncChange {
   id: string;
   bookId: string;
   sha256: string;
-  kind: 'library' | 'progress' | 'session' | 'highlight' | 'article' | 'articleProgress';
+  kind: 'library' | 'progress' | 'session' | 'highlight' | 'article' | 'articleProgress' | 'category' | 'categoryItem';
   updatedAt: string;
   payload: Record<string, unknown>;
 }
@@ -100,6 +110,10 @@ export interface OriginState {
   articlesUnsupportedUntil?: string;
   /** Article documents this device saved and still has to upload: id to SHA-256. */
   articleUploads?: Record<string, string>;
+  /** Server category rev already pulled; absent means never pulled. */
+  categoryCursor?: number;
+  /** Set when the server rejected category sync (not yet deployed). */
+  categoriesUnsupportedUntil?: string;
 }
 
 export interface StoredSync {
@@ -115,6 +129,8 @@ export interface SyncApi {
     changes: Record<string, unknown>[];
     highlightsSince?: number;
     articlesSince?: number;
+    /** Null pulls every category; requests without it get no `categories`. */
+    categoriesSince?: number | null;
     keepalive?: boolean;
   }): Promise<SyncResponse>;
   getBook(id: string): Promise<Book>;
@@ -163,6 +179,7 @@ export interface SyncDeps {
   settings: SettingsStoreImpl;
   highlights?: HighlightStoreImpl;
   articles?: ArticleStoreImpl;
+  categories?: CategoryStoreImpl;
   clientFor(origin: string): SyncApi;
   isUploadPending?(entryId: string): boolean;
   retryUploads?(): void;
@@ -360,6 +377,7 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
       }),
       ...(this.deps.highlights ? [this.deps.highlights.subscribe(capture)] : []),
       ...(this.deps.articles ? [this.deps.articles.subscribe(capture)] : []),
+      ...(this.deps.categories ? [this.deps.categories.subscribe(capture)] : []),
       this.bus.listen((topic) => {
         if (topic === 'sync') void this.reloadFromOtherTab();
       }),
@@ -458,6 +476,7 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
     }
     this.captureHighlights(origin, state, entries, out);
     this.captureArticles(state, out);
+    this.captureCategories(state, out);
     return out;
   }
 
@@ -514,6 +533,31 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
       const stamp = `deleted:${at}`;
       if (state.seen[key] === undefined || state.seen[key] === stamp) continue;
       out.push([key, stamp, articleChange('article', at, { articleId: id, deleted: true })]);
+    }
+  }
+
+  /**
+   * Categories and where items are filed, which (like articles) go to
+   * whichever origin is current. A deletion, or an item taken out of its
+   * category, is only sent when this origin has seen it. Records the API
+   * would reject stay on this device rather than failing a batch.
+   */
+  private captureCategories(state: OriginState, out: Capture[]): void {
+    const store = this.deps.categories;
+    if (!store?.loaded) return;
+    for (const c of store.allCategories) {
+      const key = `category:${c.id}`;
+      if (state.seen[key] === c.updatedAt || (c.deleted && state.seen[key] === undefined)) continue;
+      const payload = categoryPayload(c);
+      out.push([key, c.updatedAt, payload ? categoryChange('category', c.updatedAt, payload) : null]);
+    }
+    for (const a of store.allAssignments) {
+      const key = `categoryItem:${a.type}:${a.id}`;
+      if (state.seen[key] === a.updatedAt || (a.categoryId === null && state.seen[key] === undefined)) continue;
+      const valid = (a.type === 'book' ? a.id.length <= 128 && BOOK_ITEM_ID.test(a.id) : ARTICLE_ITEM_ID.test(a.id)) &&
+        (a.categoryId === null || CATEGORY_ID.test(a.categoryId));
+      const payload = { itemType: a.type, itemId: a.id, categoryId: a.categoryId };
+      out.push([key, a.updatedAt, valid ? categoryChange('categoryItem', a.updatedAt, payload) : null]);
     }
   }
 
@@ -663,6 +707,10 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
     let withArticles =
       this.deps.articles !== undefined && !(state.articlesUnsupportedUntil && isoOrder(state.articlesUnsupportedUntil) / 1000 > now);
     let articlesRejected = false;
+    let withCategories =
+      this.deps.categories !== undefined &&
+      !(state.categoriesUnsupportedUntil && isoOrder(state.categoriesUnsupportedUntil) / 1000 > now);
+    let categoriesRejected = false;
     const submitted = new Map<string, SyncChange>();
     let bytes = 100;
     try {
@@ -672,7 +720,9 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
       for (const [key, pending] of Object.entries(state.pending)) {
         const value = { ...pending };
         if (value.kind === 'highlight' && !withHighlights) continue;
-        if (isArticleKind(value.kind)) {
+        if (isCategoryKind(value.kind)) {
+          if (!withCategories) continue;
+        } else if (isArticleKind(value.kind)) {
           if (!withArticles) continue;
         } else {
           const entry = library.find((e) => e.origin === origin && e.book.sha256 === value.sha256);
@@ -695,26 +745,38 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
             changes: [...submitted.values()] as unknown as Record<string, unknown>[],
             ...(withHighlights ? { highlightsSince: state.highlightCursor ?? 0 } : {}),
             ...(withArticles ? { articlesSince: state.articleCursor ?? 0 } : {}),
+            ...(withCategories ? { categoriesSince: state.categoryCursor ?? null } : {}),
             keepalive,
           });
           break;
         } catch (error) {
-          if (!(withHighlights || withArticles) || !(error instanceof ApiError) || error.status !== 400 || error.code !== 'INVALID_SYNC') {
+          if (
+            !(withHighlights || withArticles || withCategories) ||
+            !(error instanceof ApiError) ||
+            error.status !== 400 ||
+            error.code !== 'INVALID_SYNC'
+          ) {
             throw error;
           }
-          // A server without article (or highlight) sync rejects the whole
-          // atomic batch. Keep everything else syncing and try that part
-          // again later: articles first, as the newer feature.
-          const dropArticles = withArticles;
-          if (dropArticles) {
+          // A server without category (or article, or highlight) sync rejects
+          // the whole atomic batch. Keep everything else syncing and try that
+          // part again later, newest feature first.
+          let dropped: (kind: string) => boolean;
+          if (withCategories) {
+            withCategories = false;
+            categoriesRejected = true;
+            dropped = isCategoryKind;
+          } else if (withArticles) {
             withArticles = false;
             articlesRejected = true;
+            dropped = isArticleKind;
           } else {
             withHighlights = false;
             highlightsRejected = true;
+            dropped = (kind) => kind === 'highlight';
           }
           for (const [key, value] of [...submitted]) {
-            if (dropArticles ? isArticleKind(value.kind) : value.kind === 'highlight') {
+            if (dropped(value.kind)) {
               submitted.delete(key);
               before.delete(key);
             }
@@ -744,11 +806,13 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
         }
         if (highlightsRejected) st.highlightsUnsupportedUntil = new Date(now + HIGHLIGHTS_RETRY_MS).toISOString();
         if (articlesRejected) st.articlesUnsupportedUntil = new Date(now + ARTICLES_RETRY_MS).toISOString();
+        if (categoriesRejected) st.categoriesUnsupportedUntil = new Date(now + CATEGORIES_RETRY_MS).toISOString();
       });
 
       const seen: Record<string, string> = {};
       let cursor: number | undefined;
       let articleCursor: number | undefined;
+      let categoryCursor: number | undefined;
       const metadataRefresh: LibraryEntry[] = [];
       this.applying = true;
       try {
@@ -756,11 +820,13 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
         const pulled = response.highlights;
         if (withHighlights && isRecord(pulled)) cursor = await this.applyHighlights(origin, pulled, seen);
         if (withArticles && isRecord(response.articles)) articleCursor = await this.applyArticles(response.articles, seen);
+        if (withCategories && isRecord(response.categories)) categoryCursor = await this.applyCategories(response.categories, seen);
         await this.mutate((s) => {
           const st = (s.origins[origin] ??= emptyOrigin());
           Object.assign(st.seen, seen);
           if (cursor !== undefined) st.highlightCursor = cursor;
           if (articleCursor !== undefined) st.articleCursor = articleCursor;
+          if (categoryCursor !== undefined) st.categoryCursor = categoryCursor;
           st.lastSyncedAt = nowIso(this.now);
           s.lastAttemptAt = nowIso(this.now);
         });
@@ -776,7 +842,13 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
       this.scheduleMetadataRefresh(origin, client, metadataRefresh);
       const more = isRecord(response.highlights) && response.highlights.more === true;
       const moreArticles = isRecord(response.articles) && response.articles.more === true;
-      this.drainMore = submitted.size === MAX_CHANGES || bytes > 200 * 1024 || (withHighlights && more) || (withArticles && moreArticles);
+      const moreCategories = isRecord(response.categories) && response.categories.more === true;
+      this.drainMore =
+        submitted.size === MAX_CHANGES ||
+        bytes > 200 * 1024 ||
+        (withHighlights && more) ||
+        (withArticles && moreArticles) ||
+        (withCategories && moreCategories);
       if (withArticles && !keepalive && origin === this.origin) void this.deps.articles!.prefetch(ARTICLE_PREFETCH_PER_CYCLE).catch(() => undefined);
     } catch (error) {
       this.failures++;
@@ -944,6 +1016,30 @@ export class SyncStoreImpl extends Emitter<SyncSnapshot> implements SyncStore {
       if (local && isoOrder(local.addedAt) === isoOrder(r.updatedAt)) seen[`article:${r.id}`] = `saved:${local.addedAt}`;
       if (local?.progressUpdatedAt && r.positionUpdatedAt && isoOrder(local.progressUpdatedAt) === isoOrder(r.positionUpdatedAt)) {
         seen[`articleProgress:${r.id}`] = local.progressUpdatedAt;
+      }
+    }
+    return typeof pulled.cursor === 'number' && Number.isSafeInteger(pulled.cursor) ? pulled.cursor : undefined;
+  }
+
+  /**
+   * Stores categories and assignments changed on other devices (one shared
+   * rev sequence); returns the new pull cursor. Assignments to a category not
+   * pulled yet are kept and count once it arrives.
+   */
+  private async applyCategories(pulled: Record<string, unknown>, seen: Record<string, string>): Promise<number | undefined> {
+    const store = this.deps.categories!;
+    const categories = (Array.isArray(pulled.items) ? pulled.items : []).map(parseCategoryRecord).filter((c) => c !== null);
+    const assignments = (Array.isArray(pulled.assignments) ? pulled.assignments : []).map(parseAssignmentRecord).filter((a) => a !== null);
+    await store.applyRemote({ categories, assignments });
+    // Matching copies need no upload; a newer local edit stays queued.
+    for (const r of categories) {
+      const local = store.category(r.id);
+      if (local && local.deleted === r.deleted && isoOrder(local.updatedAt) === isoOrder(r.updatedAt)) seen[`category:${r.id}`] = local.updatedAt;
+    }
+    for (const r of assignments) {
+      const local = store.assignment(r);
+      if (local && local.categoryId === r.categoryId && isoOrder(local.updatedAt) === isoOrder(r.updatedAt)) {
+        seen[`categoryItem:${r.type}:${r.id}`] = local.updatedAt;
       }
     }
     return typeof pulled.cursor === 'number' && Number.isSafeInteger(pulled.cursor) ? pulled.cursor : undefined;
@@ -1208,6 +1304,9 @@ function parseOriginState(value: unknown): OriginState {
   if (typeof value.articleCursor === 'number') st.articleCursor = Math.trunc(value.articleCursor);
   const articlesUnsupported = toIso(value.articlesUnsupportedUntil);
   if (articlesUnsupported) st.articlesUnsupportedUntil = articlesUnsupported;
+  if (typeof value.categoryCursor === 'number') st.categoryCursor = Math.trunc(value.categoryCursor);
+  const categoriesUnsupported = toIso(value.categoriesUnsupportedUntil);
+  if (categoriesUnsupported) st.categoriesUnsupportedUntil = categoriesUnsupported;
   if (isRecord(value.articleUploads)) {
     for (const [id, sha] of Object.entries(value.articleUploads)) if (typeof sha === 'string') (st.articleUploads ??= {})[id] = sha;
   }
@@ -1269,6 +1368,19 @@ function highlightPayload(h: Highlight): Record<string, unknown> | null {
 }
 
 const isArticleKind = (kind: string): boolean => kind === 'article' || kind === 'articleProgress';
+const isCategoryKind = (kind: string): boolean => kind === 'category' || kind === 'categoryItem';
+
+function categoryChange(kind: 'category' | 'categoryItem', updatedAt: string, payload: Record<string, unknown>): SyncChange {
+  return { id: randomId(), bookId: CATEGORIES_BOOK_ID, sha256: CATEGORIES_SHA, kind, updatedAt, payload };
+}
+
+/** A category as the API validates it; null for one it would reject. */
+export function categoryPayload(c: CategoryRecord): Record<string, unknown> | null {
+  if (!CATEGORY_ID.test(c.id)) return null;
+  if (c.deleted) return { categoryId: c.id, deleted: true };
+  if (!validCategoryName(c.name)) return null;
+  return { categoryId: c.id, name: c.name, color: CATEGORY_COLOR.test(c.color) ? c.color : 'gray', createdAt: c.createdAt, deleted: false };
+}
 
 function articleChange(kind: 'article' | 'articleProgress', updatedAt: string, payload: Record<string, unknown>): SyncChange {
   return { id: randomId(), bookId: ARTICLES_BOOK_ID, sha256: ARTICLES_SHA, kind, updatedAt, payload };

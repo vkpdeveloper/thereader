@@ -4,19 +4,25 @@ import '../../app_scope.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/tokens.dart';
 import '../../data/models/article_summary.dart';
-import '../../data/models/book.dart';
+import '../../data/models/category.dart';
 import '../../data/models/library.dart';
 import '../articles/add_article_sheet.dart';
 import '../articles/article_tile.dart';
 import '../book/book_detail_screen.dart';
+import '../categories/category_items.dart';
+import '../categories/category_screen.dart';
+import '../categories/category_sheet.dart';
+import '../categories/category_shelf.dart';
 import '../reader/reader_screen.dart';
+import 'book_grid_item.dart';
 import '../shared/cover_art.dart';
 import '../shared/states.dart';
 
 enum _Filter { all, downloaded, inProgress, articles }
 
-/// Home: an editorial title, one continue-reading entry, saved articles, then
-/// a cover-led grid of everything you have. Works fully offline.
+/// Home: an editorial title, one continue-reading entry, a row of category
+/// bookcases, saved articles, then a cover-led grid of everything not filed in
+/// a category. Works fully offline.
 class LibraryScreen extends StatefulWidget {
   const LibraryScreen({super.key, required this.onBrowse});
 
@@ -63,10 +69,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final services = AppScope.of(context);
     final imports = services.imports;
     final articles = services.articles;
+    final store = services.categories;
     // Upload and sync progress are deliberately not observed here: the
     // library stays quiet and Settings is the one place that reports them.
     return ListenableBuilder(
-      listenable: Listenable.merge([services.library, services.settings, ?articles]),
+      listenable: Listenable.merge([services.library, services.settings, ?articles, ?store]),
       builder: (context, _) {
         final lib = services.library;
         final text = Theme.of(context).textTheme;
@@ -75,14 +82,18 @@ class _LibraryScreenState extends State<LibraryScreen> {
         final canImport = imports != null && imports.isSupported;
         final current = lib.continueReading.firstOrNull;
         final all = lib.entries.toList()..sort((a, b) => b.addedAt.compareTo(a.addedAt));
+        final everySaved = articles != null && articles.loaded ? articles.articles : const <ArticleSummary>[];
+        // Filed items live in their category, not here.
+        final home = all.where((e) => !isFiled(store, CategoryItemRef.book(e.book.id))).toList();
+        final saved = everySaved.where((a) => !isFiled(store, CategoryItemRef.article(a.id))).toList();
+        final categories = store == null || !store.loaded ? const <Category>[] : store.categories;
         final shown = switch (_filter) {
-          _Filter.all => all,
-          _Filter.downloaded => all.where((e) => e.download.isReady).toList(),
+          _Filter.all => home,
+          _Filter.downloaded => home.where((e) => e.download.isReady).toList(),
           _Filter.inProgress =>
-            all.where((e) => e.progress != null && e.progress!.percent < 0.995).toList(),
+            home.where((e) => e.progress != null && e.progress!.percent < 0.995).toList(),
           _Filter.articles => <LibraryEntry>[],
         };
-        final saved = articles != null && articles.loaded ? articles.articles : const <ArticleSummary>[];
         final shownArticles = switch (_filter) {
           _Filter.all => saved.take(_articlePreview).toList(),
           _Filter.inProgress => saved.where((a) => a.progress != null && !a.progress!.finished).toList(),
@@ -91,17 +102,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
         };
         final both = shown.isNotEmpty && shownArticles.isNotEmpty;
         final count = switch (_filter) {
-          _Filter.all => all.length + saved.length,
+          _Filter.all => home.length + saved.length,
           _ => shown.length + shownArticles.length,
         };
         final width = MediaQuery.sizeOf(context).width;
-        final columns = width >= 900
-            ? 5
-            : width >= 600
-            ? 4
-            : width >= 420
-            ? 3
-            : 2;
 
         return CustomScrollView(
           physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
@@ -148,7 +152,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 ),
               ),
             ),
-            if (all.isEmpty && saved.isEmpty)
+            if (all.isEmpty && everySaved.isEmpty && categories.isEmpty)
               SliverFillRemaining(
                 hasScrollBody: false,
                 child: StateMessage(
@@ -169,6 +173,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(Space.gutter, Space.xl, Space.gutter, 0),
                   sliver: SliverToBoxAdapter(child: _ContinueReading(entry: current)),
+                ),
+              if (categories.isNotEmpty)
+                SliverPadding(
+                  padding: const EdgeInsets.only(top: Space.xl),
+                  sliver: SliverToBoxAdapter(child: _Categories(categories: categories)),
                 ),
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(Space.gutter, Space.xl, Space.gutter, Space.md),
@@ -246,8 +255,15 @@ class _LibraryScreenState extends State<LibraryScreen> {
               ],
               if (shown.isEmpty && shownArticles.isEmpty)
                 SliverToBoxAdapter(
-                  child: _filter == _Filter.articles
-                      ? const StateMessage(title: 'No articles yet.', body: 'Save one from a link with the + button above.')
+                  child: _filter == _Filter.all
+                      ? const StateMessage(
+                          title: 'Everything is on a shelf.',
+                          body: 'Books and articles you file in a category live there. New ones land here.',
+                        )
+                      : _filter == _Filter.articles
+                      ? (everySaved.isEmpty
+                            ? const StateMessage(title: 'No articles yet.', body: 'Save one from a link with the + button above.')
+                            : const StateMessage(title: 'All your articles are filed.', body: 'Open a category to find them.'))
                       : const StateMessage(title: 'Nothing matches.', body: 'Try another filter.'),
                 )
               else if (shown.isNotEmpty)
@@ -259,22 +275,72 @@ class _LibraryScreenState extends State<LibraryScreen> {
                     Space.xxl,
                   ),
                   sliver: SliverGrid.builder(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: columns,
-                      mainAxisSpacing: Space.lg,
-                      crossAxisSpacing: Space.md,
-                      mainAxisExtent:
-                          ((width - Space.gutter * 2 - Space.md * (columns - 1)) / columns) /
-                              CoverArt.ratio + MediaQuery.textScalerOf(context).scale(96),
-                    ),
+                    gridDelegate: bookGridDelegate(context, width),
                     itemCount: shown.length,
-                    itemBuilder: (context, i) => _GridItem(entry: shown[i]),
+                    itemBuilder: (context, i) => BookGridItem(entry: shown[i]),
                   ),
                 ),
             ],
           ],
         );
       },
+    );
+  }
+}
+
+/// One bookcase per category in a horizontal row that runs to the screen
+/// edge, so a partly visible last case says "there is more".
+class _Categories extends StatelessWidget {
+  const _Categories({required this.categories});
+  final List<Category> categories;
+
+  Future<void> _create(BuildContext context) async {
+    final created = await showCreateCategory(context);
+    // Land in the new, empty category: it explains how to fill it.
+    if (created != null && context.mounted) await CategoryScreen.open(context, created.id);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final services = AppScope.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: Space.gutter, right: Space.gutter - 12),
+          child: Row(
+            children: [
+              const Expanded(child: Eyebrow('Categories')),
+              QuietIconButton(
+                icon: Icons.add,
+                label: 'New category',
+                color: context.colors.muted,
+                onPressed: () => _create(context),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: Space.xs),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: Space.gutter),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final (i, c) in categories.indexed) ...[
+                if (i > 0) const SizedBox(width: 12),
+                CategoryShelf(
+                  key: ValueKey(c.id),
+                  category: c,
+                  items: filedItems(services, c.id),
+                  onOpen: () => CategoryScreen.open(context, c.id),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -308,9 +374,6 @@ class _FilterLink extends StatelessWidget {
   }
 }
 
-Uri? _cover(AppServices services, LibraryEntry entry) =>
-    entry.source == BookSource.api ? services.sourceForEntry(entry).coverUri(entry.book) : null;
-
 /// The single in-progress feature: cover, title, chapter, a thin progress line.
 class _ContinueReading extends StatelessWidget {
   const _ContinueReading({required this.entry});
@@ -336,7 +399,7 @@ class _ContinueReading extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                CoverArt(book: entry.book, width: 64, imageUri: _cover(services, entry)),
+                CoverArt(book: entry.book, width: 64, imageUri: coverUriFor(services, entry)),
                 const SizedBox(width: Space.md),
                 Expanded(
                   child: Column(
@@ -376,86 +439,6 @@ class _ContinueReading extends StatelessWidget {
               ],
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _GridItem extends StatelessWidget {
-  const _GridItem({required this.entry});
-  final LibraryEntry entry;
-
-  @override
-  Widget build(BuildContext context) {
-    final services = AppScope.of(context);
-    final text = Theme.of(context).textTheme;
-    final colors = context.colors;
-    final d = entry.download;
-    final percent = entry.progress?.percent;
-
-    Widget status;
-    if (d.isReady) {
-      status = percent == null
-          ? Text('Downloaded', style: text.labelSmall?.copyWith(letterSpacing: 0))
-          : percent >= 0.995
-          ? Text(
-              'Finished',
-              style: text.labelSmall?.copyWith(letterSpacing: 0, color: colors.green),
-            )
-          : ClipRRect(
-              borderRadius: BorderRadius.circular(1),
-              child: LinearProgressIndicator(value: percent, minHeight: 2),
-            );
-    } else if (d.isActive) {
-      status = ClipRRect(
-        borderRadius: BorderRadius.circular(1),
-        child: LinearProgressIndicator(
-          value: d.status == DownloadStatus.verifying ? null : d.fraction,
-          minHeight: 2,
-        ),
-      );
-    } else if (d.status == DownloadStatus.failed) {
-      status = Text(
-        'Download failed',
-        style: text.labelSmall?.copyWith(letterSpacing: 0, color: colors.error),
-      );
-    } else {
-      status = Text('Not downloaded', style: text.labelSmall?.copyWith(letterSpacing: 0));
-    }
-
-    return Semantics(
-      button: true,
-      label: '${entry.book.title} by ${entry.book.author}',
-      child: InkWell(
-        onTap: () => services.library.canRead(entry.id)
-            ? ReaderScreen.open(context, entry)
-            : BookDetailScreen.open(context, entry.book, entry: entry),
-        onLongPress: () => BookDetailScreen.open(context, entry.book, entry: entry),
-        borderRadius: const BorderRadius.all(Radii.md),
-        child: LayoutBuilder(
-          builder: (context, c) => Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              CoverArt(book: entry.book, width: c.maxWidth, imageUri: _cover(services, entry)),
-              const SizedBox(height: Space.sm),
-              Text(
-                entry.book.title,
-                style: text.titleSmall,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 2),
-              Text(
-                entry.book.author,
-                style: text.bodySmall,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 6),
-              status,
-            ],
-          ),
         ),
       ),
     );

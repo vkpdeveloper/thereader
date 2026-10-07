@@ -5,11 +5,13 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/tokens.dart';
 import '../../data/models/article_summary.dart';
 import '../../data/repositories/article_repository.dart';
+import '../categories/category_items.dart';
+import '../categories/item_actions.dart';
 import 'article_media.dart';
 import 'article_screen.dart';
 
 /// A saved article in the library: lead image, title, site, reading time and
-/// progress. Long press (or right click) offers removal.
+/// progress. Long press (or right click) files it in a category or removes it.
 class ArticleTile extends StatelessWidget {
   const ArticleTile({super.key, required this.summary, required this.articles});
 
@@ -91,55 +93,28 @@ class ArticleTile extends StatelessWidget {
     );
   }
 
-  Future<void> _actions(BuildContext context) async {
-    final colors = context.colors;
-    final action = await showModalBottomSheet<String>(
-      context: context,
-      barrierColor: Colors.black54,
-      builder: (ctx) => SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.only(top: Space.lg, bottom: Space.sm),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: Space.gutter),
-                child: Text(
-                  summary.title,
-                  style: Theme.of(ctx).textTheme.titleMedium,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(height: Space.sm),
-              ListTile(
-                leading: const Icon(Icons.open_in_new, size: 20),
-                title: const Text('Open original'),
-                onTap: () => Navigator.pop(ctx, 'open'),
-              ),
-              ListTile(
-                leading: Icon(Icons.delete_outline, size: 20, color: colors.error),
-                title: Text('Remove from library', style: TextStyle(color: colors.error)),
-                onTap: () => Navigator.pop(ctx, 'remove'),
-              ),
-            ],
-          ),
-        ),
+  Future<void> _actions(BuildContext context) => showItemActions(
+    context,
+    item: FiledArticle(summary),
+    subtitle: '${summary.site} · ${summary.readingMinutes} min',
+    actions: [
+      ItemAction(
+        icon: Icons.open_in_new,
+        label: 'Open original',
+        onSelected: () => launchUrl(Uri.parse(summary.url), mode: LaunchMode.inAppBrowserView),
       ),
-    );
-    if (!context.mounted) return;
-    switch (action) {
-      case 'open':
-        await launchUrl(Uri.parse(summary.url), mode: LaunchMode.inAppBrowserView);
-      case 'remove':
-        await articles.remove(summary.id);
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Removed “${summary.title}”.')));
-        }
-    }
-  }
+      ItemAction(
+        icon: Icons.delete_outline,
+        label: 'Remove from library',
+        destructive: true,
+        onSelected: () async {
+          final messenger = ScaffoldMessenger.maybeOf(context);
+          await articles.remove(summary.id);
+          if (context.mounted) messenger?.showSnackBar(SnackBar(content: Text('Removed “${summary.title}”.')));
+        },
+      ),
+    ],
+  );
 }
 
 class _Thumbnail extends StatelessWidget {

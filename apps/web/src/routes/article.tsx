@@ -12,7 +12,9 @@ import { Lightbox, type ZoomedImage } from '../components/article/Lightbox';
 import { safeHref } from '../components/article/media';
 import { useArticleLinkPreview } from '../components/article/useArticleLinkPreview';
 import { IconButton, QuietButton } from '../components/buttons';
-import { ArrowBackIcon, OpenInNewIcon, TextFieldsIcon } from '../components/icons';
+import { useCategoryDialog } from '../components/categories/CategoryDialog';
+import { articleRef } from '../components/categories/model';
+import { ArrowBackIcon, MoveToFolderIcon, NewFolderIcon, OpenInNewIcon, TextFieldsIcon } from '../components/icons';
 import { hasOpenOverlay, Sheet } from '../components/overlay';
 import { FontPicker, TypographyPanel } from '../components/reader/TypographyPanel';
 import { LoadingLine, StateMessage } from '../components/states';
@@ -130,6 +132,9 @@ export function ArticleScreen() {
     if (fraction.current != null) void services.articles.saveProgress(id, fraction.current);
   }, [id, services]);
 
+  const filing = useCategoryDialog();
+  // Observed so the end-of-article button follows filing.
+  useStore(services.categories);
   const close = useCallback(() => {
     saveNow();
     goBack();
@@ -452,6 +457,10 @@ export function ArticleScreen() {
                 <span>Open original</span>
               </a>
             )}
+            <FileButton
+              category={services.categories.categoryOf(articleRef({ id }))?.name ?? null}
+              onClick={() => filing.addTo({ ...articleRef({ id }), title: article.title })}
+            />
             <QuietButton label="Back to Library" onClick={close} />
           </div>
         </footer>
@@ -469,6 +478,12 @@ export function ArticleScreen() {
       {linkPreview}
       {highlights.layer}
       {ink.toolbar}
+      {filing.dialog}
     </div>
   );
+}
+
+/** Files the article from its end: "Add to category", or the category it is in. */
+function FileButton({ category, onClick }: { category: string | null; onClick: () => void }) {
+  return <QuietButton icon={category ? MoveToFolderIcon : NewFolderIcon} label={category ?? 'Add to category'} onClick={onClick} />;
 }

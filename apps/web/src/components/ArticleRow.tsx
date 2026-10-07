@@ -1,4 +1,4 @@
-import { memo, useRef, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { memo, useRef, type ReactNode, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { Link } from '@tanstack/react-router';
 import { articleLink } from '../lib/hooks';
 import type { ArticleSummary } from '../lib/types';
@@ -7,11 +7,12 @@ import { useRelayedSrc } from './article/media';
 import { MoreHorizIcon } from './icons';
 import { menuPoint, type MenuPoint } from './overlay';
 import { ProgressLine } from './states';
+import { articleRef, startItemDrag } from './categories/model';
 
-/** A publisher's favicon at text size, through the relay if its host refuses; hidden when it fails to load. */
-export function SiteIcon({ src, size = 14 }: { src: string | null; size?: number }) {
+/** A publisher's favicon at text size, through the relay if its host refuses; `fallback` (or nothing) when there is none or it fails to load. */
+export function SiteIcon({ src, size = 14, fallback = null }: { src: string | null; size?: number; fallback?: ReactNode }) {
   const icon = useRelayedSrc(src ?? undefined);
-  if (icon.failed) return null;
+  if (icon.failed) return <>{fallback}</>;
   return (
     <img
       className="site-icon"
@@ -27,20 +28,48 @@ export function SiteIcon({ src, size = 14 }: { src: string | null; size?: number
   );
 }
 
-/** Lead image (through the relay if its host refuses), or a quiet plate with the favicon (or the site's initial) when there is none. */
+/** The site's initial, where its favicon would be. */
+function SiteInitial({ article }: { article: ArticleSummary }) {
+  return <span className="article-thumb-initial">{article.siteName.slice(0, 1).toUpperCase()}</span>;
+}
+
+/**
+ * Lead image (through the relay if its host refuses), or a quiet plate with
+ * the favicon (or the site's initial) when there is none. As a `cover` (on a
+ * shelf, beside books) it is a printed page instead: the site and title on
+ * paper, with the lead image as a plate above them when there is one.
+ */
 export function ArticleThumb({ article, shape = 'wide' }: { article: ArticleSummary; shape?: 'wide' | 'cover' }) {
   const lead = useRelayedSrc(article.image ?? undefined);
-  const cls = shape === 'cover' ? 'article-thumb is-cover' : 'article-thumb';
+  if (shape === 'cover') {
+    return (
+      <div className="article-thumb is-cover is-paper" aria-hidden="true">
+        <div className={lead.failed ? 'article-paper' : 'article-paper has-image'}>
+          {!lead.failed && (
+            <div className="article-paper-image">
+              <img src={lead.src} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={lead.onError} />
+            </div>
+          )}
+          <div className="article-paper-site">
+            <SiteIcon src={article.favicon} size={16} fallback={<SiteInitial article={article} />} />
+            <span className="article-paper-site-name">{article.siteName}</span>
+          </div>
+          <div className="article-paper-title">{article.title}</div>
+          {lead.failed && <div className="article-paper-lines" />}
+        </div>
+      </div>
+    );
+  }
   if (!lead.failed) {
     return (
-      <div className={cls}>
+      <div className="article-thumb">
         <img src={lead.src} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={lead.onError} />
       </div>
     );
   }
   return (
-    <div className={`${cls} is-plate`} aria-hidden="true">
-      {article.favicon ? <SiteIcon src={article.favicon} size={22} /> : <span className="article-thumb-initial">{article.siteName.slice(0, 1).toUpperCase()}</span>}
+    <div className="article-thumb is-plate" aria-hidden="true">
+      <SiteIcon src={article.favicon} size={22} fallback={<SiteInitial article={article} />} />
     </div>
   );
 }
@@ -111,6 +140,7 @@ export const ArticleRow = memo(function ArticleRow({
       onPointerUp={cancelPress}
       onPointerCancel={cancelPress}
       onClickCapture={onClickCapture}
+      onDragStart={(e) => startItemDrag(e, { ...articleRef(article), title: article.title })}
     >
       <Link {...articleLink(article)} className="article-row" aria-label={`${article.title}, ${article.siteName}`}>
         <ArticleThumb article={article} />

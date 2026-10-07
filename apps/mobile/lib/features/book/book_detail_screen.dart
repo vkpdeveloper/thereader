@@ -6,6 +6,8 @@ import '../../core/theme/tokens.dart';
 import '../../data/models/book.dart';
 import '../../data/api/catalog_source.dart';
 import '../../data/models/library.dart';
+import '../categories/category_items.dart';
+import '../categories/category_sheet.dart';
 import '../reader/reader_screen.dart';
 import '../shared/cloud_status.dart';
 import '../shared/cover_art.dart';
@@ -21,30 +23,35 @@ class BookDetailScreen extends StatelessWidget {
   final Book book;
   final CatalogSource source;
 
+  /// The source is resolved now, not in the route builder: the caller (a
+  /// library tile) can leave the tree while the page is open, for example
+  /// when the book is filed in a category from this page.
   static Future<void> open(
     BuildContext context,
     Book book, {
     LibraryEntry? entry,
-  }) => Navigator.of(context).push(
-    MaterialPageRoute(
-      builder: (_) => BookDetailScreen(
-        book: book,
-        source: entry == null
-            ? AppScope.of(context).currentSource
-            : AppScope.of(context).sourceForEntry(entry),
+  }) {
+    final services = AppScope.of(context);
+    final source = entry == null
+        ? services.currentSource
+        : services.sourceForEntry(entry);
+    return Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => BookDetailScreen(book: book, source: source),
       ),
-    ),
-  );
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final services = AppScope.of(context);
     final imports = services.imports;
     final sync = services.sync;
+    final categories = services.categories;
     return ListenableBuilder(
       // The import service is observed only so "Remove" can tell whether a
       // cancelled upload is at stake; nothing about uploads is displayed.
-      listenable: Listenable.merge([services.library, ?imports]),
+      listenable: Listenable.merge([services.library, ?imports, ?categories]),
       builder: (context, _) {
         final entry = services.library.entryFor(book, source);
         final current = entry?.book ?? book;
@@ -108,6 +115,10 @@ class BookDetailScreen extends StatelessWidget {
                   Tag(formatBytes(current.fileSize)),
                 ],
               ),
+              if (entry != null && categories != null) ...[
+                const SizedBox(height: Space.md),
+                _CategoryPill(entry: entry),
+              ],
               const SizedBox(height: Space.lg),
               _DownloadPanel(
                 book: book,
@@ -385,6 +396,94 @@ class _DownloadPanel extends StatelessWidget {
         ),
         child: inner,
       ),
+    );
+  }
+}
+
+/// Where this book is filed, or an invitation to file it. Tapping opens the
+/// "Add to…" sheet either way.
+class _CategoryPill extends StatelessWidget {
+  const _CategoryPill({required this.entry});
+  final LibraryEntry entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final colors = context.colors;
+    final item = FiledBook(entry);
+    final category = AppScope.of(context).categories?.categoryOf(item.ref);
+    final hue = category?.color.hue;
+    return Row(
+      children: [
+        Flexible(
+          child: Semantics(
+            container: true,
+            button: true,
+            label: category == null
+                ? 'Add to category'
+                : 'In ${category.name}. Move to another category',
+            excludeSemantics: true,
+            child: InkWell(
+              onTap: () => showCategoryPicker(context, item),
+              borderRadius: const BorderRadius.all(Radius.circular(22)),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 44),
+                child: Center(
+                  widthFactor: 1,
+                  child: AnimatedContainer(
+                    duration: Motion.of(context, Motion.base),
+                    curve: Motion.curve,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: hue?.withValues(alpha: 0.12) ?? Colors.transparent,
+                      border: Border.all(
+                        color: hue?.withValues(alpha: 0.35) ?? colors.border,
+                      ),
+                      borderRadius: const BorderRadius.all(Radius.circular(16)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (hue != null)
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: hue,
+                              shape: BoxShape.circle,
+                            ),
+                          )
+                        else
+                          Icon(
+                            Icons.create_new_folder_outlined,
+                            size: 16,
+                            color: colors.muted,
+                          ),
+                        const SizedBox(width: Space.sm),
+                        Flexible(
+                          child: Text(
+                            category?.name ?? 'Add to category',
+                            style: text.labelLarge?.copyWith(
+                              color: hue == null ? colors.muted : colors.fg,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Icon(Icons.expand_more, size: 16, color: colors.muted),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

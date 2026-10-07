@@ -9,6 +9,7 @@ import 'data/api/catalog_source.dart';
 import 'data/models/settings.dart';
 import 'data/models/library.dart';
 import 'data/models/book.dart';
+import 'data/models/category.dart';
 import 'data/repositories/catalog_repository.dart';
 import 'data/repositories/library_repository.dart';
 import 'data/repositories/settings_repository.dart';
@@ -27,6 +28,7 @@ class AppServices {
     this.sync,
     this.highlights,
     this.articles,
+    this.categories,
   }) : _fixed = catalogSource {
     catalog = CatalogRepository(sourceFor(settings.settings));
     settings.addListener(_onSettings);
@@ -40,6 +42,10 @@ class AppServices {
 
   /// Saved web articles. Null in widget tests that do not exercise them.
   final ArticleRepository? articles;
+
+  /// Categories of books and articles. Null in widget tests that do not
+  /// exercise them.
+  final CategoryStore? categories;
   final SettingsRepository settings;
   final LibraryRepository library;
   final ReaderService readerService;

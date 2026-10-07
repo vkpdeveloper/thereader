@@ -111,13 +111,15 @@ class ApiClient {
 
   /// One pull+push. With [highlightsSince] (a server cursor, 0 for all) the
   /// response also carries highlight rows changed since then, and with
-  /// [articlesSince] saved-article rows; without them the request is
+  /// [articlesSince] saved-article rows, and with [categoriesSince]
+  /// categories and their assignments; without them the request is
   /// byte-for-byte what older servers accept.
   Future<Map<String, dynamic>> syncState({
     required String deviceId,
     required List<Map<String, dynamic>> changes,
     int? highlightsSince,
     int? articlesSince,
+    int? categoriesSince,
   }) async {
     final uri = resolve('/v1/sync');
     final http.Response response;
@@ -134,6 +136,7 @@ class ApiClient {
               'changes': changes,
               'highlightsSince': ?highlightsSince,
               'articlesSince': ?articlesSince,
+              'categoriesSince': ?categoriesSince,
             }),
           )
           .timeout(timeout);

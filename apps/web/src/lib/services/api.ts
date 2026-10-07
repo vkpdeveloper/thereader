@@ -15,6 +15,7 @@ export interface SyncResponse {
   books: unknown[];
   highlights?: unknown;
   articles?: unknown;
+  categories?: unknown;
   [key: string]: unknown;
 }
 
@@ -28,15 +29,16 @@ export interface ArticleBodyApi {
 
 export interface HttpApiClient extends ApiClient, ArticleBodyApi {
   /**
-   * One pull+push. With `highlightsSince` (or `articlesSince`) the response
-   * also carries highlight (article) rows changed since then; without them
-   * the body is what older servers accept.
+   * One pull+push. With `highlightsSince` (or `articlesSince`,
+   * `categoriesSince`) the response also carries highlight (article, category)
+   * rows changed since then; without them the body is what older servers accept.
    */
   syncState(options: {
     deviceId: string;
     changes: Record<string, unknown>[];
     highlightsSince?: number;
     articlesSince?: number;
+    categoriesSince?: number | null;
     keepalive?: boolean;
   }): Promise<SyncResponse>;
   /** Streams an EPUB. The caller reads `response.body`. */
@@ -139,13 +141,14 @@ export function createApiClient(
       const json = await getJson(resolve(`/v1/books/${encodeURIComponent(id)}`));
       return bookFrom(json.book);
     },
-    async syncState({ deviceId, changes, highlightsSince, articlesSince, keepalive }) {
+    async syncState({ deviceId, changes, highlightsSince, articlesSince, categoriesSince, keepalive }) {
       const url = resolve('/v1/sync');
       const body = JSON.stringify({
         deviceId,
         changes,
         ...(highlightsSince === undefined ? {} : { highlightsSince }),
         ...(articlesSince === undefined ? {} : { articlesSince }),
+        ...(categoriesSince === undefined ? {} : { categoriesSince }),
       });
       const response = await send(
         url,

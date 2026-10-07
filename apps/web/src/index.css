@@ -138,6 +138,7 @@
   --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 
   --sidebar-width: 224px;
+  --sidebar-rail: 61px;
   --tab-height: 50px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -522,6 +523,10 @@ kbd {
   :root {
     --gutter: 40px;
   }
+  /* Set before first paint from localStorage (AppShell); device-local. */
+  html[data-sidebar='collapsed'] {
+    --sidebar-width: var(--sidebar-rail);
+  }
   .tab-row {
     display: none;
   }
@@ -533,26 +538,47 @@ kbd {
     bottom: 0;
     left: 0;
     width: var(--sidebar-width);
-    padding: 28px 16px;
+    padding: 28px 12px 16px;
     border-right: 1px solid var(--border);
     background: var(--bg);
     z-index: 20;
+    overflow: hidden;
+    transition: width var(--motion-base) var(--ease);
   }
   .shell-main {
     margin-left: var(--sidebar-width);
     padding-bottom: 0;
+    transition: margin-left var(--motion-base) var(--ease);
   }
 }
 
+/*
+ * Rows keep their icon in one 36px column in both widths, so collapsing only
+ * narrows the panel and fades the labels: nothing jumps.
+ */
 .sidebar-brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 4px 8px 28px;
+  padding: 4px 5px 28px;
   font-family: var(--serif);
   font-size: 17px;
   font-weight: 500;
   letter-spacing: -0.2px;
+  white-space: nowrap;
+}
+.sidebar-brand svg {
+  flex: none;
+}
+.sidebar-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: opacity var(--motion-fast) var(--ease);
+}
+html[data-sidebar='collapsed'] .sidebar-label {
+  opacity: 0;
+  pointer-events: none;
 }
 .sidebar-list {
   display: flex;
@@ -560,15 +586,23 @@ kbd {
   gap: 2px;
 }
 .sidebar-link {
-  display: block;
-  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 36px;
+  padding: 0 9px;
   border-radius: var(--radius-md);
   font-size: 14px;
   font-weight: 500;
   color: var(--subtle);
+  white-space: nowrap;
   transition:
     color var(--motion-fast) var(--ease),
-    background-color var(--motion-fast) var(--ease);
+    background-color var(--motion-fast) var(--ease),
+    box-shadow var(--motion-fast) var(--ease);
+}
+.sidebar-icon {
+  flex: none;
 }
 .sidebar-link:hover {
   color: var(--muted);
@@ -576,6 +610,45 @@ kbd {
 }
 .sidebar-link.is-active {
   color: var(--fg);
+}
+.sidebar-footer {
+  flex: none;
+  padding-top: 12px;
+}
+.sidebar-toggle,
+.sidebar-add {
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-md);
+  color: var(--subtle);
+  transition:
+    color var(--motion-fast) var(--ease),
+    background-color var(--motion-fast) var(--ease);
+}
+.sidebar-toggle {
+  width: 36px;
+  height: 36px;
+}
+.sidebar-toggle:hover,
+.sidebar-add:hover {
+  color: var(--fg);
+  background: var(--panel);
+}
+.sidebar-tooltip {
+  position: fixed;
+  z-index: 260;
+  transform: translateY(-50%);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--element);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.3;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: page-in var(--motion-fast) var(--ease);
 }
 
 .desktop-only {
@@ -1520,6 +1593,104 @@ kbd {
   font-size: 24px;
   font-weight: 500;
   color: var(--muted);
+}
+
+/*
+ * An article standing among books: a printed page, so it never reads as a
+ * blank cover. Paper lightly tinted with `--cat` (a category's colour on a
+ * shelf, neutral elsewhere); sized in container units like covers.
+ */
+.article-thumb.is-paper {
+  container-type: inline-size;
+  border: 0;
+  background: color-mix(in srgb, var(--fg) 94%, var(--cat));
+}
+.article-paper {
+  --ink: color-mix(in srgb, var(--bg) 88%, var(--cat));
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 10cqi 9cqi 9cqi;
+  color: var(--ink);
+  /* A little light from the top edge, like a sheet off the press. */
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.35), transparent 40%);
+}
+.article-paper-image {
+  position: relative;
+  flex: none;
+  height: 46%;
+  margin: -10cqi -9cqi 8cqi;
+  overflow: hidden;
+  background: var(--element);
+}
+.article-paper-site {
+  display: flex;
+  align-items: center;
+  gap: 3.5cqi;
+  min-width: 0;
+  padding-bottom: 6cqi;
+  margin-bottom: 7cqi;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 16%, transparent);
+}
+.article-thumb.is-paper .article-paper-site img,
+.article-paper-site .article-thumb-initial {
+  position: static;
+  flex: none;
+  width: 13cqi;
+  height: 13cqi;
+  border-radius: 2.5cqi;
+}
+.article-paper-site .article-thumb-initial {
+  display: grid;
+  place-items: center;
+  font-size: 9cqi;
+  line-height: 1;
+  font-weight: 600;
+  color: var(--fg);
+  background: var(--ink);
+}
+.article-paper-site-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 7.6cqi;
+  font-weight: 600;
+  line-height: 1.2;
+  color: color-mix(in srgb, var(--ink) 62%, transparent);
+}
+.article-paper-title {
+  flex: none;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  font-family: var(--serif);
+  font-size: 12.5cqi;
+  font-weight: 600;
+  line-height: 1.16;
+  letter-spacing: -0.01em;
+  /* Room for the last line's descenders inside the clamp. */
+  padding-bottom: 0.14em;
+}
+.article-paper.has-image .article-paper-title {
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+/* Body copy, set in grey. */
+.article-paper-lines {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-top: 8cqi;
+  background:
+    linear-gradient(currentColor, currentColor) 0 0 / 100% 2.6cqi no-repeat,
+    linear-gradient(currentColor, currentColor) 0 7.5cqi / 100% 2.6cqi no-repeat,
+    linear-gradient(currentColor, currentColor) 0 15cqi / 64% 2.6cqi no-repeat;
+  color: color-mix(in srgb, var(--ink) 13%, transparent);
 }
 .article-more {
   position: absolute;
