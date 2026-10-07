@@ -330,12 +330,17 @@ class ScreenedPattern {
     return out;
   }
 
-  bool hasMatch(String subject) {
+  /// False when [subject] cannot match.
+  bool mayMatch(String subject) {
     final byFirst = _byFirst;
-    if (byFirst == null || _containsAny(subject, byFirst)) return regex.hasMatch(subject);
+    if (byFirst == null || _containsAny(subject, byFirst)) return true;
     assert(!regex.hasMatch(subject), '${regex.pattern} matches "$subject" without its literals');
     return false;
   }
+
+  bool hasMatch(String subject) => mayMatch(subject) && regex.hasMatch(subject);
+
+  RegExpMatch? firstMatch(String subject) => mayMatch(subject) ? regex.firstMatch(subject) : null;
 
   bool _containsAny(String s, List<List<String>?> byFirst) {
     final ignoreCase = !regex.isCaseSensitive;

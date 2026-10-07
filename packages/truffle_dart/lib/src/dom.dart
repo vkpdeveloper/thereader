@@ -383,6 +383,15 @@ dom.Element? _texAnnotation(dom.Element el) {
 final _xmlAttr = RegExp(r'[&<>"]');
 final _xmlText = RegExp(r'[&<>]');
 
+/// [s] with [pattern]'s characters escaped; most text has none.
+String _escaped(String s, RegExp pattern) {
+  for (var i = 0; i < s.length; i++) {
+    final c = s.codeUnitAt(i);
+    if (c == 0x26 || c == 0x3c || c == 0x3e || c == 0x22) return s.replaceAllMapped(pattern, _xmlEscape);
+  }
+  return s;
+}
+
 String _xmlEscape(Match m) => switch (m[0]) {
   '&' => '&amp;',
   '<' => '&lt;',
@@ -429,13 +438,13 @@ String _serializeXml(dom.Element el) {
       el.attributes.forEach((key, value) {
         final name = _attrName(key);
         if (!_mathmlAttributes.contains(name) && !_dataAttr.hasMatch(name)) return;
-        out.write(' $name="${value.replaceAllMapped(_xmlAttr, _xmlEscape)}"');
+        out.write(' $name="${_escaped(value, _xmlAttr)}"');
       });
       out.write('>');
     }
     for (final child in el.nodes) {
       if (child is dom.Text) {
-        out.write(child.data.replaceAllMapped(_xmlText, _xmlEscape));
+        out.write(_escaped(child.data, _xmlText));
       } else if (child is dom.Element) {
         visit(child);
       }

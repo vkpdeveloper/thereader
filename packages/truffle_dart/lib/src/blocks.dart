@@ -2323,14 +2323,23 @@ String codeText(VElement el) {
   }
 
   visit(el);
-  return _trimEndJs(
-    out
-        .toString()
-        .replaceAll(_carriageReturns, '\n')
-        .replaceAll(' ', ' ')
-        .replaceAll(_zeroWidth, '')
-        .replaceFirst(_leadingBlankLines, ''),
-  );
+  var text = out.toString();
+  // Most code has no carriage return, no-break space or zero-width character to replace.
+  if (_needsCleaning(text)) {
+    text = text.replaceAll(_carriageReturns, '\n').replaceAll(' ', ' ').replaceAll(_zeroWidth, '');
+  }
+  return _trimEndJs(text.replaceFirst(_leadingBlankLines, ''));
+}
+
+/// Whether [text] holds what [codeText] replaces: `\r`, U+00A0 or a [_zeroWidth] character.
+bool _needsCleaning(String text) {
+  for (var i = 0; i < text.length; i++) {
+    final c = text.codeUnitAt(i);
+    if (c == 0x0d || c == 0xa0 || c == 0x200b || c == 0xfeff || c == 0x2060 || (c >= 0xe000 && c <= 0xf8ff)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /// Language from markup on the block, its <code> child, or wrappers up to three levels.
