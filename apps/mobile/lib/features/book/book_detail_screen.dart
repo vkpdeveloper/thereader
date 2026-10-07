@@ -23,20 +23,24 @@ class BookDetailScreen extends StatelessWidget {
   final Book book;
   final CatalogSource source;
 
+  /// The source is resolved now, not in the route builder: the caller (a
+  /// library tile) can leave the tree while the page is open, for example
+  /// when the book is filed in a category from this page.
   static Future<void> open(
     BuildContext context,
     Book book, {
     LibraryEntry? entry,
-  }) => Navigator.of(context).push(
-    MaterialPageRoute(
-      builder: (_) => BookDetailScreen(
-        book: book,
-        source: entry == null
-            ? AppScope.of(context).currentSource
-            : AppScope.of(context).sourceForEntry(entry),
+  }) {
+    final services = AppScope.of(context);
+    final source = entry == null
+        ? services.currentSource
+        : services.sourceForEntry(entry);
+    return Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => BookDetailScreen(book: book, source: source),
       ),
-    ),
-  );
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -409,57 +413,77 @@ class _CategoryPill extends StatelessWidget {
     final item = FiledBook(entry);
     final category = AppScope.of(context).categories?.categoryOf(item.ref);
     final hue = category?.color.hue;
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Semantics(
-        button: true,
-        label: category == null ? 'Add to category' : 'In ${category.name}. Move to another category',
-        excludeSemantics: true,
-        child: InkWell(
-          onTap: () => showCategoryPicker(context, item),
-          borderRadius: const BorderRadius.all(Radius.circular(22)),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 44),
-            child: Center(
-              widthFactor: 1,
-              child: AnimatedContainer(
-                duration: Motion.of(context, Motion.base),
-                curve: Motion.curve,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                decoration: BoxDecoration(
-                  color: hue?.withValues(alpha: 0.12) ?? Colors.transparent,
-                  border: Border.all(color: hue?.withValues(alpha: 0.35) ?? colors.border),
-                  borderRadius: const BorderRadius.all(Radius.circular(16)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (hue != null)
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(color: hue, shape: BoxShape.circle),
-                      )
-                    else
-                      Icon(Icons.create_new_folder_outlined, size: 16, color: colors.muted),
-                    const SizedBox(width: Space.sm),
-                    Flexible(
-                      child: Text(
-                        category?.name ?? 'Add to category',
-                        style: text.labelLarge?.copyWith(color: hue == null ? colors.muted : colors.fg),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+    return Row(
+      children: [
+        Flexible(
+          child: Semantics(
+            container: true,
+            button: true,
+            label: category == null
+                ? 'Add to category'
+                : 'In ${category.name}. Move to another category',
+            excludeSemantics: true,
+            child: InkWell(
+              onTap: () => showCategoryPicker(context, item),
+              borderRadius: const BorderRadius.all(Radius.circular(22)),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 44),
+                child: Center(
+                  widthFactor: 1,
+                  child: AnimatedContainer(
+                    duration: Motion.of(context, Motion.base),
+                    curve: Motion.curve,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 7,
                     ),
-                    const SizedBox(width: 6),
-                    Icon(Icons.expand_more, size: 16, color: colors.muted),
-                  ],
+                    decoration: BoxDecoration(
+                      color: hue?.withValues(alpha: 0.12) ?? Colors.transparent,
+                      border: Border.all(
+                        color: hue?.withValues(alpha: 0.35) ?? colors.border,
+                      ),
+                      borderRadius: const BorderRadius.all(Radius.circular(16)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (hue != null)
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: hue,
+                              shape: BoxShape.circle,
+                            ),
+                          )
+                        else
+                          Icon(
+                            Icons.create_new_folder_outlined,
+                            size: 16,
+                            color: colors.muted,
+                          ),
+                        const SizedBox(width: Space.sm),
+                        Flexible(
+                          child: Text(
+                            category?.name ?? 'Add to category',
+                            style: text.labelLarge?.copyWith(
+                              color: hue == null ? colors.muted : colors.fg,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Icon(Icons.expand_more, size: 16, color: colors.muted),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
           ),
         ),
-      ),
+      ],
     );
   }
 }

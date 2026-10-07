@@ -12,6 +12,7 @@ import 'package:thereader/data/repositories/settings_repository.dart';
 import 'package:thereader/data/storage/book_store_web.dart';
 import 'package:thereader/data/storage/key_value_store.dart';
 import 'package:thereader/features/categories/category_screen.dart';
+import 'package:thereader/features/book/book_detail_screen.dart';
 import 'package:thereader/features/categories/category_shelf.dart';
 import 'package:thereader/features/library/book_grid_item.dart';
 import 'package:thereader/reader/dart_engine/dart_reader_engine.dart';
@@ -196,5 +197,38 @@ void main() {
     for (final title in ['Structure and Interpretation', 'Walden', 'Dune']) {
       expect(_inGrid(title), findsOneWidget);
     }
+  });
+
+  testWidgets('the book page files its book, and survives losing its library tile', (tester) async {
+    _phone(tester);
+    final (services, store) = await _services();
+    final someday = await store.create('Someday', CategoryColor.purple);
+    await tester.pumpWidget(TheReaderApp(services: services));
+    await tester.pumpAndSettle();
+
+    // The last tile: the grid reuses elements by index, so only filing the
+    // last book takes its element (the page's opener) out of the tree.
+    await tester.ensureVisible(_inGrid('Structure and Interpretation'));
+    await tester.pumpAndSettle();
+    await tester.longPress(_inGrid('Structure and Interpretation'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Book details'));
+    await tester.pumpAndSettle();
+    expect(find.byType(BookDetailScreen), findsOneWidget);
+
+    await tester.tap(find.bySemanticsLabel('Add to category'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel('Someday'));
+    await tester.pumpAndSettle();
+    expect(store.categoryOf(const CategoryItemRef.book('sicp'))?.id, someday.id);
+    expect(find.bySemanticsLabel('In Someday. Move to another category'), findsOneWidget);
+
+    // The tile that opened this page has left the library grid; rebuilding
+    // the route (as a theme change or hot reload does) must not reach it.
+    final reassembled = tester.binding.reassembleApplication();
+    await tester.pumpAndSettle();
+    await reassembled;
+    expect(tester.takeException(), isNull);
+    expect(find.byType(BookDetailScreen), findsOneWidget);
   });
 }
