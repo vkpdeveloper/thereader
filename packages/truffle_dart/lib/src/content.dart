@@ -85,7 +85,9 @@ bool isPhrasing(VNode node) {
 
 /// Post-order: children were visited first, so their `containsBlock` is known.
 bool _hasBlockChild(VElement el) {
-  for (final child in el.children) {
+  final children = el.children;
+  for (var i = 0; i < children.length; i++) {
+    final child = children[i];
     if (child is VElement && (_blocks.contains(child.tag) || child.containsBlock)) return true;
   }
   return false;
@@ -97,7 +99,9 @@ void measure(VElement el) {
   var link = 0.0;
   var commas = 0;
   final isLink = el.tag == 'a';
-  for (final child in el.children) {
+  final children = el.children;
+  for (var i = 0; i < children.length; i++) {
+    final child = children[i];
     if (child is VText) {
       text += child.length;
       commas += child.commas;
@@ -821,7 +825,9 @@ void _resetMarks(VElement el) {
   el.skip = false;
   el.scored = false;
   el.score = 0;
-  for (final child in el.children) {
+  final children = el.children;
+  for (var i = 0; i < children.length; i++) {
+    final child = children[i];
     if (child is VElement) _resetMarks(child);
   }
 }

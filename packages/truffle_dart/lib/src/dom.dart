@@ -67,23 +67,26 @@ String _attrName(Object key) => key is String ? key : key.toString();
 String? _attr(dom.Element el, String name) => el.attributes[name];
 
 bool _isHidden(dom.Element el, String tag) {
-  final cls = _attr(el, 'class');
-  if (cls != null && cls.contains('mwe-math-mathml')) return false;
+  final attributes = el.attributes;
+  if (attributes.isEmpty) return false;
+  final cls = attributes['class'];
+  // Wikipedia's MathML copy is never hidden (asked last: most elements are not hidden anyway).
+  bool shown() => cls != null && cls.contains('mwe-math-mathml');
   // React streaming SSR parks finished Suspense boundaries in <div hidden id="S:n"> until JS swaps them in.
-  if (el.attributes.containsKey('hidden') && tag != 'input' && !_suspenseId.hasMatch(_attr(el, 'id') ?? '')) {
-    return true;
+  if (attributes.containsKey('hidden') && tag != 'input' && !_suspenseId.hasMatch(attributes['id'] ?? '')) {
+    return !shown();
   }
-  final style = _attr(el, 'style');
+  final style = attributes['style'];
   if (style != null) {
     final hidden = _hidesByStyle(style);
     assert(hidden == _hiddenStyle.hasMatch(style), 'hidden style "$style"');
-    if (hidden) return true;
+    if (hidden) return !shown();
   }
-  if (cls != null && _srOnly.hasMatch(cls)) return true;
-  if (_attr(el, 'aria-hidden') == 'true') {
+  if (cls != null && _srOnly.hasMatch(cls)) return !shown();
+  if (attributes['aria-hidden'] == 'true') {
     // KaTeX and MathJax hide their visual copy; the MathML copy is read instead.
     // Decorative wrappers that still hold real images or long text stay.
-    return !(cls != null && _decorativeKeep.hasMatch(cls));
+    return !(cls != null && _decorativeKeep.hasMatch(cls)) && !shown();
   }
   return false;
 }

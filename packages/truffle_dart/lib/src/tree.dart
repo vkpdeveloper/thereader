@@ -37,20 +37,34 @@ final class VText extends VNode {
     return _texMarks;
   }
 
+  /// [visibleLength], commas and TeX marks in one pass.
   void _scan() {
-    _len = visibleLength(text);
-    if (_len == 0) return;
+    final text = this.text;
     var n = 0;
+    var space = true;
+    var commas = 0;
     var tex = false;
     for (var i = 0; i < text.length; i++) {
       final c = text.codeUnitAt(i);
+      if (c == 32 || c == 10 || c == 9 || c == 13 || c == 12) {
+        if (!space) {
+          n++;
+          space = true;
+        }
+        continue;
+      }
+      n++;
+      space = false;
       if (c == 0x24 || c == 0x5c) {
         tex = true;
-      } else if (_isComma(c)) {
-        n++;
+      } else if (c == 0x2c || c >= 0x60c && _isComma(c)) {
+        commas++;
       }
     }
-    _commaCount = n;
+    _len = space && n > 0 ? n - 1 : n;
+    assert(_len == visibleLength(text));
+    if (_len == 0) return;
+    _commaCount = commas;
     _texMarks = tex;
   }
 }
@@ -230,7 +244,9 @@ String rawText(VNode node) {
 }
 
 void _rawText(VElement el, StringBuffer out) {
-  for (final child in el.children) {
+  final children = el.children;
+  for (var i = 0; i < children.length; i++) {
+    final child = children[i];
     if (child is VText) {
       out.write(child.text);
     } else if (!(child as VElement).skip) {

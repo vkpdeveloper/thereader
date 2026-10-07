@@ -51,15 +51,28 @@ class ClassPattern {
   bool get isLiteral => _plan != null;
   final Map<String, bool> _memo = {};
 
+  /// The last subject and its result: elements without class or id all
+  /// share one match string, and are asked about in runs.
+  String? _last;
+  bool _lastResult = false;
+
   bool hasMatch(String subject) {
+    if (identical(subject, _last)) return _lastResult;
     final cached = memoize ? _memo[subject] : null;
-    if (cached != null) return cached;
+    if (cached != null) return _remember(subject, cached);
     final plan = _plan;
     final result = plan != null ? plan.matches(subject) : regex.hasMatch(subject);
     assert(result == regex.hasMatch(subject), 'ClassPattern ${regex.pattern} disagrees with RegExp on "$subject"');
     if (!memoize) return result;
     if (_memo.length >= 4096) _memo.clear();
-    return _memo[subject] = result;
+    _memo[subject] = result;
+    return _remember(subject, result);
+  }
+
+  bool _remember(String subject, bool result) {
+    _last = subject;
+    _lastResult = result;
+    return result;
   }
 }
 
@@ -248,9 +261,10 @@ class _Plan {
       if (c >= 128) continue;
       final candidates = literalIndex[c];
       if (candidates != null) {
-        for (final literal in candidates) {
+        for (var k = 0; k < candidates.length; k++) {
+          final literal = candidates[k];
           final word = literal.word;
-          if (!s.startsWith(word, i)) continue;
+          if (!_startsWith(s, word, i)) continue;
           if (literal.start && i != 0) continue;
           if (literal.end && i + word.length != n) continue;
           return true;
@@ -258,13 +272,23 @@ class _Plan {
       }
       final starts = wordIndex[c];
       if (starts != null && _before(s, i)) {
-        for (final word in starts) {
+        for (var k = 0; k < starts.length; k++) {
+          final word = starts[k];
           final end = i + word.length;
-          if (s.startsWith(word, i) && (end == n || _delimiter(s.codeUnitAt(end)))) return true;
+          if (_startsWith(s, word, i) && (end == n || _delimiter(s.codeUnitAt(end)))) return true;
         }
       }
     }
     return false;
+  }
+
+  /// `s.startsWith(word, i)`, where the first code units are known to match.
+  static bool _startsWith(String s, String word, int i) {
+    if (i + word.length > s.length) return false;
+    for (var k = 1; k < word.length; k++) {
+      if (s.codeUnitAt(i + k) != word.codeUnitAt(k)) return false;
+    }
+    return true;
   }
 
   bool _before(String s, int i) {
