@@ -159,14 +159,26 @@ final _footnoteClass = ClassPattern(r'(?:^|\s)footnote(?:\s|$)');
 final _footnoteNumber = ClassPattern(r'footnote-number');
 final _footnoteContent = ClassPattern(r'footnote-content');
 final _mathFallback = ClassPattern(r'mwe-math-fallback-image');
-final _imageLink = RegExp(r'\.(?:jpe?g|png|webp|gif|avif)(?:$|[?#])', caseSensitive: false);
+final _imageLink = ScreenedPattern(r'\.(?:jpe?g|png|webp|gif|avif)(?:$|[?#])', caseSensitive: false);
 final _httpLink = RegExp(r'^https?:', caseSensitive: false);
 final _labelBrackets = RegExp(r'^\[|\]$');
 final _backArrow = RegExp(r'^[↩↑^]');
 final _permalinkText = RegExp(r'^[#¶§🔗]?$', unicode: true);
 final _linkScheme = RegExp(r'^(?:https?|mailto|tel):', caseSensitive: false);
-final _bold = RegExp(r'font-weight\s*:\s*(?:bold|[6-9]00)', caseSensitive: false);
-final _italic = RegExp(r'font-style\s*:\s*italic', caseSensitive: false);
+
+/// [_linkScheme] as prefix checks.
+bool _isLinkScheme(String url) {
+  final link =
+      startsWithIgnoringCase(url, 'https:') ||
+      startsWithIgnoringCase(url, 'http:') ||
+      startsWithIgnoringCase(url, 'mailto:') ||
+      startsWithIgnoringCase(url, 'tel:');
+  assert(link == _linkScheme.hasMatch(url));
+  return link;
+}
+
+final _bold = ScreenedPattern(r'font-weight\s*:\s*(?:bold|[6-9]00)', caseSensitive: false);
+final _italic = ScreenedPattern(r'font-style\s*:\s*italic', caseSensitive: false);
 final _texWrapper = RegExp(r'^\{\\(?:displaystyle|textstyle|scriptstyle)\s*([\s\S]*)\}$');
 
 bool _hasZeroWidth(String s) {
@@ -1085,7 +1097,7 @@ class Converter {
         }
         if (_permalink.hasMatch(el.matchString) && _permalinkText.hasMatch(collapse(rawText(el)))) return;
         final resolved = href == null ? null : resolveUrl(href, base);
-        final linkCtx = resolved != null && _linkScheme.hasMatch(resolved) ? _Ctx(ctx.marks, resolved) : ctx;
+        final linkCtx = resolved != null && _isLinkScheme(resolved) ? _Ctx(ctx.marks, resolved) : ctx;
         _inlineChildren(el, b, linkCtx, out);
         return;
       case 'q':

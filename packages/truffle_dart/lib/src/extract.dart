@@ -694,15 +694,38 @@ final _promoLine = RegExp(
   caseSensitive: false,
 );
 
+/// The leading words of [_promo]'s and [_promoLine]'s alternatives: a text
+/// either matches starts with one of them, then a character that is not an
+/// ASCII letter.
+const _promoWords = {
+  'see', 'read', 'also', 'related', 'more', 'don', 'dont', 'watch', 'recommended', 'must', 'trending', 'click', //
+  'listen', 'subscribe', 'sign', 'follow', 'up', 'next', 'most', 'you', 'advertisement', 'share',
+};
+
 bool _isPromo(List<Inline> content) {
   final text = collapse(inlineText(content));
   if (text.isEmpty) return false;
   final share = _linkShare(content);
-  if (_promo.hasMatch(text) && (share > 0.4 || text.length < 120)) return true;
-  if (_promoLine.hasMatch(text)) return true;
+  if (!_promoWords.contains(_leadingWord(text))) {
+    assert(!_promo.hasMatch(text) && !_promoLine.hasMatch(text), 'promo "$text"');
+  } else {
+    if (_promo.hasMatch(text) && (share > 0.4 || text.length < 120)) return true;
+    if (_promoLine.hasMatch(text)) return true;
+  }
   // A short line that is entirely a link to another page, or a stack of them.
   if (share >= 0.9 && (text.length < 160 || content.any((n) => n is LineBreak))) return true;
   return false;
+}
+
+/// The ASCII letters [text] starts with, lowercase.
+String _leadingWord(String text) {
+  var end = 0;
+  while (end < text.length && end < 16) {
+    final c = text.codeUnitAt(end) | 0x20;
+    if (c < 0x61 || c > 0x7a) break;
+    end++;
+  }
+  return text.substring(0, end).toLowerCase();
 }
 
 /// Sign-up, subscribe, app, membership and affiliate pitches, in the languages publishers use most.
