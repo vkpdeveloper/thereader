@@ -1,0 +1,79 @@
+/* The Reader content enhancer v1. Pair with enhance.js; TheReaderMath.woff2 sits next to this file.
+ * GENERATED from apps/web/src/reader/enhance by `cd apps/web && bun run build:enhance`; do not edit.
+ * Includes temml (MIT) and highlight.js (BSD-3-Clause). */
+@font-face{font-family:"TheReader Math";src:url("TheReaderMath.woff2") format("woff2");font-style:normal;font-weight:400;font-display:swap;}
+
+:root{
+  --tr-math-font:"TheReader Math", "STIX Two Math", "STIXTwoMath-Regular", "Latin Modern Math", "Cambria Math", "Noto Sans Math", math;
+  --tr-mono:ui-monospace, "SF Mono", SFMono-Regular, Menlo, "JetBrains Mono", "Cascadia Mono", Consolas, "Roboto Mono", "Liberation Mono", monospace;
+}
+:root:not(#tr-none) .tr-hidden, :root:not(#tr-none) [class~="tr-hidden"]{display:none !important;}
+
+/* ---- math (rules 1-3) */
+:root:not(#tr-none) math{font-family:var(--tr-math-font) !important;font-style:normal !important;font-weight:normal !important;color:inherit !important;
+  line-height:normal !important;text-indent:0 !important;letter-spacing:normal !important;word-spacing:normal !important;
+  text-transform:none !important;direction:ltr;background-color:transparent !important;}
+:root:not(#tr-none) math *{font-family:inherit !important;color:inherit !important;}
+:root:not(#tr-none) .tr-math-scroll, :root:not(#tr-none) .tr-math-display{display:block !important;max-width:100% !important;box-sizing:border-box !important;
+  overflow-x:auto !important;overflow-y:hidden !important;margin:0.6em 0 !important;padding:0.15em 0 !important;
+  text-align:center !important;text-indent:0 !important;break-inside:avoid;-webkit-overflow-scrolling:touch;}
+:root:not(#tr-none) .tr-math-scroll > math{margin:0 auto;}
+:root:not(#tr-none) .tr-math{display:inline;text-indent:0;color:inherit !important;font-style:normal !important;font-weight:normal !important;
+  white-space:normal !important;background-color:transparent !important;}
+:root:not(#tr-none) .tr-math-display{display:block !important;}
+:root:not(#tr-none) .tr-switch-case{display:inline;}
+
+/* ---- code (rule 5) */
+:root:not(#tr-none) pre{display:block !important;white-space:pre !important;word-break:normal !important;overflow-wrap:normal !important;
+  word-wrap:normal !important;overflow-x:auto !important;overflow-y:hidden !important;tab-size:4;-moz-tab-size:4;
+  font-family:var(--tr-mono) !important;font-size:0.82em !important;line-height:1.55 !important;font-style:normal !important;
+  text-align:left !important;text-indent:0 !important;-webkit-hyphens:none !important;hyphens:none !important;
+  direction:ltr !important;unicode-bidi:isolate;
+  padding:0.85em 1em !important;margin:1em 0 !important;max-width:100% !important;box-sizing:border-box !important;
+  border:1px solid var(--tr-border, color-mix(in srgb, currentColor 16%, transparent)) !important;border-radius:6px !important;
+  background-color:var(--tr-panel, color-mix(in srgb, currentColor 7%, transparent)) !important;color:inherit !important;
+  break-inside:avoid;-webkit-overflow-scrolling:touch;}
+:root:not(#tr-none) pre *{font-family:inherit !important;font-size:inherit !important;line-height:inherit !important;white-space:inherit !important;
+  word-break:inherit !important;overflow-wrap:inherit !important;background-color:transparent !important;}
+:root:not(#tr-none) pre code{display:inline !important;padding:0 !important;margin:0 !important;border:0 !important;border-radius:0 !important;}
+:root:not(#tr-none) pre.tr-wrap{white-space:pre-wrap !important;overflow-wrap:anywhere !important;word-wrap:anywhere !important;
+  overflow-x:visible !important;overflow-y:visible !important;break-inside:auto;}
+:root:not(#tr-none) :not(pre) > :is(code, kbd, samp, tt){font-family:var(--tr-mono) !important;font-size:0.88em !important;font-style:normal !important;
+  padding:0.08em 0.32em !important;border-radius:4px !important;overflow-wrap:anywhere;
+  background-color:var(--tr-panel, color-mix(in srgb, currentColor 9%, transparent)) !important;
+  -webkit-box-decoration-break:clone;box-decoration-break:clone;}
+:root:not(#tr-none) :is(h1, h2, h3, h4, h5, h6, a) > :is(code, tt){background-color:transparent !important;padding:0 !important;font-size:0.95em !important;}
+:root:not(#tr-none) .hljs-comment, :root:not(#tr-none) .hljs-quote{color:var(--tr-syn-comment, color-mix(in srgb, currentColor 55%, transparent)) !important;font-style:italic !important;}
+:root:not(#tr-none) :is(.hljs-keyword, .hljs-selector-tag, .hljs-doctag, .hljs-operator){color:var(--tr-syn-keyword, color-mix(in srgb, #c472fb 80%, currentColor)) !important;}
+:root:not(#tr-none) :is(.hljs-string, .hljs-regexp, .hljs-char) {color:var(--tr-syn-string, color-mix(in srgb, #62c073 80%, currentColor)) !important;}
+:root:not(#tr-none) :is(.hljs-number, .hljs-literal, .hljs-symbol, .hljs-bullet, .hljs-link){color:var(--tr-syn-number, color-mix(in srgb, #ff9907 80%, currentColor)) !important;}
+:root:not(#tr-none) :is(.hljs-title, .hljs-section, .hljs-function){color:var(--tr-syn-title, color-mix(in srgb, #52a8ff 80%, currentColor)) !important;}
+:root:not(#tr-none) :is(.hljs-type, .hljs-built_in, .hljs-class){color:var(--tr-syn-type, color-mix(in srgb, #1da9b0 80%, currentColor)) !important;}
+:root:not(#tr-none) :is(.hljs-attr, .hljs-attribute, .hljs-property, .hljs-variable, .hljs-template-variable, .hljs-params){color:var(--tr-syn-attr, color-mix(in srgb, #52a8ff 80%, currentColor)) !important;}
+:root:not(#tr-none) :is(.hljs-tag, .hljs-name, .hljs-selector-id, .hljs-selector-class, .hljs-meta){color:var(--tr-syn-tag, color-mix(in srgb, #f75f8f 80%, currentColor)) !important;}
+:root:not(#tr-none) .hljs-addition{color:var(--tr-syn-string, color-mix(in srgb, #62c073 80%, currentColor)) !important;}
+:root:not(#tr-none) .hljs-deletion{color:var(--tr-syn-tag, color-mix(in srgb, #f75f8f 80%, currentColor)) !important;}
+:root:not(#tr-none) .hljs-emphasis{font-style:italic !important;}
+:root:not(#tr-none) .hljs-strong{font-weight:700 !important;}
+
+/* ---- tables (rule 6) */
+:root:not(#tr-none) .tr-table-scroll{display:block !important;max-width:100% !important;overflow-x:auto !important;overflow-y:hidden !important;
+  margin:1em 0 !important;break-inside:avoid;-webkit-overflow-scrolling:touch;}
+:root:not(#tr-none) .tr-table-scroll > table{margin:0 !important;max-width:none !important;}
+:root:not(#tr-none) .tr-table-scroll.tr-wrap{overflow:visible !important;break-inside:auto;}
+:root:not(#tr-none) .tr-table-scroll.tr-wrap > table{table-layout:fixed !important;width:100% !important;max-width:100% !important;overflow-wrap:anywhere;}
+
+/* ---- dark-ink images (rule 4) */
+:root:not(#tr-none) :is(img, image).tr-ink{filter:invert(1) hue-rotate(180deg) !important;}
+
+/* ---- PDF conversions (rule 7) */
+:root:not(#tr-none) .tr-pdf-neutral{font-style:normal !important;font-weight:normal !important;text-decoration:none !important;}
+:root:not(#tr-none) .tr-pdf-hidden{display:block !important;height:0 !important;min-height:0 !important;margin:0 !important;padding:0 !important;
+  border:0 !important;overflow:hidden !important;font-size:0 !important;line-height:0 !important;}
+:root:not(#tr-none) .tr-pdf-para{display:block !important;margin:0.85em 0 !important;padding:0 !important;}
+:root:not(#tr-none) .tr-pdf-para > *{display:inline !important;margin:0 !important;padding:0 !important;text-indent:0 !important;}
+:root:not(#tr-none) .tr-pdf-para > :not(:last-child):not(.tr-pdf-hidden):not(.tr-pdf-hyphen)::after{content:" ";}
+/* Out of flow, so the spaces around a collapsed header merge into one; the page anchor keeps a position. */
+:root:not(#tr-none) .tr-pdf-para > .tr-pdf-hidden{position:absolute !important;width:0 !important;}
+:root:not(#tr-none) .tr-pdf-label{font-weight:700 !important;margin:1.4em 0 0.15em !important;break-after:avoid;}
+:root:not(#tr-none) .tr-pdf-title{font-weight:700 !important;margin:0 0 0.6em !important;break-after:avoid;}

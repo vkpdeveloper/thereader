@@ -1,3 +1,5 @@
+import { UI_ATTR } from '../enhance/dom';
+
 /**
  * Text positions inside a rendered chapter. Offsets are into the raw
  * concatenation of the body's text nodes, i.e. the body's `textContent`
@@ -7,6 +9,12 @@
  */
 
 const SKIP = new Set(['script', 'style', 'noscript', 'template']);
+
+/** Reader UI and enhancer insertions (rendered formulas): not book text. */
+function isUi(el: Element): boolean {
+  return el.hasAttribute('data-reader-ui') || el.hasAttribute(UI_ATTR);
+}
+
 const IGNORABLE = /[\s­​‌‍﻿]/;
 
 export class TextIndex {
@@ -23,7 +31,7 @@ export class TextIndex {
       acceptNode(n) {
         if (n.nodeType === Node.ELEMENT_NODE) {
           const el = n as Element;
-          if (SKIP.has(el.localName.toLowerCase()) || el.hasAttribute('data-reader-ui')) return NodeFilter.FILTER_REJECT;
+          if (SKIP.has(el.localName.toLowerCase()) || isUi(el)) return NodeFilter.FILTER_REJECT;
           return NodeFilter.FILTER_SKIP;
         }
         return NodeFilter.FILTER_ACCEPT;
@@ -270,7 +278,7 @@ export function plainText(root: Element): string {
     if (n.nodeType !== Node.ELEMENT_NODE) return;
     const el = n as Element;
     const name = el.localName.toLowerCase();
-    if (SKIP.has(name) || el.hasAttribute('data-reader-ui')) return;
+    if (SKIP.has(name) || isUi(el)) return;
     const block = BLOCK.has(name);
     if (block) parts.push(' ');
     for (let c = el.firstChild; c; c = c.nextSibling) walk(c);

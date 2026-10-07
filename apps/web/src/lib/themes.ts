@@ -298,5 +298,16 @@ export function engineColors(themeId: string | null | undefined): EngineColors {
     link: c.blue,
     selection: withAlpha(c.blue, 0.3),
     highlightTints,
+    content: {
+      panel: c.panel,
+      border: c.border,
+      subtle: c.subtle,
+      blue: c.blue,
+      purple: c.purple,
+      green: c.green,
+      orange: c.orange,
+      pink: c.pink,
+      cyan: c.cyan,
+    },
   };
 }
