@@ -71,18 +71,8 @@ function hasBlockChild(el: VElement): boolean {
   return false;
 }
 
-/**
- * Bottom-up statistics over non-skipped nodes. With `reset`, first clears every mark (skip, score) in the subtree, in
- * the same pass: an attempt starts from a clean tree, all of which is then measured. With `toScore`, also lists the
- * elements whose text is scored, in document order.
- */
-function measure(el: VElement, reset = false, toScore: VElement[] | null = null): void {
-  if (reset) {
-    el.skip = false;
-    el.scored = false;
-    el.score = 0;
-  }
-  if (toScore !== null && (TAGS_TO_SCORE.has(el.tag) || el.attrs['data-x-as-p'] !== undefined)) toScore.push(el);
+/** Bottom-up statistics over non-skipped nodes. */
+export function measure(el: VElement): void {
   let text = 0;
   let link = 0;
   let commas = 0;
@@ -93,8 +83,8 @@ function measure(el: VElement, reset = false, toScore: VElement[] | null = null)
     if (child.kind === 0) {
       text += child.length;
       commas += child.commas;
-    } else if (reset || !child.skip) {
-      measure(child, reset, toScore);
+    } else if (!child.skip) {
+      measure(child);
       text += child.textLen;
       link += child.linkLen;
       commas += child.commas;
@@ -257,62 +247,52 @@ const TABLE_OR_CODE = new Set(['table', 'code', 'pre']);
 /** Pass 1 of an attempt: marks unlikely candidates, bylines and empty wrappers as skipped. */
 function markUnlikely(body: VElement, flags: Flags, state: { bylineRemoved: boolean }): void {
   const totalProse = proseLength(body);
-  // Pre-order below the body; a skipped element's subtree is not visited.
-  const visit = (el: VElement): void => {
-    const children = el.children;
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i]!;
-      if (child.kind === 1 && !unlikely(child, flags, state, totalProse)) visit(child);
+  walk(body, (el) => {
+    if (el === body) return true;
+    // A heading's id is a slug of its own words ("highlighting-with-comments"): judge headings by class.
+    const match = HEADINGS.has(el.tag) ? lowerCase(el.className) : el.matchString;
+    if (el.attrs['aria-modal'] === 'true' && el.attrs['role'] === 'dialog') {
+      el.skip = true;
+      return false;
     }
-  };
-  visit(body);
-}
-
-/** Marks `el` skipped when it is an unlikely candidate, a byline or an empty wrapper; true when it does. */
-function unlikely(el: VElement, flags: Flags, state: { bylineRemoved: boolean }, totalProse: number): boolean {
-  // A heading's id is a slug of its own words ("highlighting-with-comments"): judge headings by class.
-  const match = HEADINGS.has(el.tag) ? lowerCase(el.className) : el.matchString;
-  if (el.attrs['aria-modal'] === 'true' && el.attrs['role'] === 'dialog') {
-    el.skip = true;
-    return true;
-  }
-  if (!state.bylineRemoved && match.length > 1 && isByline(el, match)) {
-    state.bylineRemoved = true;
-    el.skip = true;
-    return true;
-  }
-  if (flags.stripUnlikely) {
-    if (UNLIKELY.test(match) && !MAYBE.test(match) && el.tag !== 'a' && el.tag !== 'body' && el.tag !== 'article' && el.tag !== 'main' && !hasAncestor(el, TABLE_OR_CODE) && !(el.tag === 'table' && isDataTableCached(el))) {
-      // "header", "banner", "extra": weak signals that real prose overrides (MDN puts intros in a header).
-      // A layout wrapper holding most of the page's prose ("with-sidebar") is never unlikely.
-      const prose = proseLength(el);
-      // Headings carry no prose of their own; only the hard words drop them ("header-anchor" is not chrome).
-      // A header holding the page's h1 and real prose is the article's own header (title, standfirst, intro).
-      if ((UNLIKELY_HARD.test(match) || prose < 400 && !HEADINGS.has(el.tag) && !(prose >= 100 && linkDensity(el) < 0.3 && hasH1(el))) && prose <= totalProse * 0.5) {
+    if (!state.bylineRemoved && match.length > 1 && isByline(el, match)) {
+      state.bylineRemoved = true;
+      el.skip = true;
+      return false;
+    }
+    if (flags.stripUnlikely) {
+      if (UNLIKELY.test(match) && !MAYBE.test(match) && el.tag !== 'a' && el.tag !== 'body' && el.tag !== 'article' && el.tag !== 'main' && !hasAncestor(el, TABLE_OR_CODE) && !(el.tag === 'table' && isDataTableCached(el))) {
+        // "header", "banner", "extra": weak signals that real prose overrides (MDN puts intros in a header).
+        // A layout wrapper holding most of the page's prose ("with-sidebar") is never unlikely.
+        const prose = proseLength(el);
+        // Headings carry no prose of their own; only the hard words drop them ("header-anchor" is not chrome).
+        // A header holding the page's h1 and real prose is the article's own header (title, standfirst, intro).
+        if ((UNLIKELY_HARD.test(match) || prose < 400 && !HEADINGS.has(el.tag) && !(prose >= 100 && linkDensity(el) < 0.3 && hasH1(el))) && prose <= totalProse * 0.5) {
+          el.skip = true;
+          return false;
+        }
+      }
+      const role = el.attrs['role'];
+      if (role !== undefined && UNLIKELY_ROLES.has(role)) {
         el.skip = true;
-        return true;
+        return false;
+      }
+      if (el.tag === 'nav' || el.tag === 'aside' && !isCallout(el) && !isNoteMarkup(el)) {
+        el.skip = true;
+        return false;
+      }
+      // Several articles inside an article are a feed of other posts or comments.
+      if (el.tag === 'article' && el.parent !== null && countNestedArticles(el.parent) >= 2 && hasAncestor(el, ARTICLE)) {
+        el.skip = true;
+        return false;
       }
     }
-    const role = el.attrs['role'];
-    if (role !== undefined && UNLIKELY_ROLES.has(role)) {
+    if (isEmptyContainer(el)) {
       el.skip = true;
-      return true;
+      return false;
     }
-    if (el.tag === 'nav' || el.tag === 'aside' && !isCallout(el) && !isNoteMarkup(el)) {
-      el.skip = true;
-      return true;
-    }
-    // Several articles inside an article are a feed of other posts or comments.
-    if (el.tag === 'article' && el.parent !== null && countNestedArticles(el.parent) >= 2 && hasAncestor(el, ARTICLE)) {
-      el.skip = true;
-      return true;
-    }
-  }
-  if (isEmptyContainer(el)) {
-    el.skip = true;
     return true;
-  }
-  return false;
+  });
 }
 
 function hasH1(el: VElement): boolean {
@@ -404,10 +384,17 @@ interface Attempt {
 }
 
 function grab(body: VElement, flags: Flags, articleBody: string | null): Attempt {
-  measure(body, true);
+  resetMarks(body);
+  measure(body);
   markUnlikely(body, flags, { bylineRemoved: false });
+  measure(body);
+
   const toScore: VElement[] = [];
-  measure(body, false, toScore);
+  walk(body, (el) => {
+    if (el.skip) return false;
+    if (TAGS_TO_SCORE.has(el.tag) || el.attrs['data-x-as-p'] !== undefined) toScore.push(el);
+    return true;
+  });
 
   const candidates: VElement[] = [];
   for (const el of toScore) {
@@ -716,6 +703,16 @@ function liveChildren(el: VElement): number {
   return n;
 }
 
+function resetMarks(el: VElement): void {
+  el.skip = false;
+  el.scored = false;
+  el.score = 0;
+  const children = el.children;
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i]!;
+    if (child.kind === 1) resetMarks(child);
+  }
+}
 
 // ------------------------------------------------------------- structured body
 
@@ -863,68 +860,58 @@ function hasHeading(el: VElement): boolean {
 function prepare(root: VElement, flags: Flags): void {
   const rootLen = Math.max(1, root.textLen);
 
-  // Pre-order below the root; an element `clean` stops at keeps its subtree unvisited.
-  const visit = (el: VElement): void => {
-    const children = el.children;
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i]!;
-      if (child.kind === 1 && clean(child, root, rootLen, flags)) visit(child);
+  walk(root, (el) => {
+    if (el === root) return true;
+    if (el.skip) return false;
+    const tag = el.tag;
+    if (tag === 'pre' || tag === 'code' || tag === 'math' || tag === 'math-tex' || tag === 'table' && isDataTableCached(el)) return false;
+    if (tag === 'footer' && !hasAncestor(el, QUOTE_OR_FIGURE) || tag === 'aside' && !isCallout(el) && !isNoteMarkup(el) || tag === 'nav' || tag === 'd-appendix' || tag === 'd-title' || tag === 'd-byline' || tag === 'form' && el.textLen < 200) {
+      el.skip = true;
+      return false;
     }
-  };
-  visit(root);
+    if (tag === 'iframe' && !isContentFrame(el)) {
+      el.skip = true;
+      return false;
+    }
+    // A heading's id is a slug of its own words ("nav_relaxing-in-...") and says nothing about it.
+    const match = HEADINGS.has(tag) ? lowerCase(el.className) : el.matchString;
+    if (match.length > 1 && el.textLen < Math.max(500, rootLen * 0.3)) {
+      if (SHARE.test(match) && el.textLen < 500 || BOILERPLATE.test(match) && !MAYBE_CONTENT.test(match)) {
+        el.skip = true;
+        return false;
+      }
+    }
+    if (match.indexOf('author') >= 0 && isAuthorBlock(el, root)) {
+      el.skip = true;
+      return false;
+    }
+    if (tag === 'article' && el.textLen < rootLen * 0.4 && el.textLen < 1500 && hasLinkedHeading(el)) {
+      el.skip = true;
+      return false;
+    }
+    if ((tag === 'ul' || tag === 'ol') && isTableOfContents(el)) {
+      el.skip = true;
+      const heading = previousElement(el);
+      if (heading !== null && HEADINGS.has(heading.tag) && heading.textLen < 40) heading.skip = true;
+      return false;
+    }
+    // Negative words in a heading's class drop it, unless it anchors a section (an id that is not negative itself).
+    if ((tag === 'h1' || tag === 'h2') && classWeight(el, flags) < 0 && (el.id.length === 0 || NEGATIVE.test(lowerCase(el.id)))) {
+      el.skip = true;
+      return false;
+    }
+    // A heading stays or goes whole: its links ("toc-backref", permalinks) are its words.
+    if (HEADINGS.has(tag)) return false;
+    if (el.textLen < 40 && el.textLen > 0 && (tag === 'p' || tag === 'div' || tag === 'span' || tag === 'a' || tag === 'li') && UI_TEXT.test(textOf(el))) {
+      el.skip = true;
+      return false;
+    }
+    return true;
+  });
 
   if (flags.cleanConditionally) {
     cleanConditionally(root, flags);
   }
-}
-
-/** Marks boilerplate inside the article (`root`) as skipped; true when the walk goes on into `el`. */
-function clean(el: VElement, root: VElement, rootLen: number, flags: Flags): boolean {
-  if (el.skip) return false;
-  const tag = el.tag;
-  if (tag === 'pre' || tag === 'code' || tag === 'math' || tag === 'math-tex' || tag === 'table' && isDataTableCached(el)) return false;
-  if (tag === 'footer' && !hasAncestor(el, QUOTE_OR_FIGURE) || tag === 'aside' && !isCallout(el) && !isNoteMarkup(el) || tag === 'nav' || tag === 'd-appendix' || tag === 'd-title' || tag === 'd-byline' || tag === 'form' && el.textLen < 200) {
-    el.skip = true;
-    return false;
-  }
-  if (tag === 'iframe' && !isContentFrame(el)) {
-    el.skip = true;
-    return false;
-  }
-  // A heading's id is a slug of its own words ("nav_relaxing-in-...") and says nothing about it.
-  const match = HEADINGS.has(tag) ? lowerCase(el.className) : el.matchString;
-  if (match.length > 1 && el.textLen < Math.max(500, rootLen * 0.3)) {
-    if (SHARE.test(match) && el.textLen < 500 || BOILERPLATE.test(match) && !MAYBE_CONTENT.test(match)) {
-      el.skip = true;
-      return false;
-    }
-  }
-  if (match.indexOf('author') >= 0 && isAuthorBlock(el, root)) {
-    el.skip = true;
-    return false;
-  }
-  if (tag === 'article' && el.textLen < rootLen * 0.4 && el.textLen < 1500 && hasLinkedHeading(el)) {
-    el.skip = true;
-    return false;
-  }
-  if ((tag === 'ul' || tag === 'ol') && isTableOfContents(el)) {
-    el.skip = true;
-    const heading = previousElement(el);
-    if (heading !== null && HEADINGS.has(heading.tag) && heading.textLen < 40) heading.skip = true;
-    return false;
-  }
-  // Negative words in a heading's class drop it, unless it anchors a section (an id that is not negative itself).
-  if ((tag === 'h1' || tag === 'h2') && classWeight(el, flags) < 0 && (el.id.length === 0 || NEGATIVE.test(lowerCase(el.id)))) {
-    el.skip = true;
-    return false;
-  }
-  // A heading stays or goes whole: its links ("toc-backref", permalinks) are its words.
-  if (HEADINGS.has(tag)) return false;
-  if (el.textLen < 40 && el.textLen > 0 && (tag === 'p' || tag === 'div' || tag === 'span' || tag === 'a' || tag === 'li') && UI_TEXT.test(textOf(el))) {
-    el.skip = true;
-    return false;
-  }
-  return true;
 }
 
 /** A list of three or more items that is almost all links to sections of this page. */
