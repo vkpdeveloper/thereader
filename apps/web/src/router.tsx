@@ -4,6 +4,7 @@ import { AppShell } from './components/AppShell';
 import { NotFound } from './routes/notFound';
 import { LibraryScreen } from './routes/library';
 import { BrowseScreen } from './routes/browse';
+import { CategoryScreen } from './routes/category';
 import { loadArticle, loadBook, loadReader, loadSettings } from './routes/lazy';
 import { LoadingLine } from './components/states';
 
@@ -21,6 +22,8 @@ const indexRoute = createRoute({
 const shellRoute = createRoute({ getParentRoute: () => rootRoute, id: 'shell', component: AppShell });
 
 const libraryRoute = createRoute({ getParentRoute: () => shellRoute, path: 'library', component: LibraryScreen });
+/** One category's books and articles. */
+const categoryRoute = createRoute({ getParentRoute: () => shellRoute, path: 'library/category/$id', component: CategoryScreen });
 const browseRoute = createRoute({ getParentRoute: () => shellRoute, path: 'browse', component: BrowseScreen });
 const settingsRoute = createRoute({
   getParentRoute: () => shellRoute,
@@ -75,7 +78,7 @@ const legacyAppIndex = createRoute({
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
-  shellRoute.addChildren([libraryRoute, browseRoute, settingsRoute]),
+  shellRoute.addChildren([libraryRoute, categoryRoute, browseRoute, settingsRoute]),
   bookRoute,
   readRoute,
   articleRoute,

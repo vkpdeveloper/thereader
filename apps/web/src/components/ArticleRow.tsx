@@ -7,6 +7,7 @@ import { useRelayedSrc } from './article/media';
 import { MoreHorizIcon } from './icons';
 import { menuPoint, type MenuPoint } from './overlay';
 import { ProgressLine } from './states';
+import { articleRef, startItemDrag } from './categories/model';
 
 /** A publisher's favicon at text size, through the relay if its host refuses; hidden when it fails to load. */
 export function SiteIcon({ src, size = 14 }: { src: string | null; size?: number }) {
@@ -111,6 +112,7 @@ export const ArticleRow = memo(function ArticleRow({
       onPointerUp={cancelPress}
       onPointerCancel={cancelPress}
       onClickCapture={onClickCapture}
+      onDragStart={(e) => startItemDrag(e, { ...articleRef(article), title: article.title })}
     >
       <Link {...articleLink(article)} className="article-row" aria-label={`${article.title}, ${article.siteName}`}>
         <ArticleThumb article={article} />
