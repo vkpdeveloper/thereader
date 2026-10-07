@@ -34,15 +34,16 @@
  *
  * Memory (Chromium only), with V8's sampling heap profiler over CDP
  * (`HeapProfiler.startSampling`, every `--interval` bytes on average, 1024 by
- * default), attributed to the one call that runs the phase (inputs are built
- * before sampling starts), after a warm-up run of each phase:
+ * default), attributed to the frame that runs the phase (documents are parsed
+ * before sampling starts), after a warm-up run:
  *
  * - allocated: bytes allocated by the phase, including everything collected
  *   since (`includeObjectsCollectedByMajorGC/MinorGC`), the mean of
- *   `--mem-runs` runs (2 by default); the garbage it makes;
+ *   `--mem-runs` runs (2 by default); the garbage it makes. The first three
+ *   phases are sampled in one run of the chain, `extract` in a run of its own;
  * - retained: bytes the phase allocated that are still live after a forced
  *   full GC while its result is held: the tree (`fromDom`) and the final output
- *   (`extract`, the tree and all intermediates gone), one run. The document is dropped
+ *   (`extract`, the tree and all intermediates gone), both from one run. The documents are dropped
  *   first, so wrappers it holds are not counted. Strings the DOM hands over
  *   are often external (their characters live in Blink); only V8 heap counts. The tree is what every
  *   later stage works on and is live through the whole extraction, so tree +
@@ -62,7 +63,7 @@
 import { writeFileSync } from 'node:fs';
 import type { CDPSession, Page } from '../../../eval/node_modules/playwright';
 import { resolve } from 'node:path';
-import { PHASES, type EngineName, type Phase, type Timing } from './compare-harness';
+import { PHASE_FRAMES, PHASES, type EngineName, type MemoryRun, type Phase, type Timing } from './compare-harness';
 import { arg, baselineDir, bundleComparePage, call, flag, loadCorpus, openPages, pageHtml, SRC, type Entry } from './compare';
 
 const runtime = arg('--runtime') ?? 'both';
@@ -151,36 +152,45 @@ function memoryReport(results: PageMemory[]): string {
 
 // ------------------------------------------------------------------ Chromium
 
-/** Bytes in the sampled profile under the `measuredRun` frame. */
-function measuredBytes(node: { callFrame: { functionName: string }; selfSize: number; children: unknown[] }, inside = false): number {
-  const here = inside || node.callFrame.functionName === 'measuredRun';
-  let total = here ? node.selfSize : 0;
-  for (const child of node.children) total += measuredBytes(child as typeof node, here);
-  return total;
+type ProfileNode = { callFrame: { functionName: string }; selfSize: number; children: ProfileNode[] };
+
+/** Bytes in the sampled profile under each phase's frame. */
+function phaseBytes(node: ProfileNode, out: Record<Phase, number>, phase: Phase | null = null): Record<Phase, number> {
+  const here = phase ?? PHASES.find((p) => PHASE_FRAMES[p] === node.callFrame.functionName) ?? null;
+  if (here !== null) out[here] += node.selfSize;
+  for (const child of node.children) phaseBytes(child, out, here);
+  return out;
 }
 
-async function sampleHeap(page: Page, cdp: CDPSession, engine: EngineName, phase: Phase, collected: boolean): Promise<number> {
-  if (!(await call<boolean>(page, 'prepare', engine, phase))) return 0;
+/** Heap profile of one `measuredRun`: everything it allocated (`collected`), or what is still live after a full GC. */
+async function sampleHeap(page: Page, cdp: CDPSession, run: MemoryRun, collected: boolean): Promise<Record<Phase, number>> {
+  await call(page, 'prepare');
   await cdp.send('HeapProfiler.startSampling', { samplingInterval: interval, includeObjectsCollectedByMajorGC: collected, includeObjectsCollectedByMinorGC: collected } as never);
-  await call(page, 'measuredRun', engine, phase);
+  await call(page, 'measuredRun', 'next', run);
   if (!collected) await cdp.send('HeapProfiler.collectGarbage');
   const { profile } = await cdp.send('HeapProfiler.stopSampling');
   await call(page, 'release');
-  return measuredBytes(profile.head as never);
+  return phaseBytes(profile.head as ProfileNode, { fromDom: 0, extractTree: 0, markdown: 0, extract: 0 });
 }
 
 /** One build's memory on the loaded page, in its own renderer. */
 async function pageMemory(page: Page, cdp: CDPSession): Promise<Memory> {
   const m: Memory = { fromDom: 0, extractTree: 0, markdown: 0, extract: 0, tree: 0, output: 0 };
-  for (const phase of PHASES) {
-    if (await call<boolean>(page, 'prepare', 'next', phase)) await call(page, 'measuredRun', 'next', phase); // warm-up
+  for (const run of ['chain', 'extract'] as const) {
+    await call(page, 'prepare');
+    await call(page, 'measuredRun', 'next', run); // warm-up
     await call(page, 'release');
   }
   for (let r = 0; r < memRuns; r++) {
-    for (const phase of PHASES) m[phase] += (await sampleHeap(page, cdp, 'next', phase, true)) / memRuns;
+    const chain = await sampleHeap(page, cdp, 'chain', true);
+    m.fromDom += chain.fromDom / memRuns;
+    m.extractTree += chain.extractTree / memRuns;
+    m.markdown += chain.markdown / memRuns;
+    m.extract += (await sampleHeap(page, cdp, 'extract', true)).extract / memRuns;
   }
-  m.tree = await sampleHeap(page, cdp, 'next', 'fromDom', false);
-  m.output = await sampleHeap(page, cdp, 'next', 'extract', false);
+  const retained = await sampleHeap(page, cdp, 'retained', false);
+  m.tree = retained.fromDom;
+  m.output = retained.extract;
   return m;
 }
 

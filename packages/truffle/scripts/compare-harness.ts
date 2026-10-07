@@ -20,6 +20,13 @@ export interface Engine {
 export type EngineName = 'base' | 'next';
 export type Phase = 'fromDom' | 'extractTree' | 'markdown' | 'extract';
 export const PHASES: Phase[] = ['fromDom', 'extractTree', 'markdown', 'extract'];
+/**
+ * What `measuredRun` runs for heap sampling: `chain` the first three phases one after the other, `extract` the full
+ * extraction, `retained` a tree and a full output, both kept.
+ */
+export type MemoryRun = 'chain' | 'extract' | 'retained';
+/** The frame each phase runs in during `measuredRun`, which a heap profile attributes allocations to. */
+export const PHASE_FRAMES: Record<Phase, string> = { fromDom: 'measureFromDom', extractTree: 'measureExtractTree', markdown: 'measureMarkdown', extract: 'measureExtract' };
 
 export interface Environment {
   base: Engine;
@@ -59,9 +66,9 @@ export function createHarness(env: Environment) {
   let html = '';
   let url = '';
   let doc: Document | null = null;
-  // Inputs prepared outside a measured region (a fresh document, a tree, an article), and the outputs kept alive past it.
+  // Documents prepared outside a measured region, and the outputs kept alive past it.
   let fresh: Document | null = null;
-  let input: unknown = null;
+  let fresh2: Document | null = null;
   let kept: unknown = null;
 
   const engine = (name: EngineName): Engine => (name === 'base' ? env.base : env.next);
@@ -72,8 +79,7 @@ export function createHarness(env: Environment) {
     html = source;
     url = pageUrl;
     doc = null;
-    fresh = null;
-    input = null;
+    fresh = fresh2 = null;
     kept = null;
     return html.length;
   }
@@ -160,27 +166,34 @@ export function createHarness(env: Environment) {
     return { fromDom: median(samples.fromDom), extractTree: median(samples.extractTree), markdown: median(samples.markdown), extract: median(samples.extract) };
   }
 
-  /** Builds what `phase` takes (a fresh document, a tree, an article) so that `measuredRun` does only the phase itself. */
-  function prepare(name: EngineName, phase: Phase): boolean {
-    const e = engine(name);
+  /** Parses the documents `measuredRun` reads, so that parsing stays outside the measured region. */
+  function prepare(): void {
     kept = null;
-    fresh = phase === 'fromDom' || phase === 'extract' ? env.parse(html, url) : null;
-    input = phase === 'extractTree' ? e.fromDom(env.parse(html, url)) : phase === 'markdown' ? e.extractTree(e.fromDom(env.parse(html, url)), { url }) : null;
-    return phase !== 'markdown' || input !== null;
+    fresh = env.parse(html, url);
+    fresh2 = env.parse(html, url);
   }
 
+  // One frame per phase, so that a heap profile can tell the phases of one run apart.
+  const measureFromDom = (e: Engine, d: Document): unknown => e.fromDom(d);
+  const measureExtractTree = (e: Engine, tree: unknown): unknown => e.extractTree(tree, { url });
+  const measureMarkdown = (e: Engine, article: unknown): unknown => e.articleMarkdown(article as never);
+  const measureExtract = (e: Engine, d: Document): unknown => e.extract(d, { url, markdown: true });
+
   /**
-   * The measured region for allocation sampling: exactly one run of `phase`, on what `prepare` built. Its output stays
-   * referenced; its input does not (the document goes too, with the wrappers the run created on it).
+   * The measured region for heap sampling (see `MemoryRun`), on the documents `prepare` parsed. What a run keeps stays
+   * referenced after it; the documents do not (they go with the wrappers the run created on them).
    */
-  function measuredRun(name: EngineName, phase: Phase): number {
+  function measuredRun(name: EngineName, run: MemoryRun): number {
     const e = engine(name);
-    if (phase === 'fromDom') kept = e.fromDom(fresh!);
-    else if (phase === 'extractTree') kept = e.extractTree(input, { url });
-    else if (phase === 'markdown') kept = e.articleMarkdown(input as never);
-    else kept = e.extract(fresh!, { url, markdown: true });
-    fresh = null;
-    input = null;
+    if (run === 'chain') {
+      const article = measureExtractTree(e, measureFromDom(e, fresh!));
+      kept = article === null ? null : measureMarkdown(e, article);
+    } else if (run === 'extract') {
+      kept = measureExtract(e, fresh!);
+    } else {
+      kept = [measureFromDom(e, fresh!), measureExtract(e, fresh2!)];
+    }
+    fresh = fresh2 = null;
     return 0;
   }
 
