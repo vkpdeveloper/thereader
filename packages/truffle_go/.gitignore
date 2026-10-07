@@ -1,0 +1,2 @@
+# go test -c / -cpuprofile leave the test binary here
+*.test
