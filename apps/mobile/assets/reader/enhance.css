@@ -1,4 +1,4 @@
-/* The Reader content enhancer v3. Pair with enhance.js; TheReaderMath.woff2 sits next to this file.
+/* The Reader content enhancer v4. Pair with enhance.js; TheReaderMath.woff2 sits next to this file.
  * GENERATED from apps/web/src/reader/enhance by `cd apps/web && bun run build:enhance`; do not edit.
  * Includes temml (MIT) and highlight.js (BSD-3-Clause). */
 @font-face{font-family:"TheReader Math";src:url("TheReaderMath.woff2") format("woff2");font-style:normal;font-weight:400;font-display:swap;}
@@ -22,6 +22,12 @@
   white-space:normal !important;background-color:transparent !important;}
 :root:not(#tr-none) .tr-math-display{display:block !important;}
 :root:not(#tr-none) .tr-switch-case{display:inline;}
+/* MathML a library hid for screen readers (KaTeX, MathJax assistive MathML), shown in place of its rendering. */
+:root:not(#tr-none) .tr-shown{position:static !important;clip:auto !important;clip-path:none !important;width:auto !important;height:auto !important;
+  max-width:100% !important;overflow:visible !important;padding:0 !important;margin:0 !important;border:0 !important;opacity:1 !important;
+  display:inline !important;top:auto !important;left:auto !important;line-height:normal !important;font-size:inherit !important;
+  -webkit-user-select:text !important;user-select:text !important;}
+:root:not(#tr-none) .tr-shown > math[display="block"], :root:not(#tr-none) .tr-shown > .tr-math-scroll, :root:not(#tr-none) .tr-shown > .tr-math-display{display:block !important;}
 
 /* ---- code (rule 5) */
 :root:not(#tr-none) pre{display:block !important;white-space:pre !important;word-break:normal !important;overflow-wrap:normal !important;
@@ -65,6 +71,9 @@
 
 /* ---- dark-ink images (rule 4) */
 :root:not(#tr-none) :is(img, image).tr-ink{filter:invert(1) hue-rotate(180deg) !important;}
+/* Black on white: the white turns black and screens into whatever the page colour is. */
+:root:not(#tr-none) img.tr-ink-paper{filter:invert(1) hue-rotate(180deg) !important;mix-blend-mode:screen;background-color:transparent !important;}
+:root:not(#tr-none) svg.tr-svg-ink{background-color:transparent !important;}
 
 /* ---- PDF conversions (rule 7) */
 :root:not(#tr-none) .tr-pdf-neutral{font-style:normal !important;font-weight:normal !important;text-decoration:none !important;}

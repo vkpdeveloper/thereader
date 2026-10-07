@@ -1,5 +1,7 @@
 import { enhanceContent, needs, type EnhanceReport, type TexRenderer } from './index';
 
+const noTex: TexRenderer = () => null;
+
 /**
  * The web engine's entry: runs the enhancer on a parsed chapter, loading
  * temml and highlight.js as their own chunks only when the chapter has TeX or
@@ -13,7 +15,8 @@ export async function enhanceChapter(doc: Document, body: Element): Promise<{ te
       need.code ? import('../../lib/highlight').then((m) => m.highlightCode, () => null) : null,
     ]);
     const report = await enhanceContent(doc, body, { tex, highlight });
-    return { tex: report.math > 0 ? tex : null, report };
+    // Rebuilt MathML hydrates without temml; TeX hosts exist only when it loaded.
+    return { tex: report.math > 0 ? (tex ?? noTex) : null, report };
   } catch {
     return { tex: null, report: null };
   }

@@ -728,6 +728,8 @@ function escapeXml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+const foreignNamespaces: Record<string, string> = { svg: 'http://www.w3.org/2000/svg', math: 'http://www.w3.org/1998/Math/MathML' };
+
 function writeXhtml(root: HtmlNode): string {
   const out: string[] = [];
   const write = (node: HtmlNode): void => {
@@ -744,6 +746,9 @@ function writeXhtml(root: HtmlNode): string {
     if (!xmlName.test(tag)) tag = 'span';
     out.push(`<${tag}`);
     if (tag === 'html') out.push(' xmlns="http://www.w3.org/1999/xhtml"', ' xmlns:xlink="http://www.w3.org/1999/xlink"');
+    // HTML puts these in their own namespace without saying so; XHTML needs it written.
+    const foreign = foreignNamespaces[tag];
+    if (foreign && !(node as HtmlElement).attributes.has('xmlns')) out.push(` xmlns="${foreign}"`);
     for (const [name, value] of (node as HtmlElement).attributes) {
       if (tag === 'html' && (name === 'xmlns' || name === 'xmlns:xlink')) continue;
       if (!xmlName.test(name) && name !== 'xml:lang' && name !== 'xlink:href' && !name.startsWith('xmlns:')) continue;

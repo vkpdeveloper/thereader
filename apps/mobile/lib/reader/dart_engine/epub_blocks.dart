@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
@@ -6,14 +7,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_math_fork/ast.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 import 'package:html/dom.dart' as dom;
+import 'package:html/parser.dart' as html;
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/tokens.dart';
 import '../../features/articles/article_code.dart' show HighlightedCode, codeTokenStyle, grammarFor, highlightCode;
 import 'epub_chapter.dart';
 import 'epub_package.dart';
+import 'epub_svg.dart';
 import 'epub_tex.dart';
 import 'garbled_math.dart';
 import 'mathml_tex.dart';
@@ -36,21 +40,32 @@ class EpubContentBuilder {
   Widget? build(dom.Element element) {
     // Hidden elements fall through to the `display: none` style.
     if (element.attributes.containsKey(EpubMarks.hidden)) return null;
-    switch ((element.localName ?? '').split(':').last) {
+    final name = (element.localName ?? '').split(':').last;
+    switch (name) {
       case 'math':
         return _mathml(element);
       case 'pre':
         return _code(element);
       case 'img':
         return _image(element);
-      case 'span' || 'div' when element.classes.contains('math'):
-        return _texSource(element);
+      case 'svg':
+        return _inlineSvg(element);
+      case 'object' || 'embed':
+        return _embedded(element);
+      case 'mjx-container':
+        return _rendered(element);
     }
+    final mathml = element.attributes[EpubMarks.mathml];
+    if (mathml != null) return _encodedMathml(mathml, _isDisplayElement(element) || _isRenderedDisplay(element));
+    if (_isRendered(element)) return _rendered(element);
+    final formula = _attributeFormula(element);
+    if (formula != null) return formula;
+    if ((name == 'span' || name == 'div') && element.classes.contains('math')) return _texSource(element);
     return null;
   }
 
-  Widget? _mathml(dom.Element math) {
-    final display = MathmlTex.isDisplay(math);
+  Widget? _mathml(dom.Element math, {bool? display}) {
+    display ??= MathmlTex.isDisplay(math);
     final annotation = MathmlTex.annotation(math);
     final alttext = math.attributes['alttext'];
     for (final tex in [?annotation, MathmlTex.convert(math), ?alttext]) {
@@ -58,6 +73,174 @@ class EpubContentBuilder {
       if (ast != null) return _formula(ast, display: display);
     }
     return null;
+  }
+
+  // ------------------------------------------------------------ rendered maths
+
+  static final _mathJaxFrame = RegExp(r'(^|\s)(MathJax|MathJax_CHTML|MathJax_SVG|MathJax_PHTML|mjx-chtml)(\s|$)');
+  static final _mathJaxDisplay = RegExp(r'(^|\s)(MathJax_Display|MathJax_SVG_Display|MJXc-display|katex-display)(\s|$)');
+
+  /// KaTeX output or a MathJax 2 frame. Without the library's stylesheet and
+  /// fonts their HTML is glyph soup; the MathML they carry is shown instead.
+  static bool _isRendered(dom.Element e) =>
+      e.classes.contains('katex') || (e.id.endsWith('-Frame') && _mathJaxFrame.hasMatch(e.className));
+
+  static bool _isRenderedDisplay(dom.Element e) =>
+      e.attributes['display'] == 'true' || _mathJaxDisplay.hasMatch(e.className) || _mathJaxDisplay.hasMatch(e.parent?.className ?? '');
+
+  Widget? _rendered(dom.Element e) {
+    final display = _isRenderedDisplay(e);
+    final math = _firstMath(e);
+    if (math != null) return _mathml(math, display: display || MathmlTex.isDisplay(math));
+    final svg = e.children.where((c) => c.localName == 'svg').firstOrNull;
+    return svg == null ? null : _inlineSvg(svg, mathContext: true, display: display);
+  }
+
+  static dom.Element? _firstMath(dom.Element e) {
+    final stack = [e];
+    for (var seen = 0; stack.isNotEmpty && seen < 20000; seen++) {
+      final el = stack.removeLast();
+      if (el != e && (el.localName ?? '').split(':').last == 'math') return el;
+      stack.addAll(el.children.reversed);
+    }
+    return null;
+  }
+
+  /// MathML kept as a string (`data-mathml`, a `math/mml` script; see
+  /// [EpubMarks.mathml]), parsed inertly.
+  Widget? _encodedMathml(String encoded, bool display) {
+    final String source;
+    try {
+      source = Uri.decodeComponent(encoded);
+    } on ArgumentError {
+      return null;
+    }
+    if (source.length > 64000 || !RegExp(r'^\s*<(\w+:)?math[\s>/]').hasMatch(source)) return null;
+    final holder = dom.Element.tag('div')..nodes.addAll(html.parseFragment(source, container: 'div').nodes.toList());
+    final math = _firstMath(holder);
+    return math == null ? null : _mathml(math, display: display || MathmlTex.isDisplay(math));
+  }
+
+  static const _texAttributes = ['data-tex', 'data-latex'];
+  static const _looseTexAttributes = ['data-equation', 'data-formula', 'data-math'];
+  static final _texSignal = RegExp(r'\\[A-Za-z]+|\\[{}|,;:!]|[_^]|\{[^{}]*\}');
+
+  /// TeX kept in attributes (`data-tex`, `data-latex`; `data-equation` only
+  /// when it reads as TeX, not an equation number). `data-mathml` is read
+  /// as [EpubMarks.mathml].
+  /// Elements holding MathML of their own keep it.
+  Widget? _attributeFormula(dom.Element e) {
+    final attrs = e.attributes;
+    if (!attrs.keys.any((k) => k is String && k.startsWith('data-'))) return null;
+    String? tex;
+    for (final a in _texAttributes) {
+      final v = attrs[a]?.trim();
+      if (tex == null && v != null && v.isNotEmpty) tex = v;
+    }
+    for (final a in _looseTexAttributes) {
+      final v = attrs[a]?.trim();
+      if (tex == null && v != null && v.length <= 4000 && _texSignal.hasMatch(v)) tex = v;
+    }
+    if (tex == null || _firstMath(e) != null) return null;
+    final display = _isDisplayElement(e);
+    final ast = EpubTex.tryParse(EpubTex.normalize(tex));
+    return ast == null ? null : _formula(ast, display: display);
+  }
+
+  static const _blockTags = {'div', 'p', 'figure', 'section', 'blockquote', 'li', 'td', 'th', 'dd', 'dt'};
+
+  static bool _isDisplayElement(dom.Element e) {
+    final mode = (e.attributes['data-display'] ?? e.attributes['data-mode'] ?? '').toLowerCase();
+    if (mode == 'block' || mode == 'display' || mode == 'true') return true;
+    if (mode == 'inline' || mode == 'false') return false;
+    if (e.classes.contains('display')) return true;
+    return _blockTags.contains(e.localName) || _ancestors(e).take(3).any((a) => _displayClass.hasMatch(a.className));
+  }
+
+  // ------------------------------------------------------------ SVG
+
+  /// An inline `<svg>`: formulas drawn in black follow the reading ink;
+  /// other drawings keep their paint. Rendered by flutter_svg.
+  Widget? _inlineSvg(dom.Element svg, {bool mathContext = false, bool? display}) {
+    var source = svg.outerHtml;
+    if (!source.contains('xmlns=')) source = source.replaceFirst('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+    final parsed = EpubSvg.parse(source);
+    if (parsed == null) return null;
+    final context = mathContext || _ancestors(svg).any((a) => _mathClass.hasMatch(a.className) || a.localName == 'mjx-container');
+    final formula = EpubSvg.looksLikeFormula(parsed, mathContext: context);
+    final drawn = (formula ? EpubSvg.inked(parsed) : null) ?? source;
+    final width = EpubSvg.length(parsed.getAttribute('width'), _em);
+    final height = EpubSvg.length(parsed.getAttribute('height'), _em);
+    final picture = _svgPicture(drawn, width: width, height: height, label: null);
+    if (display ?? _isDisplayImage(svg)) return _displayBox(picture);
+    return InlineCustomWidget(alignment: PlaceholderAlignment.middle, child: picture);
+  }
+
+  Widget _svgPicture(String source, {double? width, double? height, String? label}) {
+    // A drawing never overflows the column.
+    final maxWidth = 680.0;
+    if (width != null && width > maxWidth) {
+      if (height != null) height = height * maxWidth / width;
+      width = maxWidth;
+    }
+    return SvgPicture.string(
+      source,
+      width: width,
+      height: height,
+      theme: SvgTheme(currentColor: colors.ink, fontSize: _em),
+      semanticsLabel: label,
+      errorBuilder: (context, error, stack) => const SizedBox.shrink(),
+    );
+  }
+
+  /// An SVG file (`<img src=…svg>`, `<object>`): monochrome dark drawings
+  /// follow the reading ink, as formula images do on the web.
+  Widget? _svgImage(String path, {double? emHeight, required bool display, String? alt}) {
+    final bytes = package.readBytes(path);
+    if (bytes == null || bytes.length > EpubSvg.maxLength) return null;
+    final String source;
+    try {
+      source = utf8.decode(bytes, allowMalformed: true);
+    } on Object {
+      return null;
+    }
+    final parsed = EpubSvg.parse(source);
+    if (parsed == null) return null;
+    final drawn = EpubSvg.inked(parsed) ?? source;
+    final height = emHeight != null ? emHeight * _em : EpubSvg.length(parsed.getAttribute('height'), _em);
+    final width = emHeight != null ? null : EpubSvg.length(parsed.getAttribute('width'), _em);
+    final picture = _svgPicture(drawn, width: width, height: height, label: alt == null || alt.isEmpty ? null : alt);
+    if (display) return _displayBox(picture);
+    return InlineCustomWidget(alignment: PlaceholderAlignment.middle, child: picture);
+  }
+
+  static final _imageFile = RegExp(r'\.(svg|png|gif|jpe?g|webp)$', caseSensitive: false);
+
+  /// `<object data=…>` / `<embed src=…>` showing an image in the book: the
+  /// image, in place of the plugin and its fallback.
+  Widget? _embedded(dom.Element e) {
+    final url = (e.attributes[e.localName == 'object' ? 'data' : 'src'] ?? '').trim();
+    final type = (e.attributes['type'] ?? '').toLowerCase();
+    if (url.isEmpty || RegExp(r'^[a-z][\w+.-]*:|^//', caseSensitive: false).hasMatch(url)) return null;
+    if (!type.startsWith('image/') && !_imageFile.hasMatch(url.split(RegExp('[?#]')).first)) return null;
+    final String path;
+    try {
+      path = package.resolve(href, url);
+    } on ArgumentError {
+      return null;
+    }
+    final emHeight = double.tryParse(e.attributes[EpubMarks.emHeight] ?? '');
+    final display = _isDisplayImage(e);
+    if (path.toLowerCase().endsWith('.svg')) return _svgImage(path, emHeight: emHeight, display: display, alt: e.attributes['title']);
+    final bytes = package.readBytes(path);
+    if (bytes == null) return null;
+    final image = InkAdaptiveImage(
+      package: package,
+      path: path,
+      ink: colors.ink,
+      child: Image.memory(bytes, height: emHeight == null ? null : emHeight * _em),
+    );
+    return display ? _displayBox(image) : InlineCustomWidget(alignment: PlaceholderAlignment.middle, child: image);
   }
 
   /// Pandoc `span.math`, converted MathJax scripts, `$$…$$` runs and decoded garbled formulas.
@@ -75,16 +258,26 @@ class EpubContentBuilder {
 
   Widget? _image(dom.Element img) {
     final emHeight = double.tryParse(img.attributes[EpubMarks.emHeight] ?? '');
-    final mathContext = emHeight != null || _ancestors(img).any((a) => _mathClass.hasMatch(a.className));
+    // Pandoc's --webtex puts the class on the image itself.
+    final mathContext = emHeight != null || _mathClass.hasMatch(img.className) || _ancestors(img).any((a) => _mathClass.hasMatch(a.className));
     final alt = img.attributes['alt'] ?? '';
     final display = _isDisplayImage(img);
     if (EpubTex.looksLikeTex(alt, mathContext: mathContext)) {
       final ast = EpubTex.tryParse(EpubTex.normalize(alt));
       if (ast != null) return _formula(ast, display: display);
     }
+    final src = img.attributes['src'] ?? '';
+    // The HTML widget cannot decode SVG files.
+    if (src.split(RegExp('[?#]')).first.toLowerCase().endsWith('.svg')) {
+      try {
+        return _svgImage(package.resolve(href, src), emHeight: emHeight, display: display, alt: alt);
+      } on ArgumentError {
+        return null;
+      }
+    }
     // Inline equation images keep their em size instead of becoming blocks.
     if (emHeight == null) return null;
-    final path = package.resolve(href, img.attributes['src'] ?? '');
+    final path = package.resolve(href, src);
     final bytes = package.readBytes(path);
     if (bytes == null) return null;
     final image = InkAdaptiveImage(
@@ -109,6 +302,7 @@ class EpubContentBuilder {
   /// Inside a display-math container, or alone in its own block.
   static bool _isDisplayImage(dom.Element img) {
     if (_ancestors(img).any((a) => _displayClass.hasMatch(a.className))) return true;
+    if (RegExp(r'(^|\s)display(\s|$)').hasMatch(img.className)) return true;
     var block = img.parent;
     while (block != null && _inlineWrappers.contains(block.localName)) {
       block = block.parent;
@@ -387,8 +581,9 @@ class InkAdaptiveImage extends StatefulWidget {
   final Color ink;
   final Widget child;
 
-  /// Only formats that can carry transparency are inspected.
-  static bool canHaveAlpha(String path) => RegExp(r'\.(png|gif|webp)$', caseSensitive: false).hasMatch(path);
+  /// Formats that can be ink: transparency (PNG, GIF, WebP) or black on
+  /// white (those and JPEG equation exports).
+  static bool canHaveAlpha(String path) => RegExp(r'\.(png|gif|webp|jpe?g)$', caseSensitive: false).hasMatch(path);
 
   @override
   State<InkAdaptiveImage> createState() => _InkAdaptiveImageState();
@@ -451,12 +646,15 @@ abstract final class InkAnalysis {
     final bytes = package.readBytes(path);
     if (bytes == null) return false;
     try {
-      final rgba = await sample(bytes);
-      return rgba != null && isDarkInk(rgba);
+      final sampled = await sample(bytes);
+      return sampled != null && (isDarkInk(sampled.rgba) || isInkOnPaper(sampled.rgba, sampled.width));
     } on Object {
       return false;
     }
   }
+
+  /// Widest sample decoded.
+  static const sampleWidth = 192;
 
   /// Larger images are not sampled: a few kilobytes of PNG can declare a
   /// frame of gigabytes.
@@ -464,22 +662,23 @@ abstract final class InkAnalysis {
 
   /// Native resources are released even when a corrupt image fails to decode.
   @visibleForTesting
-  static Future<Uint8List?> sample(Uint8List bytes) async {
+  static Future<({Uint8List rgba, int width})?> sample(Uint8List bytes) async {
     final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
     try {
       final descriptor = await ui.ImageDescriptor.encoded(buffer);
       try {
         if (descriptor.width * descriptor.height > maxSampledPixels) return null;
-        final scale = descriptor.width > 96 ? 96 / descriptor.width : 1.0;
+        final scale = descriptor.width > sampleWidth ? sampleWidth / descriptor.width : 1.0;
+        final width = (descriptor.width * scale).round().clamp(1, sampleWidth);
         final codec = await descriptor.instantiateCodec(
-          targetWidth: (descriptor.width * scale).round().clamp(1, 96),
+          targetWidth: width,
           targetHeight: (descriptor.height * scale).round().clamp(1, 4096),
         );
         try {
           final frame = await codec.getNextFrame();
           try {
             final data = await frame.image.toByteData(format: ui.ImageByteFormat.rawRgba);
-            return data?.buffer.asUint8List();
+            return data == null ? null : (rgba: data.buffer.asUint8List(), width: frame.image.width);
           } finally {
             frame.image.dispose();
           }
@@ -492,6 +691,44 @@ abstract final class InkAnalysis {
     } finally {
       buffer.dispose();
     }
+  }
+
+  /// Black on opaque white (Word, InDesign and Kindle equation exports): all
+  /// greys, at least three quarters white with a white border, and ink that is
+  /// mostly solid. A greyscale photo fills more of its frame and spreads its
+  /// tones over the middle. The web rule's `paper` verdict (enhance/ink.ts).
+  @visibleForTesting
+  static bool isInkOnPaper(Uint8List rgba, int width) {
+    final pixels = rgba.length ~/ 4;
+    if (width < 3 || pixels < width * 3) return false;
+    final height = pixels ~/ width;
+    var opaque = 0, grey = 0, light = 0, dark = 0, mid = 0, border = 0, borderLight = 0;
+    for (var p = 0; p < width * height; p++) {
+      final i = p * 4;
+      final a = rgba[i + 3];
+      if (a < 24) continue;
+      opaque++;
+      final r = rgba[i], g = rgba[i + 1], b = rgba[i + 2];
+      final lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      final hi = r > g ? (r > b ? r : b) : (g > b ? g : b);
+      final lo = r < g ? (r < b ? r : b) : (g < b ? g : b);
+      if (hi - lo <= 36) grey++;
+      if (lum > 200 && a > 200) light++;
+      if (lum < 110) {
+        dark++;
+      } else if (lum <= 200) {
+        mid++;
+      }
+      final x = p % width, y = p ~/ width;
+      if (x == 0 || y == 0 || x == width - 1 || y == height - 1) {
+        border++;
+        if (a > 200 && lum > 215) borderLight++;
+      }
+    }
+    if (opaque < pixels * 0.98 || opaque == 0 || border == 0) return false;
+    final ink = dark + mid;
+    if (grey / opaque < 0.97 || light / opaque < 0.75 || ink / opaque < 0.005 || dark < mid * 0.4) return false;
+    return borderLight / border >= 0.9;
   }
 
   /// Mostly transparent, and what is opaque is mostly dark.

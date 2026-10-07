@@ -91,7 +91,7 @@ function watch(doc: Document, root: Element): void {
         stopInk?.();
         stopInk = null;
         if (dark) stopInk = watchInk(root);
-        else for (const img of Array.from(root.querySelectorAll('.tr-ink'))) img.classList.remove('tr-ink');
+        else for (const img of Array.from(root.querySelectorAll('.tr-ink, .tr-ink-paper'))) img.classList.remove('tr-ink', 'tr-ink-paper');
       }
       fitBlocks(root, isPaginated(doc) ? doc.documentElement.clientHeight : null);
     } catch {
