@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:flutter/widgets.dart';
 
 import '../api/api_client.dart';
+import '../articles/article_anchors.dart';
 import '../models/article_summary.dart';
 import '../models/book.dart';
 import '../models/category.dart';
@@ -266,18 +267,29 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  /// Queues highlights of this origin's cloud books. Highlights on local-only
-  /// imports have no cloud edition and stay on this device.
+  /// Queues highlights of this origin's cloud books, and of saved articles
+  /// (which, like the articles, go to whichever origin is current).
+  /// Highlights on local-only imports have no cloud edition, and those on
+  /// articles that stay on this device stay here too.
   bool _captureHighlights(String origin, _OriginState state) {
     final store = highlights;
     if (store == null || !store.loaded) return false;
     var changed = false;
     Map<String, LibraryEntry>? bySha;
     for (final h in store.all) {
-      if (h.origin != origin) continue;
       final key = 'highlight:${h.id}';
       final stamp = h.updatedAt.toUtc().toIso8601String();
       if (state.seen[key] == stamp) continue;
+      final articleId = ArticleAnchors.articleIdOf(bookId: h.bookId, sha256: h.sha256);
+      if (articleId != null) {
+        final summary = articles?.byId(articleId);
+        if (summary != null && !articleSyncable(summary)) continue;
+        state.seen[key] = stamp;
+        state.pending[key] = _sentinelChange(h.bookId, 'highlight', h.updatedAt, _highlightPayload(h));
+        changed = true;
+        continue;
+      }
+      if (h.origin != origin) continue;
       bySha ??= {
         for (final e in library.entries)
           if (e.source == BookSource.api && e.origin == origin)
@@ -286,19 +298,21 @@ class SyncRepository extends ChangeNotifier with WidgetsBindingObserver {
       final entry = bySha[h.sha256];
       if (entry == null) continue;
       state.seen[key] = stamp;
-      _queue(state, key, entry, 'highlight', h.updatedAt, {
-        'highlightId': h.id,
-        'locator': _boundedHighlightLocator(h.locator),
-        'text': h.text,
-        'color': h.color,
-        if (h.note != null) 'note': h.note,
-        'createdAt': h.createdAt.toUtc().toIso8601String(),
-        'deleted': h.deleted,
-      });
+      _queue(state, key, entry, 'highlight', h.updatedAt, _highlightPayload(h));
       changed = true;
     }
     return changed;
   }
+
+  static Map<String, dynamic> _highlightPayload(Highlight h) => {
+    'highlightId': h.id,
+    'locator': _boundedHighlightLocator(h.locator),
+    'text': h.text,
+    'color': h.color,
+    if (h.note != null) 'note': h.note,
+    'createdAt': h.createdAt.toUtc().toIso8601String(),
+    'deleted': h.deleted,
+  };
 
   /// Saved articles: each save or deletion, then reading positions. A
   /// deletion is only sent for an article this origin has seen. A save also

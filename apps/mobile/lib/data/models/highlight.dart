@@ -62,11 +62,20 @@ class Highlight {
   /// Chapter title recorded by the engine when the highlight was made.
   String? get chapter => locator['title'] as String?;
 
+  /// A note that is only whitespace counts as none.
+  String? get noteText {
+    final n = note?.trim();
+    return n == null || n.isEmpty ? null : note;
+  }
+
+  /// [note] is replaced when given; [clearNote] removes it.
   Highlight copyWith({
     String? color,
     DateTime? updatedAt,
     bool? deleted,
     String? bookId,
+    String? note,
+    bool clearNote = false,
   }) => Highlight(
     id: id,
     bookId: bookId ?? this.bookId,
@@ -75,7 +84,7 @@ class Highlight {
     locator: locator,
     text: text,
     color: color ?? this.color,
-    note: note,
+    note: clearNote ? null : note ?? this.note,
     createdAt: createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     deleted: deleted ?? this.deleted,

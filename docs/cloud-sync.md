@@ -130,7 +130,7 @@ identical documents saved twice share one object.
 
 ## Article highlights
 
-Passages highlighted in saved web articles (web reader only so far) are
+Passages highlighted in saved articles (web and Flutter readers) are
 ordinary highlights: the same local store, the same `highlight` change in the
 scheduled `/v1/sync` batch, the same `highlightsSince` pull, tombstones and
 last-write-wins. Creating, recolouring, annotating or deleting one never sends
@@ -176,9 +176,17 @@ a request of its own. What differs is what they are pinned to:
   around the recorded ones, then the whole article, preferring the occurrence
   whose surrounding text matches `before`/`after`, then the nearest. A passage
   that cannot be found is kept (and still listed and synced) but not drawn.
-  Clients that compute block text differently (Flutter, later) should treat
-  the offsets as a hint and rely on the quote. The web implementation is
-  `apps/web/src/lib/articleAnchors.ts`, with tests.
+  Clients that compute block text differently should treat the offsets as a
+  hint and rely on the quote. The web implementation is
+  `apps/web/src/lib/articleAnchors.ts`; the Flutter port is
+  `apps/mobile/lib/data/articles/article_anchors.dart`, both with tests.
+  Flutter's block text is the text set in paragraphs only: list markers,
+  code blocks, math, raised or keyboard text and images do not count, and a
+  note reference reads as its label, as on the web. Its offsets therefore
+  differ from the web's in blocks with code or raised text, and a quote
+  that takes in raised or keyboard text (or punctuation set with it) is not
+  found on the other app: that passage is kept and listed there, not drawn.
+  Plain prose, links, emphasis and note references match.
 - **Removing an article** keeps its highlights, as removing a book keeps its
   own: they come back if the URL is saved again (same id), re-anchored by
   quote if the page changed. Highlights on an article that stays on its
@@ -186,8 +194,12 @@ a request of its own. What differs is what they are pinned to:
 
 The web reader paints them with the CSS Custom Highlight API (`::highlight()`,
 Chrome 105+, Safari 17.2+, Firefox 140+) over React's own text nodes, so the
-article DOM is never changed. The Flutter app stores pulled article
-highlights but has no article highlight UI yet.
+article DOM is never changed. The Flutter reader paints them into the
+article's own text spans (`ArticleText`), reads selections per paragraph,
+and replaces the selection toolbar with the colours, Note and Copy; a tap on
+a passage recolours, annotates, copies or deletes it (with Undo), and the
+Highlights button lists them with their notes. It sends article highlights
+like the web app: the same `highlight` change, to whichever origin is current.
 
 ## Categories
 

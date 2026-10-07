@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:thereader/data/api/api_client.dart';
+import 'package:thereader/data/articles/article_anchors.dart';
 import 'package:thereader/data/models/book.dart';
 import 'package:thereader/data/repositories/highlight_repository.dart';
 import 'package:thereader/data/repositories/library_repository.dart';
@@ -322,4 +323,73 @@ void main() {
     expect(device.sync.pendingCount, 1);
     await device.dispose();
   });
+
+  test(
+    'article highlights and notes ride the same cycle under the sentinel edition',
+    () async {
+      final cloud = HighlightCloud();
+      final a = await Device.create(cloud);
+      final b = await Device.create(cloud);
+      final articleId = '76faff49e6928df24de0670458eb6518';
+      final h = await a.highlights.create(
+        bookId: ArticleAnchors.bookIdFor(articleId),
+        sha256: ArticleAnchors.sha256,
+        // Made while another API was current: articles sync to whichever is.
+        origin: 'https://elsewhere.example',
+        locator: {
+          'type': 'article',
+          'href': 'https://example.org/post',
+          'articleId': articleId,
+          'block': 3,
+          'start': 0,
+          'endBlock': 3,
+          'end': 15,
+          'locations': {'progression': 0.04, 'totalProgression': 0.04},
+          'text': {'highlight': 'We focused on f'},
+        },
+        text: 'We focused on f',
+        color: 'green',
+      );
+      await a.highlights.setNote(h.id, '  Ask about the fourth journey.  ');
+      expect(a.highlights.byId(h.id)!.note, 'Ask about the fourth journey.');
+      await pumpEventQueue();
+      expect(
+        cloud.requests,
+        isEmpty,
+        reason: 'edits never send a request of their own',
+      );
+
+      await a.sync.syncNow();
+      final sent = highlightChanges(cloud.requests.single).single;
+      expect(sent['bookId'], 'article-$articleId');
+      expect(sent['sha256'], '0' * 64);
+      expect((sent['payload'] as Map)['note'], 'Ask about the fourth journey.');
+      expect(((sent['payload'] as Map)['locator'] as Map)['type'], 'article');
+
+      await b.sync.syncNow();
+      final pulled = b.highlights.forArticle(articleId).single;
+      expect(
+        (pulled.text, pulled.color, pulled.note),
+        ('We focused on f', 'green', 'Ask about the fourth journey.'),
+      );
+      expect(
+        b.highlights.forEdition(origin, book.sha256),
+        isEmpty,
+        reason: 'no book lists them',
+      );
+
+      // A blank note removes it, and the removal syncs too.
+      await b.highlights.setNote(h.id, '   ');
+      expect(b.highlights.byId(h.id)!.note, isNull);
+      await b.sync.syncNow();
+      await a.sync.syncNow();
+      expect(a.highlights.forArticle(articleId).single.note, isNull);
+
+      // Pulled copies are not echoed back.
+      await a.sync.syncNow();
+      expect(highlightChanges(cloud.requests.last), isEmpty);
+      await a.dispose();
+      await b.dispose();
+    },
+  );
 }
