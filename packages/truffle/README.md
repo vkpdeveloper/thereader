@@ -2,8 +2,9 @@
 
 The article extraction engine: HTML in, a structured, renderable `Article` out (text, headings,
 code with languages, math, tables, figures, media). This is the reference implementation, used
-by the web app and the eval; `packages/truffle_dart` is its line-for-line Dart port and produces
-the same JSON for the same page tree.
+by the web app and the eval; `packages/truffle_dart` is its line-for-line Dart port and
+`packages/truffle_go` its Go port (a library and a CLI), and both produce the same JSON and
+Markdown for the same page tree.
 
 ```ts
 import { extract, articleText, type Article } from 'truffle';
@@ -72,9 +73,9 @@ bun run typecheck
 ```
 
 The Markdown tests compare `fixtures/expected/<name>.md` and `fixtures/markdown/cases.json`
-(blocks in, Markdown out; both shared with the Dart port), and parse every output back with
+(blocks in, Markdown out; both shared with the Dart and Go ports), and parse every output back with
 remark (GFM + math, `test/markdown-oracle.ts`) to check that the tree holds exactly what the
 blocks hold. `bun scripts/markdown-check.ts` runs the same check on every article of the eval
 corpus (after `bun scripts/parity-dump.ts`).
 
-`fixtures/` holds the conformance cases shared with the Dart port (see `fixtures/README.md`).
+`fixtures/` holds the conformance cases shared with the Dart and Go ports (see `fixtures/README.md`).
