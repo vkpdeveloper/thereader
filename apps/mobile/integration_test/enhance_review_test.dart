@@ -1,14 +1,16 @@
-// Reviews maths/code rendering in the Readium engine on a simulator.
+// Reviews maths/code rendering in the Readium engine on a simulator or
+// emulator, for before/after screenshots.
 //
-// Books are private local copies served by a host helper; never bundled or
-// committed. The helper answers:
-//   GET /books/<name>.epub  the book
-//   GET /shot/<name>        takes a simulator screenshot, then returns 200
-//   GET /log?m=<text>       prints a progress line on the host
-// Run with `--dart-define=REVIEW_HOST=127.0.0.1:8931` (simulator shares the
-// host network). No sync and no app storage are involved: books go to a
-// temporary IoBookStore and open through ReadiumReaderEngine directly, the
-// same path ReaderScreen uses.
+// Books are private local copies (nobs, llm, ladr3e, plus the committed
+// apps/web/fixtures/enhance-sampler.epub copied as sampler.epub), served with
+// screenshots and carried highlight locators by tool/enhance_review_host.py:
+//   python3 -I tool/enhance_review_host.py <books> <out> after
+//   flutter test integration_test/enhance_review_test.dart -d <device>
+// The iOS simulator shares the host network (the default REVIEW_HOST); on the
+// Android emulator pass `--dart-define=REVIEW_HOST=10.0.2.2:8931` and run the
+// helper with PLATFORM=android. No sync and no app storage are involved:
+// books go to a temporary IoBookStore and open through ReadiumReaderEngine
+// directly, the same path ReaderScreen uses.
 import 'dart:convert';
 import 'dart:io';
 
