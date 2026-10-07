@@ -5,6 +5,8 @@ import type { Block, Callout, Definition, Figure, Footnote, Image, Inline, ListI
 import { collapse, collapseSpaces, firstElement, lowerCase, rawText, walk, type VElement, type VNode } from './tree';
 import { resolveHttp, resolveUrl } from './url';
 
+/** `$$`, `\\(` or `\\[` somewhere in the text: one scan rather than three searches. */
+const TEX_DELIMITER = /\$\$|\\[([]/;
 /** $$…$$ display TeX: the delimiters of `texMatches` that start with a dollar. */
 const TEX_DOLLARS = /\$\$([^$]+?)\$\$/g;
 /** The same plus $…$ inline, for pages that show they use TeX (never "$5 and $10"). */
@@ -518,7 +520,7 @@ export class Converter {
       for (let i = 0; i < children.length; i++) {
         const child = children[i]!;
         if (child.kind === 1) visit(child);
-        else if (child.text.indexOf('$$') >= 0 || child.text.indexOf('\\(') >= 0 || child.text.indexOf('\\[') >= 0) {
+        else if (TEX_DELIMITER.test(child.text)) {
           if (!texMatches(child.text, false).next().done) this.tex = true;
         }
         if (this.tex) return;
