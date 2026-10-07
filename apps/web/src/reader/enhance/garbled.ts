@@ -204,11 +204,13 @@ function mergeAtoms(atoms: Atom[], cls: WordClass): Atom[] {
 }
 
 const GARBLE = /[˛ˇˆ¿¤¨˚\\ıŠŒ…]/;
-const OPERATOR_WORD = /^[DCW2![]$/;
+const OPERATOR_WORD = /^[DCW2![<>]$/;
 
 /** Prose, math, or undecided, from the word alone (context settles the rest). */
 function classify(text: string): { cls: WordClass; strong: boolean } {
   const core = text.replace(/^[(“"]+/, '').replace(/[.,;:?!)”"’]+$/, '');
+  if (/^[<>]$/.test(text)) return { cls: 'weak', strong: false };
+  if (/^[RCF][nm\d](;[nm\d])?[.,;:]?$/.test(text)) return { cls: 'math', strong: true };
   if (!core || core === '/') return { cls: /^[.\/;]+$/.test(text) ? 'math' : 'weak', strong: /\//.test(text) };
   if (GARBLE.test(text) || /^'[\w;:./]*$/.test(text)) return { cls: 'math', strong: true };
   if (/^[A-Za-z]+$/.test(core)) {
@@ -273,7 +275,7 @@ function findRuns(words: Word[]): [number, number][] {
     // Articles and the pronoun at the edges belong to the prose.
     const article = (w: Word) => /^(a|A|I)$/.test(w.text);
     const operatorAt = (j: number) => j >= a && j <= b && (OPERATOR_WORD.test(words[j].text) || /^[¤¨˚\\[!]$/.test(words[j].text));
-    while (a <= b && article(words[a]) && !operatorAt(a + 1)) a++;
+    while (a <= b && article(words[a]) && !operatorAt(a + 1) && !(a < b && words[a + 1].atoms[0].gap >= 2)) a++;
     while (b >= a && (article(words[b]) || words[b].cls === 'func') && !operatorAt(b - 1)) b--;
     if (a <= b && hasSignal(words, a, b)) runs.push([a, b]);
     k = end;
@@ -421,7 +423,8 @@ function formula(atoms: Atom[], lastOfLine: boolean, droppedAfter: boolean): { t
 
     if (s === 'text') {
       // The prose word an accent was fused onto ends this formula.
-      b.push(`\\text{ ${a.text} }`, ` ${a.text} `, 'op');
+      const space = k < n - 1 ? ' ' : '';
+      b.push(`\\text{ ${a.text}${space}}`, ` ${a.text}${space}`, 'op');
       expect = true;
       continue;
     }
