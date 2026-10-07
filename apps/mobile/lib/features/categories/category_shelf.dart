@@ -104,6 +104,7 @@ class _CategoryShelfState extends State<CategoryShelf> with SingleTickerProvider
     final c = widget.category;
     final count = widget.items.length;
     return Semantics(
+      container: true,
       button: true,
       label: '${c.name}, ${itemCount(count)}',
       hint: 'Opens the category',
@@ -177,11 +178,13 @@ class _CategoryShelfState extends State<CategoryShelf> with SingleTickerProvider
   }
 }
 
-/// One book's pose: horizontal place on the shelf, its resting lean and how
-/// far it opens. Angles are in degrees; positive leans right.
+/// One book's pose: where it stands at rest, where its foot gathers to when
+/// open, its lean at rest and when open, and how far it lifts. Angles are in
+/// degrees; positive leans right.
 class _Pose {
-  const _Pose(this.x, this.rest, this.open, this.lift, [this.scale = 1]);
+  const _Pose(this.x, this.xOpen, this.rest, this.open, this.lift, [this.scale = 1]);
   final double x;
+  final double xOpen;
   final double rest;
   final double open;
   final double lift;
@@ -191,17 +194,18 @@ class _Pose {
 /// Poses at the reference width, back to front: the newest item stands in
 /// the middle and is painted last so it is in front.
 List<_Pose> _poses(int n) => switch (n) {
-  1 => const [_Pose(0, 0, -4, 8, 1.05)],
-  2 => const [_Pose(-15, -2, -13, 4), _Pose(15, 2, 13, 4, 1.02)],
-  _ => const [_Pose(-26, -2.5, -21, 2), _Pose(26, 2.5, 21, 2), _Pose(0, 0, 0, 8, 1.05)],
+  1 => const [_Pose(0, 0, 0, -5, 8, 1.05)],
+  2 => const [_Pose(-18, -5, -2, -16, 9), _Pose(18, 5, 2, 16, 9, 1.03)],
+  _ => const [_Pose(-29, -6, -2.5, -24, 11), _Pose(29, 6, 2.5, 24, 11), _Pose(0, 0, 0, 0, 9, 1.05)],
 };
 
 /// The bookcase itself: a panel washed with the category colour, a glowing
 /// shelf, and up to three items standing on it.
 ///
-/// [bloom] runs from 0 (at rest) to 1 (open). Every book rotates about one
-/// shared pivot just below the middle of the shelf, so they fan out from a
-/// common base like petals, lifting a little; none leaves the case. An empty
+/// [bloom] runs from 0 (at rest) to 1 (open). As it opens, the books' feet
+/// gather towards the middle while each rotates about one shared pivot below
+/// the shelf, so they fan out from a common base like petals, lifting a
+/// little; none leaves the case. An empty
 /// category shows three dashed outlines: an intentionally empty shelf.
 class ShelfCase extends StatelessWidget {
   const ShelfCase({
@@ -233,10 +237,10 @@ class ShelfCase extends StatelessWidget {
     final colors = context.colors;
     final k = width / _refWidth;
     final height = heightFor(width);
-    final bookWidth = 46 * k;
+    final bookWidth = 52 * k;
     final bookHeight = bookWidth / CoverArt.ratio;
-    final shelfTop = height - 24 * k;
-    final pivotDrop = 10 * k;
+    final shelfTop = height - 22 * k;
+    final pivotDrop = 34 * k;
     final b = bloom;
     final glow = b.clamp(0.0, 1.0);
     final empty = items.isEmpty;
@@ -257,9 +261,7 @@ class ShelfCase extends StatelessWidget {
         decoration: BoxDecoration(
           color: colors.panel,
           borderRadius: const BorderRadius.all(Radii.lg),
-          border: Border.all(
-            color: pressed ? Color.lerp(colors.border, color, 0.45)! : colors.border,
-          ),
+          border: Border.all(color: pressed ? Color.lerp(colors.border, color, 0.45)! : colors.border),
         ),
         child: ClipRRect(
           borderRadius: const BorderRadius.all(Radii.lg),
@@ -294,16 +296,9 @@ class ShelfCase extends StatelessWidget {
                     origin: Offset(bookWidth / 2, bookHeight + pivotDrop),
                     transform: Matrix4.identity()
                       ..rotateZ(lerpDouble(poses[i].rest, poses[i].open, b)! * math.pi / 180)
-                      ..translateByDouble(poses[i].x * k, -poses[i].lift * k * b, 0, 1)
-                      ..scaleByDouble(
-                        lerpDouble(1, poses[i].scale, b)!,
-                        lerpDouble(1, poses[i].scale, b)!,
-                        1,
-                        1,
-                      ),
-                    child: order[i] == null
-                        ? _EmptySlot(color: color)
-                        : _ShelfBook(item: order[i]!, width: bookWidth),
+                      ..translateByDouble(lerpDouble(poses[i].x, poses[i].xOpen, b)! * k, -poses[i].lift * k * b, 0, 1)
+                      ..scaleByDouble(lerpDouble(1, poses[i].scale, b)!, lerpDouble(1, poses[i].scale, b)!, 1, 1),
+                    child: order[i] == null ? _EmptySlot(color: color) : _ShelfBook(item: order[i]!, width: bookWidth),
                   ),
                 ),
               // The shelf board, with a soft glow in the category colour.
@@ -437,17 +432,24 @@ class _EmptySlot extends StatelessWidget {
   final Color color;
 
   @override
-  Widget build(BuildContext context) => CustomPaint(painter: _DashedSlotPainter(color.withValues(alpha: 0.38)));
+  Widget build(BuildContext context) => CustomPaint(
+    painter: _DashedSlotPainter(
+      color.withValues(alpha: 0.4),
+      // Opaque, so a slot in front hides the outline of the one behind it.
+      fill: Color.alphaBlend(color.withValues(alpha: 0.06), context.colors.panel),
+    ),
+  );
 }
 
 class _DashedSlotPainter extends CustomPainter {
-  _DashedSlotPainter(this.color);
+  _DashedSlotPainter(this.color, {required this.fill});
   final Color color;
+  final Color fill;
 
   @override
   void paint(Canvas canvas, Size size) {
     final rrect = RRect.fromRectAndRadius(Offset.zero & size, Radii.sm).deflate(0.5);
-    canvas.drawRRect(rrect, Paint()..color = color.withValues(alpha: 0.05));
+    canvas.drawRRect(rrect, Paint()..color = fill);
     final paint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
@@ -461,5 +463,5 @@ class _DashedSlotPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_DashedSlotPainter old) => old.color != color;
+  bool shouldRepaint(_DashedSlotPainter old) => old.color != color || old.fill != fill;
 }
