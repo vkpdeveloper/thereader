@@ -7,7 +7,7 @@ import { mathFromMarkdown } from 'mdast-util-math';
 import { toHast } from 'mdast-util-to-hast';
 import { gfm } from 'micromark-extension-gfm';
 import { math } from 'micromark-extension-math';
-import { articleText, extract } from 'truffle';
+import { articleMarkdown, articleText, extract, extractTree, fromDom } from 'truffle';
 import type { Article, Block, Inline } from 'truffle';
 import { canonicalLanguage, normalizeText } from './text';
 
@@ -351,6 +351,54 @@ export function timeMarkdown(runs: number): { plain: number[]; markdown: number[
   return out;
 }
 
+export interface PipelineRun {
+  parseMs: number[];
+  treeMs: number[];
+  extractMs: number[];
+  markdownMs: number[];
+}
+
+/**
+ * The whole pipeline for the cross-language benchmark (`bun run bench`), on the current page: parse
+ * (`DOMParser`, no `<base>` added), tree (`fromDom`), extract (`extractTree`) and Markdown (`articleMarkdown`),
+ * timed separately; one untimed warm-up.
+ */
+export function benchPipeline(runs: number): PipelineRun {
+  const { html, url } = current;
+  const out: PipelineRun = { parseMs: [], treeMs: [], extractMs: [], markdownMs: [] };
+  for (let i = 0; i <= runs; i++) {
+    const t0 = performance.now();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const t1 = performance.now();
+    const tree = fromDom(doc);
+    const t2 = performance.now();
+    const article = extractTree(tree, { url });
+    const t3 = performance.now();
+    if (article !== null) articleMarkdown(article);
+    const t4 = performance.now();
+    if (i === 0) continue;
+    out.parseMs.push(t1 - t0);
+    out.treeMs.push(t2 - t1);
+    out.extractMs.push(t3 - t2);
+    out.markdownMs.push(t4 - t3);
+  }
+  return out;
+}
+
+/**
+ * For the benchmark's memory measurement (DevTools heap usage read around the call): one more run
+ * of the pipeline whose document, tree and article stay alive (`keep`), or drops them.
+ */
+export function benchKeep(keep: boolean): void {
+  const g = globalThis as { benchKeep?: unknown };
+  g.benchKeep = undefined;
+  if (!keep) return;
+  const { html, url } = current;
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const tree = fromDom(doc);
+  g.benchKeep = [doc, tree, extractTree(tree, { url, markdown: true })];
+}
+
 /** Text of the whole page as the engines see it (scripts, styles, templates and noscript dropped). */
 export function pageText(): string {
   return nodeText(parse(current.html, current.url).body);
@@ -419,4 +467,4 @@ export function meta(): Record<string, string> {
   };
 }
 
-Object.assign(globalThis, { evalPage: { load, runEngine, timeMarkdown, summarizeHtml, summarizeArticle, pageText, pageBlocks, meta } });
+Object.assign(globalThis, { evalPage: { load, runEngine, timeMarkdown, benchPipeline, benchKeep, summarizeHtml, summarizeArticle, pageText, pageBlocks, meta } });

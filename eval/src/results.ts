@@ -306,7 +306,7 @@ export function renderMarkdown(latest: Latest): string {
       '',
       '## Performance (all scored pages, per-page median of the timed runs)',
       '',
-      'JS engines run in headless Chromium on a fresh `DOMParser` document per run; ours-dart (the Dart port, AOT-compiled, one process) parses with package:html, timed separately from extraction; Trafilatura in CPython (lxml parse timed separately); Postlight in Node (cheerio parse is internal, so only the total is timed). Cross-runtime numbers are indicative; the Chromium engines are directly comparable. ours-md is ours with `markdown: true`; its cost measured alternately on each page is in [results/markdown-cost.md](results/markdown-cost.md) (`bun run markdown-cost`).',
+      'JS engines run in headless Chromium on a fresh `DOMParser` document per run; ours-dart (the Dart port, AOT-compiled, one process) parses with package:html, timed separately from extraction; ours-go (the Go port, native binary, one process) parses with its own HTML5 parser, timed the same way; Trafilatura in CPython (lxml parse timed separately); Postlight in Node (cheerio parse is internal, so only the total is timed). Cross-runtime numbers are indicative; the Chromium engines are directly comparable. ours-md is ours with `markdown: true`; its cost measured alternately on each page is in [results/markdown-cost.md](results/markdown-cost.md) (`bun run markdown-cost`).',
       '',
       table(
         ['engine', 'pages', 'parse median', 'extract median', 'extract p95', 'extract mean', 'total median', 'total p95', 'total mean'],

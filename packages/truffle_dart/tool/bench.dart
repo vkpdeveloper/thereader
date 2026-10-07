@@ -7,6 +7,9 @@
 //   dart run tool/bench.dart [--runs 5] [--ids key,key]              (JIT)
 //   dart compile exe tool/bench.dart -o /tmp/bench && /tmp/bench     (AOT)
 //
+// `--json <file>` also writes the per-page medians and the process's peak RSS
+// for `eval/scripts/bench.ts`, which compares the TypeScript, Dart and Go engines.
+//
 // Per page: one warm-up run, then `--runs` timed runs; each phase is the
 // median of its runs. Summaries are over the per-page medians. `articleMarkdown`
 // (what `markdown: true` adds) is timed on its own and left out of the totals.
@@ -71,6 +74,30 @@ void main(List<String> args) {
   }
 
   final mode = const bool.fromEnvironment('dart.vm.product') ? 'AOT' : 'JIT';
+  final jsonPath = option('--json');
+  if (jsonPath != null) {
+    File(jsonPath).writeAsStringSync(
+      jsonEncode({
+        'engine': 'dart',
+        'version': Platform.version.split(' ').first,
+        'mode': mode,
+        'runs': runs,
+        'maxRss': ProcessInfo.maxRss,
+        'rows': [
+          for (final r in rows)
+            {
+              'key': r.key,
+              'bytes': r.bytes,
+              'parseMs': r.parse,
+              'treeMs': r.convert,
+              'extractMs': r.engine,
+              'markdownMs': r.markdown,
+              'totalMs': r.total + r.markdown,
+            },
+        ],
+      }),
+    );
+  }
   stdout.writeln(
     'Dart $mode (${Platform.version.split(' ').first}), ${rows.length} pages, $runs timed runs per page, '
     'load ${_loadAverage()}',
