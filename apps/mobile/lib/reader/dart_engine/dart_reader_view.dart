@@ -78,7 +78,7 @@ class DartReaderView extends StatefulWidget {
       case 'svg':
         return {'max-width': '100%', 'margin': '1em auto', 'display': 'block'};
       case 'table':
-        return {'border-color': border, 'font-size': '0.9em'};
+        return {'border-color': border, 'font-size': '0.9em', 'margin': '1em 0'};
       case 'body':
       case 'section':
       case 'div':

@@ -87,7 +87,11 @@ abstract final class EpubChapter {
   static String _escape(String s) => s.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 
   static bool _needsDom(String s) =>
-      s.contains('epub:switch') || s.contains(r'$$') || s.contains('data-tr-tex="script"');
+      s.contains('epub:switch') ||
+      s.contains(r'$$') ||
+      s.contains(r'\(') ||
+      s.contains(r'\[') ||
+      s.contains('data-tr-tex="script"');
 
   /// pdftohtml output, directly or through calibre: the generator says so,
   /// or calibre paragraphs carry numbered page anchors (`<a id="p112">`).
@@ -102,7 +106,7 @@ abstract final class EpubChapter {
     final doc = html.parse('<!DOCTYPE html><html><body>$body</body></html>');
     final root = doc.body!;
     _resolveSwitches(root);
-    _wrapDisplayDollars(root);
+    _wrapDelimitedTex(root);
     _hideMathJaxOutput(root);
     if (pdf) {
       _unwrapInlineAroundBlocks(root);
@@ -149,24 +153,25 @@ abstract final class EpubChapter {
 
   static const _rawText = {'pre', 'code', 'script', 'math', 'textarea', 'kbd', 'samp'};
 
-  /// `$$…$$` in running text becomes a display-math span holding the very
-  /// same text.
-  static void _wrapDisplayDollars(dom.Element root) {
-    final pattern = RegExp(r'\$\$([\s\S]+?)\$\$');
+  static final _delimitedTex = RegExp(r'\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)');
+
+  /// `$$…$$`, `\[…\]` and `\(…\)` in running text become math spans holding
+  /// the very same text, as MathJax would have typeset them.
+  static void _wrapDelimitedTex(dom.Element root) {
     void walk(dom.Node node) {
       for (final child in node.nodes.toList()) {
         if (child is dom.Element) {
           if (_rawText.contains(child.localName) || child.classes.contains('math')) continue;
           walk(child);
-        } else if (child is dom.Text && child.data.contains(r'$$')) {
+        } else if (child is dom.Text) {
           final text = child.data;
-          final matches = pattern.allMatches(text).toList();
+          final matches = _delimitedTex.allMatches(text).toList();
           if (matches.isEmpty) continue;
           var at = 0;
           for (final m in matches) {
             if (m.start > at) node.insertBefore(dom.Text(text.substring(at, m.start)), child);
             final span = dom.Element.tag('span')
-              ..classes.addAll(['math', 'display'])
+              ..classes.addAll(['math', if (m[3] == null) 'display' else 'inline'])
               ..append(dom.Text(m[0]!));
             node.insertBefore(span, child);
             at = m.end;

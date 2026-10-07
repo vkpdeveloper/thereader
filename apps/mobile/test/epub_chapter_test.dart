@@ -40,6 +40,14 @@ void main() {
       expect(body.querySelectorAll('span.math'), hasLength(1));
     });
 
+    test(r'\(…\) and \[…\] in running text become math spans', () {
+      final body = _prepared(r'<p>Let \(\lambda \in F\) and \[x^2\] but not <code>\(raw\)</code>.</p>');
+      final spans = body.querySelectorAll('span.math');
+      expect(spans.map((s) => s.className), ['math inline', 'math display']);
+      expect(spans.map((s) => s.text), [r'\(\lambda \in F\)', r'\[x^2\]']);
+      expect(body.text, r'Let \(\lambda \in F\) and \[x^2\] but not \(raw\).');
+    });
+
     test('epub:switch keeps the MathML case, else the fallback', () {
       final body = _prepared('<p><epub:switch><epub:case required-namespace="http://www.w3.org/1998/Math/MathML">'
           '<math><mi>x</mi></math></epub:case><epub:default><img src="x.png" alt="x"/></epub:default></epub:switch>'
