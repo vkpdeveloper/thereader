@@ -1,0 +1,174 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+import 'dart:isolate';
+
+import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:path/path.dart' as p;
+
+import 'epub_rewrite.dart';
+
+/// The content enhancer bundle (maths, code, dark-ink images, broken PDF
+/// conversions) shipped as `assets/reader/`. Generated from
+/// `apps/web/src/reader/enhance/`; see the header of `enhance.js`.
+class EnhancerBundle {
+  EnhancerBundle(this.files)
+    : key = sha256
+          .convert([
+            ...utf8.encode('$_format\n'),
+            for (final name in (files.keys.toList()..sort())) ...[
+              ...utf8.encode('$name\n'),
+              ...files[name]!,
+            ],
+          ])
+          .toString()
+          .substring(0, 16);
+
+  /// Bump when the derived EPUB's layout changes (not the bundle: its bytes
+  /// are part of [key] already).
+  static const _format = 1;
+
+  static const assetDir = 'assets/reader/';
+
+  /// File name (relative to [assetDir]) to bytes.
+  final Map<String, Uint8List> files;
+
+  /// Identifies this bundle and derivation format; part of every cache name.
+  final String key;
+
+  static Future<EnhancerBundle?>? _loaded;
+
+  /// The bundle from the app's assets, or null when it is missing or empty.
+  static Future<EnhancerBundle?> load([AssetBundle? assets]) =>
+      _loaded ??= _load(assets ?? rootBundle);
+
+  static Future<EnhancerBundle?> _load(AssetBundle assets) async {
+    try {
+      final manifest = await AssetManifest.loadFromAssetBundle(assets);
+      final files = <String, Uint8List>{};
+      for (final asset in manifest.listAssets()) {
+        if (!asset.startsWith(assetDir)) continue;
+        final data = await assets.load(asset);
+        files[asset.substring(assetDir.length)] = data.buffer.asUint8List(
+          data.offsetInBytes,
+          data.lengthInBytes,
+        );
+      }
+      if (!files.keys.any((f) => f.endsWith('.js'))) return null;
+      return EnhancerBundle(files);
+    } catch (error) {
+      debugPrint('[enhance] bundle unavailable: $error');
+      return null;
+    }
+  }
+}
+
+/// Derived copies of stored EPUBs with the enhancer linked into every
+/// document, for engines that render publisher HTML themselves (Readium).
+///
+/// A copy sits next to its book as `<book>.enhanced-<key>.epub`, where the key
+/// covers the book file (name, size, modification time; the stored name is
+/// already the book's version and SHA-256) and the bundle. It is therefore
+/// rebuilt when either changes, removed when the book's folder is deleted, and
+/// stale siblings are pruned whenever a new copy is written.
+class EnhancedEpubCache {
+  EnhancedEpubCache._();
+
+  static const _marker = '.enhanced-';
+  static final _pending = <String, Future<String>>{};
+
+  /// Path of the enhanced copy of [source], building it if needed, or
+  /// [source] itself on any failure (missing bundle, unreadable archive,
+  /// full disk). Never throws.
+  static Future<String> resolve(String source, {EnhancerBundle? bundle}) async {
+    try {
+      bundle ??= await EnhancerBundle.load();
+      if (bundle == null) return source;
+      final file = File(source);
+      final stat = await file.stat();
+      if (stat.type != FileSystemEntityType.file) return source;
+      final target = derivedPath(source, stat, bundle);
+      if (await File(target).exists()) return target;
+      return await (_pending[target] ??= _build(source, target, bundle)
+          .whenComplete(() {
+            _pending.remove(target);
+          }));
+    } catch (error) {
+      debugPrint('[enhance] using the original EPUB: $error');
+      return source;
+    }
+  }
+
+  @visibleForTesting
+  static String derivedPath(
+    String source,
+    FileStat stat,
+    EnhancerBundle bundle,
+  ) {
+    final base = p.basenameWithoutExtension(source);
+    final key = sha256
+        .convert(
+          utf8.encode(
+            '${p.basename(source)}\n${stat.size}\n'
+            '${stat.modified.millisecondsSinceEpoch}\n${bundle.key}',
+          ),
+        )
+        .toString()
+        .substring(0, 16);
+    return p.join(p.dirname(source), '$base$_marker$key.epub');
+  }
+
+  /// Whether [path] names a derived copy rather than a stored book.
+  static bool isDerived(String path) => p.basename(path).contains(_marker);
+
+  static Future<String> _build(
+    String source,
+    String target,
+    EnhancerBundle bundle,
+  ) async {
+    final files = bundle.files;
+    try {
+      final stats = await Isolate.run(
+        () => rewriteEpubWithEnhancer(
+          source: source,
+          target: target,
+          bundle: files,
+        ),
+      );
+      debugPrint('[enhance] ${p.basename(source)}: $stats');
+      await _prune(source, keep: target);
+      return target;
+    } catch (error) {
+      debugPrint('[enhance] could not derive ${p.basename(source)}: $error');
+      try {
+        final part = File('$target.part');
+        if (await part.exists()) await part.delete();
+      } catch (_) {}
+      return source;
+    }
+  }
+
+  /// Deletes derived copies beside [source] other than [keep]: those of
+  /// older bundles or file states of [source], and those whose book is gone
+  /// (a version that has since been replaced).
+  static Future<void> _prune(String source, {required String keep}) async {
+    final dir = p.dirname(source);
+    final base = p.basenameWithoutExtension(source);
+    try {
+      await for (final item in Directory(dir).list(followLinks: false)) {
+        if (item is! File || item.path == keep) continue;
+        final name = p.basename(item.path);
+        final at = name.indexOf(_marker);
+        if (at <= 0 || !name.endsWith('.epub')) continue;
+        final owner = name.substring(0, at);
+        if (owner == base || !await File(p.join(dir, '$owner.epub')).exists()) {
+          await item.delete();
+        }
+      }
+    } catch (error) {
+      debugPrint('[enhance] prune failed: $error');
+    }
+  }
+}

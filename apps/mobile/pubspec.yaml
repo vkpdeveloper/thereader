@@ -47,6 +47,8 @@ flutter:
   uses-material-design: true
   assets:
     - assets/samples/
+    # Content enhancer linked into Readium's derived EPUB copies.
+    - assets/reader/
     - assets/fonts/LibronOFL.txt
     - assets/fonts/LiterataOFL.txt
     - assets/fonts/SourceSerif4OFL.txt
