@@ -50,16 +50,20 @@ One file per TypeScript file in `lib/src/` (`tree`, `url`, `metadata`, `content`
 - `match.dart`: `ClassPattern`. Class/id patterns that are alternations of literal words match
   by string search (the Dart VM interprets regular expressions in AOT builds, far slower than
   V8); the words are derived from the same pattern source, and with assertions enabled every
-  call is checked against the `RegExp`.
+  call is checked against the `RegExp`. Also `requiredLiterals`, which derives from a pattern's
+  source the strings one of which every match contains, and the two screens built on it:
+  `ScreenedPattern` (a `RegExp` run only on subjects holding one of its literals; URLs, image
+  sources, frames) and `LiteralScreen` (one subject, many patterns: the code-language rules).
 - `url.dart` ports the WHATWG URL parser so `new URL(href, base).href` resolves identically,
-  with a concatenation fast path for plain http(s) references (also asserted against the
-  parser).
+  with a concatenation fast path for plain http(s) references, protocol-relative ones and
+  non-ASCII paths (also asserted against the parser).
 
 Dart regular expressions are ECMAScript's (irregexp), so the patterns are the TypeScript ones
 verbatim, with the same flags. Where the TypeScript engine runs a costly pattern over running text
-(calls to action, author bios), the port first checks a cheap condition every match implies (a
-literal word, the first character) and skips the pattern when it fails; with assertions enabled
-the pattern is checked as well.
+or over every element (calls to action, author bios, UI and promo lines, hidden styles), the port
+first checks a cheap condition every match implies (a required literal, the first word or
+character, a prefix) and skips the pattern when it fails; with assertions enabled the pattern is
+checked as well.
 
 ## Tests: `dart test`
 
@@ -129,27 +133,90 @@ dart compile exe tool/bench.dart -o /tmp/bench && /tmp/bench --runs 5   # AOT, a
 dart run tool/bench.dart                                                  # JIT
 ```
 
-Per page: parse (package:html), `fromDocument` and `extractTree` timed separately, median of the
-timed runs; summaries over pages and by HTML size, next to the TypeScript timings for the same
-pages (Chromium from the last eval run, Bun `extractTree` from the parity dump).
+Per page: parse (package:html), `fromDocument`, `extractTree` and `articleMarkdown` timed
+separately, then `extractHtml(html, url, markdown: true)` as one call; median of the timed runs;
+summaries over pages and by HTML size, next to the TypeScript timings for the same pages
+(Chromium from the last eval run, Bun `extractTree` from the parity dump). `--json file` writes
+the per-page medians.
 
-On an Apple M5 (load average ~3.5-4.7 from other work), 326 corpus pages, 5 timed runs per page,
-ms per page (median / p95 / mean):
+### Memory
 
-| | AOT | JIT |
+```sh
+dart --enable-vm-service=0 --disable-service-auth-codes tool/bench_memory.dart alloc   # JIT
+dart compile exe tool/bench_memory.dart -o /tmp/bench-memory && /tmp/bench-memory rss [--ids key]
+```
+
+- `alloc`: bytes allocated per page and phase, and the live size of the trees (package:html's
+  `Document`, the `VDocument`, and both at the end of `fromDocument`, the pipeline's peak of live
+  data). Read through the VM service (dart:io, no package): a phase's allocation is the growth of
+  the heap's used bytes across it from a just-collected heap, plus what every collection during
+  the phase freed (the VM timeline's GC events); the service exchange (~160 KB) is measured and
+  subtracted. Exact to about 1 KB per collection, checked against allocations of known size.
+  Live sizes are the bytes of all instances after a full collection. JIT code after a warm-up
+  pass; AOT allocates the same objects. (The VM's allocation profile is no substitute: its
+  accumulated sizes only count objects that survive a scavenge.)
+- `rss`: peak resident set size (`ProcessInfo.maxRss`) of an AOT process extracting the whole
+  corpus, or one page (`--ids`: its peak over the RSS just before parsing). Coarse (the GC's
+  growth policy decides when garbage is returned), and dominated by package:html: its input
+  stream holds 8 bytes per character of the page while it parses.
+
+### Before and after
+
+```sh
+dart run tool/bench_compare.dart --base <baseline checkout>/packages/truffle_dart \
+  [--rounds 3] [--runs 5] [--rss-pages 8]
+```
+
+Builds `tool/bench.dart` and `tool/bench_memory.dart` from both checkouts (copy the tools into
+the baseline's `tool/` if it predates them), alternates the two builds in ABBA order so machine
+load weighs on both alike, takes per page the lowest of the round medians, and prints the tables
+below. `tool/golden.dart write` in the baseline and `check` here (also AOT-compiled) proves the
+outputs identical: engine and pipeline JSON with Markdown, the pipeline without it, `articleText`,
+and the `fromDocument` tree.
+
+Profiling: `tool/profile.dart` samples the JIT (`--regexp_optimization_counter_threshold=-1`
+keeps regular expressions interpreted, as in AOT; `--callers`, `--within`), and
+`tool/profile_aot.dart` is a load for a native sampler on an unstripped AOT snapshot, whose
+symbols name the Dart functions (`dart compile aot-snapshot`, `dartaotruntime`, macOS `sample`).
+
+The performance pass against the port before it (84a0a8b), on an Apple M5 at load average ~4
+from other work, 326 corpus pages, 3 ABBA rounds × 5 timed runs, AOT, ms per page:
+
+| | median before → after | p95 before → after | mean before → after | corpus total | speedup |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| parse (package:html) | 3.55 → 3.35 | 22.6 → 22.5 | 6.81 → 6.82 | 2221 → 2224 ms | 1.00x |
+| `fromDocument` | 0.50 → 0.26 | 3.08 → 1.71 | 0.98 → 0.51 | 319 → 166 ms | 1.92x |
+| `extractTree` | 0.77 → 0.71 | 20.4 → 9.85 | 3.56 → 2.25 | 1162 → 735 ms | 1.58x |
+| `articleMarkdown` | 0.04 → 0.04 | 0.54 → 0.51 | 0.22 → 0.21 | 72 → 68 ms | 1.06x |
+| `extractHtml(markdown: true)` | 5.22 → 4.83 | 42.8 → 26.7 | 11.7 → 9.92 | 3821 → 3235 ms | 1.18x |
+
+Pages over 1 MB: 84.8 → 64.8 ms median for `extractHtml(markdown: true)`. Memory (allocation
+JIT, MB per page median / p95 / mean; RSS AOT):
+
+| | before | after |
 | --- | ---: | ---: |
-| parse (package:html) | 2.39 / 16.6 / 4.94 | 2.53 / 17.4 / 5.41 |
-| `fromDocument` | 0.33 / 2.39 / 0.72 | 0.38 / 2.71 / 0.82 |
-| `extractTree` | 0.58 / 13.1 / 2.52 | 0.71 / 13.9 / 2.92 |
-| extract (`fromDocument` + `extractTree`) | 0.97 / 14.4 / 3.24 | 1.19 / 15.1 / 3.74 |
-| total | 3.53 / 27.4 / 8.18 | 3.99 / 32.8 / 9.15 |
+| allocated by `fromDocument` | 0.64 / 4.55 / 1.36 | 0.30 / 2.00 / 0.65 |
+| allocated by `extractTree` | 0.40 / 5.13 / 1.49 | 0.38 / 4.52 / 1.18 |
+| allocated by `extractHtml(markdown: true)` (parse: 3.7 of the 4.4 GB) | 7.40 / 41.4 / 14.5 | 6.99 / 37.1 / 13.4 |
+| live `VDocument` | 0.52 / 3.90 / 1.08 | 0.46 / 3.37 / 0.97 |
+| live `Document` + `VDocument` (peak of live data) | 1.13 / 6.99 / 2.23 | 0.93 / 5.54 / 1.84 |
+| peak RSS, whole corpus in one process | 217 MB | 213 MB |
+| peak RSS for one page, frwiki Paris (3 MB) / dewiki Berlin (1.7 MB) | 87.7 / 71.7 MB | 86.9 / 61.5 MB |
 
-The TypeScript engine on the same pages: Chromium parse 0.83 / 7.13 / 1.71, extract 1.23 / 9.11
-/ 2.93, total 2.18 / 13.6 / 4.65; Bun `extractTree` 0.68 / 5.82 / 1.84. Per page, Dart AOT
-extraction is 0.83x Chromium's at the median (1.7x at p95), `extractTree` 0.95x Bun's (2.2x at
-p95); the gap in the total is package:html, a pure-Dart parser against Chromium's native one
-(2.9x at the median). Pages over 1 MB (Wikipedia articles) are the slowest: 59 ms median total
-(34 ms parse, 29 ms extract), against 31 ms in Chromium.
+Parse is now about 70% of the pipeline and nearly all of its allocation, and package:html offers
+no way to do less of it without changing the tree. What the pass changed, in order of effect:
+the code-language detector's 283 patterns run only when the code holds a literal they require
+(`requiredLiterals`); `fromDocument` reads attributes through package:html's map instead of
+copying it, tests hidden elements without patterns, and finds the root without a CSS selector;
+URL resolution takes non-ASCII and protocol-relative references by concatenation; patterns run on
+every element, link, image, frame, short text and paragraph are screened by a required literal,
+first word or prefix; class matching and the per-node passes do less per call; per-node flags and
+counts are packed into one field; the article text is built once.
+
+The TypeScript engine on the same pages, before this pass (load ~3.5-4.7): Chromium parse 0.83 /
+7.13 / 1.71, extract 1.23 / 9.11 / 2.93, total 2.18 / 13.6 / 4.65; Bun `extractTree` 0.68 /
+5.82 / 1.84. The gap in the total is package:html, a pure-Dart parser against Chromium's native
+one.
 
 The rules added with the engine's quality pass (footnotes, TeX, frames, galleries, bios, calls to
 action) cost Dart `extractTree` 7-11% at the median and about 10% on the mean, measured against the
