@@ -10,6 +10,8 @@
 /// checked against the `RegExp`.
 library;
 
+import 'dart:typed_data';
+
 import 'js.dart';
 
 enum _Bound {
@@ -280,4 +282,294 @@ class _Plan {
 
   static bool _isWordChar(int c) =>
       (c >= 0x61 && c <= 0x7a) || (c >= 0x41 && c <= 0x5a) || (c >= 0x30 && c <= 0x39) || c == 0x5f;
+}
+
+// ------------------------------------------------------------ required literals
+
+/// Strings one of which every match of [regex] contains, derived from its
+/// source (lowercase when it ignores case); null when the source requires no
+/// literal or uses syntax the derivation does not cover (it then claims
+/// nothing). A pattern run over text that contains none of them cannot
+/// match, and the strings are found far faster than the Dart VM runs the
+/// pattern.
+List<String>? requiredLiterals(RegExp regex) {
+  if (regex.isUnicode) return null;
+  try {
+    final parser = _LiteralParser(regex.pattern, !regex.isCaseSensitive);
+    final info = parser.alternation();
+    if (parser.i != regex.pattern.length) return null;
+    final required = info.required;
+    if (required == null) return null;
+    // A string that contains another member adds nothing.
+    return List.unmodifiable(required.where((w) => !required.any((v) => v != w && w.contains(v))));
+  } on FormatException {
+    return null;
+  }
+}
+
+/// What a regular expression node implies about the text it matches.
+class _Info {
+  _Info(this.exact, Set<String>? required)
+    : required = exact != null && !exact.contains('') && _better(exact, required) ? exact : required;
+
+  /// Every string the node matches, when they are few and short; else null.
+  final Set<String>? exact;
+
+  /// Strings one of which every match contains; null when none is known.
+  final Set<String>? required;
+
+  static final any = _Info(null, null);
+  static final empty = _Info({''}, null);
+
+  /// The longer the shortest string, the fewer texts contain one.
+  static bool _better(Set<String> candidate, Set<String>? current) {
+    if (current == null) return true;
+    int shortest(Set<String> s) => s.fold(1 << 30, (n, w) => w.length < n ? w.length : n);
+    final a = shortest(candidate);
+    final b = shortest(current);
+    return a > b || a == b && candidate.length < current.length;
+  }
+}
+
+/// Recursive descent over the ECMAScript (non-unicode) pattern syntax the
+/// engine uses.
+class _LiteralParser {
+  _LiteralParser(this.s, this.ignoreCase);
+
+  final String s;
+  final bool ignoreCase;
+  var i = 0;
+
+  static const _maxExact = 16;
+  static const _maxLength = 32;
+
+  _Info alternation() {
+    final alternatives = [sequence()];
+    while (i < s.length && s.codeUnitAt(i) == 0x7c) {
+      i++;
+      alternatives.add(sequence());
+    }
+    if (alternatives.length == 1) return alternatives.first;
+    Set<String>? exact = {};
+    Set<String>? required = {};
+    for (final alternative in alternatives) {
+      exact = exact == null || alternative.exact == null ? null : {...exact, ...alternative.exact!};
+      required = required == null || alternative.required == null ? null : {...required, ...alternative.required!};
+    }
+    return _Info(exact != null && exact.length <= _maxExact ? exact : null, required);
+  }
+
+  _Info sequence() {
+    Set<String>? best;
+    void consider(Set<String>? candidate) {
+      if (candidate != null && !candidate.contains('') && _Info._better(candidate, best)) best = candidate;
+    }
+
+    // Exact strings of the current run of finite atoms, which a match holds contiguously.
+    var run = <String>{''};
+    var finite = true;
+    while (i < s.length) {
+      final c = s.codeUnitAt(i);
+      if (c == 0x7c || c == 0x29) break;
+      final atom = quantified(this.atom());
+      final exact = atom.exact;
+      if (exact != null) {
+        final product = {
+          for (final a in run)
+            for (final b in exact) a + b,
+        };
+        if (product.length <= _maxExact && product.every((w) => w.length <= _maxLength)) {
+          run = product;
+          continue;
+        }
+      }
+      finite = false;
+      consider(run);
+      consider(atom.required);
+      run = exact ?? {''};
+    }
+    consider(run);
+    return _Info(finite ? run : null, best);
+  }
+
+  _Info quantified(_Info atom) {
+    if (i >= s.length) return atom;
+    final c = s.codeUnitAt(i);
+    int min;
+    int max;
+    if (c == 0x2a) {
+      (min, max) = (0, -1);
+      i++;
+    } else if (c == 0x2b) {
+      (min, max) = (1, -1);
+      i++;
+    } else if (c == 0x3f) {
+      (min, max) = (0, 1);
+      i++;
+    } else if (c == 0x7b) {
+      final m = _braces.matchAsPrefix(s, i);
+      if (m == null) return atom;
+      min = int.parse(m[1]!);
+      max = m[2] == null ? min : (m[3] == null ? -1 : int.parse(m[3]!));
+      i = m.end;
+    } else {
+      return atom;
+    }
+    if (i < s.length && s.codeUnitAt(i) == 0x3f) i++;
+    if (min == 0) return max == 1 && atom.exact != null ? _Info({'', ...atom.exact!}, null) : _Info.any;
+    if (min == 1 && max == 1) return atom;
+    return _Info(null, atom.required);
+  }
+
+  static final _braces = RegExp(r'\{(\d+)(,(\d*))?\}');
+
+  _Info atom() {
+    final c = s.codeUnitAt(i);
+    switch (c) {
+      case 0x28: // (
+        var lookaround = false;
+        if (s.startsWith('(?:', i)) {
+          i += 3;
+        } else if (s.startsWith('(?=', i) || s.startsWith('(?!', i)) {
+          lookaround = true;
+          i += 3;
+        } else if (s.startsWith('(?<=', i) || s.startsWith('(?<!', i)) {
+          lookaround = true;
+          i += 4;
+        } else if (s.startsWith('(?', i)) {
+          throw const FormatException('group syntax');
+        } else {
+          i++;
+        }
+        final inner = alternation();
+        if (i >= s.length || s.codeUnitAt(i) != 0x29) throw const FormatException('unbalanced');
+        i++;
+        return lookaround ? _Info.empty : inner;
+      case 0x5b: // [
+        i++;
+        if (i < s.length && s.codeUnitAt(i) == 0x5e) i++;
+        while (i < s.length && s.codeUnitAt(i) != 0x5d) {
+          if (s.codeUnitAt(i) == 0x5c) i++;
+          i++;
+        }
+        if (i >= s.length) throw const FormatException('unterminated class');
+        i++;
+        return _Info.any;
+      case 0x2e: // .
+        i++;
+        return _Info.any;
+      case 0x5e || 0x24: // ^ $
+        i++;
+        return _Info.empty;
+      case 0x5c: // \
+        if (i + 1 >= s.length) throw const FormatException('trailing backslash');
+        final e = s.codeUnitAt(i + 1);
+        i += 2;
+        switch (e) {
+          case 0x62 || 0x42: // \b \B
+            return _Info.empty;
+          case 0x64 || 0x44 || 0x77 || 0x57 || 0x73 || 0x53: // \d \D \w \W \s \S
+            return _Info.any;
+          case 0x6e:
+            return _literal(0x0a);
+          case 0x72:
+            return _literal(0x0d);
+          case 0x74:
+            return _literal(0x09);
+          case 0x66:
+            return _literal(0x0c);
+          case 0x76:
+            return _literal(0x0b);
+          case 0x75: // \uXXXX
+            final hex = i + 4 <= s.length ? int.tryParse(s.substring(i, i + 4), radix: 16) : null;
+            if (hex == null) throw const FormatException('escape');
+            i += 4;
+            return _literal(hex);
+        }
+        // Escaped punctuation is the character itself; other escapes are not covered.
+        if (e < 0x80 && !_isWordChar(e)) return _literal(e);
+        throw const FormatException('escape');
+      case 0x2a || 0x2b || 0x3f: // * + ?
+        throw const FormatException('nothing to repeat');
+      case 0x7b: // {
+        if (_braces.matchAsPrefix(s, i) != null) throw const FormatException('nothing to repeat');
+    }
+    i++;
+    return _literal(c);
+  }
+
+  _Info _literal(int c) {
+    if (ignoreCase) {
+      if (c >= 0x41 && c <= 0x5a) return _Info({String.fromCharCode(c + 32)}, null);
+      // Other letters may fold to their case variants.
+      if (c >= 0x80) return _Info.any;
+    }
+    return _Info({String.fromCharCode(c)}, null);
+  }
+
+  static bool _isWordChar(int c) =>
+      (c >= 0x61 && c <= 0x7a) || (c >= 0x41 && c <= 0x5a) || (c >= 0x30 && c <= 0x39) || c == 0x5f;
+}
+
+/// One subject searched for many [requiredLiterals] sets: a bitset of its
+/// code units and adjacent pairs (ASCII letters lowercased, folded to seven
+/// bits) rules most absent strings out without a search.
+class LiteralScreen {
+  LiteralScreen(this.subject) {
+    var previous = -1;
+    for (var i = 0; i < subject.length; i++) {
+      final c = _fold(subject.codeUnitAt(i));
+      _singles[c >> 5] |= 1 << (c & 31);
+      if (previous >= 0) {
+        final pair = previous << 7 | c;
+        _pairs[pair >> 5] |= 1 << (pair & 31);
+      }
+      previous = c;
+    }
+  }
+
+  final String subject;
+  final _singles = Uint32List(4);
+  final _pairs = Uint32List(512);
+  String? _lower;
+
+  static int _fold(int c) => (c >= 0x41 && c <= 0x5a ? c + 32 : c) & 0x7f;
+
+  /// Whether [subject] contains one of [literals]; with [ignoreCase] (the
+  /// literals are lowercase), its ASCII-lowercased form does.
+  bool containsAny(List<String> literals, {bool ignoreCase = false}) {
+    for (final literal in literals) {
+      if (!_mayContain(literal)) continue;
+      final text = ignoreCase ? _lower ??= _asciiLower(subject) : subject;
+      if (text.contains(literal)) return true;
+    }
+    return false;
+  }
+
+  bool _mayContain(String literal) {
+    var previous = _fold(literal.codeUnitAt(0));
+    if (_singles[previous >> 5] & (1 << (previous & 31)) == 0) return false;
+    for (var i = 1; i < literal.length; i++) {
+      final c = _fold(literal.codeUnitAt(i));
+      final pair = previous << 7 | c;
+      if (_pairs[pair >> 5] & (1 << (pair & 31)) == 0) return false;
+      previous = c;
+    }
+    return true;
+  }
+
+  static String _asciiLower(String s) {
+    for (var i = 0; i < s.length; i++) {
+      final c = s.codeUnitAt(i);
+      if (c >= 0x41 && c <= 0x5a) {
+        final units = s.codeUnits.toList();
+        for (var j = i; j < units.length; j++) {
+          final u = units[j];
+          if (u >= 0x41 && u <= 0x5a) units[j] = u + 32;
+        }
+        return String.fromCharCodes(units);
+      }
+    }
+    return s;
+  }
 }
