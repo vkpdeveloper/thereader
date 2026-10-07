@@ -1,6 +1,8 @@
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as html;
 
+import 'garbled_math.dart';
+
 /// Markers the preparation pass leaves for the view's builders. They are
 /// data attributes, so the colour stripping below never touches them.
 abstract final class EpubMarks {
@@ -208,6 +210,8 @@ abstract final class EpubChapter {
     if (pdf) {
       _unwrapInlineAroundBlocks(root);
       _hidePageFurniture(root);
+      // Line by line, before lines join into paragraphs.
+      if (GarbledMath.isGarbled(root.text)) GarbledMath.prepare(root);
       _joinBrokenLines(root);
     }
     return root.innerHtml;

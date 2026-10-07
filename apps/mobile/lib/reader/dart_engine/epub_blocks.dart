@@ -15,6 +15,7 @@ import '../../features/articles/article_code.dart' show HighlightedCode, codeTok
 import 'epub_chapter.dart';
 import 'epub_package.dart';
 import 'epub_tex.dart';
+import 'garbled_math.dart';
 import 'mathml_tex.dart';
 
 /// Native widgets for what plain HTML rendering gets wrong in technical
@@ -59,9 +60,10 @@ class EpubContentBuilder {
     return null;
   }
 
-  /// Pandoc `span.math`, converted MathJax scripts and `$$…$$` runs.
+  /// Pandoc `span.math`, converted MathJax scripts, `$$…$$` runs and decoded garbled formulas.
   Widget? _texSource(dom.Element span) {
-    final raw = span.text.trim();
+    // A garbled PDF formula keeps its original text as children and its reading here.
+    final raw = (span.attributes[GarbledMath.texAttr] ?? span.text).trim();
     final display = span.classes.contains('display') || raw.startsWith(r'\[') || raw.startsWith(r'$$');
     if (!display && !span.classes.contains('inline')) return null;
     final ast = EpubTex.tryParse(EpubTex.normalize(raw));

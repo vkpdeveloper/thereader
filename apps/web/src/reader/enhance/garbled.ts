@@ -21,8 +21,8 @@ import { isPdfConversion } from './pdf';
 
 type Kind = 'var' | 'rel' | 'bin' | 'post';
 
-/** Spacing accents a combining mark came from, for the marks NFC fused onto a following letter. */
-const MARKS: Record<string, string> = TABLE.marks;
+/** Letters NFC composed from a garbled accent and the letter after it: `Ď` is [ˇ, D]. */
+const FUSED = TABLE.fused as unknown as Record<string, [string, string]>;
 const SYMBOLS = TABLE.symbols as unknown as Record<string, [Kind, string, string]>;
 const LETTER_OPS = TABLE.letterOps as unknown as Record<string, [Kind, string, string]>;
 const FIELDS = new Set(TABLE.fields);
@@ -77,15 +77,7 @@ interface Word {
   strong: boolean;
 }
 
-const DECOMPOSED = new Map<string, [string, string]>();
-for (const base of 'ACDEGIKLNORSTUWZaceginorsuwz') {
-  for (const mark of Object.keys(MARKS)) {
-    const composed = (base + mark).normalize('NFC');
-    if (composed.length === 1) DECOMPOSED.set(composed, [MARKS[mark], base]);
-  }
-}
-
-const MARKS_SPACING = new Set(Object.values(MARKS));
+const ACCENTS = new Set(Object.values(FUSED).map(([accent]) => accent));
 const isLetter = (c: string) => /^[A-Za-z]$/.test(c);
 const isDigit = (c: string) => c >= '0' && c <= '9';
 
@@ -127,13 +119,14 @@ function makeWord(chars: { c: string; at: number; italic: boolean }[], gap: numb
   // Fused accents: "Ď" is β followed by "=", "ąnd" is α followed by "and".
   const expanded: { c: string; at: number; italic: boolean }[] = [];
   for (let k = 0; k < chars.length; k++) {
-    const split = DECOMPOSED.get(chars[k].c);
+    // A letter that is a glyph of its own (Š is the factorial sign) is not split.
+    const split = SYMBOLS[chars[k].c] ? undefined : FUSED[chars[k].c];
     if (split && fusedAccent(raw, k, split[1])) {
       expanded.push({ ...chars[k], c: split[0] }, { ...chars[k], c: split[1] });
     } else expanded.push(chars[k]);
   }
   const text = expanded.map((c) => c.c).join('');
-  if (expanded.length > chars.length && MARKS_SPACING.has(text[0]) && /^[A-Za-z]{2,}[.,;:]?$/.test(text.slice(1)) && WORDS.has(text.slice(1).replace(/[.,;:]$/, '').toLowerCase())) {
+  if (expanded.length > chars.length && ACCENTS.has(text[0]) && /^[A-Za-z]{2,}[.,;:]?$/.test(text.slice(1)) && WORDS.has(text.slice(1).replace(/[.,;:]$/, '').toLowerCase())) {
     // "ąnd": α, then the word "and" the accent was fused onto.
     const first = chars[0];
     const last = chars[chars.length - 1];
@@ -166,6 +159,7 @@ function fusedAccent(word: string, k: number, base: string): boolean {
   }
   if ('DCW'.includes(base)) return !/^[a-z]/.test(after);
   // At a word start: the base begins a common word ("ąnd", "îs") or is a lone variable ("û").
+  if (before && !/[˛ˇˆ˚.(]$/.test(before)) return false;
   const rest = (base + after).replace(/[.,;:]+$/, '');
   return WORDS.has(rest.toLowerCase()) || /^[A-Za-z]$/.test(rest);
 }
@@ -231,6 +225,8 @@ function classify(text: string): { cls: WordClass; strong: boolean } {
   // Letters with digits, dots and slashes: "u1;", "R3", ".a", "f0g", "nC1", "kuk2".
   if (/^\.[A-Za-z0-9.]/.test(text) || /[A-Za-z0-9]\/[.,;:]*$/.test(text) || /^[\w;.]*\/\.?[\w;.]*$/.test(text) && !/[A-Za-z]{4}/.test(text)) return { cls: 'math', strong: true };
   if (/^([A-Za-z]|[a-z]{2,5})\.[A-Za-z0-9]{1,3}[.,;:]?$/.test(text) && !/^[a-z]\.[a-z]\.?$/.test(text) && (text[1] === '.' || FUNCTIONS.has(text.slice(0, text.indexOf('.'))))) return { cls: 'math', strong: true };
+  // Function applications run together: "p.x/q.x/".
+  if (/^([A-Za-z]\.[A-Za-z0-9]{1,3}\/){2,}/.test(text)) return { cls: 'math', strong: true };
   if (/^\?[\/.;,]/.test(text) || /^[\w.]*=[A-Za-z0-9.]+[.,;:]?$/.test(text)) return { cls: 'math', strong: true };
   if (/^[A-Za-z]{1,3}\d{1,2}$/.test(core) || /^f\S*g$/.test(core) || /^[kj]\S+[kj]\d?$/.test(core)) return { cls: 'math', strong: true };
   if (/^\d+$/.test(core)) return { cls: 'weak', strong: false };
@@ -353,15 +349,14 @@ class Builder {
       base.sub = base.sup = false;
     }
     base.tex += `${kind === 'sub' ? '_' : '^'}{${tex}}`;
-    base.plain += plain.length === 1 ? (kind === 'sub' ? subscript(plain) : superscript(plain)) : `${kind === 'sub' ? '_' : '^'}(${plain})`;
+    const table = kind === 'sub' ? SUB : SUP;
+    base.plain += [...plain].every((c) => table[c]) ? [...plain].map((c) => table[c]).join('') : `${kind === 'sub' ? '_' : '^'}(${plain})`;
     base[kind] = true;
   }
 }
 
 const SUP: Record<string, string> = { 0: '⁰', 1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶', 7: '⁷', 8: '⁸', 9: '⁹', n: 'ⁿ', m: 'ᵐ', k: 'ᵏ', j: 'ʲ', '−': '⁻', '+': '⁺', T: 'ᵀ', '′': '′', '⊥': '⊥' };
-const SUB: Record<string, string> = { 0: '₀', 1: '₁', 2: '₂', 3: '₃', 4: '₄', 5: '₅', 6: '₆', 7: '₇', 8: '₈', 9: '₉', n: 'ₙ', m: 'ₘ', k: 'ₖ', j: 'ⱼ', '+': '₊' };
-const superscript = (s: string) => [...s].map((c) => SUP[c] ?? c).join('');
-const subscript = (s: string) => [...s].map((c) => SUB[c] ?? c).join('');
+const SUB: Record<string, string> = { 0: '₀', 1: '₁', 2: '₂', 3: '₃', 4: '₄', 5: '₅', 6: '₆', 7: '₇', 8: '₈', 9: '₉', n: 'ₙ', m: 'ₘ', k: 'ₖ', j: 'ⱼ', '+': '₊', '−': '₋', i: 'ᵢ' };
 
 /** TeX and plain text for an operand letter. */
 function letter(a: Atom, field: boolean): [string, string] {
@@ -626,8 +621,8 @@ function formula(atoms: Atom[], lastOfLine: boolean, droppedAfter: boolean): { t
           jump = m;
           continue;
         }
-        if (/^0{1,3}$/.test(num) && /^[fgpq]$/.test(prev) && b.last()?.tex === prev) {
-          // p0: the derivative p′ (the prime glyph is the symbol font's 0).
+        if (/^0{1,3}$/.test(num) && (/^[fgpq]$/.test(prev) || num === '0' && /^[A-Z]$/.test(prev)) && b.last()?.tex === prev) {
+          // p0, S0: p′ and S′ (the prime glyph is the symbol font's 0).
           b.script('sup', '\\prime'.repeat(num.length), '′'.repeat(num.length));
           jump = m;
           continue;

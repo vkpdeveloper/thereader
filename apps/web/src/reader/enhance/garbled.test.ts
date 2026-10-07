@@ -39,51 +39,18 @@ function read(line: string): string {
 
 const tex = (line: string) => decodeGarbledLine(pieces(line)).map((r) => r.tex);
 
+const FIXTURE: { cases: [string, string][] } = JSON.parse(readFileSync(new URL('../../../fixtures/garbled-lines.json', import.meta.url), 'utf8'));
+
 describe('garbled formulas', () => {
-  test('operators by position: C is + between operands and ℂ after ∈', () => {
-    expect(read('Note that x C y D y C x for all x; y 2 C.')).toBe('Note that ⟦x+y=y+x⟧ for all ⟦x,y∈C⟧.');
+  // Shared with the Dart decoder's tests (apps/mobile/test/garbled_math_test.dart).
+  for (const [line, expected] of FIXTURE.cases) {
+    test(line, () => expect(read(line)).toBe(expected));
+  }
+
+  test('TeX for ℂ, F^{m,n} and a dropped minus in T^{-1}', () => {
     expect(tex('for all x; y 2 C.')).toEqual(['x , y \\in \\mathbf{C}']);
-  });
-
-  test('Greek from spacing accents, including accents fused onto the next letter', () => {
-    expect(read('Then ˛ C Ď 0 for some ˇ 2 R.')).toBe('Then ⟦α+β=0⟧ for some ⟦β∈R⟧.');
-    // "ą" is α fused onto "and": the formula keeps the word as text.
-    expect(read('ˇ C 2 D ąnd so on')).toBe('⟦β+2=α and⟧ so on');
-  });
-
-  test('sets, inner products, norms, quotients', () => {
-    expect(read('Let S D fx 2 R W x > 0g.')).toBe('Let ⟦S={x∈R:x>0}⟧.');
-    expect(read('hx; ‹y› i D 0 and kxk2 D hx; xi')).toBe('⟦⟨x,y⟩=0⟧ and ⟦‖x‖²=⟨x,x⟩⟧');
-    expect(read('the space V =U and 1=˛ here')).toBe('the space ⟦V/U⟧ and ⟦1/α⟧ here');
-    expect(read('.x C y/ \\ .y C z/ ¤ ¿')).toBe('⟦(x+y)∩(y+z)≠∅⟧');
-  });
-
-  test('scripts flattened inline', () => {
-    expect(read('a point of R4 and a list y1; : : : ; ym')).toBe('a point of ⟦R⁴⟧ and a list ⟦y₁,…,yₘ⟧');
     expect(tex('in Fm;n')).toEqual(['\\mathbf{F}^{m,n}']);
     expect(tex('so S 1 D S')).toEqual(['S^{-1} = S']);
-    expect(read('y1 C    C ym D 0')).toBe('⟦y₁+⋯+yₘ=0⟧');
-  });
-
-  test('dropped glyphs: a binary gap reads as minus, a missing operand as λ', () => {
-    expect(read('so a  b 2 U holds')).toBe('so ⟦a−b∈U⟧ holds');
-    expect(read('C 1 D  and more')).toBe('⟦λ+1=λ⟧  and more');
-  });
-
-  test('prose is left alone', () => {
-    for (const line of [
-      'Vitamin C is good for you.',
-      'Plan D failed, so we tried Plan E.',
-      'Mix 2 cups of flour with 1 egg.',
-      'René Descartes, Jørgen Gram and Eduard Čech wrote about it.',
-      'Is this the right answer ?',
-      'See page 12 and Chapter 2 for more.',
-      'A I a',
-      'undergraduate!',
-      '[ This note is in brackets. ]',
-    ]) {
-      expect(decodeGarbledLine(pieces(line))).toEqual([]);
-    }
   });
 
   test('hostile lines are linear and never throw', () => {
