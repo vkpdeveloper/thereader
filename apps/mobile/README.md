@@ -26,18 +26,24 @@ Pull requests targeting `main` run the Android analysis, tests, and signed
 **release** APK build before merge. Every push to `main`, including a merged
 pull request, also keeps the APK as a GitHub Actions artifact for 7 days and
 publishes it on a versioned GitHub release. The workflow can be run manually
-from Actions.
+from Actions; set its optional `version` input to publish an exact version
+such as `1.0.0`.
 
-The version starts from `pubspec.yaml` (`0.1.0+2`) and adds the workflow run
+The version starts from `pubspec.yaml` (`1.0.0+2`) and adds the workflow run
 number to the patch and Android build code. For example, run 4 produces
-`v0.1.4` with build code `6`. Failed runs and PR checks can leave gaps in
-published versions. To change the major or minor version, update `pubspec.yaml`
+`v1.0.4` with build code `6`. An explicit version overrides the version name,
+while the build code still increases with the run number. Failed runs and PR
+checks can leave gaps in published versions. To change the major or minor version, update `pubspec.yaml`
 and keep its build code at least as high as the previous source value.
 
 The release build uses the checked-in `ci-debug-signing.p12` key. Its password
 is public (`android`), so these APKs are suitable for direct installation and
 updates from this repository, not for Play Store distribution. Keep this key
 unchanged to allow one GitHub release to update another.
+
+The Android package is `com.vkpdeveloper.reader`. Version `1.0.0` introduces
+this package, so it installs separately from APKs using the previous
+`com.vaibhav.thereader.thereader` package and has its own local app data.
 
 ## Layout
 

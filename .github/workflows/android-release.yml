@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Exact release version (major.minor.patch); leave empty for automatic numbering'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -39,6 +44,8 @@ jobs:
 
       - name: Set release version
         id: version
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
         shell: bash
         run: |
           set -euo pipefail
@@ -49,6 +56,13 @@ jobs:
           fi
           read -r prefix patch base_code <<< "$source_version"
           version="${prefix}$((patch + GITHUB_RUN_NUMBER))"
+          if [[ -n "$RELEASE_VERSION" ]]; then
+            if [[ ! "$RELEASE_VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+              echo 'Expected release version in major.minor.patch format' >&2
+              exit 1
+            fi
+            version="$RELEASE_VERSION"
+          fi
           code="$((base_code + GITHUB_RUN_NUMBER))"
           echo "name=$version" >> "$GITHUB_OUTPUT"
           echo "code=$code" >> "$GITHUB_OUTPUT"

@@ -1,4 +1,4 @@
-package com.vaibhav.thereader.thereader
+package com.vkpdeveloper.reader
 
 import android.content.Intent
 import android.net.Uri
