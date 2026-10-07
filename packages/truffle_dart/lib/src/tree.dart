@@ -56,17 +56,15 @@ final class VText extends VNode {
 }
 
 final class VElement extends VNode {
-  VElement(this.tag, this.attrs)
-    : className = attrs['class'] ?? '',
-      id = attrs['id'] ?? '',
-      matchString = jsLower('${attrs['class'] ?? ''} ${attrs['id'] ?? ''}');
+  VElement(this.tag, this.attrs) : className = attrs['class'] ?? '', id = attrs['id'] ?? '';
 
   String tag;
   Map<String, String> attrs;
   List<VNode> children = [];
 
-  /// Lowercase class + id, for pattern matching.
-  final String matchString;
+  /// Lowercase class + id, for pattern matching (computed when first asked:
+  /// most elements are never matched).
+  late final String matchString = className.isEmpty && id.isEmpty ? ' ' : jsLower('$className $id');
   final String className;
   final String id;
 

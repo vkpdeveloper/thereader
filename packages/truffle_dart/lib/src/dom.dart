@@ -6,6 +6,7 @@ import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as html_parser;
 
 import 'js.dart';
+import 'match.dart';
 import 'tree.dart';
 
 /// Elements dropped with their content while copying the DOM.
@@ -17,8 +18,44 @@ const _drop = {
 
 final _hiddenStyle = RegExp(r'(?:^|;)\s*(?:display\s*:\s*none|visibility\s*:\s*hidden)', caseSensitive: false);
 
+/// [_hiddenStyle] by hand: the pattern runs on every inline style.
+bool _hidesByStyle(String style) {
+  for (var i = 0; ;) {
+    while (i < style.length && isJsSpace(style.codeUnitAt(i))) {
+      i++;
+    }
+    if (_declares(style, i, 'display', 'none') || _declares(style, i, 'visibility', 'hidden')) return true;
+    i = style.indexOf(';', i) + 1;
+    if (i == 0) return false;
+  }
+}
+
+/// Whether `property\s*:\s*value` (ASCII, any case) starts at [i] of [s].
+bool _declares(String s, int i, String property, String value) {
+  int word(int at, String w) {
+    if (at + w.length > s.length) return -1;
+    for (var k = 0; k < w.length; k++) {
+      if (s.codeUnitAt(at + k) | 0x20 != w.codeUnitAt(k)) return -1;
+    }
+    return at + w.length;
+  }
+
+  int spaces(int at) {
+    while (at < s.length && isJsSpace(s.codeUnitAt(at))) {
+      at++;
+    }
+    return at;
+  }
+
+  var at = word(i, property);
+  if (at < 0) return false;
+  at = spaces(at);
+  if (at >= s.length || s.codeUnitAt(at) != 0x3a) return false;
+  return word(spaces(at + 1), value) >= 0;
+}
+
 /// Screen-reader-only text: never part of what a reader sees.
-final _srOnly = RegExp(
+final _srOnly = ClassPattern(
   r'(?:^|\s)(?:sr-only|visually-hidden|visuallyhidden|screen-reader-text|screen-reader-only|screenreader-only|a11y-hidden|hide-for-sr|u-hidden-visually|vh|offscreen|is-hidden|hidden-text)(?:\s|$)',
 );
 final _decorativeKeep = RegExp(r'fallback-image|lazy|image|img|photo|figure|media', caseSensitive: false);
@@ -37,7 +74,11 @@ bool _isHidden(dom.Element el, String tag) {
     return true;
   }
   final style = _attr(el, 'style');
-  if (style != null && _hiddenStyle.hasMatch(style)) return true;
+  if (style != null) {
+    final hidden = _hidesByStyle(style);
+    assert(hidden == _hiddenStyle.hasMatch(style), 'hidden style "$style"');
+    if (hidden) return true;
+  }
   if (cls != null && _srOnly.hasMatch(cls)) return true;
   if (_attr(el, 'aria-hidden') == 'true') {
     // KaTeX and MathJax hide their visual copy; the MathML copy is read instead.
@@ -165,7 +206,7 @@ VDocument fromDocument(dom.Document doc) {
   VElement? head;
   VElement? body;
 
-  final documentElement = doc.documentElement;
+  final documentElement = _documentElement(doc);
   dom.Element? headEl;
   dom.Element? bodyEl;
   for (final child in documentElement?.children ?? const <dom.Element>[]) {
@@ -265,7 +306,16 @@ VDocument fromDocument(dom.Document doc) {
     }
 
     final attrs = <String, String>{};
-    el.attributes.forEach((key, value) => attrs.putIfAbsent(_attrName(key), () => value));
+    // The first of equal names wins; only a namespaced name (`xlink:href`) can equal another.
+    var namespaced = false;
+    el.attributes.forEach((key, value) {
+      if (key is String) {
+        if (!namespaced || !attrs.containsKey(key)) attrs[key] = value;
+      } else {
+        namespaced = true;
+        attrs.putIfAbsent(_attrName(key), () => value);
+      }
+    });
     final v = VElement(tag, attrs);
 
     if (tag == 'math' || tag == 'svg') {
@@ -297,6 +347,18 @@ VDocument fromDocument(dom.Document doc) {
     root.append(body!);
   }
   return VDocument(root: root, head: head, body: body!, jsonLd: jsonLd, nextData: nextData, baseHref: baseHref);
+}
+
+/// `doc.documentElement` (`querySelector('html')`: the first `html` element
+/// in tree order) without parsing a selector.
+dom.Element? _documentElement(dom.Node node) {
+  for (final child in node.nodes) {
+    if (child is! dom.Element) continue;
+    if (child.localName == 'html') return child;
+    final found = _documentElement(child);
+    if (found != null) return found;
+  }
+  return null;
 }
 
 final _imageFile = RegExp(r'\.(?:svg|png|jpe?g|gif|webp|avif)(?:$|[?#])', caseSensitive: false);
