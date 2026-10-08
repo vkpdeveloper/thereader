@@ -1,7 +1,7 @@
 module github.com/vkpdeveloper/thereader/packages/truffle_go
 
-go 1.24.0
+go 1.25.0
 
-require golang.org/x/net v0.44.0
+require golang.org/x/net v0.55.0
 
-require golang.org/x/text v0.29.0 // indirect
+require golang.org/x/text v0.37.0 // indirect
