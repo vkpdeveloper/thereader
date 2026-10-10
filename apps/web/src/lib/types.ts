@@ -12,7 +12,11 @@ export interface Book {
   fileSize: number;
   sha256: string;
   updatedAt: string;
+  /** `comic` is a CBZ (docs/comics.md); absent means `epub`. */
+  format?: BookFormat;
 }
+
+export type BookFormat = 'epub' | 'comic';
 
 export type DownloadStatus = 'none' | 'queued' | 'downloading' | 'verifying' | 'ready' | 'failed';
 

@@ -16,6 +16,7 @@ class Book {
     required this.fileSize,
     required this.sha256,
     required this.updatedAt,
+    this.format = BookFormat.epub,
   });
 
   final String id;
@@ -30,6 +31,11 @@ class Book {
   final int fileSize;
   final String sha256;
   final DateTime updatedAt;
+
+  /// [BookFormat.comic] is a CBZ (docs/comics.md); older servers omit it.
+  final BookFormat format;
+
+  bool get isComic => format == BookFormat.comic;
 
   /// Identifies a file edition: `id@version`.
   String get editionKey => '$id@$version';
@@ -52,6 +58,7 @@ class Book {
       sha256: (json['sha256'] as String).toLowerCase(),
       updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+      format: json['format'] == 'comic' ? BookFormat.comic : BookFormat.epub,
     );
   }
 
@@ -68,6 +75,7 @@ class Book {
         'fileSize': fileSize,
         'sha256': sha256,
         'updatedAt': updatedAt.toUtc().toIso8601String(),
+        'format': format.name,
       };
 
   @override
@@ -77,6 +85,8 @@ class Book {
   @override
   int get hashCode => Object.hash(id, version, sha256);
 }
+
+enum BookFormat { epub, comic }
 
 /// Where a book's metadata and bytes came from.
 enum BookSource { sample, api }
