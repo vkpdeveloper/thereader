@@ -37,6 +37,10 @@ class Book {
 
   bool get isComic => format == BookFormat.comic;
 
+  /// Content type of the stored file, for downloads and uploads.
+  String get mediaType =>
+      isComic ? 'application/vnd.comicbook+zip' : 'application/epub+zip';
+
   /// Identifies a file edition: `id@version`.
   String get editionKey => '$id@$version';
 

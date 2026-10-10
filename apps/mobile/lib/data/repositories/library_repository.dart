@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 
 import '../api/api_client.dart';
 import '../api/catalog_source.dart';
+import '../comic/remote_comic_file.dart';
 import '../download/downloader.dart';
 import '../download/progressive_download.dart';
 import '../models/book.dart';
@@ -19,15 +20,19 @@ class LibraryRepository extends ChangeNotifier {
   LibraryRepository({
     required KeyValueStore store,
     required BookStore bookStore,
+    ApiClient Function(String origin)? clientForOrigin,
   }) : _store = store,
        _bookStore = bookStore,
-       _downloader = Downloader(store: bookStore);
+       _downloader = Downloader(store: bookStore),
+       _clientForOrigin = clientForOrigin;
 
   static const _key = 'library.v1';
 
   final KeyValueStore _store;
   final BookStore _bookStore;
   final Downloader _downloader;
+  final ApiClient Function(String origin)? _clientForOrigin;
+  final Map<String, ApiClient> _clients = {};
   final Map<String, LibraryEntry> _entries = {};
   final Set<String> _cancelRequests = {};
   final Map<String, String> _aliases = {};
@@ -66,23 +71,38 @@ class LibraryRepository extends ChangeNotifier {
   }
 
   /// Partial publications stay online-only until their final SHA is verified.
+  /// API comics are always readable: until their offline copy is verified
+  /// they are read by HTTP range, and a failing range surfaces in the reader.
   bool canRead(String id) {
     id = _resolveId(id);
-    return _entries[id]?.download.isReady == true ||
-        (_entries[id]?.download.isActive == true &&
-            _progressive[id]?.canRead == true);
+    final entry = _entries[id];
+    return entry?.download.isReady == true ||
+        _readsOnline(entry) ||
+        (entry?.download.isActive == true && _progressive[id]?.canRead == true);
   }
 
+  static bool _readsOnline(LibraryEntry? entry) =>
+      entry != null && entry.book.isComic && entry.source == BookSource.api;
+
+  /// A verified local file, else (comics) a [ProvisionalBookFile] reading the
+  /// edition by range from the API, else an early-reading EPUB lease.
   Future<BookFile> openForReading(String id) async {
     id = _resolveId(id);
     final entry = _entries[id];
     if (entry?.download.isReady == true) {
       return _bookStore.open(entry!.download.path!);
     }
+    if (_readsOnline(entry)) {
+      return RemoteComicFile(book: entry!.book, client: _client(entry.origin));
+    }
     final partial = _progressive[id];
     if (partial?.canRead == true) return partial!.open();
     throw StateError('This book is not ready to read yet.');
   }
+
+  ApiClient _client(String origin) =>
+      _clientForOrigin?.call(origin) ??
+      _clients.putIfAbsent(origin, () => ApiClient(baseUrl: origin));
 
   Future<void> load() async {
     final json = await _store.readJson(_key);
