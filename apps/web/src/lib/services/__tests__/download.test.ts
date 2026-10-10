@@ -4,7 +4,9 @@ import { createApiClient, type FetchLike } from '../api';
 import { ApiError } from '../contract';
 import { sha256OfBlob } from '../hash';
 import { MemoryKv } from '../kv';
-import { LibraryStoreImpl, bookBlobKey } from '../library';
+import { crc32 } from '../../import/bytes';
+import { writeCbz } from '../../import/cbzWriter';
+import { LibraryStoreImpl, bookBlobKey, partialKey } from '../library';
 import { entryIdentity } from '../models';
 import { ProgressiveDownload } from '../progressiveDownload';
 import { SEGMENT_ALIGNMENT, ZIP_TAIL_WINDOW, defaultSegmentPolicy, planSegments, type SegmentPolicy } from '../segmentPlan';
@@ -525,5 +527,182 @@ describe('offline reading', () => {
       onProgress: () => undefined,
       onReadable: () => undefined,
     })).toThrow('The book has an invalid size.');
+  });
+});
+
+/** A real CBZ (docs/comics.md layout) of `pages` pages of `pageSize` bytes each. */
+async function comicOf(pages: number, pageSize: number): Promise<{ bytes: Uint8Array; book: Book }> {
+  const entries = Array.from({ length: pages }, (_, i) => {
+    const data = pattern(pageSize, i + 1);
+    return { path: `page${String(i + 1).padStart(3, '0')}.jpg`, data: new Blob([data as BlobPart]), crc32: crc32(data) };
+  });
+  const cbz = await writeCbz(entries);
+  const bytes = new Uint8Array(await cbz.blob.arrayBuffer());
+  const book = makeBook({
+    id: `comic-${cbz.sha256}`,
+    downloadUrl: `/v1/books/comic-${cbz.sha256}/download`,
+    sha256: cbz.sha256,
+    fileSize: bytes.length,
+    format: 'comic',
+  });
+  return { bytes, book };
+}
+
+describe('comic downloads', () => {
+  test('readable once the ZIP directory is local; pages arrive on demand', async () => {
+    const { bytes, book } = await comicOf(12, 256 * 1024);
+    const plan = planSegments(smallPolicy, bytes.length);
+    const startOf = (r: Request) => Number(/bytes=(\d+)/.exec(r.range ?? '')?.[1] ?? 0);
+    const waiting = new Map<number, () => void>();
+    const released = new Set<number>();
+    const accepts: Array<string | null> = [];
+    const server = rangeServer(bytes, book.sha256, {
+      gate: (r) => {
+        const start = startOf(r);
+        // Only the tail arrives on its own; even the opening segment waits.
+        if (start === plan[0]![0] || released.has(start)) return undefined;
+        return new Promise<void>((resolve) => waiting.set(start, resolve));
+      },
+    });
+    const fetch: FetchLike = (url, init) => {
+      accepts.push(new Headers(init?.headers).get('accept'));
+      return server.fetch(url, init);
+    };
+    const s = library({ [ORIGIN_A]: fetch }, () => ORIGIN_A, smallPolicy);
+    await s.lib.load();
+    const running = s.lib.download(book);
+    const id = entryIdentity(book.id, ORIGIN_A);
+    for (let i = 0; i < 50 && !s.lib.isProvisional(id); i++) await tick();
+    expect(s.lib.isProvisional(id)).toBe(true);
+    expect(s.lib.entry(id)!.download.receivedBytes).toBeLessThan(bytes.length * 0.05);
+    expect(accepts[0]).toBe('application/vnd.comicbook+zip');
+
+    // The reader opens page 7: that segment jumps the queue.
+    const file = await s.lib.openFile(id);
+    const at = 6 * (256 * 1024 + 30 + 'page007.jpg'.length) + 30 + 'page007.jpg'.length;
+    const before = server.requests.length;
+    const reading = file.read(at, at + 64);
+    for (let i = 0; i < 20 && server.requests.length === before; i++) await tick();
+    const demand = server.requests.slice(before)[0];
+    expect(demand).toBeDefined();
+    released.add(startOf(demand!));
+    waiting.get(startOf(demand!))?.();
+    expect(await reading).toEqual(pattern(256 * 1024, 7).slice(0, 64));
+
+    const drain = setInterval(() => {
+      for (const [start, resolve] of waiting) {
+        released.add(start);
+        resolve();
+        waiting.delete(start);
+      }
+    }, 1);
+    await running;
+    clearInterval(drain);
+    file.close();
+    expect(s.lib.entry(id)!.download.status).toBe('ready');
+    const stored = (await s.blobs.get<Blob>(bookBlobKey(id, book.sha256)))!;
+    expect(new Uint8Array(await stored.arrayBuffer())).toEqual(bytes);
+    const blob = await s.lib.openForReading(id);
+    expect(blob.type).toBe('application/vnd.comicbook+zip');
+    expect(await s.blobs.keys()).toEqual([bookBlobKey(id, book.sha256)]);
+  });
+
+  test('an interrupted comic resumes after a reload from its saved verified prefix', async () => {
+    const { bytes, book } = await comicOf(17, MiB);
+    const id = entryIdentity(book.id, ORIGIN_A);
+    const kv = new MemoryKv();
+    const blobs = new MemoryKv();
+    const startOf = (r: Request) => Number(/bytes=(\d+)/.exec(r.range ?? '')?.[1] ?? 0);
+    const store = (fetch: FetchLike) =>
+      new LibraryStoreImpl({
+        kv,
+        books: blobs,
+        currentOrigin: () => ORIGIN_A,
+        clientFor: (origin) => createApiClient(origin, { fetch, timeoutMs: 2_000 }),
+      });
+
+    // Bytes past 12 MiB fail, but only once the first 8 MiB run is saved.
+    const saved = async () => {
+      for (let i = 0; i < 500 && !(await blobs.keys()).includes(partialKey(id, book.sha256)); i++) await tick();
+    };
+    const tailStart = planSegments(defaultSegmentPolicy, bytes.length)[0]![0];
+    const failing = rangeServer(bytes, book.sha256, {
+      gate: (r) => (startOf(r) >= 12 * MiB && startOf(r) < tailStart ? saved() : undefined),
+      fail: (r) => (startOf(r) >= 12 * MiB && startOf(r) < tailStart ? 404 : undefined),
+    });
+    const first = store(failing.fetch);
+    await first.load();
+    await first.download(book);
+    expect(first.entry(id)!.download.status).toBe('failed');
+    const savedEnd = (await blobs.get<{ end: number }>(partialKey(id, book.sha256)))!.end;
+    expect(savedEnd).toBeGreaterThanOrEqual(8 * MiB);
+    expect(savedEnd).toBeLessThan(12 * MiB);
+    expect(first.entry(id)!.download.receivedBytes).toBe(savedEnd);
+    expect((await blobs.keys()).sort()).toEqual([partialKey(id, book.sha256), `${partialKey(id, book.sha256)}:0`]);
+
+    // A new session shows the saved progress and fetches only what is missing.
+    const healthy = rangeServer(bytes, book.sha256);
+    const second = store(healthy.fetch);
+    await second.load();
+    expect(second.entry(id)!.download).toMatchObject({ status: 'failed', receivedBytes: savedEnd });
+    const progress: number[] = [];
+    const unsubscribe = second.subscribe(() => progress.push(second.entry(id)?.download.receivedBytes ?? 0));
+    await second.downloadEntry(id);
+    unsubscribe();
+    expect(second.entry(id)!.download.status).toBe('ready');
+    expect(healthy.requests.every((r) => startOf(r) >= savedEnd)).toBe(true);
+    expect(progress.filter((received) => received > 0 && received < savedEnd)).toEqual([]);
+    const stored = (await blobs.get<Blob>(bookBlobKey(id, book.sha256)))!;
+    expect(stored.size).toBe(bytes.length);
+    expect(new Uint8Array(await stored.arrayBuffer())).toEqual(bytes);
+    expect(await blobs.keys()).toEqual([bookBlobKey(id, book.sha256)]);
+  });
+
+  test('a damaged saved prefix is discarded; cancel and remove clear saved runs', async () => {
+    const { bytes, book } = await comicOf(17, MiB);
+    const id = entryIdentity(book.id, ORIGIN_A);
+    const s = library({ [ORIGIN_A]: rangeServer(bytes, book.sha256).fetch }, () => ORIGIN_A);
+    await s.lib.load();
+    // A manifest whose run is missing: the download starts over and still verifies.
+    await s.blobs.set(partialKey(id, book.sha256), { size: bytes.length, end: 8 * MiB, hasher: { h: [], length: 0, block: [] }, runs: [0] });
+    await s.lib.download(book);
+    expect(s.lib.entry(id)!.download.status).toBe('ready');
+    expect(await s.blobs.keys()).toEqual([bookBlobKey(id, book.sha256)]);
+
+    await s.blobs.set(`${partialKey(id, 'f'.repeat(64))}:0`, new Blob(['stale']));
+    await s.lib.remove(id);
+    expect(await s.blobs.keys()).toEqual([]);
+  });
+});
+
+describe('spilling', () => {
+  test('a short last chunk reached past the spill threshold stays in the committed file', async () => {
+    // 10 MiB + 5: hashing reaches 7 MiB, then the rest arrives at once, so
+    // the step to the end crosses the 8 MiB spill threshold.
+    const bytes = pattern(10 * MiB + 5);
+    const book = await bookOf(bytes);
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => (release = resolve));
+    let sent = 0;
+    const body = new ReadableStream<Uint8Array>({
+      async pull(controller) {
+        if (sent === 7 * MiB) await held;
+        if (sent >= bytes.length) return controller.close();
+        const end = sent < 7 * MiB ? Math.min(7 * MiB, sent + 512 * 1024) : bytes.length;
+        controller.enqueue(bytes.slice(sent, end));
+        sent = end;
+      },
+    });
+    const download = new ProgressiveDownload(book, { openDownload: async () => new Response(body) }, {
+      onProgress: () => undefined,
+      onReadable: () => undefined,
+    });
+    const running = download.run();
+    for (let i = 0; i < 200 && sent < 7 * MiB; i++) await tick();
+    for (let i = 0; i < 50; i++) await tick();
+    release();
+    const blob = await running;
+    expect(blob.size).toBe(bytes.length);
+    expect(new Uint8Array(await blob.arrayBuffer())).toEqual(bytes);
   });
 });

@@ -1,6 +1,7 @@
 import type { Book } from '../types';
 import { ApiError, type ApiClient } from './contract';
 import { isRecord, normalizeOrigin, parseBook } from './models';
+import { mimeTypeFor } from './progressiveDownload';
 
 /**
  * Thin HTTP client for the reader API, ported from mobile `ApiClient`: no
@@ -204,12 +205,12 @@ export function createApiClient(
     },
     async openDownload(book, signal) {
       const url = resolve(book.downloadUrl);
-      const response = await send(url, { headers: { accept: 'application/epub+zip' } }, `Timed out connecting to ${host}.`, signal);
+      const response = await send(url, { headers: { accept: mimeTypeFor(book) } }, `Timed out connecting to ${host}.`, signal);
       if (response.status !== 200) throw errorFrom(response.status, await readText(response, host));
       return response;
     },
     async streamRange(book, start, end, { onChunk, chunkSize = 64 * 1024, signal }) {
-      if (start < 0 || end <= start || end > book.fileSize || chunkSize <= 0) throw new RangeError('Invalid EPUB range');
+      if (start < 0 || end <= start || end > book.fileSize || chunkSize <= 0) throw new RangeError('Invalid book range');
       const url = resolve(book.downloadUrl);
       const etag = `"${book.sha256}"`;
       // One controller for headers and body, so an idle body can time out too.
@@ -222,7 +223,7 @@ export function createApiClient(
         // `send` maps connection failures and header timeouts to ApiError.
         const response = await send(
           url,
-          { headers: { accept: 'application/epub+zip', range: `bytes=${start}-${end - 1}`, 'if-range': etag } },
+          { headers: { accept: mimeTypeFor(book), range: `bytes=${start}-${end - 1}`, 'if-range': etag } },
           `Timed out connecting to ${host}.`,
           request.signal,
         );

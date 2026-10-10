@@ -1,7 +1,8 @@
 import type { Book } from '../types';
 import type { HttpApiClient } from './api';
+import { COMIC_TYPE, findDirectoryEnd } from '../comic/zip';
 import { ApiError, type BookFile } from './contract';
-import { Sha256 } from './hash';
+import { Sha256, type Sha256State } from './hash';
 import { SEGMENT_ALIGNMENT, ZIP_TAIL_WINDOW, defaultSegmentPolicy, planSegments, type SegmentPolicy } from './segmentPlan';
 
 export class DownloadFailure extends Error {
@@ -20,14 +21,39 @@ export class DownloadCancelled extends Error {
 
 export const EPUB_TYPE = 'application/epub+zip';
 
+/** MIME type of an edition's stored bytes. */
+export const mimeTypeFor = (book: Pick<Book, 'format'>): string => (book.format === 'comic' ? COMIC_TYPE : EPUB_TYPE);
+
 /** Where a download gets bytes. Clients without `streamRange` stream the whole file. */
 export type DownloadClient = Pick<HttpApiClient, 'openDownload'> & Partial<Pick<HttpApiClient, 'streamRange'>>;
 
+/** A verified prefix `[0, prefix.size)` kept from an interrupted download. */
+export interface ResumePoint {
+  prefix: Blob;
+  /** SHA-256 state after hashing exactly the prefix. */
+  hasher: Sha256State;
+}
+
+/** One verified run `[start, end)` moved to blob storage, with the hash state at `end`. */
+export interface SpilledRun {
+  start: number;
+  end: number;
+  blob: Blob;
+  hasher: Sha256State;
+}
+
 export interface ProgressiveOptions {
   onProgress(received: number, total: number): void;
-  /** The ZIP directory and the opening 5% are local: early reading may start. */
+  /**
+   * Early reading may start: the ZIP directory and the opening 5% are local
+   * (an EPUB), or the directory alone (a comic, whose pages a reader demands).
+   */
   onReadable(): void;
   policy?: SegmentPolicy;
+  /** Continue after `resume.prefix` instead of from byte 0. */
+  resume?: ResumePoint;
+  /** Each verified run as it leaves memory, so the owner can keep it for a later resume. */
+  onSpill?(run: SpilledRun): void;
 }
 
 const CHUNK = SEGMENT_ALIGNMENT;
@@ -122,6 +148,16 @@ export class ProgressiveDownload {
     this.size = book.fileSize;
     this.policy = options.policy ?? defaultSegmentPolicy;
     this.chunks = new Array(Math.ceil(this.size / CHUNK));
+    const resume = options.resume;
+    if (resume) {
+      const end = resume.prefix.size;
+      if (end <= 0 || end >= this.size || end % CHUNK !== 0 || resume.hasher.length !== end) {
+        throw new DownloadFailure('The saved part of this download is unusable.');
+      }
+      this.spilled = [{ start: 0, end, blob: resume.prefix }];
+      this.spilledEnd = end;
+      this.received = end;
+    }
   }
 
   get canRead(): boolean {
@@ -297,7 +333,9 @@ export class ProgressiveDownload {
     this.sequential = true;
     this.queue = [];
     this.urgent = [];
-    const whole = new Piece(0, this.size);
+    // A resumed prefix is already verified; the response's copy of it is skipped.
+    let skip = this.spilledEnd;
+    const whole = new Piece(skip, this.size);
     whole.active = true;
     this.pieces = [whole];
     try {
@@ -332,7 +370,8 @@ export class ProgressiveDownload {
             throw new DownloadFailure(`Received more data than the catalog size (${this.size} bytes).`, 'SIZE_MISMATCH');
           }
           arrived += incoming.length;
-          let offset = 0;
+          let offset = Math.min(skip, incoming.length);
+          skip -= offset;
           while (offset < incoming.length) {
             const take = Math.min(incoming.length - offset, buffer.length - filled);
             buffer.set(incoming.subarray(offset, offset + take), filled);
@@ -360,18 +399,28 @@ export class ProgressiveDownload {
   async run(): Promise<Blob> {
     try {
       for (const [start, end] of planSegments(this.policy, this.size)) {
-        const piece = new Piece(start, end);
+        // Segment boundaries and a resumed prefix's end are both chunk aligned.
+        if (end <= this.spilledEnd) continue;
+        const piece = new Piece(Math.max(start, this.spilledEnd), end);
         this.pieces.push(piece);
         this.queue.push(piece);
       }
       this.pieces.sort((a, b) => a.start - b.start);
+      if (this.received > 0) this.options.onProgress(this.received, this.size);
       this.pump();
       const hashing = this.hashPrefix();
       hashing.catch(() => undefined);
       // ZIP's central directory is at the tail, which the plan fetches first.
-      // Keep the 5% readiness threshold so the opening chapters are local.
-      await this.waitFor(Math.max(0, this.size - ZIP_TAIL_WINDOW), this.size);
-      await this.waitFor(0, Math.ceil(this.size * 0.05));
+      const tailStart = Math.max(0, this.size - ZIP_TAIL_WINDOW);
+      await this.waitFor(tailStart, this.size);
+      const directory = this.book.format === 'comic' ? findDirectoryEnd(await this.gather(tailStart, this.size), this.size) : null;
+      if (directory) {
+        // A comic reader needs only the directory; it demands each page it shows.
+        await this.waitFor(directory.directoryOffset, directory.directoryOffset + directory.directorySize, true);
+      } else {
+        // Keep the 5% readiness threshold so the opening chapters are local.
+        await this.waitFor(0, Math.ceil(this.size * 0.05));
+      }
       this.readable = true;
       this.options.onReadable();
       await this.waitFor(0, this.size);
@@ -383,7 +432,7 @@ export class ProgressiveDownload {
       // Zero-copy for spilled runs; only the unspilled tail is copied once.
       const parts: BlobPart[] = this.spilled.map((s) => s.blob);
       for (let i = this.spilledEnd / CHUNK; i < this.chunks.length; i++) parts.push(this.chunks[i]! as BlobPart);
-      this.final = new Blob(parts, { type: EPUB_TYPE });
+      this.final = new Blob(parts, { type: mimeTypeFor(this.book) });
       this.chunks = [];
       this.spilled = [];
       this.committed = true;
@@ -403,8 +452,9 @@ export class ProgressiveDownload {
    * SHA-256 as a pass after the download, minus the wait.
    */
   private async hashPrefix(): Promise<string> {
-    const hasher = new Sha256();
-    let hashed = 0;
+    const resume = this.options.resume;
+    const hasher = resume ? Sha256.restore(resume.hasher) : new Sha256();
+    let hashed = this.spilledEnd;
     while (hashed < this.size) {
       this.check();
       const available = this.firstMissing(hashed, this.size) ?? this.size;
@@ -419,20 +469,24 @@ export class ProgressiveDownload {
         hasher.update(chunk);
       }
       hashed = end;
-      if (hashed - this.spilledEnd >= SPILL_BYTES) this.spill(hashed);
+      // The final run stays in `chunks`: a file's last chunk may be short, so
+      // its end is not a chunk index, and the commit takes it from there anyway.
+      if (hashed < this.size && hashed - this.spilledEnd >= SPILL_BYTES) this.spill(hashed, hasher);
       // Long books hash in slices so the reader stays responsive.
       if (hashed < this.size) await sleep(0);
     }
     return hasher.hex();
   }
 
-  /** Moves verified prefix chunks out of the JS heap into blob storage. */
-  private spill(end: number): void {
+  /** Moves verified prefix chunks out of the JS heap into blob storage. `hasher` has hashed `[0, end)`. */
+  private spill(end: number, hasher: Sha256): void {
     const from = this.spilledEnd / CHUNK;
     const to = end / CHUNK;
-    this.spilled.push({ start: this.spilledEnd, end, blob: new Blob(this.chunks.slice(from, to) as BlobPart[]) });
+    const run = { start: this.spilledEnd, end, blob: new Blob(this.chunks.slice(from, to) as BlobPart[]) };
+    this.spilled.push(run);
     for (let i = from; i < to; i++) this.chunks[i] = undefined;
     this.spilledEnd = end;
+    this.options.onSpill?.({ ...run, hasher: hasher.save() });
   }
 
   /** Bytes `[start, end)`, which must have arrived. Sources are captured synchronously. */

@@ -16,6 +16,14 @@ const K = new Uint32Array([
   0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
 ]);
 
+export interface Sha256State {
+  h: number[];
+  /** Bytes hashed so far. */
+  length: number;
+  /** Bytes after the last whole 64-byte block. */
+  block: number[];
+}
+
 /**
  * Incremental SHA-256. Downloads hash each segment as it becomes part of the
  * contiguous prefix, so verification needs no second pass over the book and
@@ -73,6 +81,31 @@ export class Sha256 {
 
   hex(): string {
     return toHex(this.digest());
+  }
+
+  /** The running state as JSON-compatible data, so a long hash can continue later. */
+  save(): Sha256State {
+    if (this.finished) throw new Error('SHA-256 already finalized.');
+    return { h: Array.from(this.h), length: this.length, block: Array.from(this.block.subarray(0, this.buffered)) };
+  }
+
+  static restore(state: Sha256State): Sha256 {
+    const hasher = new Sha256();
+    if (
+      !Array.isArray(state.h) ||
+      !Array.isArray(state.block) ||
+      state.h.length !== 8 ||
+      state.block.length >= 64 ||
+      !Number.isSafeInteger(state.length) ||
+      state.length % 64 !== state.block.length
+    ) {
+      throw new Error('Invalid SHA-256 state.');
+    }
+    hasher.h.set(state.h);
+    hasher.block.set(state.block);
+    hasher.buffered = state.block.length;
+    hasher.length = state.length;
+    return hasher;
   }
 
   private compress(view: DataView, offset: number): void {

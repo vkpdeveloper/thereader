@@ -3,7 +3,7 @@ import { ImportError, type InspectFile, type UploadBook } from '../import/contra
 import { ApiError, type ImportStore, type ImportsSnapshot } from './contract';
 import type { KeyValueStore } from './kv';
 import { bookBlobKey, type LibraryStoreImpl } from './library';
-import { EPUB_TYPE } from './progressiveDownload';
+import { mimeTypeFor } from './progressiveDownload';
 import { entryIdentity, isActive, isReady, isRecord, nowIso, parseBook } from './models';
 import { Emitter, WriteQueue } from './observable';
 import { createMemoryLocks, noopBus, type Locks, type TabBus } from './tabs';
@@ -18,7 +18,7 @@ class ImportProblem extends Error {}
 interface Pending {
   book: Book;
   origin: string;
-  /** IndexedDB key of the verified EPUB blob. */
+  /** IndexedDB key of the verified EPUB or CBZ blob. */
   path: string;
 }
 
@@ -38,7 +38,7 @@ export interface ImportDeps {
 }
 
 /**
- * EPUB/MOBI imports, ported from mobile `EpubImportService`: the book is
+ * EPUB/MOBI and CBZ/CBR imports, ported from mobile `EpubImportService`: the book is
  * readable from local storage as soon as it is imported, and a persisted
  * queue uploads it to the configured API, then adopts the canonical server
  * book (which may be an existing edition with the same SHA-256).
@@ -200,12 +200,14 @@ export class ImportStoreImpl extends Emitter<ImportsSnapshot> implements ImportS
   private async importInspected(file: File, origin: string): Promise<LibraryEntry> {
     const inspected = await this.deps.inspect(file);
     const sha = inspected.sha256.toLowerCase();
+    const format = inspected.format ?? 'epub';
+    const label = format === 'comic' ? 'comic' : 'EPUB';
     if (inspected.cover) {
       // An unusable cover never blocks the import; the book renders a plate.
       await this.deps.covers?.storeEmbedded(sha, inspected.cover).catch(() => undefined);
     }
     const book: Book = {
-      id: `epub-${sha}`,
+      id: `${format}-${sha}`,
       version: sha.slice(0, 12),
       title: inspected.title || 'Untitled',
       author: inspected.author || 'Unknown',
@@ -213,10 +215,11 @@ export class ImportStoreImpl extends Emitter<ImportsSnapshot> implements ImportS
       language: inspected.language || 'en',
       subjects: inspected.subjects ?? [],
       coverUrl: null,
-      downloadUrl: `/v1/books/epub-${sha}/download`,
+      downloadUrl: `/v1/books/${format}-${sha}/download`,
       fileSize: inspected.fileSize,
       sha256: sha,
       updatedAt: nowIso(this.now),
+      format,
     };
     const existing = this.deps.library.all.find((e) => e.origin === origin && e.book.sha256 === sha && isReady(e.download));
     if (existing) {
@@ -225,12 +228,13 @@ export class ImportStoreImpl extends Emitter<ImportsSnapshot> implements ImportS
     }
     const id = entryIdentity(book.id, origin);
     const current = this.deps.library.entry(id);
-    if (current && isActive(current.download)) throw new ImportProblem('A download of this EPUB is already running.');
-    if (inspected.epub.size !== book.fileSize) throw new ImportProblem('The EPUB changed while importing.');
+    if (current && isActive(current.download)) throw new ImportProblem(`A download of this ${label} is already running.`);
+    if (inspected.epub.size !== book.fileSize) throw new ImportProblem(`The ${label} changed while importing.`);
 
     const path = bookBlobKey(id, sha);
     // Re-typing is a zero-copy slice; the bytes are not duplicated in memory.
-    const blob = inspected.epub.type === EPUB_TYPE ? inspected.epub : inspected.epub.slice(0, inspected.epub.size, EPUB_TYPE);
+    const type = mimeTypeFor(book);
+    const blob = inspected.epub.type === type ? inspected.epub : inspected.epub.slice(0, inspected.epub.size, type);
     let stored = false;
     let queued = false;
     try {
@@ -295,7 +299,7 @@ export class ImportStoreImpl extends Emitter<ImportsSnapshot> implements ImportS
             await this.cancelPending(id);
             continue;
           }
-          if (blob.size !== p.book.fileSize) throw new ImportProblem('The local EPUB size changed. Import it again.');
+          if (blob.size !== p.book.fileSize) throw new ImportProblem('The local file size changed. Import it again.');
           let lastPaint = 0;
           const uploaded = await this.deps.upload({
             origin: p.origin,
