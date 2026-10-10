@@ -49,10 +49,21 @@ describe('comic keys', () => {
   });
 
   test('no book tools and no modified keys', () => {
-    for (const key of ['t', 'h', '/', 'a', 'd', 'e', 'p', '[', ']', '+', '-', '?']) expect(comicKeyAction({ key })).toBeNull();
+    for (const key of ['t', 'h', '/', 'a', 'd', 'e', 'p', '[', ']', '?']) expect(comicKeyAction({ key })).toBeNull();
     expect(comicKeyAction({ key: 'ArrowRight', metaKey: true })).toBeNull();
     expect(comicKeyAction({ key: 'f', ctrlKey: true })).toBeNull();
     expect(comicKeyAction({ key: 'Escape', metaKey: true })).toBe('close');
+  });
+
+  test('zoom keys, leaving the browser its own ⌘/Ctrl zoom', () => {
+    for (const key of ['+', '=']) expect(comicKeyAction({ key })).toBe('zoomIn');
+    expect(comicKeyAction({ key: '+', shiftKey: true })).toBe('zoomIn');
+    for (const key of ['-', '_']) expect(comicKeyAction({ key })).toBe('zoomOut');
+    expect(comicKeyAction({ key: '0' })).toBe('zoomReset');
+    for (const key of ['+', '=', '-', '0']) {
+      expect(comicKeyAction({ key, metaKey: true })).toBeNull();
+      expect(comicKeyAction({ key, ctrlKey: true })).toBeNull();
+    }
   });
 });
 

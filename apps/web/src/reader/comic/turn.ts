@@ -1,3 +1,5 @@
+import type { SpreadGeometry } from './layout';
+
 /**
  * Page-turn maths, shared by animated turns and turns that follow a finger.
  * A turn always runs between a lower spread and the next one: progress 0
@@ -51,6 +53,48 @@ export function turnShading(progress: number, maxAngle = SPREAD_ANGLE): TurnShad
     back: 0.55 * (1 - Math.max(0, -cos)),
     cast: 0.6 * Math.sin(p * Math.PI),
     edge: cos,
+  };
+}
+
+/**
+ * Which parts of a spread turn show a page. The leaf's front is the lower
+ * spread's right half and its back the higher spread's left half; beneath
+ * lie the lower spread's left half and the higher spread's right half. A
+ * spread with an empty half (a page alone on the left before a wide scan,
+ * the cover alone on the right) leaves one of them empty.
+ */
+export interface TurnSides {
+  front: boolean;
+  back: boolean;
+  underLeft: boolean;
+  underRight: boolean;
+}
+
+export function turnSides(lo: SpreadGeometry, hi: SpreadGeometry): TurnSides {
+  return { front: lo.right !== null, back: hi.left !== null, underLeft: lo.left !== null, underRight: hi.right !== null };
+}
+
+export interface SpreadShading extends Omit<TurnShading, 'cast'> {
+  /** Shadow on the lower spread's left half (only while the back is up). */
+  castLeft: number;
+  /** Shadow on the higher spread's right half (only while the front is up). */
+  castRight: number;
+}
+
+/**
+ * A turn's shading with the empty parts left dark: an empty face is the
+ * stage itself (black, unshaded), so it only hides what it passes over, and
+ * nothing casts a shadow unless a page is both casting and receiving it.
+ */
+export function spreadShading(progress: number, sides: TurnSides, maxAngle = SPREAD_ANGLE): SpreadShading {
+  const s = turnShading(progress, maxAngle);
+  return {
+    angle: s.angle,
+    edge: s.edge,
+    front: sides.front ? s.front : 0,
+    back: sides.back ? s.back : 0,
+    castRight: s.edge > 0 && sides.front && sides.underRight ? s.cast : 0,
+    castLeft: s.edge < 0 && sides.back && sides.underLeft ? s.cast : 0,
   };
 }
 

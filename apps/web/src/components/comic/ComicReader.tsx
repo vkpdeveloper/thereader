@@ -232,7 +232,17 @@ export function ComicReader({ entryId }: { entryId: string }) {
     const book = bookRef.current;
     switch (action) {
       case 'close':
-        close();
+        // Escape backs out of a zoom before it closes the comic.
+        if (!stage.current?.resetZoom()) close();
+        break;
+      case 'zoomIn':
+        stage.current?.zoomIn();
+        break;
+      case 'zoomOut':
+        stage.current?.zoomOut();
+        break;
+      case 'zoomReset':
+        stage.current?.resetZoom();
         break;
       case 'next':
         stage.current?.next();
@@ -260,6 +270,21 @@ export function ComicReader({ entryId }: { entryId: string }) {
     const onKey = (e: KeyboardEvent) => keyHandler.current(e);
     document.addEventListener('keydown', onKey, true);
     return () => document.removeEventListener('keydown', onKey, true);
+  }, []);
+
+  // Pinches anywhere in the reader (the chrome too) zoom the comic or
+  // nothing, never the whole app; Safari needs its gesture events stopped.
+  const root = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = root.current;
+    if (!el) return;
+    const stop = (e: Event) => e.preventDefault();
+    el.addEventListener('gesturestart', stop, { passive: false });
+    el.addEventListener('gesturechange', stop, { passive: false });
+    return () => {
+      el.removeEventListener('gesturestart', stop);
+      el.removeEventListener('gesturechange', stop);
+    };
   }, []);
 
   // ------------------------------------------------------------ render
@@ -290,7 +315,7 @@ export function ComicReader({ entryId }: { entryId: string }) {
   }, [book, count]);
 
   return (
-    <div className="comic-reader">
+    <div ref={root} className="comic-reader">
       {book && (
         <ComicStage
           ref={stage}
