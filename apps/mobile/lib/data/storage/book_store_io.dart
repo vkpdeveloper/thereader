@@ -40,10 +40,11 @@ class IoBookStore implements BookStore {
   Future<BookSink> openSink({
     required String bookId,
     required String version,
+    String extension = 'epub',
   }) async {
     final dir = _bookDir(bookId);
     await dir.create(recursive: true);
-    final finalPath = p.join(dir.path, '${_safe(version)}.epub');
+    final finalPath = p.join(dir.path, '${_safe(version)}.${_safe(extension)}');
     final partPath = '$finalPath.part';
     final part = File(partPath);
     if (await part.exists()) await part.delete();

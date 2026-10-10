@@ -343,6 +343,7 @@ void main() {
       expect(entry.book.isComic, isTrue);
       expect(entry.book.title, 'Vector');
       expect(entry.download.isReady, isTrue);
+      expect(entry.download.path, endsWith('.cbz'));
       // Readable from the local copy straight away.
       final file = await library.openForReading(entry.id);
       expect(file.isProvisional, isFalse);

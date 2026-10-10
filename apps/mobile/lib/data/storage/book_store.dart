@@ -45,7 +45,12 @@ abstract class BookStore {
   /// Human-readable description shown in Settings.
   String get description;
 
-  Future<BookSink> openSink({required String bookId, required String version});
+  /// [extension] names the stored file: `cbz` for comics.
+  Future<BookSink> openSink({
+    required String bookId,
+    required String version,
+    String extension = 'epub',
+  });
   Future<bool> exists(String pathOrKey);
   Future<int?> sizeOf(String pathOrKey);
   Future<BookFile> open(String pathOrKey);

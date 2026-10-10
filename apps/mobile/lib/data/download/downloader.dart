@@ -44,6 +44,7 @@ class Downloader {
     final sink = await store.openSink(
       bookId: storageId ?? book.id,
       version: '${book.version}-${book.sha256}',
+      extension: book.isComic ? 'cbz' : 'epub',
     );
     final digestSink = _DigestSink();
     final hasher = sha256.startChunkedConversion(digestSink);

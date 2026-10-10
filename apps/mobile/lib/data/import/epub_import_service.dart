@@ -219,6 +219,7 @@ class EpubImportService extends ChangeNotifier {
       // download from sharing this import's .part file before adoption.
       bookId: 'import-$id',
       version: '${book.version}-$sha',
+      extension: book.isComic ? 'cbz' : 'epub',
     );
     String? storedPath;
     var queued = false;

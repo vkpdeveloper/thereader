@@ -57,6 +57,9 @@ Future<String?> pickBook() async {
     await sink.close();
     await dir.delete(recursive: true);
     rethrow;
+  } finally {
+    // Android's picker caches its own copy, up to 1 GiB for a comic.
+    await FilePicker.clearTemporaryFiles().catchError((_) {});
   }
 }
 
