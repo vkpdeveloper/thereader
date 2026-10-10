@@ -236,7 +236,7 @@ export async function inspectEpub(bytes: Uint8Array): Promise<EpubMetadata> {
   };
 }
 
-function clean(text: string, limit: number): string {
+export function clean(text: string, limit: number): string {
   let result = text.replace(/[\x00-\x1f\x7f]/g, ' ').replace(/\s+/g, ' ').trim();
   if (result.length > limit) {
     result = result.substring(0, limit);

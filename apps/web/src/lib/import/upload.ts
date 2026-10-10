@@ -1,3 +1,4 @@
+import { COMIC_TYPE } from '../comic/zip';
 import type { Book } from '../types';
 import { ImportError, type UploadBook, type UploadProgress } from './contract';
 
@@ -9,6 +10,8 @@ import { ImportError, type UploadBook, type UploadProgress } from './contract';
  */
 
 const MULTIPART_PART_BYTES = 8 * 1024 * 1024;
+/** Server limits by format (docs/comics.md "API"). */
+const MAX_BYTES = { epub: 512 * 1024 * 1024, comic: 1024 * 1024 * 1024 } as const;
 const PREPARE_TIMEOUT_MS = 30_000;
 const TRANSFER_TIMEOUT_MS = 10 * 60_000;
 const MAX_RESPONSE_CHARS = 256 * 1024;
@@ -52,10 +55,15 @@ function isRecord(value: unknown): value is Json {
 export const uploadBook: UploadBook = async ({ origin, book, epub, onProgress, signal }) => {
   const session = new UploadSession(origin, signal);
   if (signal?.aborted) throw abortedError();
+  const format = book.format ?? 'epub';
+  if (book.fileSize > MAX_BYTES[format]) {
+    throw new ImportError(format === 'comic' ? 'Comic uploads are limited to 1 GiB.' : 'Book uploads are limited to 512 MiB.', 'TOO_LARGE');
+  }
   const prepared = await session.prepare(book);
   if (prepared.uploaded) return prepared.book;
-  if (epub.size > book.fileSize) throw new ImportError('The local EPUB changed before upload.');
-  if (epub.size < book.fileSize) throw new ImportError('The local EPUB is incomplete.');
+  const label = format === 'comic' ? 'comic' : 'EPUB';
+  if (epub.size > book.fileSize) throw new ImportError(`The local ${label} changed before upload.`);
+  if (epub.size < book.fileSize) throw new ImportError(`The local ${label} is incomplete.`);
   const report = (sent: number): void => onProgress?.({ sent, total: book.fileSize } satisfies UploadProgress);
   return prepared.multipart !== null
     ? session.uploadMultipart(book, prepared.multipart, epub, report)
@@ -71,6 +79,8 @@ class UploadSession {
 
   async prepare(book: Book): Promise<PreparedUpload> {
     const body = JSON.stringify({
+      // Older servers refuse unknown fields; EPUB is their (and the) default.
+      ...(book.format === 'comic' ? { format: 'comic' } : {}),
       sha256: book.sha256,
       fileSize: book.fileSize,
       title: book.title,
@@ -113,7 +123,7 @@ class UploadSession {
     const json = await this.put(
       this.uploadUrl(url),
       epub,
-      { 'content-type': 'application/epub+zip' },
+      { 'content-type': book.format === 'comic' ? COMIC_TYPE : 'application/epub+zip' },
       (sent) => onProgress(Math.min(sent, book.fileSize)),
     );
     if (json.uploaded !== true) throw badResponse('The upload was not published.');
@@ -142,7 +152,7 @@ class UploadSession {
       );
       const etag = response.etag;
       if (response.partNumber !== number || typeof etag !== 'string' || etag.length === 0 || etag.length > 1024) {
-        throw badResponse('The server did not acknowledge the EPUB part.');
+        throw badResponse('The server did not acknowledge the uploaded part.');
       }
       acknowledged += end - start;
       onProgress(acknowledged);
@@ -153,7 +163,7 @@ class UploadSession {
       JSON.stringify({ uploadId: multipart.uploadId }),
       TRANSFER_TIMEOUT_MS,
     );
-    if (response.uploaded !== true) throw badResponse('The EPUB is uploaded but has not passed verification.');
+    if (response.uploaded !== true) throw badResponse('The file is uploaded but has not passed verification.');
     return parseBook(response, book);
   }
 
@@ -301,7 +311,7 @@ function parseMultipart(json: Json, fileSize: number): MultipartUpload {
     /[\x00-\x1f\x7f]/.test(id) ||
     size !== MULTIPART_PART_BYTES ||
     !Array.isArray(listed) ||
-    listed.length > 64
+    listed.length > Math.ceil(fileSize / MULTIPART_PART_BYTES)
   ) {
     throw badResponse('The multipart upload response is invalid.');
   }
@@ -327,7 +337,7 @@ function parseMultipart(json: Json, fileSize: number): MultipartUpload {
   return { uploadId: id, partSize: size, parts };
 }
 
-/** `Book.fromJson` plus the check that the server describes this exact EPUB. */
+/** `Book.fromJson` plus the check that the server describes this exact file. */
 function parseBook(json: Json, expected: Book): Book {
   const raw = json.book;
   if (
@@ -356,9 +366,10 @@ function parseBook(json: Json, expected: Book): Book {
     fileSize: Math.trunc(raw.fileSize),
     sha256: raw.sha256.toLowerCase(),
     updatedAt,
+    format: raw.format === 'comic' ? 'comic' : 'epub',
   };
-  if (book.sha256 !== expected.sha256 || book.fileSize !== expected.fileSize) {
-    throw badResponse('The upload response describes a different EPUB.');
+  if (book.sha256 !== expected.sha256 || book.fileSize !== expected.fileSize || book.format !== (expected.format ?? 'epub')) {
+    throw badResponse(`The upload response describes a different ${expected.format === 'comic' ? 'comic' : 'EPUB'}.`);
   }
   return book;
 }

@@ -438,7 +438,7 @@ describe('sha256Hex without WebCrypto', () => {
 describe('inspectFile: rejection', () => {
   test('refuses files that are neither ZIP nor PalmDB', async () => {
     const error = await rejection(inspectFile(fileOf(new TextEncoder().encode('just some text, not a book'), 'book.epub')));
-    expect(error.message).toBe('Choose an EPUB or MOBI file.');
+    expect(error.message).toBe('Choose an EPUB, MOBI, CBZ or CBR file.');
   });
 
   test('refuses ZIPs that are not EPUB publications', async () => {
@@ -611,6 +611,49 @@ describe('uploadBook', () => {
     expect(calls[1]!.headers['content-type']).toBe('application/epub+zip');
     expect(calls[1]!.size).toBe(1000);
     expect(progress).toEqual([500, 1000, 1000]);
+  });
+
+  test('comics prepare with format "comic", PUT as CBZ and allow 1 GiB', async () => {
+    const book: Book = {
+      ...localBook(1000),
+      id: `comic-${sha}`,
+      downloadUrl: `/v1/books/comic-${sha}/download`,
+      subjects: ['Comics'],
+      format: 'comic',
+    };
+    const calls = install((call) => {
+      if (call.url.endsWith('/v1/uploads/prepare')) {
+        return { status: 200, json: { book: serverBook(book), uploaded: false, uploadUrl: `/v1/uploads/${sha}`, multipart: null } };
+      }
+      return { status: 201, json: { book: serverBook(book), uploaded: true } };
+    });
+    const result = await uploadBook({ origin, book, epub: new Blob([new Uint8Array(1000)]) });
+    expect(result.format).toBe('comic');
+    expect(calls[0]!.body).toEqual({
+      format: 'comic',
+      sha256: sha,
+      fileSize: 1000,
+      title: 'Fixture',
+      author: 'Author',
+      description: '',
+      language: 'en',
+      subjects: ['Comics'],
+    });
+    expect(calls[1]!.headers['content-type']).toBe('application/vnd.comicbook+zip');
+
+    // An EPUB answer to a comic prepare is another book.
+    install(() => ({ status: 200, json: { book: { ...serverBook(book), format: 'epub' }, uploaded: true } }));
+    expect((await rejection(uploadBook({ origin, book, epub: new Blob([new Uint8Array(1000)]) }))).message).toBe(
+      'The upload response describes a different comic.',
+    );
+
+    // Limits apply before anything is sent: 1 GiB for comics, 512 MiB for EPUBs.
+    const none = install(() => ({ status: 500, json: {} }));
+    const huge = { ...book, fileSize: 1024 * 1024 * 1024 + 1 };
+    expect((await rejection(uploadBook({ origin, book: huge, epub: new Blob([]) }))).message).toBe('Comic uploads are limited to 1 GiB.');
+    const largeEpub = { ...localBook(600 * 1024 * 1024) };
+    expect((await rejection(uploadBook({ origin, book: largeEpub, epub: new Blob([]) }))).message).toBe('Book uploads are limited to 512 MiB.');
+    expect(none.length).toBe(0);
   });
 
   test('returns immediately when the server already has the EPUB', async () => {
