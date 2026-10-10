@@ -34,6 +34,11 @@ dependencies:
   re_highlight: ^0.0.3
   flutter_math_fork: ^0.7.4
   super_sliver_list: ^0.4.1
+  # Comic downloads continue in the OS (URLSession / WorkManager).
+  background_downloader: ^9.6.4
+  # CBR import: libarchive (Android) / UnrarKit (iOS); see vendor/rar/THEREADER.md.
+  rar:
+    path: vendor/rar
 
 dev_dependencies:
   flutter_test:
