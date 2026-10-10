@@ -326,6 +326,9 @@ class _ComicReaderViewState extends State<ComicReaderView> with TickerProviderSt
     setState(() {
       _flipToken++;
       _flip.stop();
+      // Re-pair first: a scan found during an earlier hold waits for a landing.
+      _from = null;
+      _relayout();
       _from = from.clamp(0, _spreads.length - 2);
       _fade = _reduceMotion;
       _flip.value = progress;
@@ -595,7 +598,7 @@ class _ComicReaderViewState extends State<ComicReaderView> with TickerProviderSt
     if (leaf == null) return Stack(children: children);
     final turn = front ? angle : math.pi - angle;
     final hinge = front ? Alignment.centerLeft : Alignment.centerRight;
-    final matrix = _leafMatrix(front ? turn : -turn, leaf.rect.height);
+    final matrix = _leafMatrix(front ? turn : -turn, leaf.rect.width);
     if (under != null) {
       children.add(
         _CastShadow(
@@ -624,7 +627,7 @@ class _ComicReaderViewState extends State<ComicReaderView> with TickerProviderSt
     final ga = layoutSpread(a, box, twoUp: false, aspectOf: _aspectOf).whole!;
     final gb = layoutSpread(b, box, twoUp: false, aspectOf: _aspectOf).whole!;
     final turn = p * math.pi / 2;
-    final matrix = _leafMatrix(turn, ga.rect.height);
+    final matrix = _leafMatrix(turn, ga.rect.width);
     return Stack(
       children: [
         _face(gb, opacity: (p * 6).clamp(0.0, 1.0)),
@@ -643,9 +646,10 @@ class _ComicReaderViewState extends State<ComicReaderView> with TickerProviderSt
   _Gutter _gutterFor(ComicSpread s, {bool right = false}) =>
       s.full ? _Gutter.none : (right ? _Gutter.left : _Gutter.right);
 
-  /// Camera about two page heights away: depth without fisheye at 90°.
-  Matrix4 _leafMatrix(double angle, double height) => Matrix4.identity()
-    ..setEntry(3, 2, 1 / (2.2 * math.max(height, 1)))
+  /// Camera about six leaf widths away: the free edge swells by under a
+  /// fifth at 90°, enough depth without a fisheye door swing.
+  Matrix4 _leafMatrix(double angle, double width) => Matrix4.identity()
+    ..setEntry(3, 2, 0.17 / math.max(width, 1))
     ..rotateY(angle);
 
   double _projectedEdge(Rect rect, Alignment hinge, Matrix4 m, {required bool freeRight}) {
