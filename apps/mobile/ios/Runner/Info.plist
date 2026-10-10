@@ -11,6 +11,10 @@
 	</dict>
 	<key>CFBundleDisplayName</key>
 	<string>The Reader</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>The Reader never saves to your photo library; this permission is not requested.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>The Reader never reads your photo library; this permission is not requested.</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
