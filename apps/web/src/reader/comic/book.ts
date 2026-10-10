@@ -23,6 +23,8 @@ interface Slot {
   /** Kept alive so the browser keeps the decoded bitmap for its URL. */
   img: HTMLImageElement | null;
   done: Promise<void>;
+  /** Holds one of the CONCURRENCY places until it finishes or is abandoned. */
+  counted: boolean;
 }
 
 /** Bytes read from a page's start to find its size in the header. */
@@ -93,8 +95,7 @@ export class ComicBook {
     this.wanted = pages.filter((p, i) => p >= 0 && p < this.count && pages.indexOf(p) === i);
     this.keep = new Set(this.wanted);
     for (const [page, slot] of this.slots) {
-      if (this.keep.has(page) || slot.state.status === 'loading') continue;
-      this.release(page, slot);
+      if (!this.keep.has(page)) this.release(page, slot);
     }
     this.pump();
   }
@@ -104,7 +105,13 @@ export class ComicBook {
     return Promise.all(pages.map((p) => this.slots.get(p)?.done ?? Promise.resolve())).then(() => undefined);
   }
 
+  /**
+   * A load still reading gives up its place at once, so a jump across a
+   * comic that is still downloading is not stuck behind pages left behind;
+   * its result is dropped when it arrives.
+   */
   private release(page: number, slot: Slot): void {
+    this.uncount(slot);
     if (slot.state.status === 'ready') URL.revokeObjectURL(slot.state.image.url);
     if (slot.img) slot.img.src = '';
     this.slots.delete(page);
@@ -116,14 +123,20 @@ export class ComicBook {
       const page = this.wanted.find((p) => !this.slots.has(p));
       if (page === undefined) return;
       this.running += 1;
-      const slot: Slot = { state: { status: 'loading' }, img: null, done: Promise.resolve() };
+      const slot: Slot = { state: { status: 'loading' }, img: null, done: Promise.resolve(), counted: true };
       this.slots.set(page, slot);
       slot.done = this.load(page, slot).finally(() => {
-        this.running -= 1;
+        this.uncount(slot);
         this.pump();
       });
       this.changed();
     }
+  }
+
+  private uncount(slot: Slot): void {
+    if (!slot.counted) return;
+    slot.counted = false;
+    this.running -= 1;
   }
 
   private async load(page: number, slot: Slot): Promise<void> {
