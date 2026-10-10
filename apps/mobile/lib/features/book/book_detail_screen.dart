@@ -392,7 +392,7 @@ class _DownloadPanel extends StatelessWidget {
           children: [
             Text(
               services.library.bookStore.isDurable
-                  ? 'Saved offline and checksum-verified.'
+                  ? 'Downloads are saved offline and checksum-verified.'
                   : 'Browser preview: this session only.',
               style: text.bodySmall,
             ),

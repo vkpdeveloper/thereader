@@ -281,7 +281,7 @@ function DownloadPanel({ book, entry, outdated }: { book: Book; entry: LibraryEn
     default:
       inner = (
         <>
-          <p className="t-body-sm">Saved offline and checksum-verified.</p>
+          <p className="t-body-sm">Downloads are saved offline and checksum-verified.</p>
           <QuietButton
             className="download-primary"
             label={`Download · ${formatBytes(book.fileSize)}`}
