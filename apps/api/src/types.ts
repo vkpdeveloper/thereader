@@ -1,5 +1,8 @@
+export type BookFormat = "epub" | "comic";
+
 export interface Book {
   id: string;
+  format: BookFormat;
   version: string;
   title: string;
   author: string;

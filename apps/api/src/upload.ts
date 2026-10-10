@@ -1,10 +1,15 @@
 import { isRecord, readBoundedJson } from "./body";
 import { findPublishedBookBySha, toPublicBook } from "./catalog";
+import { normalizeEntryName, orderPages } from "./comic";
+import { BOOK_CONTENT_TYPE } from "./download";
 import { ApiError } from "./errors";
-import type { Book, CatalogBook, Env } from "./types";
+import type { Book, BookFormat, CatalogBook, Env } from "./types";
 
 export const MAX_SINGLE_UPLOAD_BYTES = 64 * 1024 * 1024;
 export const MAX_EPUB_BYTES = 512 * 1024 * 1024;
+export const MAX_COMIC_BYTES = 1024 * 1024 * 1024;
+const MAX_BOOK_BYTES: Record<BookFormat, number> = { epub: MAX_EPUB_BYTES, comic: MAX_COMIC_BYTES };
+const FILE_LABEL: Record<BookFormat, string> = { epub: "EPUB", comic: "comic" };
 export const MULTIPART_PART_BYTES = 8 * 1024 * 1024;
 const MAX_PREPARE_BYTES = 64 * 1024;
 const MAX_PENDING_UPLOADS = 100;
@@ -14,6 +19,7 @@ const MAX_CENTRAL_DIRECTORY_BYTES = 4 * 1024 * 1024;
 const MAX_ZIP_ENTRIES = 10_000;
 
 interface UploadMetadata {
+  format: BookFormat;
   sha256: string;
   fileSize: number;
   title: string;
@@ -25,6 +31,7 @@ interface UploadMetadata {
 
 interface PendingUploadRow {
   sha256: string;
+  format: string;
   title: string;
   author: string;
   description: string;
@@ -80,6 +87,12 @@ function invalidUpload(message: string): ApiError {
   return new ApiError(400, "INVALID_UPLOAD", message);
 }
 
+function invalidFile(book: CatalogBook): ApiError {
+  return book.format === "comic"
+    ? new ApiError(422, "INVALID_COMIC", "The uploaded file is not a valid comic book archive.")
+    : new ApiError(422, "INVALID_EPUB", "The uploaded file is not a valid EPUB.");
+}
+
 function cleanText(value: unknown, name: string, maximum: number, allowEmpty = false): string {
   if (typeof value !== "string") throw invalidUpload(`${name} is invalid.`);
   const text = value.trim();
@@ -91,20 +104,24 @@ function cleanText(value: unknown, name: string, maximum: number, allowEmpty = f
 
 function parseMetadata(value: unknown): UploadMetadata {
   if (!isRecord(value)) throw invalidUpload("Upload metadata is invalid.");
-  const allowed = new Set(["sha256", "fileSize", "title", "author", "description", "language", "subjects"]);
+  const allowed = new Set(["format", "sha256", "fileSize", "title", "author", "description", "language", "subjects"]);
   if (Object.keys(value).some((key) => !allowed.has(key))) throw invalidUpload("Upload metadata is invalid.");
+  const format = value.format ?? "epub";
   const sha256 = value.sha256;
   const fileSize = value.fileSize;
   const language = value.language;
+  if (format !== "epub" && format !== "comic") throw invalidUpload("format must be epub or comic.");
   if (typeof sha256 !== "string" || !SHA256_PATTERN.test(sha256)) throw invalidUpload("sha256 is invalid.");
-  if (!Number.isSafeInteger(fileSize) || (fileSize as number) < 1 || (fileSize as number) > MAX_EPUB_BYTES) {
-    throw invalidUpload(`fileSize must be between 1 and ${MAX_EPUB_BYTES}.`);
+  const maximum = MAX_BOOK_BYTES[format];
+  if (!Number.isSafeInteger(fileSize) || (fileSize as number) < 1 || (fileSize as number) > maximum) {
+    throw invalidUpload(`fileSize must be between 1 and ${maximum}.`);
   }
   if (typeof language !== "string" || !LANGUAGE_PATTERN.test(language)) throw invalidUpload("language is invalid.");
   if (!Array.isArray(value.subjects) || value.subjects.length > 32) throw invalidUpload("subjects is invalid.");
   const subjects = value.subjects.map((subject) => cleanText(subject, "subject", 100));
   if (new Set(subjects).size !== subjects.length) throw invalidUpload("subjects must be unique.");
   return {
+    format,
     sha256,
     fileSize: fileSize as number,
     title: cleanText(value.title, "title", 300),
@@ -116,9 +133,10 @@ function parseMetadata(value: unknown): UploadMetadata {
 }
 
 function uploadedBook(metadata: UploadMetadata, updatedAt: string): CatalogBook {
-  const id = `epub-${metadata.sha256}`;
+  const id = `${metadata.format}-${metadata.sha256}`;
   return {
     id,
+    format: metadata.format,
     version: "1",
     title: metadata.title,
     author: metadata.author,
@@ -131,7 +149,7 @@ function uploadedBook(metadata: UploadMetadata, updatedAt: string): CatalogBook 
     fileSize: metadata.fileSize,
     sha256: metadata.sha256,
     updatedAt,
-    objectKey: `uploads/${metadata.sha256}.epub`,
+    objectKey: `uploads/${metadata.sha256}.${metadata.format === "comic" ? "cbz" : "epub"}`,
     cover: null,
   };
 }
@@ -160,16 +178,24 @@ export async function prepareUpload(request: Request, env: Env): Promise<Prepare
       const inspected = await ensureUploadedCover(env, published);
       return { book: toPublicBook(inspected), uploaded: true, uploadUrl: null, multipart: null };
     }
-    throw new ApiError(409, "PUBLISHED_OBJECT_MISSING", "The published EPUB object is unavailable.");
+    throw new ApiError(409, "PUBLISHED_OBJECT_MISSING", `The published ${FILE_LABEL[published.format]} object is unavailable.`);
   }
 
   const preparedAt = new Date().toISOString();
   const book = uploadedBook(metadata, preparedAt);
-  const existingPending = await env.DB.prepare("SELECT * FROM pending_uploads WHERE sha256 = ?")
+  let existingPending = await env.DB.prepare("SELECT * FROM pending_uploads WHERE sha256 = ?")
     .bind(metadata.sha256)
     .first<PendingUploadRow>();
   if (existingPending !== null && existingPending.file_size !== metadata.fileSize) {
     throw new ApiError(409, "UPLOAD_METADATA_CONFLICT", "The prepared file size conflicts with this checksum.");
+  }
+  if (existingPending !== null && existingPending.format !== metadata.format) {
+    // The same bytes prepared as the other format: restart under the new object key.
+    if (existingPending.upload_id !== null) {
+      await env.BOOKS.resumeMultipartUpload(existingPending.object_key, existingPending.upload_id).abort().catch(() => undefined);
+    }
+    await clearMultipartState(env, metadata.sha256);
+    existingPending = { ...existingPending, upload_id: null, part_size: null };
   }
   if (existingPending === null) {
     const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1_000).toISOString();
@@ -189,7 +215,7 @@ export async function prepareUpload(request: Request, env: Env): Promise<Prepare
   let createdUpload: R2MultipartUpload | null = null;
   if (needsMultipart && uploadId === null) {
     createdUpload = await env.BOOKS.createMultipartUpload(book.objectKey, {
-      httpMetadata: { contentType: "application/epub+zip" },
+      httpMetadata: { contentType: BOOK_CONTENT_TYPE[book.format] },
       customMetadata: { sha256: book.sha256 },
     });
     uploadId = createdUpload.uploadId;
@@ -204,11 +230,11 @@ export async function prepareUpload(request: Request, env: Env): Promise<Prepare
   try {
     await env.DB.prepare(
       `INSERT INTO pending_uploads
-         (sha256, title, author, description, language, subjects_json, file_size,
+         (sha256, format, title, author, description, language, subjects_json, file_size,
           object_key, prepared_at, upload_id, part_size)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(sha256) DO UPDATE SET
-         title = excluded.title, author = excluded.author, description = excluded.description,
+         format = excluded.format, title = excluded.title, author = excluded.author, description = excluded.description,
          language = excluded.language, subjects_json = excluded.subjects_json,
          file_size = excluded.file_size, object_key = excluded.object_key,
          prepared_at = excluded.prepared_at, upload_id = excluded.upload_id,
@@ -216,6 +242,7 @@ export async function prepareUpload(request: Request, env: Env): Promise<Prepare
     )
       .bind(
         metadata.sha256,
+        metadata.format,
         metadata.title,
         metadata.author,
         metadata.description,
@@ -262,11 +289,16 @@ function pendingBook(row: PendingUploadRow): CatalogBook {
   } catch {
     throw new ApiError(500, "UPLOAD_STATE_INVALID", "Upload state is invalid.");
   }
-  if (!Array.isArray(subjects) || !subjects.every((value) => typeof value === "string")) {
+  if (
+    !Array.isArray(subjects) ||
+    !subjects.every((value) => typeof value === "string") ||
+    (row.format !== "epub" && row.format !== "comic")
+  ) {
     throw new ApiError(500, "UPLOAD_STATE_INVALID", "Upload state is invalid.");
   }
   return uploadedBook(
     {
+      format: row.format,
       sha256: row.sha256,
       fileSize: row.file_size,
       title: row.title,
@@ -287,14 +319,12 @@ function u32(bytes: Uint8Array, offset: number): number {
   return new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength).getUint32(offset, true);
 }
 
-async function r2Range(env: Env, key: string, offset: number, length: number): Promise<Uint8Array> {
-  if (!Number.isSafeInteger(offset) || !Number.isSafeInteger(length) || offset < 0 || length < 0) {
-    throw new ApiError(422, "INVALID_EPUB", "The uploaded file is not a valid EPUB.");
-  }
-  const object = await env.BOOKS.get(key, { range: { offset, length } });
-  if (object === null || !("body" in object)) throw new ApiError(422, "INVALID_EPUB", "The uploaded file is not a valid EPUB.");
+async function r2Range(env: Env, book: CatalogBook, offset: number, length: number): Promise<Uint8Array> {
+  if (!Number.isSafeInteger(offset) || !Number.isSafeInteger(length) || offset < 0 || length < 0) throw invalidFile(book);
+  const object = await env.BOOKS.get(book.objectKey, { range: { offset, length } });
+  if (object === null || !("body" in object)) throw invalidFile(book);
   const bytes = new Uint8Array(await object.arrayBuffer());
-  if (bytes.byteLength !== length) throw new ApiError(422, "INVALID_EPUB", "The uploaded file is not a valid EPUB.");
+  if (bytes.byteLength !== length) throw invalidFile(book);
   return bytes;
 }
 
@@ -302,10 +332,19 @@ function safeZipName(name: string): boolean {
   return name.length > 0 && name.length <= 1_024 && !name.startsWith("/") && !name.includes("\\") && !name.includes("\0") && !name.split("/").includes("..");
 }
 
+// Comic readers address entries by their normalized name (docs/comics.md), so
+// that is what must be unique and free of traversal.
+function comicEntryKey(name: string): string | null {
+  const normalized = normalizeEntryName(name);
+  return name.length <= 1_024 && normalized.length > 0 && !name.includes("\0") && !normalized.split("/").includes("..")
+    ? normalized
+    : null;
+}
+
 async function centralDirectory(env: Env, book: CatalogBook): Promise<Map<string, ZipEntry>> {
   const tailLength = Math.min(book.fileSize, 65_557);
   const tailOffset = book.fileSize - tailLength;
-  const tail = await r2Range(env, book.objectKey, tailOffset, tailLength);
+  const tail = await r2Range(env, book, tailOffset, tailLength);
   let eocd = -1;
   for (let index = tail.length - 22; index >= 0; index -= 1) {
     if (u32(tail, index) === 0x06054b50 && index + 22 + u16(tail, index + 20) === tail.length) {
@@ -313,9 +352,7 @@ async function centralDirectory(env: Env, book: CatalogBook): Promise<Map<string
       break;
     }
   }
-  if (eocd < 0 || u16(tail, eocd + 4) !== 0 || u16(tail, eocd + 6) !== 0) {
-    throw new ApiError(422, "INVALID_EPUB", "The uploaded file is not a valid EPUB.");
-  }
+  if (eocd < 0 || u16(tail, eocd + 4) !== 0 || u16(tail, eocd + 6) !== 0) throw invalidFile(book);
   const entriesOnDisk = u16(tail, eocd + 8);
   const entryCount = u16(tail, eocd + 10);
   const directorySize = u32(tail, eocd + 12);
@@ -329,9 +366,9 @@ async function centralDirectory(env: Env, book: CatalogBook): Promise<Map<string
     directoryOffset === 0xffffffff ||
     directoryOffset + directorySize > book.fileSize
   ) {
-    throw new ApiError(422, "INVALID_EPUB", "The uploaded file is not a valid EPUB.");
+    throw invalidFile(book);
   }
-  const directory = await r2Range(env, book.objectKey, directoryOffset, directorySize);
+  const directory = await r2Range(env, book, directoryOffset, directorySize);
   const decoder = new TextDecoder("utf-8", { fatal: true });
   const entries = new Map<string, ZipEntry>();
   let offset = 0;
@@ -358,13 +395,14 @@ async function centralDirectory(env: Env, book: CatalogBook): Promise<Map<string
         throw new Error();
       }
       const name = decoder.decode(directory.subarray(offset + 46, offset + 46 + nameLength));
-      if (!safeZipName(name) || entries.has(name) || localOffset >= directoryOffset) throw new Error();
-      entries.set(name, { name, flags, method, compressedSize, uncompressedSize, localOffset });
+      const key = book.format === "comic" ? comicEntryKey(name) : safeZipName(name) ? name : null;
+      if (key === null || entries.has(key) || localOffset >= directoryOffset) throw new Error();
+      entries.set(key, { name, flags, method, compressedSize, uncompressedSize, localOffset });
       offset = end;
     }
     if (offset !== directory.length) throw new Error();
   } catch {
-    throw new ApiError(422, "INVALID_EPUB", "The uploaded file is not a valid EPUB.");
+    throw invalidFile(book);
   }
   return entries;
 }
@@ -398,17 +436,17 @@ async function boundedStream(stream: ReadableStream<Uint8Array>, maximum: number
 
 async function readEntry(env: Env, book: CatalogBook, entry: ZipEntry, maximum: number): Promise<Uint8Array> {
   if (entry.compressedSize > maximum || entry.uncompressedSize > maximum) throw new Error("entry is too large");
-  const header = await r2Range(env, book.objectKey, entry.localOffset, 30);
+  const header = await r2Range(env, book, entry.localOffset, 30);
   if (u32(header, 0) !== 0x04034b50 || u16(header, 6) !== entry.flags || u16(header, 8) !== entry.method) {
     throw new Error("invalid local header");
   }
   const nameLength = u16(header, 26);
   const extraLength = u16(header, 28);
   const localName = new TextDecoder("utf-8", { fatal: true }).decode(
-    await r2Range(env, book.objectKey, entry.localOffset + 30, nameLength),
+    await r2Range(env, book, entry.localOffset + 30, nameLength),
   );
   if (localName !== entry.name) throw new Error("local name mismatch");
-  const compressed = await r2Range(env, book.objectKey, entry.localOffset + 30 + nameLength + extraLength, entry.compressedSize);
+  const compressed = await r2Range(env, book, entry.localOffset + 30 + nameLength + extraLength, entry.compressedSize);
   const output = entry.method === 0
     ? compressed
     : await boundedStream(
@@ -511,6 +549,14 @@ function detectCover(bytes: Uint8Array): Omit<ExtractedCover, "bytes"> | null {
     }
     contentType = "image/webp";
     extension = "webp";
+  } else if (bytes.length >= 26 && bytes[0] === 0x42 && bytes[1] === 0x4d) {
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    // BITMAPCOREHEADER (12 bytes) has 16-bit sizes; later headers signed 32-bit, negative height for top-down rows.
+    dimensions = u32(bytes, 14) === 12
+      ? [u16(bytes, 18), u16(bytes, 20)]
+      : [view.getInt32(18, true), Math.abs(view.getInt32(22, true))];
+    contentType = "image/bmp";
+    extension = "bmp";
   } else {
     dimensions = jpegDimensions(bytes);
     if (dimensions !== null) {
@@ -643,7 +689,7 @@ function decodeXmlPath(value: string): string {
 async function validateEpub(env: Env, book: CatalogBook): Promise<ExtractedCover | null> {
   try {
     if (book.fileSize < 80) throw new Error();
-    const first = await r2Range(env, book.objectKey, 0, Math.min(book.fileSize, 80));
+    const first = await r2Range(env, book, 0, Math.min(book.fileSize, 80));
     if (
       u32(first, 0) !== 0x04034b50 ||
       (u16(first, 6) & 0x09) !== 0 ||
@@ -680,8 +726,32 @@ async function validateEpub(env: Env, book: CatalogBook): Promise<ExtractedCover
     return await extractCover(env, book, entries, packagePath, packageXml);
   } catch (error) {
     if (error instanceof ApiError) throw error;
-    throw new ApiError(422, "INVALID_EPUB", "The uploaded file is not a valid EPUB.");
+    throw invalidFile(book);
   }
+}
+
+// A comic is a ZIP with at least one page (docs/comics.md). Only the tail, the
+// central directory and the first page are read; that page becomes the cover
+// when it is a raster image within the cover limits, otherwise there is none.
+async function validateComic(env: Env, book: CatalogBook): Promise<ExtractedCover | null> {
+  try {
+    if (book.fileSize < 22 || u32(await r2Range(env, book, 0, 4), 0) !== 0x04034b50) throw new Error();
+    const entries = await centralDirectory(env, book);
+    const first = orderPages(entries.keys())[0];
+    if (first === undefined) throw new Error();
+    const page = entries.get(first)!;
+    if (page.compressedSize > MAX_RASTER_COVER_BYTES || page.uncompressedSize > MAX_RASTER_COVER_BYTES) return null;
+    const bytes = await readEntry(env, book, page, MAX_RASTER_COVER_BYTES);
+    const detected = detectCover(bytes);
+    return detected === null || detected.contentType === "image/svg+xml" ? null : { bytes, ...detected };
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw invalidFile(book);
+  }
+}
+
+function validateBook(env: Env, book: CatalogBook): Promise<ExtractedCover | null> {
+  return book.format === "comic" ? validateComic(env, book) : validateEpub(env, book);
 }
 
 function validMultipartRow(row: PendingUploadRow): row is PendingUploadRow & { upload_id: string; part_size: number } {
@@ -754,7 +824,7 @@ export async function uploadEpubPart(
   if (!Number.isSafeInteger(contentLength) || contentLength !== expectedLength) {
     throw new ApiError(400, "INVALID_CONTENT_LENGTH", "Content-Length does not match the multipart part size.");
   }
-  if (request.body === null) throw new ApiError(400, "UPLOAD_BODY_REQUIRED", "EPUB part bytes are required.");
+  if (request.body === null) throw new ApiError(400, "UPLOAD_BODY_REQUIRED", "Part bytes are required.");
   let part: R2UploadedPart;
   try {
     part = await env.BOOKS.resumeMultipartUpload(row.object_key, row.upload_id).uploadPart(partNumber, request.body);
@@ -785,7 +855,7 @@ async function resetMultipart(env: Env, row: PendingUploadRow): Promise<void> {
 async function objectSha256(env: Env, book: CatalogBook): Promise<string> {
   const object = await env.BOOKS.get(book.objectKey);
   if (object === null || object.size !== book.fileSize) {
-    throw new ApiError(422, "UPLOAD_INCOMPLETE", "The EPUB upload was incomplete.");
+    throw new ApiError(422, "UPLOAD_INCOMPLETE", `The ${FILE_LABEL[book.format]} upload was incomplete.`);
   }
   const workerCrypto = crypto as typeof crypto & { DigestStream: typeof DigestStream };
   const digestStream = new workerCrypto.DigestStream("SHA-256");
@@ -826,7 +896,7 @@ async function ensureUploadedCover(env: Env, book: CatalogBook): Promise<Catalog
     .bind(book.sha256)
     .first<{ cover_checked_at: string | null }>();
   if (state === null || state.cover_checked_at !== null) return book;
-  const extracted = await validateEpub(env, book);
+  const extracted = await validateBook(env, book);
   const inspected = await storeExtractedCover(env, book, extracted);
   const checkedAt = new Date().toISOString();
   await env.DB.prepare(
@@ -851,13 +921,14 @@ async function publishBook(env: Env, book: CatalogBook): Promise<{ status: numbe
   const publishResults = await env.DB.batch([
     env.DB.prepare(
       `INSERT INTO uploaded_books
-         (id, sha256, version, title, author, description, language, subjects_json,
+         (id, format, sha256, version, title, author, description, language, subjects_json,
           file_size, object_key, updated_at, cover_id, cover_object_key,
           cover_content_type, cover_file_size, cover_etag, cover_checked_at)
-       VALUES (?, ?, '1', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       VALUES (?, ?, ?, '1', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(sha256) DO NOTHING`,
     ).bind(
       book.id,
+      book.format,
       book.sha256,
       book.title,
       book.author,
@@ -913,8 +984,8 @@ export async function completeMultipartUpload(
     part.etag.length > 0 &&
     part.etag.length <= 512
   ));
-  if (!complete) throw new ApiError(409, "MULTIPART_INCOMPLETE", "Upload all EPUB parts before completing the upload.");
   const book = pendingBook(row);
+  if (!complete) throw new ApiError(409, "MULTIPART_INCOMPLETE", `Upload all ${FILE_LABEL[book.format]} parts before completing the upload.`);
   try {
     await env.BOOKS.resumeMultipartUpload(row.object_key, row.upload_id).complete(
       parts.results.map((part) => ({ partNumber: part.part_number, etag: part.etag })),
@@ -931,7 +1002,7 @@ export async function completeMultipartUpload(
     if (await objectSha256(env, book) !== book.sha256) {
       throw new ApiError(422, "CHECKSUM_MISMATCH", "The uploaded bytes do not match sha256.");
     }
-    extractedCover = await validateEpub(env, book);
+    extractedCover = await validateBook(env, book);
   } catch (error) {
     await resetMultipart(env, row);
     throw error;
@@ -949,25 +1020,27 @@ export async function uploadEpub(request: Request, env: Env, sha256: string): Pr
     .bind(sha256)
     .first<PendingUploadRow>();
   if (row === null) throw new ApiError(404, "UPLOAD_NOT_PREPARED", "Upload must be prepared first.");
-  if (row.upload_id !== null || row.file_size > MAX_SINGLE_UPLOAD_BYTES) {
-    throw new ApiError(409, "USE_MULTIPART_UPLOAD", "This EPUB must be uploaded with the multipart endpoints.");
-  }
   const book = pendingBook(row);
+  const label = FILE_LABEL[book.format];
+  if (row.upload_id !== null || row.file_size > MAX_SINGLE_UPLOAD_BYTES) {
+    throw new ApiError(409, "USE_MULTIPART_UPLOAD", `This ${label} must be uploaded with the multipart endpoints.`);
+  }
+  const expectedType = BOOK_CONTENT_TYPE[book.format];
   const contentType = request.headers.get("Content-Type")?.split(";", 1)[0]?.trim().toLowerCase();
-  if (contentType !== "application/epub+zip") {
-    throw new ApiError(415, "UNSUPPORTED_MEDIA_TYPE", "Content-Type must be application/epub+zip.");
+  if (contentType !== expectedType) {
+    throw new ApiError(415, "UNSUPPORTED_MEDIA_TYPE", `Content-Type must be ${expectedType}.`);
   }
   const contentLength = Number(request.headers.get("Content-Length"));
   if (!Number.isSafeInteger(contentLength) || contentLength !== book.fileSize) {
     throw new ApiError(400, "INVALID_CONTENT_LENGTH", "Content-Length must match the prepared file size.");
   }
-  if (request.body === null) throw new ApiError(400, "UPLOAD_BODY_REQUIRED", "EPUB bytes are required.");
+  if (request.body === null) throw new ApiError(400, "UPLOAD_BODY_REQUIRED", `${label} bytes are required.`);
 
   let stored: R2Object;
   try {
     stored = await env.BOOKS.put(book.objectKey, request.body, {
       sha256: hexDigest(book.sha256),
-      httpMetadata: { contentType: "application/epub+zip" },
+      httpMetadata: { contentType: expectedType },
       customMetadata: { sha256: book.sha256 },
     });
   } catch (error) {
@@ -975,14 +1048,14 @@ export async function uploadEpub(request: Request, env: Env, sha256: string): Pr
     if (message.includes("10037") || message.toLowerCase().includes("digest")) {
       throw new ApiError(422, "CHECKSUM_MISMATCH", "The uploaded bytes do not match sha256.");
     }
-    throw new ApiError(422, "UPLOAD_INCOMPLETE", "The EPUB upload was incomplete.");
+    throw new ApiError(422, "UPLOAD_INCOMPLETE", `The ${label} upload was incomplete.`);
   }
   if (stored.size !== book.fileSize || stored.checksums.sha256 === undefined || digestHex(stored.checksums.sha256) !== book.sha256) {
     throw new ApiError(422, "CHECKSUM_MISMATCH", "The uploaded bytes do not match sha256.");
   }
   let extractedCover: ExtractedCover | null;
   try {
-    extractedCover = await validateEpub(env, book);
+    extractedCover = await validateBook(env, book);
   } catch (error) {
     await env.BOOKS.delete(book.objectKey);
     throw error;
