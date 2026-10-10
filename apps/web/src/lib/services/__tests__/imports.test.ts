@@ -63,6 +63,26 @@ async function setup(upload: UploadBook, kv = new MemoryKv(), blobs = new Memory
 const file = () => new File(['ignored'], 'book.epub');
 
 describe('import queue', () => {
+  test('a comic is readable locally at once as a CBZ and uploads with its format', async () => {
+    const cbz = new Blob(['cbz bytes']);
+    const comic: InspectedBook = { ...(await inspected('cbz bytes')), epub: cbz, sha256: await sha256OfBlob(cbz), format: 'comic' };
+    const uploaded: Book[] = [];
+    const s = await setup(async ({ book }) => {
+      uploaded.push(book);
+      return { ...book, version: '1' };
+    });
+    s.setNext(comic);
+    const entry = await s.imports.importFile(new File(['ignored'], 'issue.cbr'));
+    expect(entry.id).toBe(entryIdentity(`comic-${comic.sha256}`, ORIGIN));
+    expect(entry.book).toMatchObject({ format: 'comic', downloadUrl: `/v1/books/comic-${comic.sha256}/download` });
+    expect(s.library.canRead(entry.id)).toBe(true);
+    const blob = await s.library.openForReading(entry.id);
+    expect(blob.type).toBe('application/vnd.comicbook+zip');
+    expect(await blob.text()).toBe('cbz bytes');
+    for (let i = 0; i < 50 && uploaded.length === 0; i++) await new Promise((r) => setTimeout(r, 0));
+    expect(uploaded[0]?.format).toBe('comic');
+  });
+
   test('imports locally, uploads, and adopts the canonical server edition under an alias', async () => {
     const book = await inspected('epub bytes');
     let uploads = 0;
