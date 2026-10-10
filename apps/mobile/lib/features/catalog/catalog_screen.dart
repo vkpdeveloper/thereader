@@ -287,7 +287,10 @@ class _CatalogRow extends StatelessWidget {
       subtitle: Text(
         [
           book.author,
-          if (book.subjects.isNotEmpty) book.subjects.first,
+          if (book.isComic)
+            'Comic'
+          else if (book.subjects.isNotEmpty)
+            book.subjects.first,
           formatBytes(book.fileSize),
         ].join(' · '),
         maxLines: 1,

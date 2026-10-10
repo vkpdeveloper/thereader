@@ -116,7 +116,16 @@ class BookGridItem extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 6),
-              status,
+              if (entry.book.isComic)
+                Row(
+                  children: [
+                    Text('COMIC', style: text.labelSmall?.copyWith(fontSize: 10, letterSpacing: 0.6)),
+                    const SizedBox(width: Space.sm),
+                    Expanded(child: status),
+                  ],
+                )
+              else
+                status,
             ],
           ),
         ),

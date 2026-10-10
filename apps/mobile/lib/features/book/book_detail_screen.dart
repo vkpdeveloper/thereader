@@ -110,7 +110,9 @@ class BookDetailScreen extends StatelessWidget {
                 spacing: Space.sm,
                 runSpacing: Space.sm,
                 children: [
-                  for (final s in current.subjects) Tag(s),
+                  if (current.isComic) const Tag('Comic'),
+                  for (final s in current.subjects)
+                    if (!current.isComic || s != 'Comics') Tag(s),
                   Tag(current.language.toUpperCase()),
                   Tag(formatBytes(current.fileSize)),
                 ],
@@ -252,6 +254,17 @@ class _DownloadPanel extends StatelessWidget {
     final colors = context.colors;
     final d = entry?.download ?? const DownloadState();
     final lib = services.library;
+    // A comic in the library reads page by page from the server before (or
+    // without) its offline copy.
+    final readsOnline =
+        entry != null && entry!.book.isComic && lib.canRead(entry!.id);
+    final readOnline = QuietButton(
+      label: entry?.progress == null
+          ? 'Read online'
+          : 'Continue reading online',
+      expand: true,
+      onPressed: () => ReaderScreen.open(context, entry!),
+    );
 
     Widget inner;
     switch (d.status) {
@@ -261,8 +274,12 @@ class _DownloadPanel extends StatelessWidget {
         final label = d.status == DownloadStatus.verifying
             ? 'Verifying SHA-256'
             : d.status == DownloadStatus.queued
-            ? 'Connecting'
+            ? (book.isComic ? 'Queued' : 'Connecting')
             : '${formatBytes(d.receivedBytes)} of ${formatBytes(d.totalBytes ?? book.fileSize)}';
+        // Comics download in the OS, which reports pauses and retries.
+        final note = book.isComic
+            ? [?d.error, 'Continues in the background.'].join(' · ')
+            : null;
         // Once the opening slice is cached the book is readable while the rest
         // arrives. It is not "downloaded": that word waits for verification.
         final readable = entry != null && lib.canRead(entry!.id);
@@ -288,6 +305,10 @@ class _DownloadPanel extends StatelessWidget {
                 minHeight: 2,
               ),
             ),
+            if (note != null) ...[
+              const SizedBox(height: Space.sm),
+              Text(note, style: text.bodySmall),
+            ],
             if (readable) ...[
               const SizedBox(height: Space.md),
               QuietButton(
@@ -359,6 +380,10 @@ class _DownloadPanel extends StatelessWidget {
               expand: true,
               onPressed: () => lib.download(book, source),
             ),
+            if (readsOnline) ...[
+              const SizedBox(height: Space.sm),
+              readOnline,
+            ],
           ],
         );
       case DownloadStatus.none:
@@ -379,6 +404,10 @@ class _DownloadPanel extends StatelessWidget {
               icon: Icons.arrow_downward,
               onPressed: () => lib.download(book, source),
             ),
+            if (readsOnline) ...[
+              const SizedBox(height: Space.sm),
+              readOnline,
+            ],
           ],
         );
     }

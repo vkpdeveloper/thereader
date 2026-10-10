@@ -136,7 +136,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                                     )
                                   : QuietIconButton(
                                       icon: Icons.file_upload_outlined,
-                                      label: 'Import EPUB or MOBI',
+                                      label: 'Import a book or comic',
                                       // Uploads run in the background; only the pick
                                       // and local copy block a second import.
                                       onPressed: _import,
@@ -159,7 +159,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   title: 'Nothing here yet.',
                   body: [
                     canImport
-                        ? 'Browse the library and download a book, or import an EPUB or MOBI from your files with the button above.'
+                        ? 'Browse the library and download a book, or import an EPUB, MOBI, CBZ or CBR from your files with the button above.'
                         : 'Browse the library and download a book.',
                     if (articles != null) 'Save any article from the web with the + button.',
                     'Everything is kept on this device for offline reading.',
