@@ -1,4 +1,4 @@
-import { createExtractorFromData, UnrarError } from 'node-unrar-js/esm';
+import { createExtractorFromData, UnrarError } from 'node-unrar-js/esm/index.esm';
 import { normalizeEntryName, pickComicInfo } from '../comic/pages';
 import { crc32 } from './bytes';
 import { repackOrder, type RepackEntry } from './cbzWriter';
