@@ -340,7 +340,13 @@ export class LibraryStoreImpl extends Emitter<LibrarySnapshot> implements Librar
     let e: LibraryEntry = existing
       ? { ...existing, book, progress: existing.book.sha256 !== book.sha256 ? null : existing.progress }
       : newEntry(book, origin, nowIso(this.now));
-    e = { ...e, download: { status: 'queued', receivedBytes: 0, totalBytes: book.fileSize, path: null, error: null } };
+    // A failed comic of this edition reports its saved prefix until the
+    // download confirms it, so resuming does not flash back to zero.
+    const resumable =
+      book.format === 'comic' && existing?.download.status === 'failed' && existing.book.sha256 === book.sha256
+        ? existing.download.receivedBytes
+        : 0;
+    e = { ...e, download: { status: 'queued', receivedBytes: resumable, totalBytes: book.fileSize, path: null, error: null } };
     this.cancelRequests.delete(id);
     this.put(e);
 

@@ -651,7 +651,7 @@ describe('comic downloads', () => {
     unsubscribe();
     expect(second.entry(id)!.download.status).toBe('ready');
     expect(healthy.requests.every((r) => startOf(r) >= savedEnd)).toBe(true);
-    expect(progress.filter((received) => received > 0 && received < savedEnd)).toEqual([]);
+    expect(progress.filter((received) => received < savedEnd)).toEqual([]);
     const stored = (await blobs.get<Blob>(bookBlobKey(id, book.sha256)))!;
     expect(stored.size).toBe(bytes.length);
     expect(new Uint8Array(await stored.arrayBuffer())).toEqual(bytes);
