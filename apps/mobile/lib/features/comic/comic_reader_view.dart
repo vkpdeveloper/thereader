@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/scheduler.dart';
@@ -58,8 +60,11 @@ class ComicViewController extends ChangeNotifier {
 }
 
 /// Pages on pure black: single pages on portrait phones, two-page spreads
-/// elsewhere, turned with a 3D hinge flip that follows the finger. Pinch or
-/// double-tap zooms; while zoomed, drags pan instead of turning.
+/// elsewhere, turned with a 3D hinge flip that follows the finger. Taps on the
+/// outer thirds turn at once; a double tap in the centre third (anywhere while
+/// zoomed) zooms, and a single centre tap toggles the chrome once it is clear
+/// no second tap is coming. Pinch zooms too; while zoomed, drags pan instead
+/// of turning.
 class ComicReaderView extends StatefulWidget {
   const ComicReaderView({
     super.key,
@@ -121,7 +126,11 @@ class _ComicReaderViewState extends State<ComicReaderView> with TickerProviderSt
   double _dragDx = 0;
 
   bool _zoomed = false;
-  Offset? _doubleTapAt;
+
+  /// A centre tap waiting out the double-tap window before toggling chrome.
+  Timer? _centerTap;
+  Offset? _centerTapAt;
+  bool _secondTap = false;
 
   Size _viewSize = Size.zero;
   double _dpr = 1;
@@ -162,6 +171,7 @@ class _ComicReaderViewState extends State<ComicReaderView> with TickerProviderSt
     if (widget.controller._view == this) widget.controller._view = null;
     widget.store.removeListener(_onStore);
     _zoom.removeListener(_onZoom);
+    _centerTap?.cancel();
     _flip.dispose();
     _zoomAnim.dispose();
     _zoom.dispose();
@@ -339,27 +349,56 @@ class _ComicReaderViewState extends State<ComicReaderView> with TickerProviderSt
 
   // Gestures ---------------------------------------------------------------
 
-  void _onTapUp(TapUpDetails details) {
+  /// Outer thirds turn on the tap itself: no recognizer waits for a second
+  /// tap there, so quick taps flip quickly. Only the centre third (or the
+  /// whole view while zoomed) listens for a double tap, so only the chrome
+  /// toggle waits out [kDoubleTapTimeout].
+  bool _isCenter(Offset at) {
     final width = _viewSize.width;
-    final x = details.localPosition.dx;
-    if (_zoomed || width <= 0) {
-      widget.onCenterTap?.call();
-    } else if (x < width / 3) {
-      _turn(-1);
-    } else if (x > width * 2 / 3) {
-      _turn(1);
-    } else {
-      widget.onCenterTap?.call();
-    }
+    return _zoomed || width <= 0 || (at.dx >= width / 3 && at.dx <= width * 2 / 3);
   }
 
-  void _onDoubleTap() {
+  void _onTapDown(TapDownDetails details) {
+    final first = _centerTapAt;
+    _secondTap = (_centerTap?.isActive ?? false) &&
+        first != null &&
+        _isCenter(details.localPosition) &&
+        (details.localPosition - first).distance <= kDoubleTapSlop;
+  }
+
+  void _onTapUp(TapUpDetails details) {
+    final at = details.localPosition;
+    if (_secondTap) {
+      _secondTap = false;
+      _cancelCenterTap();
+      _onDoubleTap(at);
+      return;
+    }
+    if (!_isCenter(at)) {
+      _cancelCenterTap();
+      _turn(at.dx < _viewSize.width / 2 ? -1 : 1);
+      return;
+    }
+    _cancelCenterTap();
+    _centerTapAt = at;
+    _centerTap = Timer(kDoubleTapTimeout, () {
+      _centerTapAt = null;
+      if (mounted) widget.onCenterTap?.call();
+    });
+  }
+
+  void _cancelCenterTap() {
+    _centerTap?.cancel();
+    _centerTap = null;
+    _centerTapAt = null;
+  }
+
+  void _onDoubleTap(Offset at) {
     if (_zoomed) {
       _resetZoom(animate: true);
       return;
     }
     if (_from != null) return;
-    final at = _doubleTapAt ?? _viewSize.center(Offset.zero);
     const scale = 2.5;
     final end = Matrix4.identity()
       ..translateByDouble(-at.dx * (scale - 1), -at.dy * (scale - 1), 0, 1)
@@ -458,33 +497,33 @@ class _ComicReaderViewState extends State<ComicReaderView> with TickerProviderSt
         ? velocity < -fling || (velocity < fling && p > 0.5)
         : velocity > fling || (velocity > -fling && p < 0.5);
     final end = complete ? (forward ? 1.0 : 0.0) : (forward ? 0.0 : 1.0);
-    // Finger speed in flip progress per second (the leaf edge crosses about
-    // two page widths over a spread turn, one for a single page).
-    final travel = _leafWidth() * (_twoUp ? 2 : 1);
+    // Finger speed in flip progress per second: the leaf edge travels
+    // `cos(start) - cos(end)` leaf widths over the turn (two for a spread,
+    // one for a single page or a one-sided spread turn).
+    final turn = _turnOf(_from!);
+    final travel = turn.width * (math.cos(turn.start) - math.cos(turn.end));
     _animateTo(end, velocity: travel > 0 ? -velocity / travel : 0);
   }
 
-  double _leafWidth() {
-    final from = _from;
-    if (from == null) return _viewSize.width;
+  _Turn _turnOf(int from) {
     final box = Offset.zero & _viewSize;
     final a = layoutSpread(_spreads[from], box, twoUp: _twoUp, aspectOf: _aspectOf);
-    final face = _twoUp ? (a.right ?? a.left) : a.whole;
-    return face?.rect.width ?? _viewSize.width / 2;
+    if (!_twoUp) return _Turn(0, math.pi / 2, a.whole?.rect.width ?? box.width);
+    final b = layoutSpread(_spreads[from + 1], box, twoUp: true, aspectOf: _aspectOf);
+    return _Turn.spread(a, b, box.width / 2);
   }
 
   /// Keeps the leaf's free edge under the finger: its projected x is
   /// `cos(angle)` of the leaf width from the hinge.
   double _progressForDrag(double dx) {
-    final w = _leafWidth();
-    if (w <= 0) return _target;
-    final forward = _target == 0;
-    if (_twoUp) {
-      final c = (forward ? 1 + dx / w : -1 + dx / w).clamp(-1.0, 1.0);
-      return math.acos(c) / math.pi;
-    }
-    final c = (forward ? 1 + dx / w : dx / w).clamp(0.0, 1.0);
-    return math.acos(c) / (math.pi / 2);
+    final turn = _turnOf(_from!);
+    final w = turn.width;
+    if (w <= 0 || turn.end <= turn.start) return _target;
+    final start = _target == 0 ? turn.start : turn.end;
+    final lo = math.min(math.cos(turn.start), math.cos(turn.end));
+    final hi = math.max(math.cos(turn.start), math.cos(turn.end));
+    final c = (math.cos(start) + dx / w).clamp(lo, hi);
+    return ((math.acos(c) - turn.start) / (turn.end - turn.start)).clamp(0.0, 1.0);
   }
 
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
@@ -523,9 +562,9 @@ class _ComicReaderViewState extends State<ComicReaderView> with TickerProviderSt
               }
               return GestureDetector(
                 behavior: HitTestBehavior.opaque,
+                onTapDown: _onTapDown,
                 onTapUp: _onTapUp,
-                onDoubleTapDown: (d) => _doubleTapAt = d.localPosition,
-                onDoubleTap: _onDoubleTap,
+                onTapCancel: () => _secondTap = false,
                 child: InteractiveViewer(
                   transformationController: _zoom,
                   minScale: 1,
@@ -581,19 +620,33 @@ class _ComicReaderViewState extends State<ComicReaderView> with TickerProviderSt
 
   /// The right-hand leaf of [a] turns about the spine; past 90° its back is
   /// [b]'s left page. Beneath: [a]'s left page and [b]'s right page.
+  ///
+  /// A side with no page never turns as blank paper: when [a] has nothing on
+  /// the right (a page alone before a double-page scan) the turn runs only
+  /// from 90° to 180°, [b]'s left page rising out of the spine while its
+  /// right page fades into the empty half; when [b] had nothing on the left
+  /// the turn would stop at 90° the same way. Shadows only fall on pages.
   Widget _spreadFlip(ComicSpread a, ComicSpread b, double p, Rect box) {
     final ga = layoutSpread(a, box, twoUp: true, aspectOf: _aspectOf);
     final gb = layoutSpread(b, box, twoUp: true, aspectOf: _aspectOf);
-    final angle = p * math.pi;
+    final range = _Turn.spread(ga, gb, box.width / 2);
+    final angle = range.start + (range.end - range.start) * p;
     final front = angle < math.pi / 2;
     final leaf = front ? ga.right : gb.left;
     final under = front ? gb.right : ga.left;
+    // A one-sided turn starts or ends edge-on at the spine; its shadow and
+    // the page it uncovers ease in from nothing there.
+    final rising = ga.right == null ? (p * 4).clamp(0.0, 1.0) : 1.0;
+    final sinking = gb.left == null ? ((1 - p) * 4).clamp(0.0, 1.0) : 1.0;
     final children = <Widget>[];
     if (ga.left != null) {
-      children.add(_face(ga.left!, gutter: _gutterFor(a), opacity: front ? ((1 - p) * 6).clamp(0.0, 1.0) : 1));
+      // Covered by the landing leaf as p → 1; with no leaf to land, it fades.
+      final opacity = gb.left == null ? (1 - p) * 2 : (front ? 1.0 : (1 - p) * 6);
+      children.add(_face(ga.left!, gutter: _gutterFor(a), opacity: opacity.clamp(0.0, 1.0)));
     }
     if (gb.right != null) {
-      children.add(_face(gb.right!, gutter: _gutterFor(b, right: true), opacity: front ? (p * 6).clamp(0.0, 1.0) : 1));
+      final opacity = ga.right == null ? p * 4 : (front ? p * 6 : 1.0);
+      children.add(_face(gb.right!, gutter: _gutterFor(b, right: true), opacity: opacity.clamp(0.0, 1.0)));
     }
     if (leaf == null) return Stack(children: children);
     final turn = front ? angle : math.pi - angle;
@@ -605,7 +658,7 @@ class _ComicReaderViewState extends State<ComicReaderView> with TickerProviderSt
           clip: under.rect,
           edge: _projectedEdge(leaf.rect, hinge, matrix, freeRight: front),
           towardRight: front,
-          strength: math.sin(turn),
+          strength: math.sin(turn) * rising * sinking,
           width: leaf.rect.width * 0.45,
         ),
       );
@@ -623,17 +676,26 @@ class _ComicReaderViewState extends State<ComicReaderView> with TickerProviderSt
   }
 
   /// A single page hinges on its left edge and lifts away to the page beneath.
+  /// The page beneath shows only where the leaf's free edge has swept past,
+  /// so a taller page never ghosts in around a shorter leaf (a double-page
+  /// scan) still lying flat.
   Widget _singleFlip(ComicSpread a, ComicSpread b, double p, Rect box) {
     final ga = layoutSpread(a, box, twoUp: false, aspectOf: _aspectOf).whole!;
     final gb = layoutSpread(b, box, twoUp: false, aspectOf: _aspectOf).whole!;
     final turn = p * math.pi / 2;
     final matrix = _leafMatrix(turn, ga.rect.width);
+    final edge = _projectedEdge(ga.rect, Alignment.centerLeft, matrix, freeRight: true);
     return Stack(
       children: [
-        _face(gb, opacity: (p * 6).clamp(0.0, 1.0)),
+        Positioned.fill(
+          child: ClipRect(
+            clipper: _RightOf(p < 1 ? edge : double.negativeInfinity),
+            child: Stack(children: [_face(gb)]),
+          ),
+        ),
         _CastShadow(
           clip: gb.rect,
-          edge: _projectedEdge(ga.rect, Alignment.centerLeft, matrix, freeRight: true),
+          edge: edge,
           towardRight: true,
           strength: math.sin(turn),
           width: ga.rect.width * 0.45,
@@ -698,7 +760,37 @@ class _ComicReaderViewState extends State<ComicReaderView> with TickerProviderSt
       );
 }
 
+/// The angles a flip sweeps (0 = lying on the right, π = on the left) and
+/// the width of the leaf whose free edge follows the finger.
+@immutable
+class _Turn {
+  const _Turn(this.start, this.end, this.width);
+
+  /// Only sides with a page turn: no front skips 0°–90°, no back 90°–180°.
+  factory _Turn.spread(SpreadGeometry a, SpreadGeometry b, double fallbackWidth) => _Turn(
+    a.right == null && b.left != null ? math.pi / 2 : 0,
+    b.left == null && a.right != null ? math.pi / 2 : math.pi,
+    (a.right ?? b.left)?.rect.width ?? fallbackWidth,
+  );
+
+  final double start;
+  final double end;
+  final double width;
+}
+
 enum _Gutter { none, left, right }
+
+/// Everything right of [x].
+class _RightOf extends CustomClipper<Rect> {
+  const _RightOf(this.x);
+  final double x;
+
+  @override
+  Rect getClip(Size size) => Rect.fromLTRB(x.clamp(0.0, size.width), 0, size.width, size.height);
+
+  @override
+  bool shouldReclip(_RightOf old) => old.x != x;
+}
 
 /// One page (or half of a double-page scan) as a cached raster, or a quiet
 /// placeholder while it loads.

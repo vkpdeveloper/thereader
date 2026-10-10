@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:archive/archive.dart';
@@ -92,9 +93,12 @@ void main() {
   Future<void> tapThird(WidgetTester tester, {required bool right}) async {
     final size = tester.getSize(find.byType(ComicReaderView));
     await tester.tapAt(Offset(right ? size.width - 20 : 20, size.height / 2));
-    // Single taps wait out the double-tap window.
-    await tester.pump(kDoubleTapTimeout + const Duration(milliseconds: 10));
+    // Edge taps turn at once; no double-tap window to wait out.
+    await tester.pump();
   }
+
+  /// The flipping leaf's rect before its 3D turn is applied.
+  Rect leafRect(WidgetTester tester) => tester.getRect(leaf());
 
   testWidgets('a tap on the outer thirds turns the page with a hinge flip', (tester) async {
     final pages = await FakePages.make(tester, List.filled(4, portrait));
@@ -119,6 +123,43 @@ void main() {
     expect(controller.firstPage, 0);
   });
 
+  testWidgets('an edge tap starts the turn on the next frame, without a double-tap wait', (
+    tester,
+  ) async {
+    final pages = await FakePages.make(tester, List.filled(6, portrait));
+    var centre = 0;
+    await setScreen(tester, const Size(390, 844));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ComicReaderView(store: pages.store(), controller: controller, onCenterTap: () => centre++),
+      ),
+    );
+    await tester.pump();
+    await tester.tapAt(const Offset(370, 422));
+    await tester.pump(const Duration(milliseconds: 16));
+    expect(leaf(), findsOneWidget, reason: 'turning one frame after the tap');
+    await tester.pump(const Duration(milliseconds: 16));
+    final turned = leafMatrix(tester).entry(0, 0);
+    expect(turned, lessThan(1), reason: 'the leaf is already moving');
+
+    // Quick taps on an edge are quick turns, never a zoom.
+    await tester.pumpAndSettle();
+    await tester.tapAt(const Offset(370, 422));
+    await tester.pump(const Duration(milliseconds: 60));
+    await tester.tapAt(const Offset(370, 422));
+    await tester.pumpAndSettle();
+    expect(controller.firstPage, 3);
+    expect(
+      tester.widget<InteractiveViewer>(find.byType(InteractiveViewer)).transformationController!.value.getMaxScaleOnAxis(),
+      closeTo(1, 0.01),
+    );
+    await tester.tapAt(const Offset(20, 422));
+    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(controller.firstPage, 2);
+    expect(centre, 0);
+  });
+
   testWidgets('the centre third toggles chrome instead of turning', (tester) async {
     final pages = await FakePages.make(tester, List.filled(3, portrait));
     var taps = 0;
@@ -130,10 +171,97 @@ void main() {
     );
     await tester.pump();
     await tester.tapAt(const Offset(195, 422));
-    await tester.pump(kDoubleTapTimeout + const Duration(milliseconds: 10));
+    await tester.pump(kDoubleTapTimeout - const Duration(milliseconds: 50));
+    expect(taps, 0, reason: 'a second tap could still make it a zoom');
+    await tester.pump(const Duration(milliseconds: 60));
     await tester.pumpAndSettle();
     expect(taps, 1);
     expect(controller.firstPage, 0);
+
+    // A double tap in the centre zooms and leaves the chrome alone.
+    await tester.tapAt(const Offset(195, 422));
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.tapAt(const Offset(200, 430));
+    await tester.pump(kDoubleTapTimeout);
+    await tester.pumpAndSettle();
+    expect(taps, 1);
+    expect(
+      tester.widget<InteractiveViewer>(find.byType(InteractiveViewer)).transformationController!.value.getMaxScaleOnAxis(),
+      greaterThan(2),
+    );
+  });
+
+  testWidgets('one-sided spreads turn only the half that has a page', (tester) async {
+    // Spreads: [_|0] [1|2] [3|_] 4 [5|6]: page 3 stands alone before a scan.
+    final pages = await FakePages.make(tester, [portrait, portrait, portrait, portrait, wide, portrait, portrait]);
+    await pumpView(tester, pages.store(), screen: const Size(1180, 820));
+    const spine = 590.0;
+
+    // Two-sided turns lift the right page from the spine.
+    controller.debugHoldFlip(from: 1, progress: 0.05);
+    await tester.pump();
+    expect(leafRect(tester).left, closeTo(spine, 0.5));
+
+    // [3|_] → scan: no blank right leaf. The scan's left half rises from the
+    // spine, edge-on at the start, and the turn only sweeps 90°–180°.
+    controller.debugHoldFlip(from: 2, progress: 0);
+    await tester.pump();
+    expect(leafRect(tester).right, closeTo(spine, 0.5));
+    expect(leafMatrix(tester).entry(0, 0), closeTo(0, 0.01));
+    controller.debugHoldFlip(from: 2, progress: 0.5);
+    await tester.pump();
+    expect(leafRect(tester).right, closeTo(spine, 0.5));
+    expect(leafMatrix(tester).entry(0, 0), closeTo(math.cos(math.pi / 4), 0.01));
+
+    // Scan → [5|6] and the cover turn are two-sided: the full 0°–180°.
+    controller.debugHoldFlip(from: 3, progress: 0.05);
+    await tester.pump();
+    expect(leafRect(tester).left, closeTo(spine, 0.5));
+    controller.debugHoldFlip(from: 0, progress: 0.95);
+    await tester.pump();
+    expect(leafRect(tester).right, closeTo(spine, 0.5));
+
+    // Taps and drags land on the right spreads through the one-sided turn.
+    controller.jumpTo(3);
+    await tester.pumpAndSettle();
+    expect((controller.firstPage, controller.lastPage), (3, 3));
+    await tapThird(tester, right: true);
+    await tester.pumpAndSettle();
+    expect((controller.firstPage, controller.lastPage), (4, 4));
+    await tester.timedDragFrom(const Offset(300, 400), const Offset(500, 0), const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
+    expect((controller.firstPage, controller.lastPage), (3, 3));
+    final gesture = await tester.startGesture(const Offset(1100, 400));
+    await gesture.moveBy(const Offset(-40, 0));
+    await tester.pump();
+    await gesture.moveBy(const Offset(-200, 0));
+    await tester.pump();
+    // The leaf's free edge follows the finger out of the spine.
+    final c = leafMatrix(tester).entry(0, 0);
+    expect(c, greaterThan(0.1));
+    expect(c, lessThan(0.9));
+    await gesture.moveBy(const Offset(-300, 0));
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect((controller.firstPage, controller.lastPage), (4, 4));
+  });
+
+  testWidgets('a single page shows the page beneath only where the leaf has lifted', (tester) async {
+    final pages = await FakePages.make(tester, [portrait, wide, portrait]);
+    await pumpView(tester, pages.store());
+    Rect reveal() {
+      final clip = tester.widget<ClipRect>(find.byWidgetPredicate((w) => w is ClipRect && w.clipper != null));
+      return clip.clipper!.getClip(const Size(390, 844));
+    }
+
+    // The short scan turning onto a tall page: nothing of page 3 shows above
+    // or below the scan while it still lies almost flat.
+    controller.debugHoldFlip(from: 1, progress: 0.05);
+    await tester.pump();
+    expect(reveal().left, greaterThan(380));
+    controller.debugHoldFlip(from: 1, progress: 0.6);
+    await tester.pump();
+    expect(reveal().left, inInclusiveRange(100, 300));
   });
 
   testWidgets('the leaf follows a drag and completes on release', (tester) async {
