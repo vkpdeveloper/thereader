@@ -58,9 +58,49 @@ Future<String?> pickBook() async {
     await dir.delete(recursive: true);
     rethrow;
   } finally {
-    // Android's picker caches its own copy, up to 1 GiB for a comic.
-    await FilePicker.clearTemporaryFiles().catchError((_) {});
+    await _clearPickerCopies(picked);
   }
+}
+
+/// The picker keeps its own copies, up to 1 GiB each for a comic. Android
+/// caches them under the plugin's own folder, which its clear empties. iOS's
+/// clear would empty the whole temporary directory, including the copy made
+/// above, so there only the picker's copies of this file go.
+Future<void> _clearPickerCopies(PlatformFile picked) async {
+  if (Platform.isAndroid) {
+    await FilePicker.clearTemporaryFiles().catchError((_) {});
+    return;
+  }
+  final path = picked.path;
+  if (path == null) return;
+  for (final copy in pickerCopies(path, Directory.systemTemp.path)) {
+    try {
+      await copy.delete(recursive: true);
+    } catch (_) {}
+  }
+}
+
+/// The iOS picker's copies of [pickedPath]: the plugin's own `<temp>/<id>/`
+/// folder holding it and the document picker's `<temp>/<app>-Inbox/<name>`
+/// it was copied from. Empty for a file picked in place.
+List<FileSystemEntity> pickerCopies(String pickedPath, String tempPath) {
+  String resolve(String path) {
+    try {
+      return Directory(path).resolveSymbolicLinksSync();
+    } on FileSystemException {
+      return p.normalize(path);
+    }
+  }
+
+  final dir = p.dirname(pickedPath);
+  if (!p.equals(resolve(p.dirname(dir)), resolve(tempPath))) return const [];
+  final name = p.basename(pickedPath);
+  return [
+    Directory(dir),
+    for (final entry in Directory(tempPath).listSync())
+      if (entry is Directory && p.basename(entry.path).endsWith('-Inbox'))
+        File(p.join(entry.path, name)),
+  ].where((copy) => copy.existsSync()).toList();
 }
 
 String _safeFileName(String name, String extension) {
