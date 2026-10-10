@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useParams } from '@tanstack/react-router';
 import { hasOpenOverlay, Sheet } from '../components/overlay';
 import { BottomChrome, EdgeProgress, TopChrome, ToChapterStart, type ReaderPanel } from '../components/reader/ReaderChrome';
@@ -53,12 +53,55 @@ const panelTitles: Record<ReaderPanel, string> = {
   typography: 'Typography',
 };
 
+/** The comic reader's chunk: none of the EPUB engine, panels or pen. */
+const ComicReader = lazy(() => import('../components/comic/ComicReader').then((m) => ({ default: m.ComicReader })));
+
+/**
+ * Comics (docs/comics.md) open in their own reader; everything else in the
+ * EPUB reader. The choice is made once per entry, so an entry removed while
+ * open keeps its reader.
+ */
+export function ReaderScreen() {
+  const { entryId } = useParams({ from: '/read/$entryId' });
+  const services = useServices();
+  const lib = useStore(services.library);
+  const chosen = useRef<{ entryId: string; comic: boolean } | null>(null);
+  if (chosen.current?.entryId !== entryId) {
+    const entry = lib.loaded ? services.library.entry(entryId) : undefined;
+    chosen.current = lib.loaded ? { entryId, comic: entry?.book.format === 'comic' } : null;
+  }
+  const choice = chosen.current;
+  if (!choice) {
+    return (
+      <div className="reader">
+        <div className="reader-state">
+          <LoadingLine label="Opening" />
+        </div>
+      </div>
+    );
+  }
+  if (!choice.comic) return <EpubReaderScreen />;
+  return (
+    <Suspense
+      fallback={
+        <div className="reader">
+          <div className="reader-state">
+            <LoadingLine label="Opening" />
+          </div>
+        </div>
+      }
+    >
+      <ComicReader key={entryId} entryId={entryId} />
+    </Suspense>
+  );
+}
+
 /**
  * The reading surface. Chrome is hidden by default and revealed with a click
  * in the middle of the page; position is saved continuously and on exit.
  * On desktop the tools open as side panels that keep the page readable.
  */
-export function ReaderScreen() {
+function EpubReaderScreen() {
   const { entryId } = useParams({ from: '/read/$entryId' });
   const services = useServices();
   const settings = useStore(services.settings);

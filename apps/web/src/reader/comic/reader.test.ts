@@ -64,6 +64,9 @@ describe('page turn', () => {
     expect(mid.cast).toBeCloseTo(0.6);
     expect(mid.edge).toBeCloseTo(0);
     expect(turnShading(1)).toMatchObject({ angle: -180, back: 0 });
+    expect(turnShading(1).cast).toBeCloseTo(0);
+    expect(turnShading(1, 90).angle).toBe(-90);
+    expect(turnShading(1, 90).edge).toBeCloseTo(0);
     expect(easeInOut(0)).toBe(0);
     expect(easeInOut(1)).toBe(1);
     expect(easeInOut(0.5)).toBeCloseTo(0.5);
@@ -76,8 +79,9 @@ describe('page turn', () => {
     expect(dragProgress(0, 300, 600)).toBe(0);
     // Turning back starts flat on the left.
     expect(dragProgress(1, 600, 600)).toBeCloseTo(0.5);
-    // A single page turns within its own width.
-    expect(dragProgress(0, -390, 390, 2)).toBeCloseTo(1);
+    // A single page turns (90°) within its own width.
+    expect(dragProgress(0, -390, 390, 90)).toBeCloseTo(1);
+    expect(dragProgress(1, 195, 390, 90)).toBeCloseTo(2 / 3);
   });
 
   test('release completes, flicks win, short drags snap back', () => {

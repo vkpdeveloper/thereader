@@ -21,43 +21,50 @@ export function easeOut(t: number): number {
 }
 
 export interface TurnShading {
-  /** Leaf rotation about the hinge, degrees (0 → −180). */
+  /** Leaf rotation about the hinge, degrees (0 → −maxAngle). */
   angle: number;
   /** Darkening of the leaf's front (0..1), strongest as it stands up. */
   front: number;
   /** Darkening of the leaf's back as it comes down. */
   back: number;
-  /** Strength of the shadow the leaf casts on the page below. */
+  /** Strength of the shadow the leaf casts on the page below; gone at both ends. */
   cast: number;
-  /** Projected free edge of the leaf, in leaf widths from the hinge (1 → −1). */
+  /** Projected free edge of the leaf, in leaf widths from the hinge (1 → cos maxAngle). */
   edge: number;
 }
 
-export function turnShading(progress: number): TurnShading {
+/**
+ * A spread's leaf turns 180° onto the facing half. A single page has nowhere
+ * to land, so it turns 90°: edge-on, it has vanished, and no part of the turn
+ * is spent off screen.
+ */
+export const SPREAD_ANGLE = 180;
+export const SINGLE_ANGLE = 90;
+
+export function turnShading(progress: number, maxAngle = SPREAD_ANGLE): TurnShading {
   const p = clamp01(progress);
-  const radians = p * Math.PI;
+  const radians = (p * maxAngle * Math.PI) / 180;
   const cos = Math.cos(radians);
-  const sin = Math.sin(radians);
   return {
-    angle: -180 * p,
+    angle: -maxAngle * p,
     front: 0.55 * (1 - Math.max(0, cos)),
     back: 0.55 * (1 - Math.max(0, -cos)),
-    cast: 0.6 * sin,
+    cast: 0.6 * Math.sin(p * Math.PI),
     edge: cos,
   };
 }
 
 /**
  * Progress that keeps the leaf's free edge under the finger. `dx` is the
- * finger's travel (negative = leftwards), `leafWidth` the leaf's width and
- * `gain` how many leaf widths a full drag covers (spreads cross both halves:
- * 1; a single page turns within its own width: 2).
+ * finger's travel (negative = leftwards) and `leafWidth` the leaf's width:
+ * a spread's leaf edge crosses both halves, a single page's its own width.
  */
-export function dragProgress(startProgress: number, dx: number, leafWidth: number, gain = 1): number {
+export function dragProgress(startProgress: number, dx: number, leafWidth: number, maxAngle = SPREAD_ANGLE): number {
   if (leafWidth <= 0) return startProgress;
-  const startEdge = Math.cos(clamp01(startProgress) * Math.PI);
-  const edge = Math.min(1, Math.max(-1, startEdge + (dx * gain) / leafWidth));
-  return Math.acos(edge) / Math.PI;
+  const max = (maxAngle * Math.PI) / 180;
+  const startEdge = Math.cos(clamp01(startProgress) * max);
+  const edge = Math.min(1, Math.max(Math.cos(max), startEdge + dx / leafWidth));
+  return Math.acos(edge) / max;
 }
 
 /**
