@@ -5,7 +5,7 @@ for package management and local scripts; the deployed request handler uses only
 Cloudflare Workers bindings and Web Platform APIs.
 
 This is one deliberately shared personal profile. Anyone who can reach the API
-can read its catalog and sync state, upload EPUBs, and change that state. There
+can read its catalog and sync state, upload EPUBs and comics, and change that state. There
 are no accounts, login flows, bearer tokens, API keys, or per-device access
 controls. Keep the deployment URL private if that shared behavior is not wanted.
 
@@ -44,6 +44,9 @@ bunx wrangler deploy --dry-run
   treat as immutable.
 - `uploads/<sha256>.epub` contains device uploads verified by R2 SHA-256 and a
   bounded EPUB ZIP structure check before their D1 catalog row is published.
+- `uploads/<sha256>.cbz` contains uploaded comics (see
+  [comic books](../../docs/comics.md)), verified the same way with a bounded
+  CBZ check.
 - `covers/<sha256>.<ext>` contains immutable embedded cover bytes extracted from
   a verified uploaded edition. D1 records the cover ID, object key, MIME type,
   byte length and R2 ETag.
@@ -58,16 +61,24 @@ bunx wrangler deploy --dry-run
 The manifest includes the public book metadata, the private R2 object key, and
 the real byte length and SHA-256 checksum generated from each EPUB. The Worker
 never exposes R2 credentials. Uploads stream through the server-side R2 binding
-with a 512 MiB application limit.
+with a 512 MiB application limit for EPUBs and 1 GiB for comics.
 
 ## Upload and sync contract
 
+Every `Book` carries `format`: `"epub"` or `"comic"`. Legacy manifest books
+are `epub` unless their manifest entry says otherwise; clients treat a missing
+`format` (older servers) as `epub`.
+
 `POST /v1/uploads/prepare` accepts
-`{sha256,fileSize,title,author,description,language,subjects}` and returns
-`{book,uploaded,uploadUrl,multipart}`. New IDs are `epub-<full-sha256>`; a
-matching legacy manifest object keeps its legacy ID. Files up to 64 MiB use the
-relative `uploadUrl`: send the exact raw EPUB with `PUT`, `Content-Type:
-application/epub+zip`, and the prepared `Content-Length`.
+`{format?,sha256,fileSize,title,author,description,language,subjects}` and
+returns `{book,uploaded,uploadUrl,multipart}`. `format` defaults to `epub`.
+New IDs are `epub-<full-sha256>` or `comic-<full-sha256>`; a SHA-256 that is
+already published returns that book whatever format was asked for, and a
+matching legacy manifest object keeps its legacy ID. Preparing a pending SHA
+again as the other format restarts its session under the new object key.
+Files up to 64 MiB use the relative `uploadUrl`: send the exact raw bytes with
+`PUT`, the prepared `Content-Length` and `Content-Type: application/epub+zip`
+(EPUB) or `application/vnd.comicbook+zip` (comic).
 
 Larger files use the returned `{uploadId,partSize,parts}` multipart state. The
 production part size is 8 MiB and the final part carries the exact remainder.
@@ -77,9 +88,9 @@ Upload missing parts with `PUT /v1/uploads/:sha256/parts/:partNumber`, raw
 prepare returns the same current session and its saved parts, so a client can
 resume after restarting. Finish with `POST /v1/uploads/:sha256/complete` and
 `{"uploadId":"..."}`. The Worker completes R2, streams the complete object
-through native SHA-256, checks its bounded EPUB structure, and only then
-publishes the D1 catalog row. A checksum or EPUB failure deletes the completed
-object and clears saved parts so prepare can create a clean session.
+through native SHA-256, checks its bounded EPUB or comic structure, and only
+then publishes the D1 catalog row. A checksum or structure failure deletes the
+completed object and clears saved parts so prepare can create a clean session.
 
 Publishing is idempotent by SHA. Multipart ETags only identify R2 parts and are
 never treated as a whole-file checksum. R2 automatically aborts incomplete
@@ -99,6 +110,23 @@ HEAD. Repeating prepare for a published pre-migration D1 upload performs the
 same bounded extraction once and records `cover_checked_at`, which is the
 operator backfill path and requires no public maintenance endpoint.
 
+A comic must be a ZIP (`PK\x03\x04`) whose central directory, read by range
+from the tail, has at most 10,000 entries, no ZIP64 fields, no encrypted
+entries, only stored or deflated entries, UTF-8 names that stay unique and free
+of `..` after normalizing (`\` → `/`, no leading `/`), and at least one page
+under the shared page-selection rule. Failures answer `422 INVALID_COMIC`. Only
+the tail, the directory and page 1 (in natural page order) are read; page 1
+becomes the cover when it is a JPEG, PNG, WebP, GIF or BMP within the 4 MiB and
+dimension limits (deflated pages inflate with bounded output). Any other first
+page (too large, AVIF, unreadable as an image) means `coverId:null`, not a
+rejection. The Worker never reads `ComicInfo.xml`; clients send the metadata.
+
+`GET /v1/books/:id/download` serves EPUBs as `application/epub+zip` with an
+`.epub` file name and comics as `application/vnd.comicbook+zip` with a `.cbz`
+file name. Range, If-Range, ETag and HEAD behave the same for both, and CORS
+exposes `Content-Range`, `ETag`, `Content-Length`, `Accept-Ranges` and
+`Content-Disposition`.
+
 `GET /v1/sync` returns the full shared state. `POST /v1/sync` accepts up to 100
 edition-pinned changes in `{deviceId,changes}` and returns the merged state plus
 `acceptedChangeIds`. Progress and library membership use
@@ -109,7 +137,8 @@ returns `SYNC_STATE_TOO_LARGE` instead of silently truncating.
 
 Progress payloads are Flutter `ReadingLocator` JSON: a non-empty `href` up to
 4,096 characters, `progression` in 0–1, and optional nullable
-`totalProgression`, `title`, `engine`, and object-valued `raw`.
+`totalProgression`, `title`, `engine`, and object-valued `raw`. Comics use the
+same shape with `engine:"comic"` and `raw:{page,pages}`.
 
 Reader settings (typography, theme, highlight colour and the rest) are
 per-device and never synced; the response has no `preferences` field. Older
