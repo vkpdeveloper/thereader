@@ -9,6 +9,9 @@ import Flutter
 import UIKit
 import UnrarKit
 
+/// unrar's ERAR_BAD_PASSWORD, which URKErrorCode does not name.
+private let unrarBadPassword = 24
+
 public class RarPlugin: NSObject, FlutterPlugin {
   private let queue = DispatchQueue(label: "thereader.rar", qos: .userInitiated)
 
@@ -59,7 +62,7 @@ public class RarPlugin: NSObject, FlutterPlugin {
     do {
       infos = try archive.listFileInfo()
     } catch let error as NSError {
-      if error.code == URKErrorCode.missingPassword.rawValue || error.code == URKErrorCode.badPassword.rawValue {
+      if error.code == URKErrorCode.missingPassword.rawValue || error.code == unrarBadPassword {
         throw RarError(code: "encrypted", message: "The archive is encrypted.")
       }
       throw RarError(code: "damaged", message: error.localizedDescription)
@@ -104,7 +107,7 @@ public class RarPlugin: NSObject, FlutterPlugin {
           handle.write(chunk)
         }
       } catch let error as NSError {
-        if error.code == URKErrorCode.missingPassword.rawValue || error.code == URKErrorCode.badPassword.rawValue {
+        if error.code == URKErrorCode.missingPassword.rawValue || error.code == unrarBadPassword {
           throw RarError(code: "encrypted", message: "The archive is encrypted.")
         }
         throw RarError(code: "damaged", message: error.localizedDescription)

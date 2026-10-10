@@ -39,6 +39,10 @@
                 <data android:scheme="file" android:mimeType="application/epub+zip" />
                 <data android:scheme="content" android:mimeType="application/x-mobipocket-ebook" />
                 <data android:scheme="file" android:mimeType="application/x-mobipocket-ebook" />
+                <data android:scheme="content" android:mimeType="application/vnd.comicbook+zip" />
+                <data android:scheme="content" android:mimeType="application/vnd.comicbook-rar" />
+                <data android:scheme="content" android:mimeType="application/x-cbz" />
+                <data android:scheme="content" android:mimeType="application/x-cbr" />
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
