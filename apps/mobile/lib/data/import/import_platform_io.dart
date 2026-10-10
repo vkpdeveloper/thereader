@@ -8,6 +8,8 @@ import 'package:crypto/crypto.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:xml/xml.dart';
+import '../comic/cbz_writer.dart' show maxComicBytes;
+import '../comic/comic_import_io.dart';
 import '../covers/cover_validation.dart';
 import 'mobi_converter.dart';
 
@@ -18,29 +20,34 @@ Stream<List<int>> readImportFile(String path) => File(path).openRead();
 Future<String?> pickBook() async {
   final picked = await FilePicker.pickFile(
     type: FileType.custom,
-    allowedExtensions: ['epub', 'mobi'],
+    allowedExtensions: ['epub', 'mobi', 'cbz', 'cbr'],
   );
   if (picked == null) return null;
   final extension = p.extension(picked.name).toLowerCase();
-  if (extension != '.epub' && extension != '.mobi') {
-    throw const FormatException('Choose an EPUB or MOBI file.');
+  if (!const {'.epub', '.mobi', '.cbz', '.cbr'}.contains(extension)) {
+    throw const FormatException('Choose an EPUB, MOBI, CBZ or CBR file.');
   }
+  final comic = _isComicPath(picked.name);
+  final limit = comic ? maxComicBytes : maxImportBytes;
+  final tooLarge = FormatException(
+    comic
+        ? 'Comics are limited to 1 GiB.'
+        : 'Book imports are limited to 512 MiB.',
+  );
   final size = picked.lengthSync() ?? await picked.length();
-  if (size != null && size > maxImportBytes) {
-    throw const FormatException('Book imports are limited to 512 MiB.');
-  }
+  if (size != null && size > limit) throw tooLarge;
   // File providers can return content URIs or temporary security-scoped URLs.
   // Consume their byte stream while the picker grants access, without readAll.
+  // The copy keeps the picked name: comics without ComicInfo.xml take their
+  // title from it.
   final dir = await Directory.systemTemp.createTemp('thereader-import-');
-  final file = File(p.join(dir.path, 'picked$extension'));
+  final file = File(p.join(dir.path, _safeFileName(picked.name, extension)));
   final sink = file.openWrite();
   try {
     var count = 0;
     await for (final chunk in picked.readAsByteStream()) {
       count += chunk.length;
-      if (count > maxImportBytes) {
-        throw const FormatException('Book imports are limited to 512 MiB.');
-      }
+      if (count > limit) throw tooLarge;
       sink.add(chunk);
       await sink.flush();
     }
@@ -53,17 +60,42 @@ Future<String?> pickBook() async {
   }
 }
 
+String _safeFileName(String name, String extension) {
+  final base = p.basename(name.replaceAll('\\', '/'));
+  final clean = base.replaceAll(RegExp(r'[\x00-\x1f\x7f/:]'), '_');
+  return clean.length > 200 || clean.startsWith('.')
+      ? 'picked$extension'
+      : clean;
+}
+
+bool _isComicPath(String path) =>
+    const {'.cbz', '.cbr'}.contains(p.extension(path).toLowerCase());
+
 Future<void> cleanPickedBook(String path) =>
     File(path).parent.delete(recursive: true);
 
 /// MOBI is unpacked once at import, off the UI isolate. The resulting EPUB
 /// enters the same checksum, storage, upload and native Readium path as a
 /// directly imported EPUB. The caller owns and removes the returned temp file.
+///
+/// Comics (`.cbz`/`.cbr`, the archive type decided by magic bytes) come back
+/// as a CBZ: the source itself, or a deterministic repack of a CBR.
 Future<String> prepareBook(String sourcePath) async {
   final extension = p.extension(sourcePath).toLowerCase();
   if (extension == '.epub') return sourcePath;
+  if (_isComicPath(sourcePath)) {
+    final work = await Directory.systemTemp.createTemp('thereader-comic-');
+    try {
+      final prepared = await prepareComic(sourcePath, work);
+      if (prepared == sourcePath) await work.delete(recursive: true);
+      return prepared;
+    } catch (_) {
+      await work.delete(recursive: true);
+      rethrow;
+    }
+  }
   if (extension != '.mobi') {
-    throw const FormatException('Choose an EPUB or MOBI file.');
+    throw const FormatException('Choose an EPUB, MOBI, CBZ or CBR file.');
   }
   final size = await File(sourcePath).length();
   // kindle_unpack materializes its input and EPUB output. Keep the conversion
@@ -102,6 +134,14 @@ void _convertMobi(String sourcePath, String outputPath) {
     throw const FormatException('This MOBI cannot be converted.');
   }
 }
+
+/// Book metadata for a prepared import; [sourcePath] names the original file.
+Future<Map<String, dynamic>> inspectBook(
+  String preparedPath,
+  String sourcePath,
+) => _isComicPath(sourcePath)
+    ? inspectComic(preparedPath, p.basename(sourcePath))
+    : inspectEpub(preparedPath);
 
 Future<Map<String, dynamic>> inspectEpub(String path) =>
     Isolate.run(() => _inspect(path));

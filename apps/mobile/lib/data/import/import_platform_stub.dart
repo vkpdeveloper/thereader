@@ -9,3 +9,7 @@ Future<Map<String, dynamic>> inspectEpub(String path) async =>
     throw UnsupportedError('Import requires a native app.');
 Stream<List<int>> readImportFile(String path) =>
     throw UnsupportedError('Import requires a native app.');
+Future<Map<String, dynamic>> inspectBook(
+  String preparedPath,
+  String sourcePath,
+) async => throw UnsupportedError('Import requires a native app.');
