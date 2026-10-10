@@ -223,10 +223,11 @@ export function ComicReader({ entryId }: { entryId: string }) {
     if (hasOpenOverlay() || isTypingTarget(e.target)) return;
     const action = comicKeyAction(e);
     if (!action) return;
-    // A focused control keeps Space and Enter; the scrubber keeps its arrows.
+    // A focused button keeps Space and Enter. The scrubber does not keep its
+    // arrows: after a scrub they turn pages again (assistive tech adjusts it
+    // with modified keys, which pass through).
     const target = e.target as Element | null;
     if ((e.key === ' ' || e.key === 'Enter') && target?.closest?.('button, a, [role=button]')) return;
-    if (target instanceof HTMLInputElement && target.type === 'range' && action !== 'close') return;
     e.preventDefault();
     const book = bookRef.current;
     switch (action) {

@@ -60,6 +60,9 @@ interface Drag {
   samples: { t: number; x: number }[];
 }
 
+/** Presses remembered during a turn; a held key's repeats beyond this are dropped. */
+const MAX_QUEUED = 24;
+
 /**
  * The page surface: lays out the current spread, runs 3D page turns (or a
  * cross-fade with reduced motion) and turns pages from taps, swipes that
@@ -245,7 +248,7 @@ export const ComicStage = forwardRef<
   const step = useCallback((dir: 1 | -1) => {
     if (drag.current?.turning) return;
     if (state.current.turn) {
-      pending.current = Math.max(-6, Math.min(6, pending.current + dir));
+      pending.current = Math.max(-MAX_QUEUED, Math.min(MAX_QUEUED, pending.current + dir));
       const a = animation.current;
       if (a) animateTo(a.to, FAST_TURN_MS, easeOut);
       return;
