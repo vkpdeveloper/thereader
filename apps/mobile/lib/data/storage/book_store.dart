@@ -52,5 +52,13 @@ abstract class BookStore {
   Future<void> delete(String pathOrKey);
   Future<void> deleteBook(String bookId);
 
+  /// Moves an already verified file at native [path] (a finished background
+  /// download) into the store, atomically, and returns its key.
+  Future<String> adoptFile(
+    String path, {
+    required String bookId,
+    required String version,
+  });
+
   static Future<BookStore> create() => impl.createBookStore();
 }

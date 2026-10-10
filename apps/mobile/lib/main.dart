@@ -9,6 +9,7 @@ import 'core/theme/app_theme.dart';
 import 'data/api/catalog_source.dart';
 import 'data/api/api_client.dart';
 import 'data/articles/article_store.dart';
+import 'data/comic/comic_transfers.dart';
 import 'data/articles/page_fetcher.dart';
 import 'data/import/epub_import_service.dart';
 import 'data/repositories/article_repository.dart';
@@ -31,7 +32,13 @@ Future<void> main() async {
   final kv = await SharedPreferencesStore.open();
   final bookStore = await BookStore.create();
   final settings = SettingsRepository(kv);
-  final library = LibraryRepository(store: kv, bookStore: bookStore);
+  final library = LibraryRepository(
+    store: kv,
+    bookStore: bookStore,
+    // Comics download in the OS (URLSession / WorkManager) and survive the
+    // app being suspended or killed.
+    comicTransfers: ComicTransfers.create(),
+  );
   await settings.load();
   // `--dart-define=THEREADER_ENGINE=dart|readium` forces the preferred engine
   // (used by the integration walkthrough; never silently in production).

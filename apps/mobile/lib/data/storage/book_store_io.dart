@@ -91,6 +91,27 @@ class IoBookStore implements BookStore {
   }
 
   @override
+  Future<String> adoptFile(
+    String path, {
+    required String bookId,
+    required String version,
+  }) async {
+    final dir = _bookDir(bookId);
+    await dir.create(recursive: true);
+    final target = File(p.join(dir.path, '${_safe(version)}.cbz'));
+    try {
+      await File(path).rename(target.path);
+    } on FileSystemException {
+      // Another volume: copy beside the target, then rename into place.
+      final part = File('${target.path}.part');
+      await File(path).copy(part.path);
+      await part.rename(target.path);
+      await File(path).delete();
+    }
+    return p.relative(target.path, from: root.path);
+  }
+
+  @override
   Future<void> deleteBook(String bookId) async {
     final dir = _bookDir(bookId);
     if (await dir.exists()) await dir.delete(recursive: true);

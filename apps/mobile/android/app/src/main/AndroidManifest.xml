@@ -1,6 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Catalog + downloads. Cleartext is allowed for the local dev Worker (http://10.0.2.2:8787). -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Comic downloads run in the OS with a progress notification (Android 13+
+         asks at the first comic download); on Android 14+ as user-initiated
+         data transfers without WorkManager's time limit. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RUN_USER_INITIATED_JOBS" />
     <application
         android:label="The Reader"
         android:usesCleartextTraffic="true"

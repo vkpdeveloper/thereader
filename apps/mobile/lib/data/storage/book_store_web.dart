@@ -37,6 +37,13 @@ class MemoryBookStore implements BookStore {
   @override
   Future<void> deleteBook(String bookId) async =>
       files.removeWhere((k, _) => k.startsWith('mem://$bookId/'));
+
+  @override
+  Future<String> adoptFile(
+    String path, {
+    required String bookId,
+    required String version,
+  }) => throw UnsupportedError('There are no native files in memory storage.');
 }
 
 class _MemorySink implements BookSink {
