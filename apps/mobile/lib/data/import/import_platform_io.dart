@@ -133,14 +133,7 @@ Future<void> cleanPickedBook(String path) =>
 Future<String> prepareBook(String sourcePath, {Uri? origin}) async {
   final extension = p.extension(sourcePath).toLowerCase();
   if (extension == '.epub') return sourcePath;
-  if (extension == '.pdf') {
-    if (origin == null) {
-      throw const FormatException(
-        'Choose a reading server before importing a PDF.',
-      );
-    }
-    return pdf.convertPdf(sourcePath, origin);
-  }
+  if (extension == '.pdf') return pdf.convertPdf(sourcePath);
   if (_isComicPath(sourcePath)) {
     final work = await Directory.systemTemp.createTemp('thereader-comic-');
     try {

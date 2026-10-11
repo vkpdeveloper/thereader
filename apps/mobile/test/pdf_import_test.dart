@@ -1,99 +1,128 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:archive/archive.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:thereader/data/import/import_platform_io.dart';
+import 'package:thereader/data/import/pdf_import_io.dart' as pdf;
 
 void main() {
   late Directory temp;
-  late HttpServer server;
   late File source;
-  late Uri origin;
-
   setUp(() async {
     temp = await Directory.systemTemp.createTemp('pdf-import-test-');
-    source = File('${temp.path}/book.pdf')
-      ..writeAsStringSync('%PDF-1.7 source bytes');
-    server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-    origin = Uri.parse('http://127.0.0.1:${server.port}');
+    source = await File(
+      '../../eval/pdf/native/edge-fixtures/named-rgb.pdf',
+    ).copy('${temp.path}/book.pdf');
   });
   tearDown(() async {
-    await server.close(force: true);
     await temp.delete(recursive: true);
   });
 
   test(
-    'PDF conversion uses the captured origin and cleans its EPUB copy',
+    'PDF converts without a server and enters the normal EPUB inspection path',
     () async {
-      final handled = server.first.then((request) async {
-        expect(request.uri.path, '/v1/pdf/extract');
-        expect(request.method, 'POST');
-        expect(request.headers.contentType?.mimeType, 'application/pdf');
+      final result = await prepareBook(source.path);
+      try {
+        final metadata = await inspectEpub(result);
+        expect(metadata['title'], isNotEmpty);
+        final zip = ZipDecoder().decodeBytes(await File(result).readAsBytes());
         expect(
-          await utf8.decoder.bind(request).join(),
-          '%PDF-1.7 source bytes',
+          utf8.decode(zip.findFile('mimetype')!.content),
+          'application/epub+zip',
         );
-        request.response.headers.contentType = ContentType(
-          'application',
-          'epub+zip',
+        expect(
+          utf8.decode(zip.findFile('OEBPS/page-1.xhtml')!.content),
+          contains('After image'),
         );
-        request.response.add([80, 75, 3, 4, 1, 2, 3]);
-        await request.response.close();
-      });
-      final result = await prepareBook(source.path, origin: origin);
-      await handled;
-      expect(await File(result).readAsBytes(), [80, 75, 3, 4, 1, 2, 3]);
-      await cleanPreparedBook(source.path, result);
+        expect(
+          zip.files.any((f) => f.name.startsWith('OEBPS/assets/')),
+          isTrue,
+        );
+      } finally {
+        await cleanPreparedBook(source.path, result);
+      }
       expect(await File(result).parent.exists(), isFalse);
       expect(await source.exists(), isTrue);
     },
   );
 
-  test('server extraction errors are preserved for the user', () async {
-    final handled = server.first.then((request) async {
-      await request.drain<void>();
-      request.response.statusCode = 422;
-      request.response.headers.contentType = ContentType.json;
-      request.response.write(
-        jsonEncode({
-          'error': {'message': 'This PDF needs OCR.'},
-        }),
-      );
-      await request.response.close();
+  test('a configured server receives no extraction requests', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    var requests = 0;
+    server.listen((request) {
+      requests++;
+      request.response.statusCode = 503;
+      request.response.close();
     });
+    try {
+      final result = await prepareBook(
+        source.path,
+        origin: Uri.parse('http://127.0.0.1:${server.port}'),
+      );
+      await cleanPreparedBook(source.path, result);
+      expect(requests, 0);
+    } finally {
+      await server.close(force: true);
+    }
+  });
+
+  test(
+    'invalid and encrypted PDF errors survive the isolate boundary',
+    () async {
+      source.writeAsStringSync('%PDF-1.7 broken');
+      await expectLater(prepareBook(source.path), throwsFormatException);
+      final fixtures = Directory('../../eval/pdf/native/fixtures');
+      for (final f in fixtures.listSync().whereType<File>().where(
+        (f) => f.path.endsWith('.json'),
+      )) {
+        if (jsonDecode(f.readAsStringSync())['error'] == 'ENCRYPTED_PDF') {
+          await File(f.path.replaceAll('.json', '.pdf')).copy(source.path);
+          await expectLater(
+            prepareBook(source.path),
+            throwsA(
+              isA<FormatException>().having(
+                (e) => e.message.toLowerCase(),
+                'message',
+                contains('encrypted'),
+              ),
+            ),
+          );
+          return;
+        }
+      }
+      fail('Missing encrypted fixture');
+    },
+  );
+
+  test('deadline kills conversion and removes its partial output', () async {
+    Set<String> outputs() => Directory.systemTemp
+        .listSync()
+        .whereType<Directory>()
+        .where((d) => d.path.split('/').last.startsWith('thereader-pdf-'))
+        .map((d) => d.path)
+        .toSet();
+    final before = outputs();
     await expectLater(
-      prepareBook(source.path, origin: origin),
+      pdf.convertPdf(source.path, timeout: Duration.zero),
       throwsA(
         isA<FormatException>().having(
           (e) => e.message,
           'message',
-          'This PDF needs OCR.',
+          contains('timed out'),
         ),
       ),
     );
-    await handled;
+    expect(outputs().difference(before), isEmpty);
+    expect(source.existsSync(), isTrue);
   });
 
-  test('redirects do not forward a private PDF to another server', () async {
-    final handled = server.first.then((request) async {
-      await request.drain<void>();
-      request.response.statusCode = 307;
-      request.response.headers.set('Location', 'https://invalid.example/pdf');
-      await request.response.close();
-    });
-    await expectLater(
-      prepareBook(source.path, origin: origin),
-      throwsFormatException,
-    );
-    await handled;
-  });
-
-  test('empty PDFs are rejected before contacting the server', () async {
+  test('empty and oversized PDFs are rejected before conversion', () async {
     source.writeAsBytesSync([]);
-    await expectLater(
-      prepareBook(source.path, origin: origin),
-      throwsFormatException,
-    );
+    await expectLater(prepareBook(source.path), throwsFormatException);
+    final handle = source.openSync(mode: FileMode.write);
+    handle.truncateSync(pdf.maxPdfBytes + 1);
+    handle.closeSync();
     await expectLater(prepareBook(source.path), throwsFormatException);
   });
 }

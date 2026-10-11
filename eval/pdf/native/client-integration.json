@@ -1,0 +1,53 @@
+{
+  "date": "2026-10-11",
+  "scope": "Client integration; engine cores unchanged from 0881cf235ed2b80f3cb1a56d447ab8d54d460974",
+  "document": {
+    "title": "An Empirical Study of Harness Design for Coding Agents",
+    "pages": 43
+  },
+  "browser": {
+    "engine": "TypeScript browser worker",
+    "networkDisabledInWorker": true,
+    "wallMs": 1269.199999988079,
+    "uiTicks20ms": 63,
+    "epubBytes": 6971877,
+    "scope": "Extraction and EPUB generation in worker; input already loaded"
+  },
+  "mobile": {
+    "engine": "Dart VM isolate",
+    "device": "iPhone 18 Pro simulator, iOS 27.0, debug build",
+    "flutter": "3.47.5",
+    "dart": "3.13.4",
+    "elapsedMs": 3745,
+    "uiTicks20ms": 185,
+    "epubBytes": 7418878,
+    "pendingUpload": 1,
+    "scope": "Production importPath: conversion, EPUB inspection, local storage, offline upload queue; excludes reader opening",
+    "nativeReadiumOpened": true,
+    "spineCount": 44,
+    "table3Colspan": 2,
+    "table3Rowspan": 5,
+    "sourcePreserved": true,
+    "uploadApi": "Injected offline failure; not a device-wide airplane-mode test"
+  },
+  "android": {
+    "debugApkBuild": "passed",
+    "deviceReaderTest": "not run"
+  },
+  "proof": {
+    "screenshot": "https://pub-db5cc934f02943a19d855c11f462c1e9.r2.dev/pr-assets/thereader/pdf-mobile-offline-952f641b.png",
+    "video": "https://pub-db5cc934f02943a19d855c11f462c1e9.r2.dev/pr-assets/thereader/pdf-mobile-offline-b0d4689d.mp4"
+  },
+  "limitations": [
+    "Simulator timing is not physical-phone performance. Browser and mobile timings have different scopes and cannot be compared as engine speed.",
+    "Existing upload/sync remains; extraction itself has no server dependency.",
+    "No new extraction accuracy claim; exact benchmark parity and inherited limitations remain in README.md."
+  ],
+  "validation": {
+    "mobileTestsPassed": 464,
+    "mobileTestsSkipped": 7,
+    "typescriptTestsPassed": 56,
+    "flutterAnalyze": "passed",
+    "nativeIntegrationTest": "passed"
+  }
+}

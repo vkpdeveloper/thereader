@@ -172,3 +172,47 @@ Two inherited Go graphics/layout issues remain: path stroke widths do not scale
 with the CTM (zero-width hairlines can disappear), and discarded/clipping paths
 can influence ruling-based table detection. See [review dispositions](review.md).
 The port does not claim a clean review or full visual parity for every PDF.
+
+## Mobile client integration
+
+The Flutter app now uses the independent Dart package in a dedicated isolate.
+It passes local file paths into the worker, which reads the PDF, extracts blocks
+and assets, and writes a temporary EPUB. The normal import service validates and
+stores that EPUB, and native Readium opens it. The Go library remains separate;
+neither mobile nor web calls its extraction service. Cloud upload/sync still
+exists and can be queued while offline.
+
+On an iPhone 18 Pro **simulator** (iOS 27.0, Flutter 3.47.5 debug build), the
+43-page requested paper imported in 3,745 ms. A 20 ms UI-isolate timer fired 185
+times. The EPUB was saved locally and opened in native Readium with 44 spine
+entries (43 pages plus notes). Table 3 retained colspan=2 and rowspan=5. The
+upload API was injected to fail offline; one pending upload did not prevent
+reading. This was not a device-wide airplane-mode test. Android debug APK
+compilation passed; Android device rendering and physical-phone performance
+were not tested in this run.
+
+The browser TypeScript worker also generated a 43-page EPUB with `fetch` and
+`XMLHttpRequest` disabled inside the worker. Its 1,269.2 ms wall time includes
+EPUB packaging, unlike the extraction benchmark above. Mobile timing additionally
+includes inspection and storage, so these two measurements are not a speed ratio.
+Raw observations and proof links: [client-integration.json](client-integration.json).
+
+To reproduce the native reader test, first install the app on an iOS simulator,
+copy the requested PDF into its data container at
+`Documents/pdf-client-test/harness.pdf`, then run:
+
+```sh
+cd apps/mobile
+flutter test
+flutter analyze
+flutter test integration_test/client_pdf_test.dart -d <simulator-id>
+flutter build apk --debug
+```
+
+The integration test uses the production import service, local book store and
+Readium engine; it deliberately holds the title/table screens for proof capture.
+Unit tests cover origin-free conversion, a network trap receiving zero requests,
+invalid/encrypted input, timeout termination and temporary-file cleanup. Existing
+MOBI tests caught an archive 4.4 ZIP-descriptor incompatibility; timestamps are now
+set through the ZIP encoder API instead of patching local headers. CI uses
+Flutter 3.47.5 to match the workspace's Dart 3.13 dependency requirement.

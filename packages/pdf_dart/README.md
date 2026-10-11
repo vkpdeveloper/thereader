@@ -46,3 +46,13 @@ See [parity and timings](../../eval/pdf/native/README.md). Run `dart test` and
 remove `resolution: workspace` from its pubspec and run `dart pub get`.
 
 Known shared graphics/layout limitations are listed in the [review dispositions](../../eval/pdf/native/review.md).
+
+## Mobile integration
+
+The Flutter app depends on this package directly. Its import adapter in
+`apps/mobile/lib/data/import/pdf_import_io.dart` reads the PDF, extracts blocks
+and packages an EPUB in a background Dart isolate. A hard deadline terminates
+the isolate before partial output is removed. The normal EPUB pipeline then
+inspects and stores the book locally; uploading/syncing can wait until online.
+The PDF is never posted to an extraction service. The Go engine remains a
+separate library and CLI.

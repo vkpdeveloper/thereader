@@ -15,16 +15,18 @@ readable from their local copy. No login or accounts.
 - `packages/truffle_dart`: its Dart port, the engine the mobile app runs (pub name `truffle`).
 - `packages/truffle_go`: its Go port, a library and the `truffle` command-line tool (Go module
   `github.com/vkpdeveloper/thereader/packages/truffle_go`); no app uses it.
-- [`packages/pdf_go`](packages/pdf_go): PDF Extractor, an independent Go module,
-  CLI and HTTP service producing structured blocks, Markdown and reflowable EPUB.
+- [`packages/pdf_ts`](packages/pdf_ts): browser PDF Extractor, run in a Web Worker.
+- [`packages/pdf_dart`](packages/pdf_dart): mobile PDF Extractor, run in a background isolate.
+- [`packages/pdf_go`](packages/pdf_go): separately usable Go PDF Extractor library, CLI
+  and optional HTTP service. The browser and mobile app do not call this service.
 - `eval`: extraction quality and speed against other engines.
 - `docs/api-contract.md`: shared HTTP contract and application scope.
 
 Apps use Truffle as an installed package, through two workspaces at the repository root:
 
-- Bun: `package.json` lists `apps/web`, `packages/truffle` and `eval`; consumers declare
+- Bun: `package.json` lists `apps/web`, `packages/truffle`, `packages/pdf_ts` and `eval`; consumers declare
   `"truffle": "workspace:*"` and `import … from 'truffle'`. One `bun.lock` at the root.
-- Dart: `pubspec.yaml` lists `apps/mobile` and `packages/truffle_dart`; consumers declare
+- Dart: `pubspec.yaml` lists `apps/mobile`, `packages/truffle_dart` and `packages/pdf_dart`; consumers declare
   `truffle: ^0.1.0` and `import 'package:truffle/truffle.dart'`. One `pubspec.lock` at the root.
 
 `apps/api` does not use Truffle and stays outside the Bun workspace with its own lockfile.
@@ -51,9 +53,11 @@ explicit test fixtures only; there is no Sample mode in the interface.
 EPUB reading, with on-device MOBI conversion. A pure-black Default theme plus optional dark editor-inspired themes.
 A quiet library, search, downloads, reading controls,
 typography preferences, book/comic imports, and cloud reading-state sync.
-PDF imports use the standalone server-side PDF Extractor to create an EPUB reading
-edition. They require the Go service and Worker configuration described in the
-[package guide](packages/pdf_go/README.md); this is not a PDF facsimile viewer.
+PDF imports convert locally into reflowable EPUBs: TypeScript in the browser and
+Dart on mobile. No extraction server or Go service is required. Mobile conversion
+also works offline; the resulting book is saved locally and queued for normal
+upload/sync when the configured API is reachable. The Go package remains independently
+usable. This is not a PDF facsimile viewer.
 See [benchmarks and reader evidence](eval/pdf/README.md) for measured coverage.
 Audiobook, social, purchase and user-account features remain outside the scope.
 

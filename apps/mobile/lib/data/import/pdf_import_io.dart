@@ -1,83 +1,109 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:path/path.dart' as p;
+import 'package:pdf_extractor/pdf_extractor.dart' as pdf;
 
-/// PDF parsing lives in the independent Go package. Only the converted EPUB
-/// enters the existing storage and Readium pipeline on the device.
-Future<String> convertPdf(String sourcePath, Uri origin) async {
-  final source = File(sourcePath);
-  final size = await source.length();
-  if (size == 0 || size > 64 * 1024 * 1024) {
+const maxPdfBytes = 64 * 1024 * 1024;
+const _maxResultBytes = 128 * 1024 * 1024;
+
+/// Convert on the device, off the UI isolate. The caller owns the returned
+/// temporary EPUB; source PDF bytes never go to an extraction service.
+Future<String> convertPdf(
+  String sourcePath, {
+  Duration timeout = const Duration(seconds: 65),
+}) async {
+  final size = await File(sourcePath).length();
+  if (size == 0 || size > maxPdfBytes) {
     throw const FormatException('PDF imports are limited to 64 MiB.');
   }
   final directory = await Directory.systemTemp.createTemp('thereader-pdf-');
-  final output = File(p.join(directory.path, 'reading-edition.epub'));
-  final client = HttpClient()..connectionTimeout = const Duration(seconds: 15);
-  var timedOut = false;
-  final timer = Timer(const Duration(seconds: 65), () {
-    timedOut = true;
-    client.close(force: true);
+  final output = p.join(directory.path, 'reading-edition.epub');
+  final messages = ReceivePort();
+  final result = Completer<void>();
+  final exited = Completer<void>();
+  Isolate? worker;
+  final subscription = messages.listen((message) {
+    if (message == null) {
+      if (!exited.isCompleted) exited.complete();
+      if (!result.isCompleted) {
+        result.completeError(
+          const FormatException('PDF conversion stopped unexpectedly.'),
+        );
+      }
+    } else if (!result.isCompleted) {
+      if (message == true) {
+        result.complete();
+      } else {
+        result.completeError(
+          FormatException(
+            message is String
+                ? message
+                : 'PDF conversion failed on this device.',
+          ),
+        );
+      }
+    }
   });
-  IOSink? sink;
+  var succeeded = false;
   try {
-    final request = await client.postUrl(origin.resolve('/v1/pdf/extract'));
-    request.followRedirects = false;
-    request.contentLength = size;
-    request.headers.contentType = ContentType('application', 'pdf');
-    request.headers.set('Accept', 'application/epub+zip');
-    await request.addStream(source.openRead());
-    final response = await request.close();
-    if (response.statusCode != 200) {
-      final bytes = <int>[];
-      await for (final chunk in response) {
-        if (bytes.length + chunk.length > 64 * 1024) break;
-        bytes.addAll(chunk);
-      }
-      String message = 'PDF conversion failed. Try again shortly.';
-      try {
-        final body = jsonDecode(utf8.decode(bytes));
-        if (body is Map &&
-            body['error'] is Map &&
-            body['error']['message'] is String) {
-          message = body['error']['message'] as String;
-        }
-      } catch (_) {}
-      throw FormatException(message);
-    }
-    if (response.headers.contentType?.mimeType != 'application/epub+zip') {
-      throw const FormatException(
-        'The PDF service returned an invalid reading edition.',
-      );
-    }
-    sink = output.openWrite();
-    var received = 0;
-    await for (final chunk in response) {
-      received += chunk.length;
-      if (received > 128 * 1024 * 1024) {
-        throw const FormatException('The converted PDF is too large.');
-      }
-      sink.add(chunk);
-      await sink.flush();
-    }
-    await sink.close();
-    sink = null;
-    return output.path;
-  } catch (error) {
-    await sink?.close();
-    await directory.delete(recursive: true);
-    if (timedOut) {
-      throw const FormatException(
-        'PDF conversion timed out. Try a smaller document.',
-      );
-    }
-    if (error is FormatException) rethrow;
+    worker = await Isolate.spawn(
+      _convertOnDevice,
+      [messages.sendPort, sourcePath, output],
+      onError: messages.sendPort,
+      onExit: messages.sendPort,
+      errorsAreFatal: true,
+      debugName: 'pdf-extractor',
+    );
+    await result.future.timeout(timeout);
+    succeeded = true;
+    return output;
+  } on TimeoutException {
     throw const FormatException(
-      'PDF imports need a connection to your reading server.',
+      'PDF conversion timed out. Try a smaller document.',
     );
   } finally {
-    timer.cancel();
-    client.close(force: true);
+    // Wait for termination before deleting a partial file: a late worker write
+    // must not recreate or race cleanup after a timeout.
+    if (worker != null) {
+      worker.kill(priority: Isolate.immediate);
+      await exited.future;
+    }
+    await subscription.cancel();
+    messages.close();
+    if (!succeeded) await directory.delete(recursive: true);
   }
+}
+
+void _convertOnDevice(List<Object?> request) {
+  final reply = request[0] as SendPort;
+  Object response = true;
+  try {
+    final input = File(request[1] as String).readAsBytesSync();
+    if (input.isEmpty || input.length > maxPdfBytes) {
+      throw const FormatException('PDF imports are limited to 64 MiB.');
+    }
+    final document = pdf.extract(
+      input,
+      options: const pdf.Options(timeout: Duration(seconds: 60)),
+    );
+    final book = pdf.epub(document);
+    if (book.length > _maxResultBytes) {
+      throw const FormatException('The converted PDF is too large.');
+    }
+    File(request[2] as String).writeAsBytesSync(book, flush: true);
+  } on pdf.PdfException catch (error) {
+    response = switch (error.code) {
+      'ABORTED' => 'PDF conversion timed out. Try a smaller document.',
+      'RESOURCE_LIMIT' =>
+        'This PDF exceeds the device extraction limits. Try a smaller document.',
+      _ => error.message,
+    };
+  } on FormatException catch (error) {
+    response = error.message;
+  } catch (_) {
+    response = 'PDF conversion failed on this device.';
+  }
+  Isolate.exit(reply, response);
 }
