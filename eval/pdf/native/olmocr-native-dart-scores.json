@@ -1,0 +1,88 @@
+{
+  "candidate": "native-dart",
+  "datasetRevision": "54a96a6fb6a2bd3b297e59869491db4d3625b711",
+  "evaluatorRevision": "f7cfe4c22098b154c76b6ec950d1c0a464eecf8d",
+  "pdfs": 1403,
+  "tests": 8413,
+  "overallMacroPassRate": 0.3033110936410476,
+  "bootstrap95CI": [
+    0.2942462538391735,
+    0.31162985448008884
+  ],
+  "categories": {
+    "arxiv_math": {
+      "passed": 16,
+      "total": 2927,
+      "passRate": 0.005466347796378545
+    },
+    "baseline": {
+      "passed": 1382,
+      "total": 1394,
+      "passRate": 0.9913916786226685
+    },
+    "headers_footers": {
+      "passed": 458,
+      "total": 760,
+      "passRate": 0.6026315789473684
+    },
+    "long_tiny_text": {
+      "passed": 71,
+      "total": 442,
+      "passRate": 0.16063348416289594
+    },
+    "multi_column": {
+      "passed": 314,
+      "total": 884,
+      "passRate": 0.3552036199095023
+    },
+    "old_scans": {
+      "passed": 70,
+      "total": 526,
+      "passRate": 0.13307984790874525
+    },
+    "old_scans_math": {
+      "passed": 0,
+      "total": 458,
+      "passRate": 0.0
+    },
+    "table_tests": {
+      "passed": 182,
+      "total": 1022,
+      "passRate": 0.1780821917808219
+    }
+  },
+  "testTypes": {
+    "math": {
+      "passed": 16.0,
+      "total": 3385,
+      "passRate": 0.004726735598227474
+    },
+    "absent": {
+      "passed": 521.0,
+      "total": 823,
+      "passRate": 0.6330498177399757
+    },
+    "baseline": {
+      "passed": 1391.0,
+      "total": 1403,
+      "passRate": 0.9914468995010691
+    },
+    "present": {
+      "passed": 71.0,
+      "total": 721,
+      "passRate": 0.09847434119278779
+    },
+    "order": {
+      "passed": 314.0,
+      "total": 1061,
+      "passRate": 0.29594721960414705
+    },
+    "table": {
+      "passed": 180.0,
+      "total": 1020,
+      "passRate": 0.17647058823529413
+    }
+  },
+  "testResults": "olmocr-native-dart-tests.jsonl",
+  "testResultsSHA256": "1aa2eabbbca6bc9b21bf265f9105273f6cf4c3b187976ede93284683ae1a56b7"
+}

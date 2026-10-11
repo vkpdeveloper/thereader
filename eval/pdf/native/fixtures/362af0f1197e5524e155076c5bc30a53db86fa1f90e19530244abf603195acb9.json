@@ -1,0 +1,71 @@
+{
+  "document": {
+    "engine": "PDF Extractor",
+    "version": "0.3.0",
+    "title": "Untitled PDF",
+    "language": "en",
+    "sha256": "362af0f1197e5524e155076c5bc30a53db86fa1f90e19530244abf603195acb9",
+    "pages": [
+      {
+        "number": 1,
+        "width": 300,
+        "height": 300,
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Read A� here.",
+            "runs": [
+              {
+                "text": "Read "
+              },
+              {
+                "text": "A�",
+                "asset": "assets/091fc4a63e7162f4eb05fd71.svg",
+                "heightEm": 1.2,
+                "depthEm": 0.3200000000000003,
+                "monochrome": true
+              },
+              {
+                "text": " here."
+              }
+            ],
+            "box": {
+              "x": 20,
+              "y": 92.2,
+              "width": 59.730000000000004,
+              "height": 10
+            }
+          }
+        ]
+      }
+    ],
+    "assets": [
+      {
+        "name": "assets/091fc4a63e7162f4eb05fd71.svg",
+        "mediaType": "image/svg+xml",
+        "width": 12,
+        "height": 12,
+        "data": "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjQzLjQ1MCA5MS4yMDAgMTIuMDAwIDEyLjAwMCIgd2lkdGg9IjEyLjAwMCIgaGVpZ2h0PSIxMi4wMDAiIHJvbGU9ImltZyI+PHRpdGxlPkHvv708L3RpdGxlPjxyZWN0IHg9IjQzLjQ1MCIgeT0iOTEuMjAwIiB3aWR0aD0iMTIuMDAwIiBoZWlnaHQ9IjEyLjAwMCIgZmlsbD0id2hpdGUiLz48ZGVmcz48cGF0aCBpZD0iZzAiIGQ9Ik0wLjAwMCAwLjAwMCBMNTAuMDAwIDAuMDAwIEw1MC4wMDAgNTAuMDAwIFoiLz48cGF0aCBpZD0iZzEiIGQ9Ik0wLjAwMCAwLjAwMCBMNTAuMDAwIDAuMDAwIEw1MC4wMDAgNTAuMDAwIFoiLz48L2RlZnM+PHVzZSBocmVmPSIjZzAiIHRyYW5zZm9ybT0ibWF0cml4KDAuMSAwIDAgLTAuMSA0NC40NSAxMDApIiBmaWxsPSIjMDAwMDAwIi8+PHVzZSBocmVmPSIjZzEiIHRyYW5zZm9ybT0ibWF0cml4KDAuMSAwIDAgLTAuMSA0OS40NSAxMDApIiBmaWxsPSIjMDAwMDAwIi8+PC9zdmc+"
+      }
+    ],
+    "outline": [],
+    "warnings": [
+      {
+        "code": "unmapped-glyph",
+        "page": 1,
+        "message": "Some glyphs could not be mapped to Unicode."
+      }
+    ],
+    "complete": false,
+    "markdown": "\u003e Extraction notes: this document contains features that need review. See the structured warnings or the reading edition's extraction notes.\n\n\u003ca id=\"page-1\"\u003e\u003c/a\u003e\n\nRead ![A�](assets/091fc4a63e7162f4eb05fd71.svg) here.\n",
+    "stats": {
+      "pages": 1,
+      "characters": 13,
+      "images": 0,
+      "tables": 0,
+      "math": 0,
+      "headings": 0,
+      "durationMs": 0
+    }
+  }
+}

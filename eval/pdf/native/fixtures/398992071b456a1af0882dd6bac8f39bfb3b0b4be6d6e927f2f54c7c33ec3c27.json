@@ -1,0 +1,66 @@
+{
+  "document": {
+    "engine": "PDF Extractor",
+    "version": "0.3.0",
+    "title": "Untitled PDF",
+    "language": "en",
+    "sha256": "398992071b456a1af0882dd6bac8f39bfb3b0b4be6d6e927f2f54c7c33ec3c27",
+    "pages": [
+      {
+        "number": 1,
+        "width": 612,
+        "height": 792,
+        "blocks": [
+          {
+            "kind": "image",
+            "asset": "assets/c151a548061aeef44b7670db.png",
+            "alt": "Image",
+            "box": {
+              "x": 54,
+              "y": 162,
+              "width": 30,
+              "height": 30
+            }
+          },
+          {
+            "kind": "paragraph",
+            "text": "After the image",
+            "runs": [
+              {
+                "text": "After the image"
+              }
+            ],
+            "box": {
+              "x": 54,
+              "y": 232.64,
+              "width": 87.27600000000001,
+              "height": 12
+            }
+          }
+        ]
+      }
+    ],
+    "assets": [
+      {
+        "name": "assets/c151a548061aeef44b7670db.png",
+        "mediaType": "image/png",
+        "width": 1,
+        "height": 1,
+        "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAEUlEQVR4AQAEAPv/Av8AAAMAAwkBAkqv8tAAAAAASUVORK5CYII="
+      }
+    ],
+    "outline": [],
+    "warnings": [],
+    "complete": true,
+    "markdown": "\u003ca id=\"page-1\"\u003e\u003c/a\u003e\n\n![Image](assets/c151a548061aeef44b7670db.png)\n\nAfter the image\n",
+    "stats": {
+      "pages": 1,
+      "characters": 15,
+      "images": 1,
+      "tables": 0,
+      "math": 0,
+      "headings": 0,
+      "durationMs": 0
+    }
+  }
+}

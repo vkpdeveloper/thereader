@@ -1,0 +1,61 @@
+{
+  "document": {
+    "engine": "PDF Extractor",
+    "version": "0.3.0",
+    "title": "Untitled PDF",
+    "language": "en",
+    "sha256": "c44bef85b030736aa8492bbb2f7a335dfa73a7bcbe6b717a77e533fed040947c",
+    "pages": [
+      {
+        "number": 1,
+        "width": 300,
+        "height": 300,
+        "blocks": [
+          {
+            "kind": "math",
+            "text": "A",
+            "asset": "assets/0e7294a47b8afa9c8b27608d.svg",
+            "alt": "A",
+            "role": "formula",
+            "representation": "positioned",
+            "widthEm": 0.8336666666666664,
+            "monochrome": true,
+            "box": {
+              "x": 49,
+              "y": 139.64,
+              "width": 10.003999999999998,
+              "height": 14
+            }
+          }
+        ]
+      }
+    ],
+    "assets": [
+      {
+        "name": "assets/0e7294a47b8afa9c8b27608d.svg",
+        "mediaType": "image/svg+xml",
+        "width": 11,
+        "height": 14,
+        "data": "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjQ5LjAwMCAxMzkuNjQwIDEwLjAwNCAxNC4wMDAiIHdpZHRoPSIxMC4wMDQiIGhlaWdodD0iMTQuMDAwIiByb2xlPSJpbWciPjx0aXRsZT5BPC90aXRsZT48cmVjdCB4PSI0OS4wMDAiIHk9IjEzOS42NDAiIHdpZHRoPSIxMC4wMDQiIGhlaWdodD0iMTQuMDAwIiBmaWxsPSJ3aGl0ZSIvPjxkZWZzPjxwYXRoIGlkPSJnMCIgZD0iTTAuMDAwIDAuMDAwIEwxMDAuMDAwIDAuMDAwIFoiLz48L2RlZnM+PHVzZSBocmVmPSIjZzAiIHRyYW5zZm9ybT0ibWF0cml4KDAuMDEyIDAgMCAtMC4wMTIgNTAgMTUwKSIgZmlsbD0iIzAwMDAwMCIvPjwvc3ZnPg=="
+      }
+    ],
+    "outline": [],
+    "warnings": [
+      {
+        "code": "math-positioned",
+        "message": "Equations preserve PDF glyph positions and paths. Their linear text is not semantic LaTeX or MathML."
+      }
+    ],
+    "complete": false,
+    "markdown": "\u003e Extraction notes: this document contains features that need review. See the structured warnings or the reading edition's extraction notes.\n\n\u003ca id=\"page-1\"\u003e\u003c/a\u003e\n\n![A](assets/0e7294a47b8afa9c8b27608d.svg)\n",
+    "stats": {
+      "pages": 1,
+      "characters": 1,
+      "images": 0,
+      "tables": 0,
+      "math": 1,
+      "headings": 0,
+      "durationMs": 0
+    }
+  }
+}

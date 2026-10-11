@@ -1,0 +1,41 @@
+name: PDF browser engines
+on:
+  pull_request:
+    paths:
+      - 'packages/pdf_ts/**'
+      - 'packages/pdf_dart/**'
+      - 'eval/pdf/native/**'
+      - 'apps/web/src/lib/import/**'
+      - '.github/workflows/pdf-browser.yml'
+  push:
+    branches: [main]
+    paths: ['packages/pdf_ts/**', 'packages/pdf_dart/**']
+jobs:
+  typescript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.0'
+      - run: bun install --frozen-lockfile
+      - run: bun run --cwd packages/pdf_ts typecheck
+      - run: bun test packages/pdf_ts/test apps/web/src/lib/import/pdf.test.ts
+      - run: bun run --cwd apps/web build
+  dart:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: '3.13.4'
+      # Test the standalone package, without requiring the workspace's Flutter SDK.
+      - run: |
+          mkdir -p /tmp/pdf-standalone/packages /tmp/pdf-standalone/eval/pdf/native
+          cp -R packages/pdf_dart /tmp/pdf-standalone/packages/pdf_dart
+          sed -i '/^resolution: workspace$/d' /tmp/pdf-standalone/packages/pdf_dart/pubspec.yaml
+          cp -R eval/pdf/native/fixtures eval/pdf/native/edge-fixtures /tmp/pdf-standalone/eval/pdf/native/
+      - run: dart pub get && dart analyze && dart test
+        working-directory: /tmp/pdf-standalone/packages/pdf_dart
+      - run: mkdir -p build && dart compile js -O2 web/worker.dart -o build/pdf-worker.js
+        working-directory: /tmp/pdf-standalone/packages/pdf_dart

@@ -31,7 +31,9 @@ func fixture(objects []string, trailer string) []byte {
 		fmt.Fprintf(&b, "%010d 00000 n \n", off)
 	}
 	fmt.Fprintf(&b, "trailer\n<< /Size %d /Root 1 0 R %s >>\nstartxref\n%d\n%%%%EOF\n", len(offsets), trailer, xref)
-	return b.Bytes()
+	data := b.Bytes()
+	recordNativeParityFixture(data)
+	return data
 }
 func streamObject(content string) string {
 	return fmt.Sprintf("<< /Length %d >>\nstream\n%s\nendstream", len(content), content)

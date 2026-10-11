@@ -1,0 +1,34 @@
+library pdf_extractor;
+
+import 'dart:convert';
+import 'dart:math' as math;
+import 'dart:typed_data';
+import 'package:archive/archive.dart' as archive;
+import 'package:crypto/crypto.dart' as crypto;
+import 'package:xml/xml.dart' as xml;
+import 'package:image/image.dart' as img;
+
+part 'src/model.dart';
+part 'src/syntax.dart';
+part 'src/filters.dart';
+part 'src/parser.dart';
+part 'src/glyph_data.dart';
+part 'src/font.dart';
+part 'src/geometry.dart';
+part 'src/cff_data.dart';
+part 'src/cff.dart';
+part 'src/truetype.dart';
+part 'src/type3.dart';
+part 'src/font_program.dart';
+part 'src/content.dart';
+part 'src/fax_data.dart';
+part 'src/fax.dart';
+part 'src/assets.dart';
+part 'src/images.dart';
+part 'src/lines.dart';
+part 'src/tables.dart';
+part 'src/math.dart';
+part 'src/layout.dart';
+part 'src/metadata.dart';
+part 'src/extract.dart';
+part 'src/render.dart';

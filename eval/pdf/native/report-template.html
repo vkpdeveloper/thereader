@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>DOCUMENT TITLE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Andika:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #202124;
+    --fg: #e3e3e3;
+    --fg-dim: #b8b8b8;
+    --rule: #5f6368;
+    --rule-soft: #3d3e41;
+    --stripe: #3d3e41;
+    --surface: #2b2c2f;
+    --link: #8ab4f8;
+    --font: "Andika", "Comic Neue", "Trebuchet MS", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    overflow-wrap: break-word;
+  }
+
+  body {
+    margin: 0;
+    padding-block: clamp(2rem, 5vw, 4rem) clamp(4rem, 9vw, 8rem);
+    padding-inline: clamp(1rem, 4vw, 4rem);
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font);
+    font-size: 24px;
+    line-height: 1.8;
+    letter-spacing: normal;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  main {
+    width: max(60vw, min(72rem, 100%));
+    max-width: 100%;
+    min-width: 0;
+    margin: 0 auto;
+  }
+
+  h1, h2, h3, h4 {
+    font-weight: 700;
+    line-height: 1.3;
+    text-wrap: balance;
+    margin: 2.4em 0 0.8em;
+  }
+  h1 {
+    margin-top: 0;
+    font-size: clamp(1.7em, calc(1.45em + 1.5vw), 2.1em);
+    overflow-wrap: anywhere;
+  }
+  h2 { font-size: 1.55em; }
+  h3 { font-size: 1.2em; }
+  h4 { font-size: 1em; color: var(--fg-dim); }
+
+  p, ul, ol, blockquote, .table-wrap, pre, figure { margin: 0 0 1.5em; }
+  p { text-wrap: pretty; }
+
+  ul, ol { padding-left: 1.4em; }
+  li { margin-bottom: 0.5em; }
+  li > ul, li > ol { margin: 0.5em 0 0; }
+
+  a {
+    color: var(--link);
+    text-underline-offset: 0.2em;
+    overflow-wrap: anywhere;
+  }
+
+  img, picture, svg, video, canvas, iframe {
+    max-width: 100%;
+  }
+  img, video, canvas { height: auto; }
+
+  strong { font-weight: 700; }
+
+  hr { border: 0; border-top: 1px solid var(--rule-soft); margin: 3em 0; }
+
+  blockquote {
+    border-left: 3px solid var(--rule);
+    padding-left: 1.2em;
+    color: var(--fg-dim);
+  }
+
+  .lede { color: var(--fg-dim); }
+
+  /* Code */
+  code, kbd, samp {
+    font-family: var(--mono);
+    font-size: 0.82em;
+    letter-spacing: normal;
+  }
+  p code, li code, td code, th code, a code {
+    background: var(--surface);
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+  }
+  pre {
+    max-width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--rule-soft);
+    border-radius: 6px;
+    padding: 1.1em 1.3em;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+    line-height: 1.6;
+  }
+  pre code { background: none; padding: 0; font-size: 0.8em; }
+
+  /* Tables */
+  .table-wrap {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.86em;
+    line-height: 1.55;
+  }
+  caption {
+    caption-side: top;
+    text-align: left;
+    color: var(--fg-dim);
+    font-size: 0.9em;
+    padding-bottom: 0.6em;
+  }
+  th, td {
+    padding: 0.75em 1em;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+  thead th {
+    font-weight: 700;
+    border-bottom: 2px solid var(--rule);
+    white-space: nowrap;
+  }
+  tbody tr:nth-child(even) { background: rgba(255, 255, 255, 0.035); }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.tight, th.tight { white-space: nowrap; width: 1%; }
+
+  /* Colour swatches: background is the literal hex, foreground picked by contrast */
+  .hex {
+    font-family: var(--mono);
+    font-size: 0.78em;
+    padding: 0.15em 0.5em;
+    border-radius: 4px;
+    border: 1px solid rgba(128, 128, 128, 0.35);
+    white-space: nowrap;
+    background: var(--surface);
+  }
+
+  @media (max-width: 720px) {
+    body {
+      padding-top: max(1.5rem, env(safe-area-inset-top));
+      padding-right: max(1rem, env(safe-area-inset-right));
+      padding-bottom: max(3.5rem, env(safe-area-inset-bottom));
+      padding-left: max(1rem, env(safe-area-inset-left));
+      font-size: 19px;
+    }
+    h1, h2, h3, h4 { text-wrap: wrap; }
+    h1 { line-height: 1.2; }
+    h2 { font-size: 1.4em; }
+    h3 { font-size: 1.15em; }
+    ul, ol { padding-left: 1.2em; }
+    blockquote { padding-left: 0.85em; }
+    pre { padding: 0.9em 1em; }
+    th, td { padding: 0.65em 0.75em; }
+    thead th { white-space: normal; }
+    td.tight, th.tight { white-space: nowrap; }
+  }
+
+  @media (max-width: 380px) {
+    body { font-size: 18px; }
+    h1 { font-size: 1.65em; }
+    p, ul, ol, blockquote, .table-wrap, pre, figure { margin-bottom: 1.3em; }
+  }
+
+  @media print {
+    body { background: #fff; color: #111; }
+    main { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<main>
+
+  <h1>DOCUMENT TITLE</h1>
+  <p class="lede">One line of context: scope, date, what this is based on.</p>
+
+  <!-- Content goes here -->
+
+</main>
+
+<script>
+  // Any element with class="hex" whose text is a hex colour gets that exact
+  // colour as its background, with black or white text chosen by WCAG contrast.
+  (function () {
+    var lum = function (c) {
+      var v = c / 255;
+      return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    };
+    document.querySelectorAll(".hex").forEach(function (el) {
+      var raw = (el.dataset.color || el.textContent).trim();
+      var m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(raw);
+      if (!m) return;
+      var h = m[1];
+      if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+      var r = parseInt(h.slice(0, 2), 16),
+          g = parseInt(h.slice(2, 4), 16),
+          b = parseInt(h.slice(4, 6), 16);
+      var L = 0.2126 * lum(r) + 0.7152 * lum(g) + 0.0722 * lum(b);
+      // Contrast against white is (1.05)/(L+0.05); against black is (L+0.05)/0.05.
+      el.style.background = "#" + h;
+      el.style.color = (L + 0.05) / 0.05 > 1.05 / (L + 0.05) ? "#000000" : "#ffffff";
+      el.style.borderColor = "rgba(128,128,128,0.35)";
+    });
+  })();
+</script>
+</body>
+</html>

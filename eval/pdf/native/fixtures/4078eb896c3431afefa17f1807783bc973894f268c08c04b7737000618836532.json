@@ -1,0 +1,47 @@
+{
+  "document": {
+    "engine": "PDF Extractor",
+    "version": "0.3.0",
+    "title": "Untitled PDF",
+    "language": "en",
+    "sha256": "4078eb896c3431afefa17f1807783bc973894f268c08c04b7737000618836532",
+    "pages": [
+      {
+        "number": 1,
+        "width": 612,
+        "height": 792,
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Hi",
+            "runs": [
+              {
+                "text": "Hi"
+              }
+            ],
+            "box": {
+              "x": 54,
+              "y": 82.64,
+              "width": 11.004000000000005,
+              "height": 12
+            }
+          }
+        ]
+      }
+    ],
+    "assets": [],
+    "outline": [],
+    "warnings": [],
+    "complete": true,
+    "markdown": "\u003ca id=\"page-1\"\u003e\u003c/a\u003e\n\nHi\n",
+    "stats": {
+      "pages": 1,
+      "characters": 2,
+      "images": 0,
+      "tables": 0,
+      "math": 0,
+      "headings": 0,
+      "durationMs": 0
+    }
+  }
+}

@@ -1,35 +1,54 @@
-import * as bunTest from 'bun:test';
+import { test, expect as bunExpect, afterEach } from 'bun:test';
+import { extract, epub, PdfError } from '@thereader/pdf-extractor';
 import { convertPdf } from './pdf';
 import { inspectFile, sourceKind } from './index';
 
-const { test, afterEach } = bunTest;
-// Match the existing import suite's full matcher declaration.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const expect = bunTest.expect as unknown as (value: unknown) => any;
+const expect = bunExpect as unknown as (value: unknown) => any;
+const originalWorker = globalThis.Worker;
 const originalFetch = globalThis.fetch;
-afterEach(() => { globalThis.fetch = originalFetch; });
-const pdf = () => new File(['%PDF-1.7\n'], 'reading.pdf', { type: 'application/pdf' });
+afterEach(() => { globalThis.Worker = originalWorker; globalThis.fetch = originalFetch; });
 
-test('PDF is recognized by bytes, converted at the captured origin and validated as EPUB', async () => {
-  const bun = (globalThis as unknown as { Bun: { file(path: string): Blob } }).Bun;
-  const sample = await bun.file(new URL('../../../../../apps/api/fixtures/generated/the-quiet-hour-v1.epub', import.meta.url).pathname).arrayBuffer();
-  let called = '';
-  globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
-    called = String(url); expect(init?.body).toBeInstanceOf(File); expect(new Headers(init?.headers).get('Content-Type')).toBe('application/pdf');
-    return new Response(sample, { headers: { 'Content-Type': 'application/epub+zip' } });
-  }) as typeof fetch;
-  const result = await inspectFile(pdf(), { origin: 'https://chosen-reader.example.org' });
-  expect(called).toBe('https://chosen-reader.example.org/v1/pdf/extract');
-  expect(result.converted).toBe(true); expect(result.title).toBe('The Quiet Hour'); expect(result.epub.type).toBe('application/epub+zip');
+// Exercises the import contract with the real engine; browser tests exercise
+// the actual worker boundary, transferred buffers and UI responsiveness.
+class TestWorker {
+  onmessage?: (event: { data: unknown }) => void;
+  onerror?: () => void;
+  onmessageerror?: () => void;
+  terminated = false;
+  postMessage(data: { id: number; bytes: ArrayBuffer }) {
+    queueMicrotask(() => {
+      try {
+        const doc = extract(new Uint8Array(data.bytes));
+        this.onmessage?.({ data: { id: data.id, result: epub(doc), stats: doc.stats, complete: doc.complete, warnings: doc.warnings } });
+      } catch (error) {
+        this.onmessage?.({ data: { id: data.id, error: { code: error instanceof PdfError ? error.code : 'EXTRACTION_FAILED', message: String(error) } } });
+      }
+    });
+  }
+  terminate() { this.terminated = true; }
+}
+const workerFactory = () => new TestWorker() as unknown as Worker;
+
+test('PDF import produces a validated reading edition without an extraction network request', async () => {
+  globalThis.Worker = TestWorker as unknown as typeof Worker;
+  globalThis.fetch = (async () => { throw new Error('PDF extraction must not use the network'); }) as typeof fetch;
+  const input = await (globalThis as unknown as { Bun: { file(path: string): Blob } }).Bun.file(new URL('../../../../../eval/pdf/native/fixtures/cc720d5a85e5f3edd331f47999cf24120e88a65b7e71b59eab409cf4d048da53.pdf', import.meta.url).pathname).arrayBuffer();
+  const result = await inspectFile(new File([input], 'reading.pdf'));
+  expect(result.converted).toBe(true);
+  expect(result.epub.type).toBe('application/epub+zip');
+  expect(result.title.length).toBeGreaterThan(0);
   expect(sourceKind(new TextEncoder().encode('%PDF-1.7'))).toBe('pdf');
 });
 
-test('scan and encrypted PDF errors are actionable; wrong response types and network failures are refused', async () => {
-  const failure = async (promise: Promise<unknown>) => { try { await promise; throw new Error('expected failure'); } catch (error) { return error; } };
-  const scan = await failure(convertPdf(pdf(), 'https://reader.example.org', (async () => new Response(JSON.stringify({ error: { code: 'PDF_NEEDS_OCR', message: 'This scan needs OCR.' } }), { status: 422 })) as typeof fetch));
-  expect(scan).toMatchObject({ code: 'PDF_NEEDS_OCR', message: 'This scan needs OCR.' });
-  const bad = await failure(convertPdf(pdf(), 'https://reader.example.org', (async () => new Response('HTML', { headers: { 'Content-Type': 'text/html' } })) as typeof fetch));
-  expect(bad).toMatchObject({ code: 'BAD_RESPONSE' });
-  const network = await failure(convertPdf(pdf(), 'https://reader.example.org', (async () => { throw new TypeError('failed'); }) as typeof fetch));
-  expect(network).toMatchObject({ code: 'NETWORK', isNetwork: true });
+test('invalid PDF and cancellation errors survive the worker boundary', async () => {
+  const file = new File(['%PDF-1.7\n'], 'bad.pdf');
+  await expect(convertPdf(file, { workerFactory })).rejects.toMatchObject({ code: 'INVALID_PDF' });
+  const controller = new AbortController(); controller.abort();
+  await expect(convertPdf(file, { workerFactory, signal: controller.signal })).rejects.toMatchObject({ code: 'ABORTED' });
+});
+
+test('empty input is rejected before a worker is created', async () => {
+  let created = false;
+  await expect(convertPdf(new File([], 'empty.pdf'), { workerFactory: () => { created = true; return workerFactory(); } })).rejects.toMatchObject({ code: 'TOO_LARGE' });
+  expect(created).toBe(false);
 });

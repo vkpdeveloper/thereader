@@ -7,3 +7,4 @@ environment:
 workspace:
   - apps/mobile
   - packages/truffle_dart
+  - packages/pdf_dart

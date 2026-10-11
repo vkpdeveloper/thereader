@@ -1,0 +1,58 @@
+{
+  "document": {
+    "engine": "PDF Extractor",
+    "version": "0.3.0",
+    "title": "Untitled PDF",
+    "language": "en",
+    "sha256": "9e051e0ff085bf235c1078b24f569e29cc484d38898d5bdbeb6bb0393127d50c",
+    "pages": [
+      {
+        "number": 1,
+        "width": 300,
+        "height": 300,
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "ABC",
+            "runs": [
+              {
+                "text": "ABC"
+              }
+            ],
+            "box": {
+              "x": 50,
+              "y": 140.64,
+              "width": 24.012,
+              "height": 12
+            }
+          }
+        ]
+      }
+    ],
+    "assets": [],
+    "outline": [],
+    "warnings": [
+      {
+        "code": "font-outline",
+        "page": 1,
+        "message": "Positioned graphics use Unicode fallback for Custom: invalid PDF"
+      },
+      {
+        "code": "font-encoding",
+        "page": 1,
+        "message": "Embedded simple-font encoding could not be resolved; StandardEncoding fallback is approximate."
+      }
+    ],
+    "complete": false,
+    "markdown": "\u003e Extraction notes: this document contains features that need review. See the structured warnings or the reading edition's extraction notes.\n\n\u003ca id=\"page-1\"\u003e\u003c/a\u003e\n\nABC\n",
+    "stats": {
+      "pages": 1,
+      "characters": 3,
+      "images": 0,
+      "tables": 0,
+      "math": 0,
+      "headings": 0,
+      "durationMs": 0
+    }
+  }
+}

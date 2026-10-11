@@ -1,0 +1,53 @@
+{
+  "document": {
+    "engine": "PDF Extractor",
+    "version": "0.3.0",
+    "title": "Untitled PDF",
+    "language": "en",
+    "sha256": "9864cdf222471e7297015e3c827ef58d965b307991371f20959a9c9a6c7669f6",
+    "pages": [
+      {
+        "number": 1,
+        "width": 612,
+        "height": 792,
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "Text after unsupported image",
+            "runs": [
+              {
+                "text": "Text after unsupported image"
+              }
+            ],
+            "box": {
+              "x": 54,
+              "y": 82.64,
+              "width": 162.612,
+              "height": 12
+            }
+          }
+        ]
+      }
+    ],
+    "assets": [],
+    "outline": [],
+    "warnings": [
+      {
+        "code": "image",
+        "page": 1,
+        "message": "unsupported image color space Unsupported"
+      }
+    ],
+    "complete": false,
+    "markdown": "\u003e Extraction notes: this document contains features that need review. See the structured warnings or the reading edition's extraction notes.\n\n\u003ca id=\"page-1\"\u003e\u003c/a\u003e\n\nText after unsupported image\n",
+    "stats": {
+      "pages": 1,
+      "characters": 28,
+      "images": 0,
+      "tables": 0,
+      "math": 0,
+      "headings": 0,
+      "durationMs": 0
+    }
+  }
+}

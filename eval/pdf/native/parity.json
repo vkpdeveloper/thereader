@@ -1,0 +1,185 @@
+{
+  "baseline": "Go v0.3.0 commit 625d6b202da5759e13dc67c743022a22c2e07175",
+  "officialBenchmark": [
+    {
+      "candidate": "native-ts",
+      "tests": 8413,
+      "missing": [],
+      "extra": [],
+      "changedPassFail": [],
+      "overallMacroPassRate": 0.3033110936410476
+    },
+    {
+      "candidate": "native-dart",
+      "tests": 8413,
+      "missing": [],
+      "extra": [],
+      "changedPassFail": [],
+      "overallMacroPassRate": 0.3033110936410476
+    },
+    {
+      "candidate": "browser-ts",
+      "tests": 8413,
+      "missing": [],
+      "extra": [],
+      "changedPassFail": [],
+      "overallMacroPassRate": 0.3033110936410476
+    },
+    {
+      "candidate": "browser-dart",
+      "tests": 8413,
+      "missing": [],
+      "extra": [],
+      "changedPassFail": [],
+      "overallMacroPassRate": 0.3033110936410476
+    }
+  ],
+  "realWorld": [
+    {
+      "engine": "ts",
+      "document": "harness",
+      "pages": 43,
+      "blocksAndTableStructureEqual": true,
+      "markdownEqualAfterAssetURLNormalization": true,
+      "assetsGo": 35,
+      "assetsPort": 35,
+      "pngCompared": 14,
+      "pngPixelMismatches": [
+        6
+      ],
+      "pngDifferences": [
+        {
+          "assetIndex": 6,
+          "width": 202,
+          "height": 202,
+          "pixelsWithAnyDifference": 10401,
+          "maxChannelDifference": 3,
+          "meanAbsoluteChannelDifference": 0.11400230369571611,
+          "alphaIdentical": true,
+          "reason": "Masked JPEG decoded by distinct generic JPEG codecs before PNG encoding; integer rounding differs."
+        }
+      ]
+    },
+    {
+      "engine": "ts",
+      "document": "axler",
+      "pages": 404,
+      "blocksAndTableStructureEqual": true,
+      "markdownEqualAfterAssetURLNormalization": true,
+      "assetsGo": 5952,
+      "assetsPort": 5952,
+      "pngCompared": 0,
+      "pngPixelMismatches": [],
+      "pngDifferences": []
+    },
+    {
+      "engine": "ts",
+      "document": "hefferon",
+      "pages": 525,
+      "blocksAndTableStructureEqual": true,
+      "markdownEqualAfterAssetURLNormalization": true,
+      "assetsGo": 3593,
+      "assetsPort": 3593,
+      "pngCompared": 1,
+      "pngPixelMismatches": [],
+      "pngDifferences": []
+    },
+    {
+      "engine": "ts",
+      "document": "thinkpython",
+      "pages": 244,
+      "blocksAndTableStructureEqual": true,
+      "markdownEqualAfterAssetURLNormalization": true,
+      "assetsGo": 52,
+      "assetsPort": 52,
+      "pngCompared": 0,
+      "pngPixelMismatches": [],
+      "pngDifferences": []
+    },
+    {
+      "engine": "ts",
+      "document": "calculus",
+      "pages": 292,
+      "blocksAndTableStructureEqual": true,
+      "markdownEqualAfterAssetURLNormalization": true,
+      "assetsGo": 1295,
+      "assetsPort": 1295,
+      "pngCompared": 1,
+      "pngPixelMismatches": [],
+      "pngDifferences": []
+    },
+    {
+      "engine": "dart",
+      "document": "harness",
+      "pages": 43,
+      "blocksAndTableStructureEqual": true,
+      "markdownEqualAfterAssetURLNormalization": true,
+      "assetsGo": 35,
+      "assetsPort": 35,
+      "pngCompared": 14,
+      "pngPixelMismatches": [
+        6
+      ],
+      "pngDifferences": [
+        {
+          "assetIndex": 6,
+          "width": 202,
+          "height": 202,
+          "pixelsWithAnyDifference": 10014,
+          "maxChannelDifference": 3,
+          "meanAbsoluteChannelDifference": 0.10902117439466719,
+          "alphaIdentical": true,
+          "reason": "Masked JPEG decoded by distinct generic JPEG codecs before PNG encoding; integer rounding differs."
+        }
+      ]
+    },
+    {
+      "engine": "dart",
+      "document": "axler",
+      "pages": 404,
+      "blocksAndTableStructureEqual": true,
+      "markdownEqualAfterAssetURLNormalization": true,
+      "assetsGo": 5952,
+      "assetsPort": 5952,
+      "pngCompared": 0,
+      "pngPixelMismatches": [],
+      "pngDifferences": []
+    },
+    {
+      "engine": "dart",
+      "document": "hefferon",
+      "pages": 525,
+      "blocksAndTableStructureEqual": true,
+      "markdownEqualAfterAssetURLNormalization": true,
+      "assetsGo": 3593,
+      "assetsPort": 3593,
+      "pngCompared": 1,
+      "pngPixelMismatches": [],
+      "pngDifferences": []
+    },
+    {
+      "engine": "dart",
+      "document": "thinkpython",
+      "pages": 244,
+      "blocksAndTableStructureEqual": true,
+      "markdownEqualAfterAssetURLNormalization": true,
+      "assetsGo": 52,
+      "assetsPort": 52,
+      "pngCompared": 0,
+      "pngPixelMismatches": [],
+      "pngDifferences": []
+    },
+    {
+      "engine": "dart",
+      "document": "calculus",
+      "pages": 292,
+      "blocksAndTableStructureEqual": true,
+      "markdownEqualAfterAssetURLNormalization": true,
+      "assetsGo": 1295,
+      "assetsPort": 1295,
+      "pngCompared": 1,
+      "pngPixelMismatches": [],
+      "pngDifferences": []
+    }
+  ]
+}

@@ -1,0 +1,135 @@
+{
+  "engine": "ts",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+  "hardwareConcurrency": 10,
+  "warmups": 1,
+  "repeats": 3,
+  "scope": "Input bytes in memory. Dedicated worker, first extraction recorded separately; measured samples 1\u20133 include structured content, images and Markdown. Wall time additionally includes messaging.",
+  "rows": [
+    {
+      "name": "harness",
+      "samples": [
+        {
+          "extractionMs": 1024.2999999821186,
+          "wallMs": 1048.9000000059605,
+          "pages": 43
+        },
+        {
+          "extractionMs": 876.5,
+          "wallMs": 876.9000000059605,
+          "pages": 43
+        },
+        {
+          "extractionMs": 857.4000000059605,
+          "wallMs": 857.6999999880791,
+          "pages": 43
+        },
+        {
+          "extractionMs": 882.3000000119209,
+          "wallMs": 882.8000000119209,
+          "pages": 43
+        }
+      ]
+    },
+    {
+      "name": "axler",
+      "samples": [
+        {
+          "extractionMs": 1219.6000000238419,
+          "wallMs": 1228.8999999761581,
+          "pages": 404
+        },
+        {
+          "extractionMs": 1153.7999999821186,
+          "wallMs": 1154.9000000059605,
+          "pages": 404
+        },
+        {
+          "extractionMs": 1250.699999988079,
+          "wallMs": 1251.5999999940395,
+          "pages": 404
+        },
+        {
+          "extractionMs": 1115.2000000178814,
+          "wallMs": 1116.5,
+          "pages": 404
+        }
+      ]
+    },
+    {
+      "name": "hefferon",
+      "samples": [
+        {
+          "extractionMs": 1272.5999999940395,
+          "wallMs": 1282.4000000059605,
+          "pages": 525
+        },
+        {
+          "extractionMs": 1166.699999988079,
+          "wallMs": 1167.7999999821186,
+          "pages": 525
+        },
+        {
+          "extractionMs": 1215.2000000178814,
+          "wallMs": 1220.300000011921,
+          "pages": 525
+        },
+        {
+          "extractionMs": 1119.4000000059605,
+          "wallMs": 1120.3999999761581,
+          "pages": 525
+        }
+      ]
+    },
+    {
+      "name": "thinkpython",
+      "samples": [
+        {
+          "extractionMs": 349.19999998807907,
+          "wallMs": 357.60000002384186,
+          "pages": 244
+        },
+        {
+          "extractionMs": 301.60000002384186,
+          "wallMs": 303.2999999821186,
+          "pages": 244
+        },
+        {
+          "extractionMs": 274.60000002384186,
+          "wallMs": 274.90000000596046,
+          "pages": 244
+        },
+        {
+          "extractionMs": 281.10000002384186,
+          "wallMs": 281.5,
+          "pages": 244
+        }
+      ]
+    },
+    {
+      "name": "calculus",
+      "samples": [
+        {
+          "extractionMs": 542.1999999880791,
+          "wallMs": 550.8999999761581,
+          "pages": 292
+        },
+        {
+          "extractionMs": 512.0999999940395,
+          "wallMs": 512.7999999821186,
+          "pages": 292
+        },
+        {
+          "extractionMs": 471.5,
+          "wallMs": 471.80000001192093,
+          "pages": 292
+        },
+        {
+          "extractionMs": 481.30000001192093,
+          "wallMs": 481.59999999403954,
+          "pages": 292
+        }
+      ]
+    }
+  ]
+}
