@@ -1,0 +1,324 @@
+[
+  {
+    "engine": "pdfplumber",
+    "version": "0.11.10",
+    "scope": "text plus default extract_tables; no Markdown/image export",
+    "id": "reading-demo",
+    "pages": 1,
+    "kind": "generated",
+    "samplesMs": [
+      7.044375000987202,
+      7.084124998073094,
+      6.704833009280264,
+      7.060042000375688,
+      6.85716699808836
+    ],
+    "medianMs": 7.044375000987202,
+    "msPerPage": 7.044375000987202,
+    "quality": {
+      "characterAccuracy": 1.0,
+      "tokenF1": 1.0,
+      "headingF1": 0.0,
+      "tableCellF1": 0.0,
+      "codeBlockF1": 0.0,
+      "imageCountF1": 0.0
+    },
+    "characters": 748,
+    "outputSha256": "8646280e31cd706776326703ab14960f9f92c9771947e5e127574ac4bdbbbb92"
+  },
+  {
+    "engine": "pdfplumber",
+    "version": "0.11.10",
+    "scope": "text plus default extract_tables; no Markdown/image export",
+    "id": "book-120",
+    "pages": 120,
+    "kind": "generated",
+    "samplesMs": [
+      670.3562499897089,
+      639.0463749994524,
+      631.7949169897474,
+      617.5597080000443,
+      604.2719170072814
+    ],
+    "medianMs": 631.7949169897474,
+    "msPerPage": 5.264957641581229,
+    "quality": {
+      "characterAccuracy": 0.9326128632746891,
+      "tokenF1": 0.9481481481481482,
+      "headingF1": 0.0
+    },
+    "characters": 58943,
+    "outputSha256": "87d5d8b979bc0d18e30c1ac34d2f439a792ec346a4de4118a478e419401e708f"
+  },
+  {
+    "engine": "pdfplumber",
+    "version": "0.11.10",
+    "scope": "text plus default extract_tables; no Markdown/image export",
+    "id": "columns",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      25.38787499361206,
+      25.459292010054924,
+      60.26974999986123,
+      24.727708005229943,
+      24.508957998477854
+    ],
+    "medianMs": 25.38787499361206,
+    "msPerPage": 8.462624997870686,
+    "quality": {
+      "characterAccuracy": 0.9243432574430823,
+      "tokenF1": 0.9801699716713881,
+      "headingF1": 0.0
+    },
+    "characters": 2855,
+    "outputSha256": "e05b94e97984d6809848e43eb8bd129d2c4d7a7ed5fd57f85b05c70b81890496"
+  },
+  {
+    "engine": "pdfplumber",
+    "version": "0.11.10",
+    "scope": "text plus default extract_tables; no Markdown/image export",
+    "id": "table",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      25.134292009170167,
+      17.330208007479087,
+      17.2971249994589,
+      17.423375000362284,
+      17.356832991936244
+    ],
+    "medianMs": 17.356832991936244,
+    "msPerPage": 5.785610997312081,
+    "quality": {
+      "characterAccuracy": 0.9491794600317628,
+      "tokenF1": 0.9595375722543352,
+      "headingF1": 0.0,
+      "tableCellF1": 0.0
+    },
+    "characters": 1889,
+    "outputSha256": "26d36b79bd1d53569d725286bba63c1cad8bf44795fb8a5bdbb8de4b98a7324e"
+  },
+  {
+    "engine": "pdfplumber",
+    "version": "0.11.10",
+    "scope": "text plus default extract_tables; no Markdown/image export",
+    "id": "code",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      15.46666600916069,
+      15.51116700284183,
+      15.377999996417202,
+      15.632208000170067,
+      15.552915996522643
+    ],
+    "medianMs": 15.51116700284183,
+    "msPerPage": 5.170389000947277,
+    "quality": {
+      "characterAccuracy": 0.9455473624503687,
+      "tokenF1": 0.9575757575757575,
+      "headingF1": 0.0,
+      "codeBlockF1": 0.0
+    },
+    "characters": 1763,
+    "outputSha256": "a7e8f90a602f1cb71bd6270006040321f509f3618d5133e4e92cb74cf90c51f0"
+  },
+  {
+    "engine": "pdfplumber",
+    "version": "0.11.10",
+    "scope": "text plus default extract_tables; no Markdown/image export",
+    "id": "image",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      14.413334007258527,
+      14.296124994871207,
+      14.329208002891392,
+      13.997249989188276,
+      13.899833007599227
+    ],
+    "medianMs": 14.296124994871207,
+    "msPerPage": 4.765374998290402,
+    "quality": {
+      "characterAccuracy": 0.9415702982349361,
+      "tokenF1": 0.9548387096774194,
+      "headingF1": 0.0,
+      "imageCountF1": 0.0
+    },
+    "characters": 1643,
+    "outputSha256": "6dbb97583a6ea5aec8d2462775b6147615ea850f1094213d3f328e2d8a633f91"
+  },
+  {
+    "engine": "pdfplumber",
+    "version": "0.11.10",
+    "scope": "text plus default extract_tables; no Markdown/image export",
+    "id": "references",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      14.790457993512973,
+      14.70425000297837,
+      15.298375001293607,
+      14.849375002086163,
+      14.976999998907559
+    ],
+    "medianMs": 14.849375002086163,
+    "msPerPage": 4.949791667362054,
+    "quality": {
+      "characterAccuracy": 0.9456398640996603,
+      "tokenF1": 0.9580838323353293,
+      "headingF1": 0.0
+    },
+    "characters": 1766,
+    "outputSha256": "f97acac7d3bd0d33a75fd8d0254fbde32b9b5388fcde39d166abf4b8d8d67077"
+  },
+  {
+    "engine": "pdfplumber",
+    "version": "0.11.10",
+    "scope": "text plus default extract_tables; no Markdown/image export",
+    "id": "unicode",
+    "pages": 2,
+    "kind": "generated",
+    "samplesMs": [
+      4.98216699634213,
+      4.8352090088883415,
+      5.039958996349014,
+      13.415417008218355,
+      4.786833000252955
+    ],
+    "medianMs": 4.98216699634213,
+    "msPerPage": 2.491083498171065,
+    "quality": {
+      "characterAccuracy": 0.8387909319899245,
+      "tokenF1": 0.8771929824561403,
+      "headingF1": 0.0
+    },
+    "characters": 397,
+    "outputSha256": "8b683dd94b358eade843a3755fc27f710bd6f9501d7bba6a98265ed69535bcb2"
+  },
+  {
+    "engine": "pdfplumber",
+    "version": "0.11.10",
+    "scope": "text plus default extract_tables; no Markdown/image export",
+    "id": "scanned",
+    "pages": 1,
+    "kind": "capability-gap",
+    "samplesMs": [
+      0.4685000021709129,
+      0.42466699960641563,
+      0.40537498716730624,
+      0.4052909935126081,
+      0.4726250044768676
+    ],
+    "medianMs": 0.42466699960641563,
+    "msPerPage": 0.42466699960641563,
+    "quality": null,
+    "characters": 0,
+    "outputSha256": "fa93fbdf3a540e492c1a450bdd1124efdee9908f49e0d821c995964bb9b4b569"
+  },
+  {
+    "engine": "pdfplumber",
+    "version": "0.11.10",
+    "scope": "text plus default extract_tables; no Markdown/image export",
+    "id": "attention",
+    "pages": 15,
+    "kind": "public-unscored",
+    "samplesMs": [
+      811.7347079969477,
+      808.2765409926651,
+      862.8410000092117,
+      826.6199999925448,
+      825.2971250039991
+    ],
+    "medianMs": 825.2971250039991,
+    "msPerPage": 55.01980833359994,
+    "quality": null,
+    "characters": 35525,
+    "outputSha256": "f993dcfa4fbad5d59a34b7b2ad310948eb59c19840e1aae3e5c7f62568ed6754"
+  },
+  {
+    "engine": "pdfplumber",
+    "version": "0.11.10",
+    "scope": "text plus default extract_tables; no Markdown/image export",
+    "id": "nist-aes",
+    "pages": 46,
+    "kind": "public-unscored",
+    "samplesMs": [
+      2582.2046659886837,
+      2360.287582996534,
+      2451.7232079961104,
+      2377.3069590097293,
+      2530.71158399689
+    ],
+    "medianMs": 2451.7232079961104,
+    "msPerPage": 53.298330608611096,
+    "quality": null,
+    "characters": 68210,
+    "outputSha256": "4dbe4ed2c63e74fa3be7a08f0e5161438c1ed49436007fb7e4857fde9e0575fe"
+  },
+  {
+    "engine": "pdfplumber",
+    "version": "0.11.10",
+    "scope": "text plus default extract_tables; no Markdown/image export",
+    "id": "rfc9110",
+    "pages": 194,
+    "kind": "public-unscored",
+    "samplesMs": [
+      6120.869666992803,
+      5809.427915999549,
+      5853.9173750032205,
+      6059.493458000361,
+      5886.7396249988815
+    ],
+    "medianMs": 5886.7396249988815,
+    "msPerPage": 30.344018685561245,
+    "quality": null,
+    "characters": 459159,
+    "outputSha256": "cfb775693ed15f8cc8734098a613960063d89c127cdc25887cf8582eb01bb6bb"
+  },
+  {
+    "engine": "pdfplumber",
+    "version": "0.11.10",
+    "scope": "text plus default extract_tables; no Markdown/image export",
+    "id": "w3c",
+    "pages": 1,
+    "kind": "public-unscored",
+    "samplesMs": [
+      0.9505829948466271,
+      0.8600409928476438,
+      0.8375000033993274,
+      0.891500007128343,
+      0.8272919949376956
+    ],
+    "medianMs": 0.8600409928476438,
+    "msPerPage": 0.8600409928476438,
+    "quality": null,
+    "characters": 14,
+    "outputSha256": "8ff70abd5acb82c3944a6946e93fd2bcc398fb22ac91bfac528e80164d286850"
+  },
+  {
+    "engine": "pdfplumber",
+    "version": "0.11.10",
+    "scope": "text plus default extract_tables; no Markdown/image export",
+    "id": "alice-book",
+    "pages": 60,
+    "kind": "generated",
+    "samplesMs": [
+      1322.8395420010202,
+      1347.209333005594,
+      1335.4743750096532,
+      1349.6532499993918,
+      1438.9688330120407
+    ],
+    "medianMs": 1347.209333005594,
+    "msPerPage": 22.45348888342657,
+    "quality": {
+      "characterAccuracy": 0.9847871857325682,
+      "tokenF1": 0.9932596891967796,
+      "headingF1": 0.0
+    },
+    "characters": 145338,
+    "outputSha256": "96d478b96de3840b165b9bc7f489b88db0e8493bdb4f44b6e0577aaa0c7fbd29"
+  }
+]

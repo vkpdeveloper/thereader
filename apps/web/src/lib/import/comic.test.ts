@@ -182,12 +182,12 @@ describe('sourceKind: magic bytes', () => {
     expect(sourceKind(head([0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x02, 0x00]))).toBe(null);
   });
 
-  test('refuses CB7, CBT and PDF with messages naming them', () => {
+  test('refuses CB7 and CBT, and recognizes PDF', () => {
     expect(() => sourceKind(head([0x37, 0x7a, 0xbc, 0xaf, 0x27, 0x1c]))).toThrow('CB7 (7-Zip) comics are not supported');
     const tar = head([...utf8Encode('page001.jpg')]);
     tar.set(utf8Encode('ustar'), 257);
     expect(() => sourceKind(tar)).toThrow('CBT (TAR) comics are not supported');
-    expect(() => sourceKind(head([...utf8Encode('%PDF-1.7')]))).toThrow('PDF files are not supported.');
+    expect(sourceKind(head([...utf8Encode('%PDF-1.7')]))).toBe('pdf');
   });
 
   test('inspectFile refuses them before reading further', async () => {

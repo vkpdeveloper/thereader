@@ -198,7 +198,7 @@ export class ImportStoreImpl extends Emitter<ImportsSnapshot> implements ImportS
   }
 
   private async importInspected(file: File, origin: string): Promise<LibraryEntry> {
-    const inspected = await this.deps.inspect(file);
+    const inspected = await this.deps.inspect(file, { origin });
     const sha = inspected.sha256.toLowerCase();
     const format = inspected.format ?? 'epub';
     const label = format === 'comic' ? 'comic' : 'EPUB';

@@ -1,0 +1,324 @@
+[
+  {
+    "engine": "pdftotext",
+    "version": "pdftotext version 26.10.0",
+    "scope": "text only; CLI startup included (no in-process API)",
+    "id": "reading-demo",
+    "pages": 1,
+    "kind": "generated",
+    "samplesMs": [
+      13.020792001043446,
+      12.435832992196083,
+      12.730916001601145,
+      12.26025000505615,
+      12.91095900523942
+    ],
+    "medianMs": 12.730916001601145,
+    "msPerPage": 12.730916001601145,
+    "quality": {
+      "characterAccuracy": 1.0,
+      "tokenF1": 1.0,
+      "headingF1": 0.0,
+      "tableCellF1": 0.0,
+      "codeBlockF1": 0.0,
+      "imageCountF1": 0.0
+    },
+    "characters": 765,
+    "outputSha256": "c74654767abb8f576a3b11d8a1d9b2bb22dbd542b0ef36900ac3c16632d5a95f"
+  },
+  {
+    "engine": "pdftotext",
+    "version": "pdftotext version 26.10.0",
+    "scope": "text only; CLI startup included (no in-process API)",
+    "id": "book-120",
+    "pages": 120,
+    "kind": "generated",
+    "samplesMs": [
+      22.775958001147956,
+      23.141499987104908,
+      22.63445800053887,
+      22.296833994914778,
+      22.70420899731107
+    ],
+    "medianMs": 22.70420899731107,
+    "msPerPage": 0.18920174164425893,
+    "quality": {
+      "characterAccuracy": 0.9326128632746891,
+      "tokenF1": 0.9481481481481482,
+      "headingF1": 0.0
+    },
+    "characters": 59424,
+    "outputSha256": "d9fe5f3c69c9badce5b25f2f6c5f0e8773b50a5089846e35f714b29af0f299ad"
+  },
+  {
+    "engine": "pdftotext",
+    "version": "pdftotext version 26.10.0",
+    "scope": "text only; CLI startup included (no in-process API)",
+    "id": "columns",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      12.40420900285244,
+      12.584958007209934,
+      12.189417000627145,
+      12.711791001493111,
+      11.74941600766033
+    ],
+    "medianMs": 12.40420900285244,
+    "msPerPage": 4.134736334284146,
+    "quality": {
+      "characterAccuracy": 0.9243432574430823,
+      "tokenF1": 0.9801699716713881,
+      "headingF1": 0.0
+    },
+    "characters": 2937,
+    "outputSha256": "5735acc195008585096bd0625055119d05fdb46bb7ec061cb700ee22eacf382a"
+  },
+  {
+    "engine": "pdftotext",
+    "version": "pdftotext version 26.10.0",
+    "scope": "text only; CLI startup included (no in-process API)",
+    "id": "table",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      12.166750006144866,
+      12.196916999528185,
+      11.922000005142763,
+      12.369874995783903,
+      12.340917004621588
+    ],
+    "medianMs": 12.196916999528185,
+    "msPerPage": 4.0656389998427285,
+    "quality": {
+      "characterAccuracy": 0.9491794600317628,
+      "tokenF1": 0.9595375722543352,
+      "headingF1": 0.0,
+      "tableCellF1": 0.0
+    },
+    "characters": 1938,
+    "outputSha256": "0684f9ed36d15ecf6d29666b96ab5dd11d0e0235401702d3bd94fe4e988860dd"
+  },
+  {
+    "engine": "pdftotext",
+    "version": "pdftotext version 26.10.0",
+    "scope": "text only; CLI startup included (no in-process API)",
+    "id": "code",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      12.322958005825058,
+      12.650709002627991,
+      12.700042003416456,
+      12.698499995167367,
+      12.810249987524003
+    ],
+    "medianMs": 12.698499995167367,
+    "msPerPage": 4.232833331722456,
+    "quality": {
+      "characterAccuracy": 0.9455473624503687,
+      "tokenF1": 0.9575757575757575,
+      "headingF1": 0.0,
+      "codeBlockF1": 0.0
+    },
+    "characters": 1779,
+    "outputSha256": "50bc3af31fa5c3a4cab5bec0320a4b46fa01c4f4e60e7bafd6688a062cd721a1"
+  },
+  {
+    "engine": "pdftotext",
+    "version": "pdftotext version 26.10.0",
+    "scope": "text only; CLI startup included (no in-process API)",
+    "id": "image",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      12.993042008019984,
+      13.272958996822126,
+      12.690707997535355,
+      12.774540999089368,
+      12.766999992891215
+    ],
+    "medianMs": 12.774540999089368,
+    "msPerPage": 4.258180333029789,
+    "quality": {
+      "characterAccuracy": 0.9415702982349361,
+      "tokenF1": 0.9548387096774194,
+      "headingF1": 0.0,
+      "imageCountF1": 0.0
+    },
+    "characters": 1659,
+    "outputSha256": "a6dbfa936d8fe15f2add5e9b52a4466dade1e06a5f6d351728af338deba59b82"
+  },
+  {
+    "engine": "pdftotext",
+    "version": "pdftotext version 26.10.0",
+    "scope": "text only; CLI startup included (no in-process API)",
+    "id": "references",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      12.986040994292125,
+      12.718292011413723,
+      12.637874999199994,
+      12.668416005908512,
+      12.578666995977983
+    ],
+    "medianMs": 12.668416005908512,
+    "msPerPage": 4.222805335302837,
+    "quality": {
+      "characterAccuracy": 0.9456398640996603,
+      "tokenF1": 0.9580838323353293,
+      "headingF1": 0.0
+    },
+    "characters": 1785,
+    "outputSha256": "5f923f17c183f5d887207903f9b01f29955b735645299bb1e3c58c6aba01a942"
+  },
+  {
+    "engine": "pdftotext",
+    "version": "pdftotext version 26.10.0",
+    "scope": "text only; CLI startup included (no in-process API)",
+    "id": "unicode",
+    "pages": 2,
+    "kind": "generated",
+    "samplesMs": [
+      12.433292009518482,
+      12.399833009112626,
+      12.15745898662135,
+      12.513416993897408,
+      12.155582997365855
+    ],
+    "medianMs": 12.399833009112626,
+    "msPerPage": 6.199916504556313,
+    "quality": {
+      "characterAccuracy": 0.8387909319899245,
+      "tokenF1": 0.8771929824561403,
+      "headingF1": 0.0
+    },
+    "characters": 406,
+    "outputSha256": "0d89d1ed4dc43dd84622d36decaeeb699c5993cda03938ab83f0bb58a94d83a5"
+  },
+  {
+    "engine": "pdftotext",
+    "version": "pdftotext version 26.10.0",
+    "scope": "text only; CLI startup included (no in-process API)",
+    "id": "scanned",
+    "pages": 1,
+    "kind": "capability-gap",
+    "samplesMs": [
+      11.698292000801302,
+      12.11350000812672,
+      11.936416995013133,
+      11.766875002649613,
+      11.64716700441204
+    ],
+    "medianMs": 11.766875002649613,
+    "msPerPage": 11.766875002649613,
+    "quality": null,
+    "characters": 1,
+    "outputSha256": "19974f224479f1aac6895a44475a88b8a76b39ba40ef4ba756ab890e626ff7ec"
+  },
+  {
+    "engine": "pdftotext",
+    "version": "pdftotext version 26.10.0",
+    "scope": "text only; CLI startup included (no in-process API)",
+    "id": "attention",
+    "pages": 15,
+    "kind": "public-unscored",
+    "samplesMs": [
+      75.65333299862687,
+      75.98275000054855,
+      76.56850000785198,
+      75.54383299429901,
+      76.10008299525362
+    ],
+    "medianMs": 75.98275000054855,
+    "msPerPage": 5.065516666703236,
+    "quality": null,
+    "characters": 39919,
+    "outputSha256": "e997ca167b2ec14d75b94d860e57e88a28a091f0b555f08ddf65a3495ba22c99"
+  },
+  {
+    "engine": "pdftotext",
+    "version": "pdftotext version 26.10.0",
+    "scope": "text only; CLI startup included (no in-process API)",
+    "id": "nist-aes",
+    "pages": 46,
+    "kind": "public-unscored",
+    "samplesMs": [
+      133.90100000833627,
+      136.24945799529087,
+      133.60291699063964,
+      134.18254199496005,
+      136.6478330019163
+    ],
+    "medianMs": 134.18254199496005,
+    "msPerPage": 2.9170117824991313,
+    "quality": null,
+    "characters": 70299,
+    "outputSha256": "b0134e97ef47657bb363f95f2b0ee7586a82bdf9245ffaf7f2bd835e6dada6a8"
+  },
+  {
+    "engine": "pdftotext",
+    "version": "pdftotext version 26.10.0",
+    "scope": "text only; CLI startup included (no in-process API)",
+    "id": "rfc9110",
+    "pages": 194,
+    "kind": "public-unscored",
+    "samplesMs": [
+      247.5936250120867,
+      262.4475829943549,
+      285.4667909996351,
+      272.29399999487214,
+      266.7609589989297
+    ],
+    "medianMs": 266.7609589989297,
+    "msPerPage": 1.3750564896852047,
+    "quality": null,
+    "characters": 461594,
+    "outputSha256": "1fdced47af10179c6ce586c9ef6a9894c7d2d6b4a8ff823905d9bc82f51770e4"
+  },
+  {
+    "engine": "pdftotext",
+    "version": "pdftotext version 26.10.0",
+    "scope": "text only; CLI startup included (no in-process API)",
+    "id": "w3c",
+    "pages": 1,
+    "kind": "public-unscored",
+    "samplesMs": [
+      12.822749995393679,
+      12.378333995002322,
+      12.564250006107613,
+      12.538541996036656,
+      12.400708001223393
+    ],
+    "medianMs": 12.538541996036656,
+    "msPerPage": 12.538541996036656,
+    "quality": null,
+    "characters": 17,
+    "outputSha256": "3572b34e29dbdb55a5fe65195a40d4a09fc62e87642f6f7480fca3d9e699330e"
+  },
+  {
+    "engine": "pdftotext",
+    "version": "pdftotext version 26.10.0",
+    "scope": "text only; CLI startup included (no in-process API)",
+    "id": "alice-book",
+    "pages": 60,
+    "kind": "generated",
+    "samplesMs": [
+      30.37091599253472,
+      30.69395800412167,
+      30.16062501410488,
+      30.588749999878928,
+      30.473708000499755
+    ],
+    "medianMs": 30.473708000499755,
+    "msPerPage": 0.5078951333416626,
+    "quality": {
+      "characterAccuracy": 0.9844308162464639,
+      "tokenF1": 0.9919601191926385,
+      "headingF1": 0.0
+    },
+    "characters": 145540,
+    "outputSha256": "d1ccd7817d3fbcc01f9330fdd33c84d633b1e80c9069c66d26e3eb7e83cf4a44"
+  }
+]

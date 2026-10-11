@@ -1,0 +1,324 @@
+[
+  {
+    "engine": "pypdf",
+    "version": "6.20.0",
+    "scope": "text only, default extraction",
+    "id": "reading-demo",
+    "pages": 1,
+    "kind": "generated",
+    "samplesMs": [
+      1.5624590014340356,
+      1.5171669947449118,
+      1.5066670021042228,
+      1.518290999229066,
+      1.498500001616776
+    ],
+    "medianMs": 1.5171669947449118,
+    "msPerPage": 1.5171669947449118,
+    "quality": {
+      "characterAccuracy": 1.0,
+      "tokenF1": 1.0,
+      "headingF1": 0.0,
+      "tableCellF1": 0.0,
+      "codeBlockF1": 0.0,
+      "imageCountF1": 0.0
+    },
+    "characters": 753,
+    "outputSha256": "89207a19f5cf2294f5b2c89c667dcb73200b48a7dd60bf1c008224d9589b413a"
+  },
+  {
+    "engine": "pypdf",
+    "version": "6.20.0",
+    "scope": "text only, default extraction",
+    "id": "book-120",
+    "pages": 120,
+    "kind": "generated",
+    "samplesMs": [
+      82.49579100811388,
+      87.06912500201724,
+      88.30099999613594,
+      89.79933299997356,
+      80.57041600113735
+    ],
+    "medianMs": 87.06912500201724,
+    "msPerPage": 0.725576041683477,
+    "quality": {
+      "characterAccuracy": 0.9326128632746891,
+      "tokenF1": 0.9481481481481482,
+      "headingF1": 0.0
+    },
+    "characters": 59063,
+    "outputSha256": "59c9e0fe79bd8b134715d642bbfcb1f2577fb814a6c932a203c180334435c31a"
+  },
+  {
+    "engine": "pypdf",
+    "version": "6.20.0",
+    "scope": "text only, default extraction",
+    "id": "columns",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      3.767041998798959,
+      3.855165996355936,
+      4.135209004743956,
+      3.8349579990608618,
+      3.7837910058442503
+    ],
+    "medianMs": 3.8349579990608618,
+    "msPerPage": 1.2783193330202873,
+    "quality": {
+      "characterAccuracy": 0.9663747810858143,
+      "tokenF1": 0.9801699716713881,
+      "headingF1": 0.0
+    },
+    "characters": 2858,
+    "outputSha256": "f4f05270b1aed7effaff4fef54614a7eefbabfb3b85298a0c4f3a008994aa468"
+  },
+  {
+    "engine": "pypdf",
+    "version": "6.20.0",
+    "scope": "text only, default extraction",
+    "id": "table",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      3.235625001252629,
+      3.056541012483649,
+      3.0742919916519895,
+      3.0797499930486083,
+      3.147292009089142
+    ],
+    "medianMs": 3.0797499930486083,
+    "msPerPage": 1.0265833310162027,
+    "quality": {
+      "characterAccuracy": 0.9491794600317628,
+      "tokenF1": 0.9595375722543352,
+      "headingF1": 0.0,
+      "tableCellF1": 0.0
+    },
+    "characters": 1892,
+    "outputSha256": "367c39f4c7ec886de8028a9db193628c9f46441634d67c275bd6d5730adcc238"
+  },
+  {
+    "engine": "pypdf",
+    "version": "6.20.0",
+    "scope": "text only, default extraction",
+    "id": "code",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      2.6232079981127754,
+      2.606916008517146,
+      2.530750003643334,
+      2.574207988800481,
+      2.55933401058428
+    ],
+    "medianMs": 2.574207988800481,
+    "msPerPage": 0.8580693296001604,
+    "quality": {
+      "characterAccuracy": 0.9455473624503687,
+      "tokenF1": 0.9575757575757575,
+      "headingF1": 0.0,
+      "codeBlockF1": 0.0
+    },
+    "characters": 1778,
+    "outputSha256": "6d5f3564bfce59f3850528d50ba240faacc5c140ffe1e5dcab7a6e56e492e390"
+  },
+  {
+    "engine": "pypdf",
+    "version": "6.20.0",
+    "scope": "text only, default extraction",
+    "id": "image",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      2.169082988984883,
+      2.211708007962443,
+      2.150458996766247,
+      2.207916011684574,
+      2.148542000213638
+    ],
+    "medianMs": 2.169082988984883,
+    "msPerPage": 0.7230276629949609,
+    "quality": {
+      "characterAccuracy": 0.9415702982349361,
+      "tokenF1": 0.9548387096774194,
+      "headingF1": 0.0,
+      "imageCountF1": 0.0
+    },
+    "characters": 1646,
+    "outputSha256": "1e4c90a413f42762aa35a41f547823bee06a1a358e2ea07f2a037ecbd5a3beb2"
+  },
+  {
+    "engine": "pypdf",
+    "version": "6.20.0",
+    "scope": "text only, default extraction",
+    "id": "references",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      2.3806669923942536,
+      2.3611670039827004,
+      2.4459170090267435,
+      2.368124987697229,
+      2.3613329976797104
+    ],
+    "medianMs": 2.368124987697229,
+    "msPerPage": 0.7893749958990762,
+    "quality": {
+      "characterAccuracy": 0.9456398640996603,
+      "tokenF1": 0.9580838323353293,
+      "headingF1": 0.0
+    },
+    "characters": 1769,
+    "outputSha256": "4c82f15851bd9c8261f4ec75d0c7a376f0112c736877caee9ec4f7ee22373171"
+  },
+  {
+    "engine": "pypdf",
+    "version": "6.20.0",
+    "scope": "text only, default extraction",
+    "id": "unicode",
+    "pages": 2,
+    "kind": "generated",
+    "samplesMs": [
+      1.7335830052616075,
+      1.7580839921720326,
+      1.7230000084964558,
+      1.9049169932259247,
+      1.7876670026453212
+    ],
+    "medianMs": 1.7580839921720326,
+    "msPerPage": 0.8790419960860163,
+    "quality": {
+      "characterAccuracy": 0.8387909319899245,
+      "tokenF1": 0.8771929824561403,
+      "headingF1": 0.0
+    },
+    "characters": 399,
+    "outputSha256": "de23fbf56b253dbceefd41c13e0f0d16df0c16ff49e7437544b456ba82d5a835"
+  },
+  {
+    "engine": "pypdf",
+    "version": "6.20.0",
+    "scope": "text only, default extraction",
+    "id": "scanned",
+    "pages": 1,
+    "kind": "capability-gap",
+    "samplesMs": [
+      0.2987500047311187,
+      0.2922919957200065,
+      0.29508399893529713,
+      0.33970799995586276,
+      0.28579200443346053
+    ],
+    "medianMs": 0.29508399893529713,
+    "msPerPage": 0.29508399893529713,
+    "quality": null,
+    "characters": 0,
+    "outputSha256": "fa93fbdf3a540e492c1a450bdd1124efdee9908f49e0d821c995964bb9b4b569"
+  },
+  {
+    "engine": "pypdf",
+    "version": "6.20.0",
+    "scope": "text only, default extraction",
+    "id": "attention",
+    "pages": 15,
+    "kind": "public-unscored",
+    "samplesMs": [
+      430.08104200998787,
+      418.80145799950697,
+      403.37320799881127,
+      400.22841599420644,
+      404.0382920065895
+    ],
+    "medianMs": 404.0382920065895,
+    "msPerPage": 26.93588613377263,
+    "quality": null,
+    "characters": 39599,
+    "outputSha256": "eedc8231edf50dce1325becffed4db4a5d1b4f142e30c5d5b154bf31b1ec75fb"
+  },
+  {
+    "engine": "pypdf",
+    "version": "6.20.0",
+    "scope": "text only, default extraction",
+    "id": "nist-aes",
+    "pages": 46,
+    "kind": "public-unscored",
+    "samplesMs": [
+      859.6233330026735,
+      870.9855829947628,
+      913.6173750011949,
+      918.1291249988135,
+      903.3884999953443
+    ],
+    "medianMs": 903.3884999953443,
+    "msPerPage": 19.638880434681397,
+    "quality": null,
+    "characters": 70150,
+    "outputSha256": "25bc8aec821ef619f45dbd9e84e4e6a5fb08c5798008e55fd61aac61de3508fc"
+  },
+  {
+    "engine": "pypdf",
+    "version": "6.20.0",
+    "scope": "text only, default extraction",
+    "id": "rfc9110",
+    "pages": 194,
+    "kind": "public-unscored",
+    "samplesMs": [
+      2386.3827910099644,
+      2225.2940830076113,
+      2276.0886670002947,
+      2207.2105830011424,
+      2344.933291009511
+    ],
+    "medianMs": 2276.0886670002947,
+    "msPerPage": 11.73241580927987,
+    "quality": null,
+    "characters": 461291,
+    "outputSha256": "13cce67dc79124b9a3925b00ea004b289aecafcd0537279a09a89c98e53a2d97"
+  },
+  {
+    "engine": "pypdf",
+    "version": "6.20.0",
+    "scope": "text only, default extraction",
+    "id": "w3c",
+    "pages": 1,
+    "kind": "public-unscored",
+    "samplesMs": [
+      0.45270900591276586,
+      0.4453750007087365,
+      0.4946670087520033,
+      0.43254200136289,
+      0.42637500155251473
+    ],
+    "medianMs": 0.4453750007087365,
+    "msPerPage": 0.4453750007087365,
+    "quality": null,
+    "characters": 14,
+    "outputSha256": "8ff70abd5acb82c3944a6946e93fd2bcc398fb22ac91bfac528e80164d286850"
+  },
+  {
+    "engine": "pypdf",
+    "version": "6.20.0",
+    "scope": "text only, default extraction",
+    "id": "alice-book",
+    "pages": 60,
+    "kind": "generated",
+    "samplesMs": [
+      127.21387499186676,
+      127.98687499889638,
+      132.22854200284928,
+      127.04466599097941,
+      130.36879200080875
+    ],
+    "medianMs": 127.98687499889638,
+    "msPerPage": 2.13311458331494,
+    "quality": {
+      "characterAccuracy": 0.9847871857325682,
+      "tokenF1": 0.9932596891967796,
+      "headingF1": 0.0
+    },
+    "characters": 145398,
+    "outputSha256": "34f9d1ef13f4a7cf5c80d978e930d445bdc3e2b33ea969f58ead1c716bd402d7"
+  }
+]

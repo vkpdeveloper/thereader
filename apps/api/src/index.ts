@@ -6,6 +6,7 @@ import { downloadBook } from "./download";
 import { ApiError, errorResponse } from "./errors";
 import { linkPreview } from "./link-preview";
 import { mediaRelay } from "./media";
+import { extractPdf } from "./pdf";
 import { encodeCursor, parseListQuery } from "./query";
 import { getSyncState, pushSync } from "./sync";
 import type { CatalogBook, Env } from "./types";
@@ -18,7 +19,7 @@ function corsHeaders(): Headers {
     "Access-Control-Allow-Headers": "Content-Type, Range, If-None-Match, If-Range, X-Upload-Id",
     "Access-Control-Allow-Methods": METHODS,
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Expose-Headers": "Accept-Ranges, Content-Disposition, Content-Length, Content-Range, ETag, Last-Modified, X-Final-Url",
+    "Access-Control-Expose-Headers": "Accept-Ranges, Content-Disposition, Content-Length, Content-Range, ETag, Last-Modified, X-Final-Url, X-PDF-Pages, X-PDF-Warnings",
     "Access-Control-Max-Age": "86400",
   });
 }
@@ -121,6 +122,11 @@ async function route(request: Request, env: Env, ctx: ExecutionContext): Promise
   if (url.pathname === "/v1/article-source") {
     if (request.method !== "GET") throw new ApiError(405, "METHOD_NOT_ALLOWED", "Method not allowed.", { Allow: "GET, OPTIONS" });
     return articleSource(request);
+  }
+
+  if (url.pathname === "/v1/pdf/extract") {
+    if (request.method !== "POST") throw new ApiError(405, "METHOD_NOT_ALLOWED", "Method not allowed.", { Allow: "POST, OPTIONS" });
+    return extractPdf(request, env);
   }
 
   if (url.pathname === "/v1/media") {

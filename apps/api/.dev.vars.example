@@ -1,0 +1,4 @@
+# Start packages/pdf_go/cmd/pdfserver separately for local PDF imports.
+PDF_EXTRACTOR_URL=http://127.0.0.1:8091
+# Set the same secret on the Worker and Go service when using authenticated HTTP.
+# PDF_EXTRACTOR_TOKEN=

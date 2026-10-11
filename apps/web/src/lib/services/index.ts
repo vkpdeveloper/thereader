@@ -67,7 +67,7 @@ function build(): AppServices {
     covers,
     bus,
     locks,
-    inspect: async (file) => (await import('../import')).inspectFile(file),
+    inspect: async (file, options) => (await import('../import')).inspectFile(file, options),
     upload: async (options) => (await import('../import')).uploadBook(options),
   });
   const sync = new SyncStoreImpl({

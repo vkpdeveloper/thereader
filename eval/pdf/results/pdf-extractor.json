@@ -1,0 +1,1483 @@
+[
+  {
+    "engine": "pdf-extractor",
+    "version": "0.1.0",
+    "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+    "id": "reading-demo",
+    "pages": 1,
+    "kind": "generated",
+    "samplesMs": [
+      1.428542,
+      0.727583,
+      1.227333,
+      0.872292,
+      0.745958
+    ],
+    "medianMs": 0.872292,
+    "msPerPage": 0.872292,
+    "quality": {
+      "characterAccuracy": 1.0,
+      "tokenF1": 1.0,
+      "headingF1": 1.0,
+      "tableCellF1": 1.0,
+      "codeBlockF1": 1.0,
+      "imageCountF1": 1.0
+    },
+    "characters": 755,
+    "warnings": [],
+    "complete": true,
+    "outputSha256": "7497e56e061f51fd0837cdc3399538d838091ddf66521ced6bef2605e8dfc3a9"
+  },
+  {
+    "engine": "pdf-extractor",
+    "version": "0.1.0",
+    "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+    "id": "book-120",
+    "pages": 120,
+    "kind": "generated",
+    "samplesMs": [
+      4.558709,
+      4.510709,
+      4.516125,
+      4.386667,
+      4.449459
+    ],
+    "medianMs": 4.510709,
+    "msPerPage": 0.03758924166666667,
+    "quality": {
+      "characterAccuracy": 1.0,
+      "tokenF1": 1.0,
+      "headingF1": 1.0
+    },
+    "characters": 54971,
+    "warnings": [],
+    "complete": true,
+    "outputSha256": "bb62c2f082d00e0217989d80f4f603a48180c33c61d91d4479e61d8fffb80961"
+  },
+  {
+    "engine": "pdf-extractor",
+    "version": "0.1.0",
+    "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+    "id": "columns",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      0.26075,
+      0.250208,
+      0.242792,
+      0.250792,
+      0.242583
+    ],
+    "medianMs": 0.250208,
+    "msPerPage": 0.08340266666666667,
+    "quality": {
+      "characterAccuracy": 1.0,
+      "tokenF1": 1.0,
+      "headingF1": 1.0
+    },
+    "characters": 2759,
+    "warnings": [],
+    "complete": true,
+    "outputSha256": "3163f7a2975c6e715454215a7bf8e749460af2eb83d483ecee5c489b44df36c0"
+  },
+  {
+    "engine": "pdf-extractor",
+    "version": "0.1.0",
+    "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+    "id": "table",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      0.217416,
+      0.214333,
+      0.208625,
+      0.219166,
+      0.201833
+    ],
+    "medianMs": 0.214333,
+    "msPerPage": 0.07144433333333333,
+    "quality": {
+      "characterAccuracy": 1.0,
+      "tokenF1": 1.0,
+      "headingF1": 1.0,
+      "tableCellF1": 1.0
+    },
+    "characters": 1793,
+    "warnings": [],
+    "complete": true,
+    "outputSha256": "19ce2fd1489f5444b66d75846f1f93698d19f4cd9a207f5e06236a2dcedc717d"
+  },
+  {
+    "engine": "pdf-extractor",
+    "version": "0.1.0",
+    "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+    "id": "code",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      0.1915,
+      0.162667,
+      0.173459,
+      0.156375,
+      0.168167
+    ],
+    "medianMs": 0.168167,
+    "msPerPage": 0.05605566666666667,
+    "quality": {
+      "characterAccuracy": 1.0,
+      "tokenF1": 1.0,
+      "headingF1": 1.0,
+      "codeBlockF1": 1.0
+    },
+    "characters": 1685,
+    "warnings": [],
+    "complete": true,
+    "outputSha256": "0658c746fc814059fa425202f75dca09807a67235ed8d3ed9480263f2ab0dc6b"
+  },
+  {
+    "engine": "pdf-extractor",
+    "version": "0.1.0",
+    "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+    "id": "image",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      1.096959,
+      0.8675,
+      1.047625,
+      0.880167,
+      0.784792
+    ],
+    "medianMs": 0.880167,
+    "msPerPage": 0.293389,
+    "quality": {
+      "characterAccuracy": 1.0,
+      "tokenF1": 1.0,
+      "headingF1": 1.0,
+      "imageCountF1": 1.0
+    },
+    "characters": 1550,
+    "warnings": [],
+    "complete": true,
+    "outputSha256": "806064445bdaf3f1f8752d1506d9897fd24943d891ba7c05c5ea2a751031b3a2"
+  },
+  {
+    "engine": "pdf-extractor",
+    "version": "0.1.0",
+    "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+    "id": "references",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      0.190125,
+      0.16775,
+      0.168833,
+      0.164,
+      0.156041
+    ],
+    "medianMs": 0.16775,
+    "msPerPage": 0.05591666666666667,
+    "quality": {
+      "characterAccuracy": 1.0,
+      "tokenF1": 1.0,
+      "headingF1": 1.0
+    },
+    "characters": 1670,
+    "warnings": [],
+    "complete": true,
+    "outputSha256": "75054c49ba1b7feb3eaa987fc702fd2b6de2fd49ee9471a5825f1ed3f477314c"
+  },
+  {
+    "engine": "pdf-extractor",
+    "version": "0.1.0",
+    "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+    "id": "unicode",
+    "pages": 2,
+    "kind": "generated",
+    "samplesMs": [
+      0.165917,
+      0.151375,
+      0.137083,
+      0.129958,
+      0.130917
+    ],
+    "medianMs": 0.137083,
+    "msPerPage": 0.0685415,
+    "quality": {
+      "characterAccuracy": 1.0,
+      "tokenF1": 1.0,
+      "headingF1": 1.0
+    },
+    "characters": 333,
+    "warnings": [],
+    "complete": true,
+    "outputSha256": "42fec6cdfb178b216bbd884c9b1ffaaa2159579f4211433ced45fe894bb58d97"
+  },
+  {
+    "engine": "pdf-extractor",
+    "version": "0.1.0",
+    "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+    "id": "scanned",
+    "pages": 1,
+    "kind": "capability-gap",
+    "samplesMs": [
+      1.810833,
+      1.60775,
+      1.552291,
+      1.583167,
+      1.67325
+    ],
+    "medianMs": 1.60775,
+    "msPerPage": 1.60775,
+    "quality": null,
+    "characters": 0,
+    "warnings": [
+      {
+        "code": "needs-ocr",
+        "page": 1,
+        "message": "This page contains images without a text layer. The images are preserved; OCR has not been performed."
+      }
+    ],
+    "complete": false,
+    "outputSha256": "14ccb5d4a85c087241a93368f323166a918d78cd1d12019bf3439be24baf87aa"
+  },
+  {
+    "engine": "pdf-extractor",
+    "version": "0.1.0",
+    "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+    "id": "attention",
+    "pages": 15,
+    "kind": "public-unscored",
+    "samplesMs": [
+      117.448,
+      114.575417,
+      112.059208,
+      115.429709,
+      122.907333
+    ],
+    "medianMs": 115.429709,
+    "msPerPage": 7.695313933333334,
+    "quality": null,
+    "characters": 39622,
+    "warnings": [
+      {
+        "code": "clipping",
+        "page": 13,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 14,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 15,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      }
+    ],
+    "complete": false,
+    "outputSha256": "4190dd1a719d0ebb7652d0ae156dbcae16df2fe23a8471ff57d1d15b68a93244"
+  },
+  {
+    "engine": "pdf-extractor",
+    "version": "0.1.0",
+    "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+    "id": "nist-aes",
+    "pages": 46,
+    "kind": "public-unscored",
+    "samplesMs": [
+      95.793417,
+      99.67875,
+      101.480042,
+      98.32425,
+      96.771666
+    ],
+    "medianMs": 98.32425,
+    "msPerPage": 2.137483695652174,
+    "quality": null,
+    "characters": 65308,
+    "warnings": [
+      {
+        "code": "forms",
+        "message": "Interactive form field values are not included in the reading edition."
+      },
+      {
+        "code": "optional-content",
+        "message": "Optional layer visibility is not evaluated."
+      },
+      {
+        "code": "annotation",
+        "page": 1,
+        "message": "Non-link annotation: Widget"
+      },
+      {
+        "code": "unmapped-glyph",
+        "page": 12,
+        "message": "Some glyphs could not be mapped to Unicode."
+      },
+      {
+        "code": "unmapped-glyph",
+        "page": 13,
+        "message": "Some glyphs could not be mapped to Unicode."
+      },
+      {
+        "code": "annotation",
+        "page": 13,
+        "message": "Non-link annotation: Widget"
+      },
+      {
+        "code": "annotation",
+        "page": 14,
+        "message": "Non-link annotation: Widget"
+      },
+      {
+        "code": "annotation",
+        "page": 15,
+        "message": "Non-link annotation: Widget"
+      },
+      {
+        "code": "unmapped-glyph",
+        "page": 16,
+        "message": "Some glyphs could not be mapped to Unicode."
+      },
+      {
+        "code": "annotation",
+        "page": 19,
+        "message": "Non-link annotation: Widget"
+      },
+      {
+        "code": "unmapped-glyph",
+        "page": 20,
+        "message": "Some glyphs could not be mapped to Unicode."
+      },
+      {
+        "code": "clipping",
+        "page": 21,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "annotation",
+        "page": 21,
+        "message": "Non-link annotation: Widget"
+      },
+      {
+        "code": "annotation",
+        "page": 22,
+        "message": "Non-link annotation: Widget"
+      },
+      {
+        "code": "clipping",
+        "page": 23,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "annotation",
+        "page": 23,
+        "message": "Non-link annotation: Widget"
+      },
+      {
+        "code": "clipping",
+        "page": 24,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "annotation",
+        "page": 24,
+        "message": "Non-link annotation: Widget"
+      },
+      {
+        "code": "annotation",
+        "page": 25,
+        "message": "Non-link annotation: Widget"
+      },
+      {
+        "code": "clipping",
+        "page": 27,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "annotation",
+        "page": 27,
+        "message": "Non-link annotation: Widget"
+      },
+      {
+        "code": "clipping",
+        "page": 28,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "annotation",
+        "page": 28,
+        "message": "Non-link annotation: Widget"
+      },
+      {
+        "code": "clipping",
+        "page": 29,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "annotation",
+        "page": 29,
+        "message": "Non-link annotation: Widget"
+      },
+      {
+        "code": "clipping",
+        "page": 31,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "annotation",
+        "page": 31,
+        "message": "Non-link annotation: Widget"
+      }
+    ],
+    "complete": false,
+    "outputSha256": "817c39276f9b9014c3b17d4210afa2bb8fd6e8ceafd95ca701691268fc6987ac"
+  },
+  {
+    "engine": "pdf-extractor",
+    "version": "0.1.0",
+    "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+    "id": "rfc9110",
+    "pages": 194,
+    "kind": "public-unscored",
+    "samplesMs": [
+      206.694042,
+      205.081709,
+      202.861166,
+      206.155875,
+      213.960667
+    ],
+    "medianMs": 206.155875,
+    "msPerPage": 1.062659149484536,
+    "quality": null,
+    "characters": 453400,
+    "warnings": [
+      {
+        "code": "attachments",
+        "message": "Embedded attachments are not included in the reading edition."
+      },
+      {
+        "code": "clipping",
+        "page": 1,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 2,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 3,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 4,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 5,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 6,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 7,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 8,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 9,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 10,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 11,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 12,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 13,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 14,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 15,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 16,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 17,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 18,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 19,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 20,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 21,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 22,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 23,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 24,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 25,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 26,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 27,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 28,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 29,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 30,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 31,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 32,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 33,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 34,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 35,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 36,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 37,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 38,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 39,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 40,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 41,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 42,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 43,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 44,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 45,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 46,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 47,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 48,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 49,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 50,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 51,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 52,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 53,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 54,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 55,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 56,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 57,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 58,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 59,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 60,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 61,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 62,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 63,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 64,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 65,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 66,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 67,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 68,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 69,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 70,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 71,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 72,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 73,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 74,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 75,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 76,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 77,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 78,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 79,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 80,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 81,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 82,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 83,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 84,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 85,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 86,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 87,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 88,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 89,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 90,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 91,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 92,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 93,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 94,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 95,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 96,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 97,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 98,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 99,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 100,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 101,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 102,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 103,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 104,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 105,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 106,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 107,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 108,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 109,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 110,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 111,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 112,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 113,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 114,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 115,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 116,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 117,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 118,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 119,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 120,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 121,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 122,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 123,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 124,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 125,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 126,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 127,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 128,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 129,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 130,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 131,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 132,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 133,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 134,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 135,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 136,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 137,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 138,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 139,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 140,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 141,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 142,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 143,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 144,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 145,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 146,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 147,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 148,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 149,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 150,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 151,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 152,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 153,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 154,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 155,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 156,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 157,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 158,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 159,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 160,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 161,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 162,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 163,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 164,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 165,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 166,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 167,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 168,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 169,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 170,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 171,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 172,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 173,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 174,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 175,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 176,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 177,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 178,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 179,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 180,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 181,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 182,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 183,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 184,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 185,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 186,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 187,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 188,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 189,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 190,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 191,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 192,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 193,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      },
+      {
+        "code": "clipping",
+        "page": 194,
+        "message": "A clipping path is present; exported graphics may extend outside it."
+      }
+    ],
+    "complete": false,
+    "outputSha256": "1a0336f08dd75c61a5b8efa3b13f310e25292af646b87bb323bb0b3dc8168b53"
+  },
+  {
+    "engine": "pdf-extractor",
+    "version": "0.1.0",
+    "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+    "id": "w3c",
+    "pages": 1,
+    "kind": "public-unscored",
+    "samplesMs": [
+      0.0635,
+      0.050083,
+      0.051375,
+      0.048834,
+      0.058333
+    ],
+    "medianMs": 0.051375,
+    "msPerPage": 0.051375,
+    "quality": null,
+    "characters": 14,
+    "warnings": [],
+    "complete": true,
+    "outputSha256": "7fd445fc5abc3d5434ba42e7b559f674c63c6ba748f5017e7aa689159b9ee97d"
+  },
+  {
+    "engine": "pdf-extractor",
+    "version": "0.1.0",
+    "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+    "id": "alice-book",
+    "pages": 60,
+    "kind": "generated",
+    "samplesMs": [
+      10.150417,
+      9.932542,
+      9.721917,
+      9.90225,
+      9.572375
+    ],
+    "medianMs": 9.90225,
+    "msPerPage": 0.1650375,
+    "quality": {
+      "characterAccuracy": 1.0,
+      "tokenF1": 1.0,
+      "headingF1": 1.0
+    },
+    "characters": 143127,
+    "warnings": [],
+    "complete": true,
+    "outputSha256": "4af16232d7165da3ab68c5576ecf9c06c5451862cdd233c039fab6dc6d1c265d"
+  }
+]

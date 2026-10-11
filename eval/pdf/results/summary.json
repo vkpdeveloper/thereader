@@ -1,0 +1,347 @@
+{
+  "digitalDocuments": 13,
+  "digitalPages": 454,
+  "qualityDocuments": 9,
+  "qualityPages": 198,
+  "scope": "This corpus only; controlled quality fixtures, no blind holdout; unequal output scopes and Poppler startup explicitly recorded.",
+  "engines": [
+    {
+      "engine": "pdf-extractor",
+      "version": "0.1.0",
+      "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+      "weightedMsPerPage": 0.9626964052863436,
+      "pagesPerSecond": 1038.7490744837266,
+      "qualityMacro": {
+        "characterAccuracy": 1.0,
+        "tokenF1": 1.0,
+        "headingF1": 1.0,
+        "tableCellF1": 1.0,
+        "codeBlockF1": 1.0,
+        "imageCountF1": 1.0
+      },
+      "alice": {
+        "engine": "pdf-extractor",
+        "version": "0.1.0",
+        "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+        "id": "alice-book",
+        "pages": 60,
+        "kind": "generated",
+        "samplesMs": [
+          10.150417,
+          9.932542,
+          9.721917,
+          9.90225,
+          9.572375
+        ],
+        "medianMs": 9.90225,
+        "msPerPage": 0.1650375,
+        "quality": {
+          "characterAccuracy": 1.0,
+          "tokenF1": 1.0,
+          "headingF1": 1.0
+        },
+        "characters": 143127,
+        "warnings": [],
+        "complete": true,
+        "outputSha256": "4af16232d7165da3ab68c5576ecf9c06c5451862cdd233c039fab6dc6d1c265d"
+      },
+      "speedRank": 1,
+      "characterRank": 1,
+      "durationDividedByOurs": 1.0
+    },
+    {
+      "engine": "pdftotext",
+      "version": "pdftotext version 26.10.0",
+      "scope": "text only; CLI startup included (no in-process API)",
+      "weightedMsPerPage": 1.3888018546289547,
+      "pagesPerSecond": 720.0451213878666,
+      "qualityMacro": {
+        "characterAccuracy": 0.9402349837523208,
+        "tokenF1": 0.9586118992567951,
+        "headingF1": 0.0,
+        "tableCellF1": 0.0,
+        "codeBlockF1": 0.0,
+        "imageCountF1": 0.0
+      },
+      "alice": {
+        "engine": "pdftotext",
+        "version": "pdftotext version 26.10.0",
+        "scope": "text only; CLI startup included (no in-process API)",
+        "id": "alice-book",
+        "pages": 60,
+        "kind": "generated",
+        "samplesMs": [
+          30.37091599253472,
+          30.69395800412167,
+          30.16062501410488,
+          30.588749999878928,
+          30.473708000499755
+        ],
+        "medianMs": 30.473708000499755,
+        "msPerPage": 0.5078951333416626,
+        "quality": {
+          "characterAccuracy": 0.9844308162464639,
+          "tokenF1": 0.9919601191926385,
+          "headingF1": 0.0
+        },
+        "characters": 145540,
+        "outputSha256": "d1ccd7817d3fbcc01f9330fdd33c84d633b1e80c9069c66d26e3eb7e83cf4a44"
+      },
+      "speedRank": 2,
+      "characterRank": 7,
+      "durationDividedByOurs": 1.4426166411371097
+    },
+    {
+      "engine": "pymupdf",
+      "version": "1.28.2",
+      "scope": "text only, sort=True",
+      "weightedMsPerPage": 5.700393173985167,
+      "pagesPerSecond": 175.4264959413135,
+      "qualityMacro": {
+        "characterAccuracy": 0.940274580361888,
+        "tokenF1": 0.958756295923922,
+        "headingF1": 0.0,
+        "tableCellF1": 0.0,
+        "codeBlockF1": 0.0,
+        "imageCountF1": 0.0
+      },
+      "alice": {
+        "engine": "pymupdf",
+        "version": "1.28.2",
+        "scope": "text only, sort=True",
+        "id": "alice-book",
+        "pages": 60,
+        "kind": "generated",
+        "samplesMs": [
+          492.60354100260884,
+          496.44970800727606,
+          493.5979579895502,
+          491.2904590019025,
+          491.22566598816775
+        ],
+        "medianMs": 492.60354100260884,
+        "msPerPage": 8.210059016710147,
+        "quality": {
+          "characterAccuracy": 0.9847871857325682,
+          "tokenF1": 0.9932596891967796,
+          "headingF1": 0.0
+        },
+        "characters": 149482,
+        "outputSha256": "7e2a1087fb85a5287d14cc1a7eda7b61f63b2c05a7c0f273d160ae150f9d5125"
+      },
+      "speedRank": 3,
+      "characterRank": 5,
+      "durationDividedByOurs": 5.9212781336704445
+    },
+    {
+      "engine": "pypdf",
+      "version": "6.20.0",
+      "scope": "text only, default extraction",
+      "weightedMsPerPage": 8.405987244379647,
+      "pagesPerSecond": 118.96282624847106,
+      "qualityMacro": {
+        "characterAccuracy": 0.9449447496555249,
+        "tokenF1": 0.958756295923922,
+        "headingF1": 0.0,
+        "tableCellF1": 0.0,
+        "codeBlockF1": 0.0,
+        "imageCountF1": 0.0
+      },
+      "alice": {
+        "engine": "pypdf",
+        "version": "6.20.0",
+        "scope": "text only, default extraction",
+        "id": "alice-book",
+        "pages": 60,
+        "kind": "generated",
+        "samplesMs": [
+          127.21387499186676,
+          127.98687499889638,
+          132.22854200284928,
+          127.04466599097941,
+          130.36879200080875
+        ],
+        "medianMs": 127.98687499889638,
+        "msPerPage": 2.13311458331494,
+        "quality": {
+          "characterAccuracy": 0.9847871857325682,
+          "tokenF1": 0.9932596891967796,
+          "headingF1": 0.0
+        },
+        "characters": 145398,
+        "outputSha256": "34f9d1ef13f4a7cf5c80d978e930d445bdc3e2b33ea969f58ead1c716bd402d7"
+      },
+      "speedRank": 4,
+      "characterRank": 3,
+      "durationDividedByOurs": 8.73171147022137
+    },
+    {
+      "engine": "pdfminer",
+      "version": "20260107",
+      "scope": "text only, default layout analysis",
+      "weightedMsPerPage": 14.530138947160161,
+      "pagesPerSecond": 68.82246643590733,
+      "qualityMacro": {
+        "characterAccuracy": 0.9180197554648309,
+        "tokenF1": 0.958756295923922,
+        "headingF1": 0.0,
+        "tableCellF1": 0.0,
+        "codeBlockF1": 0.0,
+        "imageCountF1": 0.0
+      },
+      "alice": {
+        "engine": "pdfminer",
+        "version": "20260107",
+        "scope": "text only, default layout analysis",
+        "id": "alice-book",
+        "pages": 60,
+        "kind": "generated",
+        "samplesMs": [
+          448.72524999664165,
+          453.1782080011908,
+          449.1067089984426,
+          457.21429100376554,
+          535.5902500014054
+        ],
+        "medianMs": 453.1782080011908,
+        "msPerPage": 7.55297013335318,
+        "quality": {
+          "characterAccuracy": 0.9847871857325682,
+          "tokenF1": 0.9932596891967796,
+          "headingF1": 0.0
+        },
+        "characters": 146362,
+        "outputSha256": "e76258f4c669adc10e22ba7019f651dbe7b3136121fdf99d3952a8791901e24f"
+      },
+      "speedRank": 5,
+      "characterRank": 8,
+      "durationDividedByOurs": 15.093168383482567
+    },
+    {
+      "engine": "pdfplumber",
+      "version": "0.11.10",
+      "scope": "text plus default extract_tables; no Markdown/image export",
+      "weightedMsPerPage": 24.764432083634045,
+      "pagesPerSecond": 40.38049395289244,
+      "qualityMacro": {
+        "characterAccuracy": 0.940274580361888,
+        "tokenF1": 0.958756295923922,
+        "headingF1": 0.0,
+        "tableCellF1": 0.0,
+        "codeBlockF1": 0.0,
+        "imageCountF1": 0.0
+      },
+      "alice": {
+        "engine": "pdfplumber",
+        "version": "0.11.10",
+        "scope": "text plus default extract_tables; no Markdown/image export",
+        "id": "alice-book",
+        "pages": 60,
+        "kind": "generated",
+        "samplesMs": [
+          1322.8395420010202,
+          1347.209333005594,
+          1335.4743750096532,
+          1349.6532499993918,
+          1438.9688330120407
+        ],
+        "medianMs": 1347.209333005594,
+        "msPerPage": 22.45348888342657,
+        "quality": {
+          "characterAccuracy": 0.9847871857325682,
+          "tokenF1": 0.9932596891967796,
+          "headingF1": 0.0
+        },
+        "characters": 145338,
+        "outputSha256": "96d478b96de3840b165b9bc7f489b88db0e8493bdb4f44b6e0577aaa0c7fbd29"
+      },
+      "speedRank": 6,
+      "characterRank": 5,
+      "durationDividedByOurs": 25.72403090698997
+    },
+    {
+      "engine": "markitdown",
+      "version": "0.1.8",
+      "scope": "default PDF Markdown conversion; no LLM/OCR",
+      "weightedMsPerPage": 24.902604812801567,
+      "pagesPerSecond": 40.15644176652294,
+      "qualityMacro": {
+        "characterAccuracy": 0.9433900150636233,
+        "tokenF1": 0.9643152913459861,
+        "headingF1": 0.0,
+        "tableCellF1": 1.0,
+        "codeBlockF1": 0.0,
+        "imageCountF1": 0.0
+      },
+      "alice": {
+        "engine": "markitdown",
+        "version": "0.1.8",
+        "scope": "default PDF Markdown conversion; no LLM/OCR",
+        "id": "alice-book",
+        "pages": 60,
+        "kind": "generated",
+        "samplesMs": [
+          1732.1269579988439,
+          1800.6523329968331,
+          1769.812375001493,
+          1737.9200409923214,
+          1770.3563329996541
+        ],
+        "medianMs": 1769.812375001493,
+        "msPerPage": 29.496872916691547,
+        "quality": {
+          "characterAccuracy": 0.9856009585588563,
+          "tokenF1": 0.9943767572633552,
+          "headingF1": 0.0
+        },
+        "characters": 146361,
+        "outputSha256": "11683e026f43980f858048dfcb093a323257d4aee7bc91101c02d2465a828b60"
+      },
+      "speedRank": 7,
+      "characterRank": 4,
+      "durationDividedByOurs": 25.867557701531624
+    },
+    {
+      "engine": "pymupdf4llm",
+      "version": "1.28.2",
+      "scope": "Markdown with layout model; OCR off; images embedded; header/footer cleanup on",
+      "weightedMsPerPage": 79.34741767396174,
+      "pagesPerSecond": 12.60280459420868,
+      "qualityMacro": {
+        "characterAccuracy": 0.9996022275258553,
+        "tokenF1": 0.9993098688750862,
+        "headingF1": 0.9914529914529915,
+        "tableCellF1": 1.0,
+        "codeBlockF1": 0.0,
+        "imageCountF1": 1.0
+      },
+      "alice": {
+        "engine": "pymupdf4llm",
+        "version": "1.28.2",
+        "scope": "Markdown with layout model; OCR off; images embedded; header/footer cleanup on",
+        "id": "alice-book",
+        "pages": 60,
+        "kind": "generated",
+        "samplesMs": [
+          5620.975208003074,
+          5435.586624997086,
+          5110.485625002184,
+          5065.668541996274,
+          5216.549874996417
+        ],
+        "medianMs": 5216.549874996417,
+        "msPerPage": 86.94249791660695,
+        "quality": {
+          "characterAccuracy": 1.0,
+          "tokenF1": 1.0,
+          "headingF1": 0.9230769230769231
+        },
+        "characters": 144816,
+        "outputSha256": "b3cbdaee03a7118abf01d5337002292882c7cbda968d7e393c8860707638b8e8"
+      },
+      "speedRank": 8,
+      "characterRank": 2,
+      "durationDividedByOurs": 82.42205667150145
+    }
+  ]
+}

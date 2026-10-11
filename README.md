@@ -15,6 +15,8 @@ readable from their local copy. No login or accounts.
 - `packages/truffle_dart`: its Dart port, the engine the mobile app runs (pub name `truffle`).
 - `packages/truffle_go`: its Go port, a library and the `truffle` command-line tool (Go module
   `github.com/vkpdeveloper/thereader/packages/truffle_go`); no app uses it.
+- [`packages/pdf_go`](packages/pdf_go): PDF Extractor, an independent Go module,
+  CLI and HTTP service producing structured blocks, Markdown and reflowable EPUB.
 - `eval`: extraction quality and speed against other engines.
 - `docs/api-contract.md`: shared HTTP contract and application scope.
 
@@ -48,8 +50,12 @@ explicit test fixtures only; there is no Sample mode in the interface.
 
 EPUB reading, with on-device MOBI conversion. A pure-black Default theme plus optional dark editor-inspired themes.
 A quiet library, search, downloads, reading controls,
-typography preferences, EPUB and MOBI imports, and cloud reading-state sync. No PDF,
-audiobook, social, purchase, or user-account features.
+typography preferences, book/comic imports, and cloud reading-state sync.
+PDF imports use the standalone server-side PDF Extractor to create an EPUB reading
+edition. They require the Go service and Worker configuration described in the
+[package guide](packages/pdf_go/README.md); this is not a PDF facsimile viewer.
+See [benchmarks and reader evidence](eval/pdf/README.md) for measured coverage.
+Audiobook, social, purchase and user-account features remain outside the scope.
 
 ## Production API
 

@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-11",
+  "environment": "Local Vite web app, Cloudflare Worker development server, standalone native Go service; no production deployment",
+  "video": "https://pub-db5cc934f02943a19d855c11f462c1e9.r2.dev/uploads/t3-358b177f/feat-go-pdf-markdown-extraction/6f0649bb-2d6a-4301-b2af-18b4eb395e19-97ab48d2-d862-45e5-a4ba-9b9840a8383c-mp4-b143e3bca392.mp4",
+  "videoSeconds": 20.183,
+  "desktop": "https://pub-db5cc934f02943a19d855c11f462c1e9.r2.dev/uploads/t3-358b177f/feat-go-pdf-markdown-extraction/browser-screenshot-localhost-mv343kta-65725700-b750c54a4eee.png",
+  "mobile": "https://pub-db5cc934f02943a19d855c11f462c1e9.r2.dev/uploads/t3-358b177f/feat-go-pdf-markdown-extraction/browser-screenshot-localhost-mv343ork-a6e8e614-ba1673d31969.png",
+  "sourcePDF": "https://pub-db5cc934f02943a19d855c11f462c1e9.r2.dev/uploads/t3-358b177f/feat-go-pdf-markdown-extraction/reading-a6460b2765a3.pdf",
+  "browserChecks": {
+    "pdfConversionStatus": 200,
+    "initialUploadPrepareStatus": 200,
+    "initialUploadPutStatus": 201,
+    "headings": [
+      "The Art of Reading",
+      "A small, complete program",
+      "Keep the structure"
+    ],
+    "codeLanguage": "go",
+    "codeIndentationAndBlankLines": true,
+    "tableRows": 4,
+    "imageLoaded": true,
+    "imageIntrinsicWidth": 480,
+    "mobileViewportCSS": [
+      390,
+      844
+    ],
+    "mobileHorizontalOverflow": false,
+    "contentsNavigation": true
+  },
+  "notes": "The recording reimports the same original PDF and exercises existing import deduplication before opening the reader. Mobile evidence is a resized browser viewport, not a native simulator recording. Flutter conversion and import paths were tested with loopback HTTP and existing import tests.",
+  "convertedEPUBSha256": "af38fae3083c0d5a86cb799358e2b4a58d7e5cf38cd7a79248b8f8e2e791ae62"
+}

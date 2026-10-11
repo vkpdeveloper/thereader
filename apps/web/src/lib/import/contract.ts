@@ -28,12 +28,12 @@ export interface InspectedBook {
 
 /** File extensions the picker accepts. */
 export const importAccept =
-  '.epub,.mobi,.azw,.azw3,.prc,.cbz,.cbr,application/epub+zip,application/x-mobipocket-ebook,application/vnd.comicbook+zip,application/vnd.comicbook-rar';
+  '.pdf,.epub,.mobi,.azw,.azw3,.prc,.cbz,.cbr,application/pdf,application/epub+zip,application/x-mobipocket-ebook,application/vnd.comicbook+zip,application/vnd.comicbook-rar';
 
 /** File names the library accepts when dropped (the content still decides the format). */
-export const importExtensions = /\.(epub|mobi|azw3?|prc|cbz|cbr)$/i;
+export const importExtensions = /\.(pdf|epub|mobi|azw3?|prc|cbz|cbr)$/i;
 
-export type InspectFile = (file: File) => Promise<InspectedBook>;
+export type InspectFile = (file: File, options?: { origin?: string }) => Promise<InspectedBook>;
 
 export interface UploadProgress {
   sent: number;
