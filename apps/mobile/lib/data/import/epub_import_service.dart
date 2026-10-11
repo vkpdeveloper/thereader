@@ -163,7 +163,10 @@ class EpubImportService extends ChangeNotifier {
 
   Future<LibraryEntry> _import(String sourcePath, String origin) async {
     await load();
-    final preparedPath = await platform.prepareBook(sourcePath);
+    final preparedPath = await platform.prepareBook(
+      sourcePath,
+      origin: Uri.parse(origin),
+    );
     try {
       return await _importPrepared(preparedPath, sourcePath, origin);
     } finally {

@@ -34,6 +34,8 @@ export interface CatalogManifest {
 }
 
 export interface Env {
+  PDF_EXTRACTOR_URL?: string;
+  PDF_EXTRACTOR_TOKEN?: string;
   BOOKS: R2Bucket;
   CDN: R2Bucket;
   DB: D1Database;

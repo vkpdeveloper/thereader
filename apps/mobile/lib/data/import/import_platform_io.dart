@@ -12,6 +12,7 @@ import '../comic/cbz_writer.dart' show maxComicBytes;
 import '../comic/comic_import_io.dart';
 import '../covers/cover_validation.dart';
 import 'mobi_converter.dart';
+import 'pdf_import_io.dart' as pdf;
 
 const maxImportBytes = 512 * 1024 * 1024;
 bool get importSupported => true;
@@ -20,17 +21,23 @@ Stream<List<int>> readImportFile(String path) => File(path).openRead();
 Future<String?> pickBook() async {
   final picked = await FilePicker.pickFile(
     type: FileType.custom,
-    allowedExtensions: ['epub', 'mobi', 'cbz', 'cbr'],
+    allowedExtensions: ['pdf', 'epub', 'mobi', 'cbz', 'cbr'],
   );
   if (picked == null) return null;
   final extension = p.extension(picked.name).toLowerCase();
-  if (!const {'.epub', '.mobi', '.cbz', '.cbr'}.contains(extension)) {
-    throw const FormatException('Choose an EPUB, MOBI, CBZ or CBR file.');
+  if (!const {'.pdf', '.epub', '.mobi', '.cbz', '.cbr'}.contains(extension)) {
+    throw const FormatException('Choose a PDF, EPUB, MOBI, CBZ or CBR file.');
   }
   final comic = _isComicPath(picked.name);
-  final limit = comic ? maxComicBytes : maxImportBytes;
+  final limit = extension == '.pdf'
+      ? 64 * 1024 * 1024
+      : comic
+      ? maxComicBytes
+      : maxImportBytes;
   final tooLarge = FormatException(
-    comic
+    extension == '.pdf'
+        ? 'PDF imports are limited to 64 MiB.'
+        : comic
         ? 'Comics are limited to 1 GiB.'
         : 'Book imports are limited to 512 MiB.',
   );
@@ -123,9 +130,17 @@ Future<void> cleanPickedBook(String path) =>
 ///
 /// Comics (`.cbz`/`.cbr`, the archive type decided by magic bytes) come back
 /// as a CBZ: the source itself, or a deterministic repack of a CBR.
-Future<String> prepareBook(String sourcePath) async {
+Future<String> prepareBook(String sourcePath, {Uri? origin}) async {
   final extension = p.extension(sourcePath).toLowerCase();
   if (extension == '.epub') return sourcePath;
+  if (extension == '.pdf') {
+    if (origin == null) {
+      throw const FormatException(
+        'Choose a reading server before importing a PDF.',
+      );
+    }
+    return pdf.convertPdf(sourcePath, origin);
+  }
   if (_isComicPath(sourcePath)) {
     final work = await Directory.systemTemp.createTemp('thereader-comic-');
     try {
@@ -138,7 +153,7 @@ Future<String> prepareBook(String sourcePath) async {
     }
   }
   if (extension != '.mobi') {
-    throw const FormatException('Choose an EPUB, MOBI, CBZ or CBR file.');
+    throw const FormatException('Choose a PDF, EPUB, MOBI, CBZ or CBR file.');
   }
   final size = await File(sourcePath).length();
   // kindle_unpack materializes its input and EPUB output. Keep the conversion

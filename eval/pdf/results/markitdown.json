@@ -1,0 +1,324 @@
+[
+  {
+    "engine": "markitdown",
+    "version": "0.1.8",
+    "scope": "default PDF Markdown conversion; no LLM/OCR",
+    "id": "reading-demo",
+    "pages": 1,
+    "kind": "generated",
+    "samplesMs": [
+      9.335833005025052,
+      9.120082992012613,
+      13.925459003075957,
+      9.270374997868203,
+      9.33324999641627
+    ],
+    "medianMs": 9.33324999641627,
+    "msPerPage": 9.33324999641627,
+    "quality": {
+      "characterAccuracy": 1.0,
+      "tokenF1": 1.0,
+      "headingF1": 0.0,
+      "tableCellF1": 1.0,
+      "codeBlockF1": 0.0,
+      "imageCountF1": 0.0
+    },
+    "characters": 819,
+    "outputSha256": "82cd5414a8130e7355ddd48c366fc7e9971eabba280102dccc88427a8d06c157"
+  },
+  {
+    "engine": "markitdown",
+    "version": "0.1.8",
+    "scope": "default PDF Markdown conversion; no LLM/OCR",
+    "id": "book-120",
+    "pages": 120,
+    "kind": "generated",
+    "samplesMs": [
+      796.8246250093216,
+      781.0897919989657,
+      840.3445000003558,
+      825.3530420042807,
+      818.497208005283
+    ],
+    "medianMs": 818.497208005283,
+    "msPerPage": 6.820810066710692,
+    "quality": {
+      "characterAccuracy": 0.9364257363337478,
+      "tokenF1": 0.9552238805970149,
+      "headingF1": 0.0
+    },
+    "characters": 59783,
+    "outputSha256": "102fa4f87381515954334f8d8e4c3b33779dc33716e62cdeca5af2841e7adc6f"
+  },
+  {
+    "engine": "markitdown",
+    "version": "0.1.8",
+    "scope": "default PDF Markdown conversion; no LLM/OCR",
+    "id": "columns",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      42.46275000332389,
+      43.523541986360215,
+      44.19958300422877,
+      44.24829100025818,
+      50.829708998207934
+    ],
+    "medianMs": 44.19958300422877,
+    "msPerPage": 14.733194334742924,
+    "quality": {
+      "characterAccuracy": 0.9262899262899262,
+      "tokenF1": 0.9829545454545454,
+      "headingF1": 0.0
+    },
+    "characters": 2939,
+    "outputSha256": "87fb4c88cab7293067269d3aeee25930a5f6344b78735746e503306dc040e1e2"
+  },
+  {
+    "engine": "markitdown",
+    "version": "0.1.8",
+    "scope": "default PDF Markdown conversion; no LLM/OCR",
+    "id": "table",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      21.007832998293452,
+      21.20712499890942,
+      23.0294170032721,
+      22.760500010917895,
+      22.75220899900887
+    ],
+    "medianMs": 22.75220899900887,
+    "msPerPage": 7.5840696663362905,
+    "quality": {
+      "characterAccuracy": 0.9522039298990972,
+      "tokenF1": 0.9651162790697675,
+      "headingF1": 0.0,
+      "tableCellF1": 1.0
+    },
+    "characters": 2092,
+    "outputSha256": "61fde77aaf5d74fe5f3604b071a20debc0ec74c93e47f87e3bf1d890c783c328"
+  },
+  {
+    "engine": "markitdown",
+    "version": "0.1.8",
+    "scope": "default PDF Markdown conversion; no LLM/OCR",
+    "id": "code",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      31.922083988320082,
+      31.495957999140956,
+      31.733041992993094,
+      38.822125003207475,
+      32.7734999882523
+    ],
+    "medianMs": 31.922083988320082,
+    "msPerPage": 10.640694662773361,
+    "quality": {
+      "characterAccuracy": 0.9487763232783153,
+      "tokenF1": 0.9634146341463414,
+      "headingF1": 0.0,
+      "codeBlockF1": 0.0
+    },
+    "characters": 1808,
+    "outputSha256": "f32b0b632dad317e4b444fcb21d764cb37abcec2e6c00bb21560b08850226e16"
+  },
+  {
+    "engine": "markitdown",
+    "version": "0.1.8",
+    "scope": "default PDF Markdown conversion; no LLM/OCR",
+    "id": "image",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      29.74933299992699,
+      30.815083999186754,
+      30.769625009270385,
+      30.946540995500982,
+      30.80029200646095
+    ],
+    "medianMs": 30.80029200646095,
+    "msPerPage": 10.26676400215365,
+    "quality": {
+      "characterAccuracy": 0.9450213805742211,
+      "tokenF1": 0.961038961038961,
+      "headingF1": 0.0,
+      "imageCountF1": 0.0
+    },
+    "characters": 1667,
+    "outputSha256": "004f0662359a15d47f4d5411a3536e9c8de71b7d1eeb9e29c4f95f6e1b706df1"
+  },
+  {
+    "engine": "markitdown",
+    "version": "0.1.8",
+    "scope": "default PDF Markdown conversion; no LLM/OCR",
+    "id": "references",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      33.025124997948296,
+      33.28154199698474,
+      32.88916600286029,
+      38.514500003657304,
+      33.308166995993815
+    ],
+    "medianMs": 33.28154199698474,
+    "msPerPage": 11.093847332328247,
+    "quality": {
+      "characterAccuracy": 0.9488636363636364,
+      "tokenF1": 0.963855421686747,
+      "headingF1": 0.0
+    },
+    "characters": 1799,
+    "outputSha256": "71fe8cb19b627b3e936e65a251484c65411d292a66ec053c702710bb1d0aaa00"
+  },
+  {
+    "engine": "markitdown",
+    "version": "0.1.8",
+    "scope": "default PDF Markdown conversion; no LLM/OCR",
+    "id": "unicode",
+    "pages": 2,
+    "kind": "generated",
+    "samplesMs": [
+      13.075041002593935,
+      13.15749999776017,
+      14.644000009866431,
+      14.243416997487657,
+      14.152917006867938
+    ],
+    "medianMs": 14.152917006867938,
+    "msPerPage": 7.076458503433969,
+    "quality": {
+      "characterAccuracy": 0.8473282442748091,
+      "tokenF1": 0.8928571428571429,
+      "headingF1": 0.0
+    },
+    "characters": 413,
+    "outputSha256": "1bdea4e361a28cea24c14a1048544ea719aa41f075fc647c4cb106cb7106b207"
+  },
+  {
+    "engine": "markitdown",
+    "version": "0.1.8",
+    "scope": "default PDF Markdown conversion; no LLM/OCR",
+    "id": "scanned",
+    "pages": 1,
+    "kind": "capability-gap",
+    "samplesMs": [
+      3.661916998680681,
+      4.434999995282851,
+      5.174791003810242,
+      4.33804199565202,
+      3.721749992109835
+    ],
+    "medianMs": 4.33804199565202,
+    "msPerPage": 4.33804199565202,
+    "quality": null,
+    "characters": 0,
+    "outputSha256": "fa93fbdf3a540e492c1a450bdd1124efdee9908f49e0d821c995964bb9b4b569"
+  },
+  {
+    "engine": "markitdown",
+    "version": "0.1.8",
+    "scope": "default PDF Markdown conversion; no LLM/OCR",
+    "id": "attention",
+    "pages": 15,
+    "kind": "public-unscored",
+    "samplesMs": [
+      747.6808749925112,
+      766.554832996917,
+      752.0501249964582,
+      740.9414589928929,
+      742.5087500014342
+    ],
+    "medianMs": 747.6808749925112,
+    "msPerPage": 49.845391666167416,
+    "quality": null,
+    "characters": 17000,
+    "outputSha256": "5e3e2fc78e3b4f51bc0e24cc9cc4dc76ef5cb996d76c0a5da06c08ec0ffbf545"
+  },
+  {
+    "engine": "markitdown",
+    "version": "0.1.8",
+    "scope": "default PDF Markdown conversion; no LLM/OCR",
+    "id": "nist-aes",
+    "pages": 46,
+    "kind": "public-unscored",
+    "samplesMs": [
+      3607.5862500001676,
+      2138.73533300648,
+      2147.4228750012117,
+      2437.484082998708,
+      2259.2545410007006
+    ],
+    "medianMs": 2259.2545410007006,
+    "msPerPage": 49.11422915218914,
+    "quality": null,
+    "characters": 39958,
+    "outputSha256": "69f920ca0fc34d7ee97033ece43d5a7a6ac1dedf06f6721c9ebd5b7c6b0b9ab8"
+  },
+  {
+    "engine": "markitdown",
+    "version": "0.1.8",
+    "scope": "default PDF Markdown conversion; no LLM/OCR",
+    "id": "rfc9110",
+    "pages": 194,
+    "kind": "public-unscored",
+    "samplesMs": [
+      5504.633332995581,
+      5492.718624998815,
+      5535.737416998018,
+      6335.406541998964,
+      5520.797834004043
+    ],
+    "medianMs": 5520.797834004043,
+    "msPerPage": 28.45772079383527,
+    "quality": null,
+    "characters": 451067,
+    "outputSha256": "01f05d06965ea9087b02c1d1790f25de874be46322c0ea7d7e8fc56a8ed29f78"
+  },
+  {
+    "engine": "markitdown",
+    "version": "0.1.8",
+    "scope": "default PDF Markdown conversion; no LLM/OCR",
+    "id": "w3c",
+    "pages": 1,
+    "kind": "public-unscored",
+    "samplesMs": [
+      3.3667919924482703,
+      3.297875009593554,
+      3.251250003813766,
+      3.250416004448198,
+      3.3298339985776693
+    ],
+    "medianMs": 3.297875009593554,
+    "msPerPage": 3.297875009593554,
+    "quality": null,
+    "characters": 16,
+    "outputSha256": "bcd4875a74214ed6d049a09f17c0914ae16544cf1579ccf0a5cd467d82265792"
+  },
+  {
+    "engine": "markitdown",
+    "version": "0.1.8",
+    "scope": "default PDF Markdown conversion; no LLM/OCR",
+    "id": "alice-book",
+    "pages": 60,
+    "kind": "generated",
+    "samplesMs": [
+      1732.1269579988439,
+      1800.6523329968331,
+      1769.812375001493,
+      1737.9200409923214,
+      1770.3563329996541
+    ],
+    "medianMs": 1769.812375001493,
+    "msPerPage": 29.496872916691547,
+    "quality": {
+      "characterAccuracy": 0.9856009585588563,
+      "tokenF1": 0.9943767572633552,
+      "headingF1": 0.0
+    },
+    "characters": 146361,
+    "outputSha256": "11683e026f43980f858048dfcb093a323257d4aee7bc91101c02d2465a828b60"
+  }
+]

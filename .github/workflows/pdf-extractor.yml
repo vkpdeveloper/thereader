@@ -1,0 +1,26 @@
+name: PDF Extractor
+on:
+  pull_request:
+    paths:
+      - 'packages/pdf_go/**'
+      - 'apps/api/src/pdf.ts'
+      - 'apps/web/src/lib/import/**'
+      - '.github/workflows/pdf-extractor.yml'
+  push:
+    branches: [main]
+    paths: ['packages/pdf_go/**']
+jobs:
+  go:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: packages/pdf_go/go.mod
+          cache: false
+      - run: go test -race ./...
+        working-directory: packages/pdf_go
+      - run: go vet ./...
+        working-directory: packages/pdf_go
+      - run: go test -fuzz=FuzzExtract -fuzztime=15s -parallel=2 -timeout=60s
+        working-directory: packages/pdf_go

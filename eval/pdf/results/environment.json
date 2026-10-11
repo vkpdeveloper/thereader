@@ -1,0 +1,148 @@
+{
+  "timestamp": "2026-10-11T06:33:16+0530",
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "machine": "arm64",
+  "processor": "Apple M5",
+  "python": "3.12.13 (main, Apr 14 2026, 14:33:40) [Clang 22.1.3 ]",
+  "go": "go version go1.27.1 darwin/arm64",
+  "repeats": 5,
+  "warmups": 1,
+  "qualityScope": "Original generated documents only; public PDF quality is unscored. No OCR. Not an OmniDocBench evaluation or a market-wide rank.",
+  "corpus": [
+    {
+      "id": "reading-demo",
+      "file": "test-corpus/pdf/reading-demo.pdf",
+      "pages": 1,
+      "kind": "generated",
+      "images": 1,
+      "sha256": "a6460b2765a3ed81eff55b6200357eb841895da1503e1818edf5c9865c005f9e"
+    },
+    {
+      "id": "book-120",
+      "file": "test-corpus/pdf/book-120.pdf",
+      "pages": 120,
+      "kind": "generated",
+      "images": 0,
+      "sha256": "37586d7330d2463bdbf863306d7d8e00648f7dffe97a93cfe329c0760e401009"
+    },
+    {
+      "id": "columns",
+      "file": "test-corpus/pdf/columns.pdf",
+      "pages": 3,
+      "kind": "generated",
+      "images": 0,
+      "sha256": "8ac5ab3622e24f88a75ee96a964c5d2a55d3cddbb79995809ac70a206b49ab07"
+    },
+    {
+      "id": "table",
+      "file": "test-corpus/pdf/table.pdf",
+      "pages": 3,
+      "kind": "generated",
+      "images": 0,
+      "sha256": "1f4a1a6b191b0846760e17272fd8b8beed918333f07d998814221a196de5daf7"
+    },
+    {
+      "id": "code",
+      "file": "test-corpus/pdf/code.pdf",
+      "pages": 3,
+      "kind": "generated",
+      "images": 0,
+      "sha256": "551d43a62de96f0203162a7751f13f11f89237ffd7be4b8bb22c4d2b091cb654"
+    },
+    {
+      "id": "image",
+      "file": "test-corpus/pdf/image.pdf",
+      "pages": 3,
+      "kind": "generated",
+      "images": 3,
+      "sha256": "506d1e8e5ed917a284f7aaf3ed0daeca57b4b63972478c84c9c66c840c42b729"
+    },
+    {
+      "id": "references",
+      "file": "test-corpus/pdf/references.pdf",
+      "pages": 3,
+      "kind": "generated",
+      "images": 0,
+      "sha256": "46ee4fb4d580c5a4c42beec6abc73dff8bce9d623e8336ed571849f6b1be6efb"
+    },
+    {
+      "id": "unicode",
+      "file": "test-corpus/pdf/unicode.pdf",
+      "pages": 2,
+      "kind": "generated",
+      "images": 0,
+      "sha256": "cfaad2a79d0ac75bbc8a713683d64cdaa2e6b8df3a73df44862d85620d9adbd1"
+    },
+    {
+      "id": "scanned",
+      "file": "test-corpus/pdf/scanned.pdf",
+      "pages": 1,
+      "kind": "capability-gap",
+      "sha256": "f9785386e991b5051df7bbb8bd7791afebe04a459b6a8ed77b979a30f90bbd27"
+    },
+    {
+      "id": "attention",
+      "file": "test-corpus/pdf/attention.pdf",
+      "pages": 15,
+      "kind": "public-unscored",
+      "url": "https://arxiv.org/pdf/1706.03762",
+      "sha256": "bdfaa68d8984f0dc02beaca527b76f207d99b666d31d1da728ee0728182df697"
+    },
+    {
+      "id": "nist-aes",
+      "file": "test-corpus/pdf/nist-aes.pdf",
+      "pages": 46,
+      "kind": "public-unscored",
+      "url": "https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197-upd1.pdf",
+      "sha256": "62c86eb567f13edb8f71826e985da870b04ef6381634f303cdb16e84d47becd1"
+    },
+    {
+      "id": "rfc9110",
+      "file": "test-corpus/pdf/rfc9110.pdf",
+      "pages": 194,
+      "kind": "public-unscored",
+      "url": "https://www.rfc-editor.org/rfc/rfc9110.pdf",
+      "sha256": "60b30efa1048900833d1758440247fe8ac85a3134f2327388dcb24e07d814c89"
+    },
+    {
+      "id": "w3c",
+      "file": "test-corpus/pdf/w3c.pdf",
+      "pages": 1,
+      "kind": "public-unscored",
+      "url": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+      "sha256": "3df79d34abbca99308e79cb94461c1893582604d68329a41fd4bec1885e6adb4"
+    },
+    {
+      "id": "alice-book",
+      "file": "test-corpus/pdf/alice-book.pdf",
+      "pages": 60,
+      "kind": "generated",
+      "genre": "public-domain novel with controlled typesetting",
+      "sourceUrl": "https://www.gutenberg.org/cache/epub/11/pg11.txt",
+      "sourceSha256": "01b38ea4c710a84bc18d0bd41271a5a1a92b94e97b2812f4dece97d4a694725e",
+      "sha256": "48897dc4630a5eca3ec05953c92d4aa8ce631cfed853ade60d42ba4de181a194",
+      "images": 0
+    }
+  ],
+  "lastRunEngines": [
+    "pdf-extractor"
+  ],
+  "lastRunIds": [
+    "reading-demo",
+    "book-120",
+    "columns",
+    "table",
+    "code",
+    "image",
+    "references",
+    "unicode",
+    "scanned",
+    "attention",
+    "nist-aes",
+    "rfc9110",
+    "w3c",
+    "alice-book"
+  ],
+  "extractorSourceSha256": "a1e8234ceb9bca5c8d5d94e2940f112a0cd751cf696fe6ad00ae7a27fec61a69",
+  "extractorBinarySha256": "d81e3f8f6b373d0d17dd9d600ad9f606d13538e9187acdeaefc42d458547f175"
+}

@@ -1,0 +1,324 @@
+[
+  {
+    "engine": "pdfminer",
+    "version": "20260107",
+    "scope": "text only, default layout analysis",
+    "id": "reading-demo",
+    "pages": 1,
+    "kind": "generated",
+    "samplesMs": [
+      4.355333003331907,
+      4.287749994546175,
+      4.612292003002949,
+      4.345207998994738,
+      4.386334010632709
+    ],
+    "medianMs": 4.355333003331907,
+    "msPerPage": 4.355333003331907,
+    "quality": {
+      "characterAccuracy": 0.9024064171122994,
+      "tokenF1": 1.0,
+      "headingF1": 0.0,
+      "tableCellF1": 0.0,
+      "codeBlockF1": 0.0,
+      "imageCountF1": 0.0
+    },
+    "characters": 776,
+    "outputSha256": "779683facdcd0615df85da434786896eeeefe187bd605fb6b418e9469bf5110e"
+  },
+  {
+    "engine": "pdfminer",
+    "version": "20260107",
+    "scope": "text only, default layout analysis",
+    "id": "book-120",
+    "pages": 120,
+    "kind": "generated",
+    "samplesMs": [
+      230.2726670022821,
+      239.98712499451358,
+      232.14895899582189,
+      232.7484999987064,
+      234.2245830077445
+    ],
+    "medianMs": 232.7484999987064,
+    "msPerPage": 1.9395708333225532,
+    "quality": {
+      "characterAccuracy": 0.9326128632746891,
+      "tokenF1": 0.9481481481481482,
+      "headingF1": 0.0
+    },
+    "characters": 59784,
+    "outputSha256": "a4537c31396662f26c7298d3bb1e9fc6ad67ded5a7e2a0bba1fc48ee5cbea63a"
+  },
+  {
+    "engine": "pdfminer",
+    "version": "20260107",
+    "scope": "text only, default layout analysis",
+    "id": "columns",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      13.32379100495018,
+      13.08212500589434,
+      13.134041990269907,
+      13.583874999312684,
+      13.736458000494167
+    ],
+    "medianMs": 13.32379100495018,
+    "msPerPage": 4.441263668316727,
+    "quality": {
+      "characterAccuracy": 0.9243432574430823,
+      "tokenF1": 0.9801699716713881,
+      "headingF1": 0.0
+    },
+    "characters": 2940,
+    "outputSha256": "ee18b533d5bdc29b1494d85804e2c3a3d9d8dbadb44c100b8cf5e00f0833ac67"
+  },
+  {
+    "engine": "pdfminer",
+    "version": "20260107",
+    "scope": "text only, default layout analysis",
+    "id": "table",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      9.59908300137613,
+      9.460250003030524,
+      9.50116700551007,
+      9.496792001300491,
+      10.315124993212521
+    ],
+    "medianMs": 9.50116700551007,
+    "msPerPage": 3.1670556685033566,
+    "quality": {
+      "characterAccuracy": 0.8464796188459502,
+      "tokenF1": 0.9595375722543352,
+      "headingF1": 0.0,
+      "tableCellF1": 0.0
+    },
+    "characters": 1950,
+    "outputSha256": "e5766bd3c258701b091d655cdcbe953df7bd0fb1d1b8274d6f4de9f72bd24206"
+  },
+  {
+    "engine": "pdfminer",
+    "version": "20260107",
+    "scope": "text only, default layout analysis",
+    "id": "code",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      8.111041999654844,
+      11.563249994651414,
+      8.041000008233823,
+      8.149999994202517,
+      8.111542003462091
+    ],
+    "medianMs": 8.111542003462091,
+    "msPerPage": 2.7038473344873637,
+    "quality": {
+      "characterAccuracy": 0.9455473624503687,
+      "tokenF1": 0.9575757575757575,
+      "headingF1": 0.0,
+      "codeBlockF1": 0.0
+    },
+    "characters": 1809,
+    "outputSha256": "4e9483c2a89d916d890d9d06ee7dabc98a6abeb169ce22b0aa623f32825c41c0"
+  },
+  {
+    "engine": "pdfminer",
+    "version": "20260107",
+    "scope": "text only, default layout analysis",
+    "id": "image",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      7.089708000421524,
+      6.982459002756514,
+      7.034541995381005,
+      7.2181670111604035,
+      7.320999997318722
+    ],
+    "medianMs": 7.089708000421524,
+    "msPerPage": 2.363236000140508,
+    "quality": {
+      "characterAccuracy": 0.9415702982349361,
+      "tokenF1": 0.9548387096774194,
+      "headingF1": 0.0,
+      "imageCountF1": 0.0
+    },
+    "characters": 1668,
+    "outputSha256": "17ab29c1eac6423095b200705ecdf51dfa5a7a98c9240f285e754a8843d89f36"
+  },
+  {
+    "engine": "pdfminer",
+    "version": "20260107",
+    "scope": "text only, default layout analysis",
+    "id": "references",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      7.835917000193149,
+      7.8985000000102445,
+      7.993375009391457,
+      7.855875010136515,
+      7.896125011029653
+    ],
+    "medianMs": 7.896125011029653,
+    "msPerPage": 2.632041670343218,
+    "quality": {
+      "characterAccuracy": 0.9456398640996603,
+      "tokenF1": 0.9580838323353293,
+      "headingF1": 0.0
+    },
+    "characters": 1800,
+    "outputSha256": "5ba796cfeb5e23e2bb983409b86d71ea25f45f1891c1123222c2237302c297cc"
+  },
+  {
+    "engine": "pdfminer",
+    "version": "20260107",
+    "scope": "text only, default layout analysis",
+    "id": "unicode",
+    "pages": 2,
+    "kind": "generated",
+    "samplesMs": [
+      3.4514169965405017,
+      3.3163749903906137,
+      3.436999992118217,
+      3.3350000012433156,
+      3.521374994306825
+    ],
+    "medianMs": 3.436999992118217,
+    "msPerPage": 1.7184999960591085,
+    "quality": {
+      "characterAccuracy": 0.8387909319899245,
+      "tokenF1": 0.8771929824561403,
+      "headingF1": 0.0
+    },
+    "characters": 414,
+    "outputSha256": "93604df7253df0842a2fe5655c3ba5852ef1ca5918d3978243ad19758ff44dad"
+  },
+  {
+    "engine": "pdfminer",
+    "version": "20260107",
+    "scope": "text only, default layout analysis",
+    "id": "scanned",
+    "pages": 1,
+    "kind": "capability-gap",
+    "samplesMs": [
+      0.3880840085912496,
+      0.3793340001720935,
+      0.3733750054379925,
+      0.375540999812074,
+      0.4812080005649477
+    ],
+    "medianMs": 0.3793340001720935,
+    "msPerPage": 0.3793340001720935,
+    "quality": null,
+    "characters": 1,
+    "outputSha256": "19974f224479f1aac6895a44475a88b8a76b39ba40ef4ba756ab890e626ff7ec"
+  },
+  {
+    "engine": "pdfminer",
+    "version": "20260107",
+    "scope": "text only, default layout analysis",
+    "id": "attention",
+    "pages": 15,
+    "kind": "public-unscored",
+    "samplesMs": [
+      487.51679199631326,
+      487.4884589953581,
+      496.24554099864326,
+      505.8547499938868,
+      503.3365419949405
+    ],
+    "medianMs": 496.24554099864326,
+    "msPerPage": 33.08303606657622,
+    "quality": null,
+    "characters": 39675,
+    "outputSha256": "6714ad7ccf88011911deab021f0f504d8f0f9e102c2c0534668328493e254f5c"
+  },
+  {
+    "engine": "pdfminer",
+    "version": "20260107",
+    "scope": "text only, default layout analysis",
+    "id": "nist-aes",
+    "pages": 46,
+    "kind": "public-unscored",
+    "samplesMs": [
+      1615.1514999946812,
+      1700.7315829978324,
+      1614.0843749890337,
+      1687.062832992524,
+      1748.5888329974841
+    ],
+    "medianMs": 1687.062832992524,
+    "msPerPage": 36.67527897809835,
+    "quality": null,
+    "characters": 74352,
+    "outputSha256": "9111dadb629e0bbb978901cb7e33e44e43df999a914dc34b715c43973761a8e0"
+  },
+  {
+    "engine": "pdfminer",
+    "version": "20260107",
+    "scope": "text only, default layout analysis",
+    "id": "rfc9110",
+    "pages": 194,
+    "kind": "public-unscored",
+    "samplesMs": [
+      3636.852249997901,
+      3673.114749995875,
+      3774.1537499969127,
+      3634.765167007572,
+      3701.1251669900957
+    ],
+    "medianMs": 3673.114749995875,
+    "msPerPage": 18.933581185545748,
+    "quality": null,
+    "characters": 468993,
+    "outputSha256": "a68dc410d34996b2163e751f079cf7857ffee881f6f41e56b8c8c5fa09439bb9"
+  },
+  {
+    "engine": "pdfminer",
+    "version": "20260107",
+    "scope": "text only, default layout analysis",
+    "id": "w3c",
+    "pages": 1,
+    "kind": "public-unscored",
+    "samplesMs": [
+      0.6568329990841448,
+      0.7908330007921904,
+      0.6185840029502288,
+      0.6117090088082477,
+      0.612458010436967
+    ],
+    "medianMs": 0.6185840029502288,
+    "msPerPage": 0.6185840029502288,
+    "quality": null,
+    "characters": 17,
+    "outputSha256": "3572b34e29dbdb55a5fe65195a40d4a09fc62e87642f6f7480fca3d9e699330e"
+  },
+  {
+    "engine": "pdfminer",
+    "version": "20260107",
+    "scope": "text only, default layout analysis",
+    "id": "alice-book",
+    "pages": 60,
+    "kind": "generated",
+    "samplesMs": [
+      448.72524999664165,
+      453.1782080011908,
+      449.1067089984426,
+      457.21429100376554,
+      535.5902500014054
+    ],
+    "medianMs": 453.1782080011908,
+    "msPerPage": 7.55297013335318,
+    "quality": {
+      "characterAccuracy": 0.9847871857325682,
+      "tokenF1": 0.9932596891967796,
+      "headingF1": 0.0
+    },
+    "characters": 146362,
+    "outputSha256": "e76258f4c669adc10e22ba7019f651dbe7b3136121fdf99d3952a8791901e24f"
+  }
+]

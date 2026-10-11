@@ -170,7 +170,7 @@ export function LibraryScreen() {
       const files = Array.from(e.dataTransfer?.files ?? []);
       const books = files.filter((f) => importExtensions.test(f.name));
       if (books.length === 0) {
-        toast.show('Could not import that file. Choose an EPUB, MOBI, CBZ or CBR file.');
+        toast.show('Could not import that file. Choose a PDF, EPUB, MOBI, CBZ or CBR file.');
         return;
       }
       void importLatest.current(books);
@@ -306,7 +306,7 @@ export function LibraryScreen() {
       {everything.length === 0 && articles.items.length === 0 ? (
         <StateMessage
           title="Nothing here yet."
-          body="Browse the library and download a book, import an EPUB, MOBI or comic (CBZ, CBR) with the upload button, or save any article from a link with the plus button. You can also drop a book file or paste a link onto this page. Everything is kept on this device for offline reading."
+          body="Browse the library and download a book, import a PDF, EPUB, MOBI or comic (CBZ, CBR) with the upload button, or save any article from a link with the plus button. You can also drop a book file or paste a link onto this page. Everything is kept on this device for offline reading."
           actionLabel="Browse books"
           onAction={() => void navigate({ to: '/browse' })}
           secondary={<QuietButton label="Add article from link" icon={AddIcon} onClick={openAddArticle} />}
@@ -413,7 +413,7 @@ export function LibraryScreen() {
           <div className="drop-overlay-card">
             <UploadIcon size={28} />
             <div className="t-headline">Drop to import</div>
-            <div className="t-body-sm">EPUB, MOBI, CBZ or CBR. The file is copied to this device first.</div>
+            <div className="t-body-sm">PDF, EPUB, MOBI, CBZ or CBR. The file is copied to this device first.</div>
           </div>
         </div>
       )}

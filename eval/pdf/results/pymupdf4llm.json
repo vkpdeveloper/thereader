@@ -1,0 +1,324 @@
+[
+  {
+    "engine": "pymupdf4llm",
+    "version": "1.28.2",
+    "scope": "Markdown with layout model; OCR off; images embedded; header/footer cleanup on",
+    "id": "reading-demo",
+    "pages": 1,
+    "kind": "generated",
+    "samplesMs": [
+      70.4500420106342,
+      63.9935829967726,
+      65.32208400312811,
+      64.20112500200048,
+      65.03899999370333
+    ],
+    "medianMs": 65.03899999370333,
+    "msPerPage": 65.03899999370333,
+    "quality": {
+      "characterAccuracy": 1.0,
+      "tokenF1": 1.0,
+      "headingF1": 1.0,
+      "tableCellF1": 1.0,
+      "codeBlockF1": 0.0,
+      "imageCountF1": 1.0
+    },
+    "characters": 795,
+    "outputSha256": "fddf9efe7d4594dbf9588eda31d51a85f2ca7b60a166d72674db65809a6f0e88"
+  },
+  {
+    "engine": "pymupdf4llm",
+    "version": "1.28.2",
+    "scope": "Markdown with layout model; OCR off; images embedded; header/footer cleanup on",
+    "id": "book-120",
+    "pages": 120,
+    "kind": "generated",
+    "samplesMs": [
+      4148.607333001564,
+      4345.489750005072,
+      4422.155332998955,
+      4550.162415995146,
+      4595.6316250085365
+    ],
+    "medianMs": 4422.155332998955,
+    "msPerPage": 36.851294441657956,
+    "quality": {
+      "characterAccuracy": 1.0,
+      "tokenF1": 1.0,
+      "headingF1": 1.0
+    },
+    "characters": 55932,
+    "outputSha256": "fbd42011ba477bf798fd92f33e41da0e3471b70f47f1c2f53de3401acdb34b3a"
+  },
+  {
+    "engine": "pymupdf4llm",
+    "version": "1.28.2",
+    "scope": "Markdown with layout model; OCR off; images embedded; header/footer cleanup on",
+    "id": "columns",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      135.98916699993424,
+      135.22733299760148,
+      133.9604170061648,
+      133.6814590031281,
+      139.98308299051132
+    ],
+    "medianMs": 135.22733299760148,
+    "msPerPage": 45.07577766586716,
+    "quality": {
+      "characterAccuracy": 1.0,
+      "tokenF1": 1.0,
+      "headingF1": 1.0
+    },
+    "characters": 2778,
+    "outputSha256": "a24d6322e6836200d9f5de18b2129538190bcfcb5bc8f5b84499db1501752c65"
+  },
+  {
+    "engine": "pymupdf4llm",
+    "version": "1.28.2",
+    "scope": "Markdown with layout model; OCR off; images embedded; header/footer cleanup on",
+    "id": "table",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      188.96720799966715,
+      190.96491699747276,
+      189.33049999759533,
+      190.43520800187252,
+      192.83233300666325
+    ],
+    "medianMs": 190.43520800187252,
+    "msPerPage": 63.478402667290844,
+    "quality": {
+      "characterAccuracy": 1.0,
+      "tokenF1": 1.0,
+      "headingF1": 1.0,
+      "tableCellF1": 1.0
+    },
+    "characters": 1860,
+    "outputSha256": "e3cce2a83a40ea4a40aeaa6ce6b62e81c7ae94e06c328c0c5a8c21ed9ab2dd84"
+  },
+  {
+    "engine": "pymupdf4llm",
+    "version": "1.28.2",
+    "scope": "Markdown with layout model; OCR off; images embedded; header/footer cleanup on",
+    "id": "code",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      119.13170899788383,
+      120.30895800853614,
+      122.73870799981523,
+      127.2018330055289,
+      123.84470899996813
+    ],
+    "medianMs": 122.73870799981523,
+    "msPerPage": 40.91290266660508,
+    "quality": {
+      "characterAccuracy": 1.0,
+      "tokenF1": 1.0,
+      "headingF1": 1.0,
+      "codeBlockF1": 0.0
+    },
+    "characters": 1746,
+    "outputSha256": "47baeb978cd71907632516290341850d3ae061a7a27e7cacbd4089c94e81f5ec"
+  },
+  {
+    "engine": "pymupdf4llm",
+    "version": "1.28.2",
+    "scope": "Markdown with layout model; OCR off; images embedded; header/footer cleanup on",
+    "id": "image",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      127.66025000018999,
+      127.86891600990202,
+      127.37687499611638,
+      126.83550000656396,
+      126.39287499769125
+    ],
+    "medianMs": 127.37687499611638,
+    "msPerPage": 42.4589583320388,
+    "quality": {
+      "characterAccuracy": 1.0,
+      "tokenF1": 1.0,
+      "headingF1": 1.0,
+      "imageCountF1": 1.0
+    },
+    "characters": 1590,
+    "outputSha256": "35a97d36bc9cfc807ad59c309a482a05468ddc64ede0c4b5d47ac653ae7b7413"
+  },
+  {
+    "engine": "pymupdf4llm",
+    "version": "1.28.2",
+    "scope": "Markdown with layout model; OCR off; images embedded; header/footer cleanup on",
+    "id": "references",
+    "pages": 3,
+    "kind": "generated",
+    "samplesMs": [
+      135.94558399927337,
+      124.39366700709797,
+      120.71162500069477,
+      125.0127910025185,
+      120.73287500243168
+    ],
+    "medianMs": 124.39366700709797,
+    "msPerPage": 41.464555669032656,
+    "quality": {
+      "characterAccuracy": 0.9964200477326969,
+      "tokenF1": 0.9937888198757764,
+      "headingF1": 1.0
+    },
+    "characters": 1725,
+    "outputSha256": "3ad4a287a9dd6631ca06665facd8e61f4c25a23e255d07cb8197c512c25c1db7"
+  },
+  {
+    "engine": "pymupdf4llm",
+    "version": "1.28.2",
+    "scope": "Markdown with layout model; OCR off; images embedded; header/footer cleanup on",
+    "id": "unicode",
+    "pages": 2,
+    "kind": "generated",
+    "samplesMs": [
+      73.3259580010781,
+      72.65625000582077,
+      73.83137500437442,
+      75.58491699455772,
+      77.543000006699
+    ],
+    "medianMs": 73.83137500437442,
+    "msPerPage": 36.91568750218721,
+    "quality": {
+      "characterAccuracy": 1.0,
+      "tokenF1": 1.0,
+      "headingF1": 1.0
+    },
+    "characters": 342,
+    "outputSha256": "d8ffdccf76b714ff2aaddbcb1039739a5bda92c664fc2a59065090705a75d32d"
+  },
+  {
+    "engine": "pymupdf4llm",
+    "version": "1.28.2",
+    "scope": "Markdown with layout model; OCR off; images embedded; header/footer cleanup on",
+    "id": "scanned",
+    "pages": 1,
+    "kind": "capability-gap",
+    "samplesMs": [
+      40.12745800719131,
+      38.637999998172745,
+      40.54620800889097,
+      38.794874999439344,
+      38.40962500544265
+    ],
+    "medianMs": 38.794874999439344,
+    "msPerPage": 38.794874999439344,
+    "quality": null,
+    "characters": 4,
+    "outputSha256": "c738d8e64a537f3af230085aab524eb60e21f526700cf9436d07a885bf62e2cb"
+  },
+  {
+    "engine": "pymupdf4llm",
+    "version": "1.28.2",
+    "scope": "Markdown with layout model; OCR off; images embedded; header/footer cleanup on",
+    "id": "attention",
+    "pages": 15,
+    "kind": "public-unscored",
+    "samplesMs": [
+      1756.741792007233,
+      1780.5862500099465,
+      1768.4858339925995,
+      1760.1616669999203,
+      1803.925333006191
+    ],
+    "medianMs": 1768.4858339925995,
+    "msPerPage": 117.89905559950664,
+    "quality": null,
+    "characters": 39709,
+    "outputSha256": "7fc5bdcecb23e4073f994ef4e359d2ad645cfb49a69de10a1cf5b72af263df07"
+  },
+  {
+    "engine": "pymupdf4llm",
+    "version": "1.28.2",
+    "scope": "Markdown with layout model; OCR off; images embedded; header/footer cleanup on",
+    "id": "nist-aes",
+    "pages": 46,
+    "kind": "public-unscored",
+    "samplesMs": [
+      4197.121042001527,
+      4273.060666004312,
+      4485.904250002932,
+      4467.0786249917,
+      4544.797875001677
+    ],
+    "medianMs": 4467.0786249917,
+    "msPerPage": 97.11040489112392,
+    "quality": null,
+    "characters": 61900,
+    "outputSha256": "395d5ffe180d1f824831a8d4108322420b5f4d56502e0f0108fa55ad45808541"
+  },
+  {
+    "engine": "pymupdf4llm",
+    "version": "1.28.2",
+    "scope": "Markdown with layout model; OCR off; images embedded; header/footer cleanup on",
+    "id": "rfc9110",
+    "pages": 194,
+    "kind": "public-unscored",
+    "samplesMs": [
+      17519.36883298913,
+      19265.362958001788,
+      18958.93624999735,
+      19398.337165999692,
+      19326.207374993828
+    ],
+    "medianMs": 19265.362958001788,
+    "msPerPage": 99.3059946288752,
+    "quality": null,
+    "characters": 438511,
+    "outputSha256": "a97a990a71f9e761fc2d2271d33d478ea94957ebe769dcd5b5e9141bc03daa5b"
+  },
+  {
+    "engine": "pymupdf4llm",
+    "version": "1.28.2",
+    "scope": "Markdown with layout model; OCR off; images embedded; header/footer cleanup on",
+    "id": "w3c",
+    "pages": 1,
+    "kind": "public-unscored",
+    "samplesMs": [
+      43.84925001068041,
+      43.90529100783169,
+      45.05283299658913,
+      49.95374999998603,
+      47.068875006516464
+    ],
+    "medianMs": 45.05283299658913,
+    "msPerPage": 45.05283299658913,
+    "quality": null,
+    "characters": 0,
+    "outputSha256": "fa93fbdf3a540e492c1a450bdd1124efdee9908f49e0d821c995964bb9b4b569"
+  },
+  {
+    "engine": "pymupdf4llm",
+    "version": "1.28.2",
+    "scope": "Markdown with layout model; OCR off; images embedded; header/footer cleanup on",
+    "id": "alice-book",
+    "pages": 60,
+    "kind": "generated",
+    "samplesMs": [
+      5620.975208003074,
+      5435.586624997086,
+      5110.485625002184,
+      5065.668541996274,
+      5216.549874996417
+    ],
+    "medianMs": 5216.549874996417,
+    "msPerPage": 86.94249791660695,
+    "quality": {
+      "characterAccuracy": 1.0,
+      "tokenF1": 1.0,
+      "headingF1": 0.9230769230769231
+    },
+    "characters": 144816,
+    "outputSha256": "b3cbdaee03a7118abf01d5337002292882c7cbda968d7e393c8860707638b8e8"
+  }
+]

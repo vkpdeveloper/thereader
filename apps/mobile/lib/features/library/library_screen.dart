@@ -159,7 +159,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   title: 'Nothing here yet.',
                   body: [
                     canImport
-                        ? 'Browse the library and download a book, or import an EPUB, MOBI, CBZ or CBR from your files with the button above.'
+                        ? 'Browse the library and download a book, or import a PDF, EPUB, MOBI, CBZ or CBR from your files with the button above.'
                         : 'Browse the library and download a book.',
                     if (articles != null) 'Save any article from the web with the + button.',
                     'Everything is kept on this device for offline reading.',

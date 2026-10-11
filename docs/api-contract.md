@@ -178,7 +178,7 @@ App name: The Reader. Editorial and calm, using the exact user-supplied palette 
 `docs/design-theme.json` and `docs/design-theme.md`: pure black background, #101010
 panels, #1f1f1f elements/borders, #ededed text, #a1a1a1 muted text, #52a8ff primary.
 Generous whitespace, exceptional typography, compact controls. No light/sepia theme,
-decorative dashboard, gradients, bright neon, PDFs, audio, or platform-native styling
+decorative dashboard, gradients, bright neon, PDF facsimile rendering, audio, or platform-native styling
 requirement. Brief thoughtful motion and reduced-motion support. Large hit targets
 and accessible labels. No fake controls or fake success.
 
@@ -196,6 +196,15 @@ The live protocol, validation limits and response examples are documented in
 - `GET /v1/sync` and `POST /v1/sync`: library membership, locators, cumulative
   reading sessions, highlights and saved articles. Reader settings are
   per-device and never sync.
+
+`POST /v1/pdf/extract` accepts an `application/pdf` body up to 64 MiB and returns
+an `application/epub+zip` reading edition, bounded to 128 MiB. The Worker streams
+to the separately hosted [PDF Extractor Go service](../packages/pdf_go/README.md).
+Set `PDF_EXTRACTOR_URL` and the optional matching `PDF_EXTRACTOR_TOKEN` secret on
+the Worker. It reports `503 PDF_UNAVAILABLE` when unconfigured; encrypted,
+malformed, excessive or image-only input receives an actionable extraction error.
+Clients validate the EPUB and use the existing import/upload protocol. Conversion
+requires a connection; saved reading editions use the existing offline path.
 
 Maximum EPUB size is 512 MiB; maximum comic (CBZ) size is 1 GiB. A comic
 must contain at least one page, at most 10,000 entries and no encryption; its

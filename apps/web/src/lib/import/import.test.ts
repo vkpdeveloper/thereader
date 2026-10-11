@@ -438,7 +438,7 @@ describe('sha256Hex without WebCrypto', () => {
 describe('inspectFile: rejection', () => {
   test('refuses files that are neither ZIP nor PalmDB', async () => {
     const error = await rejection(inspectFile(fileOf(new TextEncoder().encode('just some text, not a book'), 'book.epub')));
-    expect(error.message).toBe('Choose an EPUB, MOBI, CBZ or CBR file.');
+    expect(error.message).toBe('Choose a PDF, EPUB, MOBI, CBZ or CBR file.');
   });
 
   test('refuses ZIPs that are not EPUB publications', async () => {

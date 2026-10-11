@@ -5,11 +5,12 @@ import { inspectCbr, inspectCbz, maxComicBytes, zipIsEpub } from './comic';
 import { coverMediaType, inspectEpub, maxImportBytes } from './epub';
 import { convertMobiFile, maxMobiBytes } from './mobi';
 import { uploadBook } from './upload';
+import { convertPdf } from './pdf';
 
 export * from './contract';
 export { uploadBook, maxImportBytes, maxMobiBytes, maxComicBytes };
 
-export type SourceKind = 'zip' | 'rar' | 'mobi' | null;
+export type SourceKind = 'zip' | 'rar' | 'mobi' | 'pdf' | null;
 
 /** Bytes needed by `sourceKind` (a TAR header's magic sits at 257). */
 export const SNIFF_BYTES = 263;
@@ -29,19 +30,24 @@ export function sourceKind(head: Uint8Array): SourceKind {
   if (startsWith(head, ascii('ustar'), 257)) {
     throw new ImportError('CBT (TAR) comics are not supported. Convert it to CBZ first.', 'UNSUPPORTED_FILE');
   }
-  if (startsWith(head, ascii('%PDF'))) throw new ImportError('PDF files are not supported.', 'UNSUPPORTED_FILE');
+  if (startsWith(head, ascii('%PDF-'))) return 'pdf';
   return null;
 }
 
-export const inspectFile: InspectFile = async (file) => {
+export const inspectFile: InspectFile = async (file, options) => {
   const kind = sourceKind(new Uint8Array(await file.slice(0, SNIFF_BYTES).arrayBuffer()));
-  if (kind === null) throw new ImportError('Choose an EPUB, MOBI, CBZ or CBR file.', 'UNSUPPORTED_FILE');
+  if (kind === null) throw new ImportError('Choose a PDF, EPUB, MOBI, CBZ or CBR file.', 'UNSUPPORTED_FILE');
   if (kind === 'rar') return inspectCbr(file);
   if (kind === 'zip' && !(await zipIsEpub(file))) return inspectCbz(file);
   if (file.size > maxImportBytes) throw new ImportError('Book imports are limited to 512 MiB.', 'TOO_LARGE');
   let epub: Blob;
   let bytes: Uint8Array;
-  if (kind === 'mobi') {
+  if (kind === 'pdf') {
+    const origin = options?.origin ?? (typeof location === 'undefined' ? undefined : location.origin);
+    if (!origin) throw new ImportError('Choose a reading server before importing a PDF.', 'PDF_UNAVAILABLE');
+    epub = await convertPdf(file, origin);
+    bytes = new Uint8Array(await epub.arrayBuffer());
+  } else if (kind === 'mobi') {
     // Conversion materializes input and output. Keep it bounded; EPUBs use the 512 MiB path.
     if (file.size === 0 || file.size > maxMobiBytes) throw new ImportError('MOBI imports are limited to 64 MiB.', 'TOO_LARGE');
     bytes = convertMobiFile(new Uint8Array(await file.arrayBuffer()));
@@ -62,7 +68,7 @@ export const inspectFile: InspectFile = async (file) => {
     language: metadata.language,
     subjects: metadata.subjects,
     cover: metadata.cover === null ? null : new Blob([ownBuffer(metadata.cover)], { type: coverMediaType(metadata.cover) }),
-    converted: kind === 'mobi',
+    converted: kind === 'mobi' || kind === 'pdf',
   };
 };
 
