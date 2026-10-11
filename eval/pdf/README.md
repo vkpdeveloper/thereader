@@ -1,5 +1,10 @@
 # PDF Extractor evaluation
 
+The [real-paper and textbook follow-up](real-world/README.md) tests the requested
+arXiv 2609.20804 PDF plus Axler, Hefferon, Think Python and Calculus Made Easy:
+1,508 pages, five comparison engines, font/mathematical geometry checks and
+reader proof. Its scores are separate from the original controlled fixtures below.
+
 [Implementation, measured ranks and reader proof report](https://pub-db5cc934f02943a19d855c11f462c1e9.r2.dev/doc/thereader/pdf-extractor-report-ebf0e378.html)
 includes screenshots and a video. [Evidence metadata](evidence.json) records the
 exact original PDF, converted EPUB hash and browser assertions.

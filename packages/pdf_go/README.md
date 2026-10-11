@@ -6,9 +6,10 @@ independent of The Reader backend. Its library, CLI and HTTP adapter use **only
 the Go standard library**. No existing PDF parser/extractor, OCR engine, model,
 subprocess or network service is used by the extraction engine.
 
-This is a first release, not a claim of universal 99% accuracy or sub-millisecond
+Version 0.2 adds embedded font outlines and real-document regressions. It is not a claim of universal 99% accuracy or sub-millisecond
 latency. The measured results, corpus, versions and limitations live in
-[the PDF evaluation](../../eval/pdf/README.md). Particularly complex, scanned,
+[the PDF evaluation](../../eval/pdf/README.md) and the
+[1,508-page real-document follow-up](../../eval/pdf/real-world/README.md). Particularly complex, scanned,
 encrypted or badly encoded files do not have the same coverage as digital books.
 
 ## Use as a library
@@ -33,7 +34,7 @@ _ = markdown
 _ = epub
 ```
 
-Use `Options.Limits` to lower input, object, page, stream, operation, span or image
+Use `Options.Limits` to lower input, object, page, stream, operation, span, image or generated-asset
 limits. `KeepArtifacts` retains marked artifacts and repeated margin text.
 Independent calls are safe to run concurrently. A call does not retain the input
 after its returned document is released. JPEG assets may reference the input
@@ -46,7 +47,7 @@ Dates remain in source form. Language defaults to `en` when absent; it is not
 inferred from the words.
 
 Blocks include headings with levels, paragraphs with styled/link runs, list
-items, code with language hints, table rows/cells, images and tagged formulas.
+items, code with language hints, table rows/cells, images and positioned math.
 Reference, index, caption and footnote roles remain on blocks. Each block has a
 top-left bounding box in PDF points and belongs to a numbered source page.
 Image bytes have deterministic relative names in `Assets` (`[]byte`, base64 when
@@ -95,7 +96,16 @@ Markdown sent to stdout still references relative assets; use `-out` to save the
    artifact tags and link annotations. MCID structure roles and figure alt text
    inform the block classifier. Raster images and supported inline images are
    extracted; supported vector paths become SVG assets.
-4. **Reading cleanup.** Overprinted duplicate text is removed; repeated small
+4. **Mathematical geometry.** A bounded interpreter reads embedded CFF/Type 2,
+   Type 1, TrueType glyf and path-only Type 3 font programs. It emits the original
+   glyph outlines and text matrices as SVG, including fraction rules and scripts.
+   Glyphs are cached per font and deduplicated within each asset. No PostScript,
+   TrueType hinting bytecode or external font program is executed. CID charset,
+   FDSelect/subroutines, Type 1 encryption/encoding and TrueType simple/composite
+   outlines are read directly. Unsupported outlines use Unicode fallback with
+   a warning. Adobe's licensed Glyph List is reference **data**, not extraction
+   code; see [its provenance](data/README.md).
+5. **Reading cleanup.** Overprinted duplicate text is removed; repeated small
    margin text and page numbers are filtered across pages. Prominent chapter
    titles are protected. Baselines group spans into lines; repeated gutters
    infer two-column order around full-width headings. Aligned short cells and
@@ -103,7 +113,7 @@ Markdown sent to stdout still references relative assets; use `-out` to save the
    discretionary soft hyphens disappear. Visible hyphens remain because their
    role in compound words is ambiguous. Monospaced/tagged code retains blank
    lines and indentation; recognizable syntax supplies a language hint.
-5. **Export.** Markdown and escaped XHTML are emitted from those same blocks.
+6. **Export.** Markdown and escaped XHTML are emitted from those same blocks.
    EPUB includes metadata, a navigation document, source-page anchors, code
    classes, tables and local images. ZIP bytes are deterministic; `mimetype`
    is the first, uncompressed entry. Partial reading editions start with
@@ -120,13 +130,17 @@ Markdown sent to stdout still references relative assets; use `-out` to save the
   paths and supported inline images. Plain JPEGs keep their original bytes;
   masks or Decode mappings cause conversion to PNG.
 - **Heuristics:** reading order, paragraph breaks, heading levels, untagged
-  tables, captions/footnotes and code languages. Formula tags are preserved as
-  linear text; mathematical semantics/LaTeX are not reconstructed.
+  tables, captions/footnotes and code languages. Math blocks retain a linear text alternative and source box alongside an SVG
+  asset with `representation: "positioned"`. Inline math runs carry an asset and
+  baseline-relative size; text scripts use `sup`/`sub`. These preserve appearance,
+  not mathematical semantics. LaTeX/MathML are not reconstructed.
 - **Reported gaps:** OCR, encrypted PDFs, missing/unusual font maps, vertical
   writing, complex merged/nested tables, non-Identity CID encodings, JPEG 2000,
   JBIG2/CCITT images, uncommon inline-image filters, some masks/color spaces,
   clipping and shading, optional layers, form values, non-link annotations
   and embedded attachments. Named/internal destinations are not all resolved.
+  Name-keyed CFF, CFF2/OpenType containers, point-matched TrueType composites,
+  and bitmap/resource-dependent Type 3 glyph outlines remain unsupported.
   A small test corpus cannot establish accuracy across arbitrary books.
 
 The engine never executes JavaScript, launch actions or embedded files. It does
@@ -134,7 +148,8 @@ not access external resources referenced by a PDF. EPUB text/metadata are XML
 escaped and only HTTP(S)/mailto links are retained.
 
 Default limits: 64 MiB input, 256 MiB decoded data, 200,000 objects, 10,000 pages,
-5,000,000 content operators, 2,000,000 spans and 20,000,000 pixels per image.
+5,000,000 content/font operations, 2,000,000 spans, 20,000,000 pixels per image
+and 128 MiB of generated assets plus cached glyph outlines.
 Limits are resource guards, not a proof that every malformed PDF is harmless.
 Run the HTTP service in an isolated process/container with a memory/CPU limit.
 
@@ -163,7 +178,10 @@ For local development, place `PDF_EXTRACTOR_URL=http://127.0.0.1:8091` in
 `apps/api/.dev.vars` and run the normal Worker and Vite dev servers. The web and
 Flutter file pickers accept PDF, submit it to `/v1/pdf/extract`, validate the
 returned EPUB, and reuse the existing checksum, upload, sync, offline storage,
-navigation, typography, highlighting and code-rendering paths. Conversion needs
+navigation, typography, highlighting and code-rendering paths. Positioned math
+is explicitly marked so the shared web/mobile enhancer never guesses TeX from
+its linear alt text. Display formulas scale with reader text; monochrome math
+uses the reader dark-mode ink treatment. Conversion needs
 a network connection; reading the saved result does not.
 
 ## Tests

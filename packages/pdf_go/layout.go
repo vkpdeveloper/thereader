@@ -11,6 +11,8 @@ import (
 
 type line struct {
 	spans      []span
+	baseline   float64
+	math       bool
 	box        Rect
 	size       float64
 	bold, mono bool
@@ -24,97 +26,160 @@ type line struct {
 
 var pageNumber = regexp.MustCompile(`(?i)^(?:page\s+)?(?:\d+|[ivxlcdm]+)(?:\s*(?:of|/)\s*\d+)?$`)
 var marginDigits = regexp.MustCompile(`\d+`)
+var sectionNumber = regexp.MustCompile(`^(?:[A-Z]|\d+)(?:\.\d+){1,3}\s+\p{L}`)
 var bulletLine = regexp.MustCompile(`^(?:[•●▪◦‣]|[-*]\s|\d+[.)]\s)`)
 var deLigature = strings.NewReplacer("ﬁ", "fi", "ﬂ", "fl", "ﬀ", "ff", "ﬃ", "ffi", "ﬄ", "ffl", "\u00ad", "", "\u00a0", " ")
 
+func spanBaseline(s span) float64 {
+	if s.baseline != 0 {
+		return s.baseline
+	}
+	return s.box.Y + s.box.H*.78
+}
+
+// Remove whole running lines, never character/kerning fragments. A number in
+// an equation or a short word near a margin must not disappear in isolation.
 func cleanMargins(pages []*pageContent) {
 	if len(pages) < 2 {
 		return
 	}
+	body := bodyFontSize(pages)
+	grouped := make([][]*line, len(pages))
 	counts := map[string]int{}
-	bodySize := bodyFontSize(pages)
-	key := func(pc *pageContent, s span) string {
-		// A chapter title can occupy the top margin and differ only by a number.
-		// Font prominence takes precedence over repetition; never discard it.
-		if s.size > bodySize*1.1 {
-			return ""
-		}
-		if s.box.Y > pc.page.Height*.08 && s.box.Y+s.box.H < pc.page.Height*.92 {
-			return ""
-		}
-		t := strings.ToLower(strings.TrimSpace(s.text))
-		if len(t) > 140 || len(t) == 0 {
+	key := func(pc *pageContent, l *line) string {
+		if l.size > body*1.1 || (l.bold && l.size >= body*.98) || len(l.text) > 180 {
 			return ""
 		}
 		side := "top:"
-		if s.box.Y > pc.page.Height/2 {
+		if l.box.Y+l.box.H < pc.page.Height*.08 {
+		} else if l.box.Y > pc.page.Height*.94 {
 			side = "bottom:"
+		} else {
+			return ""
 		}
-		return side + marginDigits.ReplaceAllString(t, "#")
+		return side + marginDigits.ReplaceAllString(strings.ToLower(strings.TrimSpace(l.text)), "#")
 	}
-	for _, pc := range pages {
+	for n, pc := range pages {
+		grouped[n] = makeLines(pc.spans)
 		seen := map[string]bool{}
-		for _, s := range pc.spans {
-			k := key(pc, s)
-			if k != "" && !seen[k] {
+		for _, l := range grouped[n] {
+			if k := key(pc, l); k != "" && !seen[k] {
 				counts[k]++
 				seen[k] = true
 			}
 		}
 	}
-	threshold := max(2, (len(pages)+1)/2)
-	for _, pc := range pages {
-		out := pc.spans[:0]
-		for _, s := range pc.spans {
-			k := key(pc, s)
-			if k != "" && (counts[k] >= threshold || pageNumber.MatchString(strings.TrimSpace(s.text))) {
-				continue
+	type position struct {
+		text string
+		x, y float64
+	}
+	for n, pc := range pages {
+		drop := map[position]bool{}
+		for _, l := range grouped[n] {
+			k := key(pc, l)
+			if k != "" && (counts[k] >= max(2, min(6, (len(pages)+1)/2)) || pageNumber.MatchString(l.text)) {
+				for _, s := range l.spans {
+					drop[position{s.text, s.box.X, s.box.Y}] = true
+				}
 			}
-			out = append(out, s)
 		}
-		pc.spans = out
+		kept := pc.spans[:0]
+		for _, s := range pc.spans {
+			if !drop[position{s.text, s.box.X, s.box.Y}] {
+				kept = append(kept, s)
+			}
+		}
+		pc.spans = kept
 	}
 }
 
 func makeLines(spans []span) []*line {
+	ordered := append([]span(nil), spans...)
+	sort.SliceStable(ordered, func(i, j int) bool { return spanBaseline(ordered[i]) < spanBaseline(ordered[j]) })
 	lines := []*line{}
-	for _, s := range spans {
+	for _, s := range ordered {
 		if strings.TrimSpace(s.text) == "" {
 			continue
 		}
+		baseline := spanBaseline(s)
 		var target *line
-		for j := len(lines) - 1; j >= 0 && j >= len(lines)-6; j-- {
-			l := lines[j]
-			baseline := s.box.Y + s.box.H*.78
-			other := l.box.Y + l.box.H*.78
-			if math.Abs(baseline-other) < math.Max(2, math.Min(s.box.H, l.box.H)*.28) {
+		if len(lines) > 0 {
+			l := lines[len(lines)-1]
+			if math.Abs(baseline-l.baseline) < math.Max(.6, math.Min(s.size, l.size)*.25) {
 				target = l
-				break
 			}
 		}
 		if target == nil {
-			target = &line{box: s.box}
+			target = &line{box: s.box, baseline: baseline}
 			lines = append(lines, target)
 		} else {
 			target.box = union(target.box, s.box)
 		}
+		target.size = math.Max(target.size, s.size)
 		target.spans = append(target.spans, s)
 	}
-	for _, l := range lines {
-		finishLine(l)
-	}
-	sort.SliceStable(lines, func(i, j int) bool {
-		if math.Abs(lines[i].box.Y-lines[j].box.Y) > 2 {
-			return lines[i].box.Y < lines[j].box.Y
+	// Attach smaller raised/lowered glyphs to the nearby baseline. Coordinates
+	// remain intact so visual math can retain both scripts at the same x position.
+	for i, l := range lines {
+		kept := l.spans[:0]
+		for _, s := range l.spans {
+			var host *line
+			best := math.Inf(1)
+			accent := s.script == "" && strings.TrimFunc(s.text, func(r rune) bool { return unicode.IsMark(r) || unicode.IsSpace(r) }) == ""
+			for j := max(0, i-4); j < min(len(lines), i+5); j++ {
+				h := lines[j]
+				dy := spanBaseline(s) - h.baseline
+				if i == j || (!accent && h.size < s.size*1.18) || math.Abs(dy) > h.size*.72 || math.Abs(dy) < h.size*.12 {
+					continue
+				}
+				dx := math.Max(h.box.X-s.box.X-s.box.W, s.box.X-h.box.X-h.box.W)
+				if dx > h.size*.6 {
+					continue
+				}
+				score := math.Abs(dy) + math.Max(0, dx)
+				if score < best {
+					host = h
+					best = score
+				}
+			}
+			if host != nil {
+				s.script = "sup"
+				if spanBaseline(s) > host.baseline {
+					s.script = "sub"
+				}
+				host.spans = append(host.spans, s)
+				host.box = union(host.box, s.box)
+			} else {
+				kept = append(kept, s)
+			}
 		}
-		return lines[i].box.X < lines[j].box.X
+		l.spans = kept
+	}
+	out := make([]*line, 0, len(lines))
+	for _, l := range lines {
+		if len(l.spans) > 0 {
+			finishLine(l)
+			out = append(out, l)
+		}
+	}
+	sort.SliceStable(out, func(i, j int) bool {
+		if math.Abs(out[i].baseline-out[j].baseline) > .5 {
+			return out[i].baseline < out[j].baseline
+		}
+		return out[i].box.X < out[j].box.X
 	})
-	return lines
+	return out
 }
 func finishLine(l *line) {
 	sort.SliceStable(l.spans, func(i, j int) bool { return l.spans[i].box.X < l.spans[j].box.X })
 	var text, cell strings.Builder
+	l.cells = nil
+	l.starts = nil
+	l.runs = nil
+	l.text = ""
+	weights := map[float64]int{}
 	l.mono = true
+	l.math = false
 	l.bold = true
 	for j, s := range l.spans {
 		t := deLigature.Replace(s.text)
@@ -137,16 +202,31 @@ func finishLine(l *line) {
 		}
 		text.WriteString(space + t)
 		cell.WriteString(space + t)
-		if n := len(l.runs); n > 0 && l.runs[n-1].Bold == s.bold && l.runs[n-1].Italic == s.italic && l.runs[n-1].Link == s.link {
+		if n := len(l.runs); n > 0 && l.runs[n-1].Bold == s.bold && l.runs[n-1].Italic == s.italic && l.runs[n-1].Link == s.link && l.runs[n-1].Script == s.script {
 			l.runs[n-1].Text += space + t
 		} else {
-			l.runs = append(l.runs, Run{space + t, s.bold, s.italic, s.link})
+			l.runs = append(l.runs, Run{Text: space + t, Bold: s.bold, Italic: s.italic, Link: s.link, Script: s.script})
 		}
-		l.size = math.Max(l.size, s.size)
+		if s.script == "" {
+			weights[math.Round(s.size*10)/10] += utf8.RuneCountInString(t)
+		}
+		l.math = l.math || (s.font != nil && s.font.math)
 		l.bold = l.bold && s.bold
 		l.mono = l.mono && s.mono
 		if s.role != "" && s.role != "Span" {
 			l.role = s.role
+		}
+	}
+	if len(weights) == 0 {
+		for _, s := range l.spans {
+			l.size = math.Max(l.size, s.size)
+		}
+	}
+	best := 0
+	for size, weight := range weights {
+		if weight > best || weight == best && size > l.size {
+			l.size = size
+			best = weight
 		}
 	}
 	l.cells = append(l.cells, strings.TrimSpace(cell.String()))
@@ -158,17 +238,25 @@ func finishLine(l *line) {
 
 func (p *pdf) layout(pc *pageContent, bodySize float64) []Block {
 	lines := makeLines(pc.spans)
+	mathBlocks := p.mathBlocks(pc, lines)
+	p.vectorAsset(pc, mathBlocks, lines)
 	tables := detectTables(lines, pc.rules, bodySize)
 	// Rulings used by tables are represented by semantic rows; decorative paths
 	// and chart geometry on other pages remain SVG assets.
-	p.vectorAsset(pc, tables)
+
 	remaining := []*line{}
 	for _, l := range lines {
 		if !l.used {
+
 			remaining = append(remaining, l)
 		}
 	}
 	ordered := columnOrder(remaining, pc.page.Width)
+	for _, l := range ordered {
+		if l.math {
+			p.inlineMath(pc, l)
+		}
+	}
 	blocks := []Block{}
 	var current *Block
 	var previous *line
@@ -196,6 +284,9 @@ func (p *pdf) layout(pc *pageContent, bodySize float64) []Block {
 			gap = l.box.Y - previous.box.Y - previous.box.H
 		}
 		join := current != nil && current.Kind == kind && kind != "heading" && kind != "list" && current.Role == role && previous != nil && gap >= -2 && gap < math.Max(l.size*.8, 4) && math.Abs(l.box.X-previous.box.X) < math.Max(l.size*2, 24)
+		if kind == "heading" && current != nil && previous != nil {
+			join = current.Kind == "heading" && current.Level == level && gap >= -2 && gap < l.size*.8 && (math.Abs(l.box.X-previous.box.X) < l.size || math.Abs((l.box.X+l.box.W/2)-(previous.box.X+previous.box.W/2)) < l.size*2)
+		}
 		if kind == "code" {
 			join = current != nil && current.Kind == "code" && gap >= -2 && gap < l.size*3
 		}
@@ -230,7 +321,7 @@ func (p *pdf) layout(pc *pageContent, bodySize float64) []Block {
 	flush()
 	// Tables and images are inserted near their original vertical position. Text
 	// blocks keep column order; sorting the entire page by Y would interleave them.
-	for _, b := range append(tables, pc.images...) {
+	for _, b := range append(append(mathBlocks, tables...), pc.images...) {
 		at := len(blocks)
 		for j, t := range blocks {
 			if t.Box.Y > b.Box.Y+b.Box.H*.25 {
@@ -270,6 +361,9 @@ func classifyLine(l *line, body float64) (string, int, string) {
 	if l.mono && utf8.RuneCountInString(l.text) > 0 {
 		return "code", 0, role
 	}
+	if l.bold && l.size >= body*.8 && len(l.text) < 150 && sectionNumber.MatchString(l.text) {
+		return "heading", 3, role
+	}
 	if len(l.text) < 200 && ((l.size >= body*1.18 && l.size-body >= 1) || (l.bold && len(l.text) < 80 && len(strings.Fields(l.text)) <= 10 && l.size >= body*.98 && !strings.HasSuffix(l.text, ".") && !strings.HasSuffix(l.text, ","))) {
 		level := 2
 		if l.size >= body*1.65 {
@@ -305,11 +399,11 @@ func endsSoftHyphen(l *line) bool {
 }
 
 func detectTables(lines []*line, rules []ruling, body float64) []Block {
-	out := []Block{}
+	out := ruledTables(lines, rules, body)
 	for i := 0; i < len(lines); {
 		l := lines[i]
 		columns := len(l.cells)
-		if columns < 2 || columns > 20 || l.mono {
+		if l.used || columns < 2 || columns > 20 || l.mono || l.math {
 			i++
 			continue
 		}
@@ -317,7 +411,7 @@ func detectTables(lines []*line, rules []ruling, body float64) []Block {
 		for end < len(lines) {
 			next := lines[end]
 			prev := lines[end-1]
-			if len(next.cells) != columns || next.box.Y-prev.box.Y > body*3 || next.box.Y-prev.box.Y < 0 {
+			if next.used || next.math || len(next.cells) != columns || next.box.Y-prev.box.Y > body*3 || next.box.Y-prev.box.Y < 0 {
 				break
 			}
 			aligned := true
@@ -378,7 +472,29 @@ func columnOrder(lines []*line, width float64) []*line {
 			}
 		}
 	}
-	if len(candidates) < 3 || len(candidates)*4 < len(lines) {
+	// Sidebars can have a slightly offset baseline and occupy only a short
+	// band on the page. They still need column order within that band.
+	for i, l := range lines {
+		if l.mono || l.box.W < width*.15 {
+			continue
+		}
+		for j := i + 1; j < len(lines) && lines[j].baseline-l.baseline < l.size*.9; j++ {
+			r := lines[j]
+			if r.mono || r.box.W < width*.15 {
+				continue
+			}
+			a, b := l, r
+			if a.box.X > b.box.X {
+				a, b = b, a
+			}
+			gap := b.box.X - a.box.X - a.box.W
+			mid := (b.box.X + a.box.X + a.box.W) / 2
+			if gap > width*.015 && mid > width*.3 && mid < width*.7 {
+				candidates = append(candidates, mid)
+			}
+		}
+	}
+	if len(candidates) < 3 {
 		return lines
 	}
 	sort.Float64s(candidates)
@@ -404,7 +520,7 @@ func columnOrder(lines []*line, width float64) []*line {
 			continue
 		}
 		part := func(spans []span) *line {
-			n := &line{spans: spans, box: spans[0].box}
+			n := &line{spans: spans, box: spans[0].box, baseline: spanBaseline(spans[0])}
 			for _, s := range spans[1:] {
 				n.box = union(n.box, s.box)
 			}

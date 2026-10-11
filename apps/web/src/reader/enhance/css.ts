@@ -91,6 +91,9 @@ ${P} .tr-shown{position:static !important;clip:auto !important;clip-path:none !i
   -webkit-user-select:text !important;user-select:text !important;}
 ${P} .tr-shown > math[display="block"], ${P} .tr-shown > .tr-math-scroll, ${P} .tr-shown > .tr-math-display{display:block !important;}
 
+/* The reader's generic image reset must not shrink positioned PDF equations. */
+${P} .math-display img[data-math-representation="positioned"]{width:var(--pdf-math-width,auto) !important;max-width:100% !important;height:auto !important;}
+
 /* ---- code (rule 5) */
 ${P} pre{display:block !important;white-space:pre !important;word-break:normal !important;overflow-wrap:normal !important;
   word-wrap:normal !important;overflow-x:auto !important;overflow-y:hidden !important;tab-size:4;-moz-tab-size:4;

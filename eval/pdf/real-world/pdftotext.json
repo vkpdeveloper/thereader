@@ -1,0 +1,82 @@
+[
+  {
+    "engine": "pdftotext",
+    "version": "pdftotext version 26.10.0",
+    "id": "harness",
+    "pages": 43,
+    "scope": "text only; CLI startup included (no in-process API)",
+    "samplesMs": [
+      192.95604102080688,
+      191.95083298836835,
+      197.69283299683593
+    ],
+    "medianMs": 192.95604102080688,
+    "msPerPage": 4.487349791181555,
+    "characters": 137924,
+    "outputSha256": "ec1e210673041d017224aebc0c0b48ccec5f919231f78cef60b1f82ac2416853"
+  },
+  {
+    "engine": "pdftotext",
+    "version": "pdftotext version 26.10.0",
+    "id": "axler",
+    "pages": 404,
+    "scope": "text only; CLI startup included (no in-process API)",
+    "samplesMs": [
+      377.851458004443,
+      369.5561249915045,
+      369.7945830062963
+    ],
+    "medianMs": 369.7945830062963,
+    "msPerPage": 0.9153331262532087,
+    "characters": 771714,
+    "outputSha256": "b0b487f8f7065d677d60d891c550c20321e301db1ac20467621e961cd8eb97ec"
+  },
+  {
+    "engine": "pdftotext",
+    "version": "pdftotext version 26.10.0",
+    "id": "hefferon",
+    "pages": 525,
+    "scope": "text only; CLI startup included (no in-process API)",
+    "samplesMs": [
+      1037.9935420060065,
+      1009.3739170115441,
+      1011.1269170010928
+    ],
+    "medianMs": 1011.1269170010928,
+    "msPerPage": 1.9259560323830338,
+    "characters": 934084,
+    "outputSha256": "acc299263e6ec5d90ac1c170f5292b6ea7a797a6d1294dea35acbdb1dace7a35"
+  },
+  {
+    "engine": "pdftotext",
+    "version": "pdftotext version 26.10.0",
+    "id": "thinkpython",
+    "pages": 244,
+    "scope": "text only; CLI startup included (no in-process API)",
+    "samplesMs": [
+      292.76574999676086,
+      291.0223329963628,
+      290.7169999962207
+    ],
+    "medianMs": 291.0223329963628,
+    "msPerPage": 1.1927144794932902,
+    "characters": 447452,
+    "outputSha256": "2acda069332316b725d63870de48d8498af853baa55205122755093c3519eceb"
+  },
+  {
+    "engine": "pdftotext",
+    "version": "pdftotext version 26.10.0",
+    "id": "calculus",
+    "pages": 292,
+    "scope": "text only; CLI startup included (no in-process API)",
+    "samplesMs": [
+      467.47104098903947,
+      464.28720801486634,
+      469.9056659883354
+    ],
+    "medianMs": 467.47104098903947,
+    "msPerPage": 1.6009282225652037,
+    "characters": 279232,
+    "outputSha256": "5a0c5cfa1fbc574e8dfcbdd300420655825ba331924716988d38e0b0cbaf2ebf"
+  }
+]

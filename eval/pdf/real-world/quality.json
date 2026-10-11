@@ -1,0 +1,2857 @@
+{
+  "paperHtmlSha256": "ccd482c65a81672a0b827d9c5c53460fdd49a5e95c55a3b8c47be3b19b035190",
+  "paperMethod": "Author HTML body/prompt paragraphs >=100 normalized alphanumeric characters; each compared with its best contiguous output window using edit distance. Omits whitespace/punctuation, short paragraphs, tables, figures, author metadata. Not a whole-document accuracy metric.",
+  "paper": {
+    "before": {
+      "proseCharacters": 46405,
+      "paragraphs": 73,
+      "weightedCharacterAgreement": 0.9350070035556514,
+      "paragraphsAt99Percent": 57,
+      "paragraphsExact": 54,
+      "fragment32": {
+        "matched": 1355,
+        "total": 1419
+      },
+      "headings": {
+        "matched": 11,
+        "expected": 41,
+        "actual": 16,
+        "recall": 0.2682926829268293,
+        "precision": 0.6875,
+        "f1": 0.38596491228070173
+      },
+      "tableCells": {
+        "matched": 883,
+        "expected": 1448,
+        "actual": 920,
+        "recall": 0.6098066298342542,
+        "precision": 0.9597826086956521,
+        "f1": 0.745777027027027
+      },
+      "paragraphScores": [
+        {
+          "id": "abstract1.1",
+          "characters": 1610,
+          "agreement": 0.915527950310559
+        },
+        {
+          "id": "S1.p1.1",
+          "characters": 716,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.p2.1",
+          "characters": 1185,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.p3.1",
+          "characters": 1322,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.p4.1",
+          "characters": 1005,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.I1.i1.p1.1",
+          "characters": 231,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.I1.i2.p1.1",
+          "characters": 335,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.I1.i3.p1.1",
+          "characters": 287,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.I1.i4.p1.1",
+          "characters": 254,
+          "agreement": 1.0
+        },
+        {
+          "id": "S2.p1.1",
+          "characters": 654,
+          "agreement": 1.0
+        },
+        {
+          "id": "S2.SS1.p1.1",
+          "characters": 681,
+          "agreement": 0.9985315712187959
+        },
+        {
+          "id": "S2.SS2.p1.1",
+          "characters": 1192,
+          "agreement": 0.99748322147651
+        },
+        {
+          "id": "S2.SS3.p1.1",
+          "characters": 1588,
+          "agreement": 0.778337531486146
+        },
+        {
+          "id": "S2.SS3.p2.1",
+          "characters": 620,
+          "agreement": 0.7758064516129033
+        },
+        {
+          "id": "S2.SS4.p1.1",
+          "characters": 160,
+          "agreement": 1.0
+        },
+        {
+          "id": "S2.SS4.SSS0.Px1.p1.1",
+          "characters": 472,
+          "agreement": 1.0
+        },
+        {
+          "id": "S2.SS4.SSS0.Px2.p1.1",
+          "characters": 260,
+          "agreement": 1.0
+        },
+        {
+          "id": "S2.SS4.SSS0.Px3.p1.1",
+          "characters": 411,
+          "agreement": 0.9975669099756691
+        },
+        {
+          "id": "S3.SS1.SSS0.Px1.p1.1",
+          "characters": 377,
+          "agreement": 0.8010610079575597
+        },
+        {
+          "id": "S3.SS1.SSS0.Px2.p1.1",
+          "characters": 317,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.I1.i1.p1.1",
+          "characters": 164,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.I1.i2.p1.1",
+          "characters": 625,
+          "agreement": 0.8160000000000001
+        },
+        {
+          "id": "S3.SS1.SSS0.Px4.p1.1",
+          "characters": 819,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px1.p1.1",
+          "characters": 762,
+          "agreement": 0.9041994750656168
+        },
+        {
+          "id": "S3.SS2.SSS0.Px1.p2.pic1.1.1",
+          "characters": 134,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px2.p1.1",
+          "characters": 832,
+          "agreement": 0.6802884615384616
+        },
+        {
+          "id": "S3.SS2.SSS0.Px2.p2.pic1.1.1",
+          "characters": 156,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px3.p1.1",
+          "characters": 1034,
+          "agreement": 0.718568665377176
+        },
+        {
+          "id": "S3.SS2.SSS0.Px3.p2.pic1.1.1",
+          "characters": 141,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px4.p1.1",
+          "characters": 1013,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px4.p2.pic1.1.1",
+          "characters": 168,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px5.p1.1",
+          "characters": 2299,
+          "agreement": 0.779469334493258
+        },
+        {
+          "id": "S3.SS2.SSS0.Px5.p2.pic1.1.1",
+          "characters": 231,
+          "agreement": 1.0
+        },
+        {
+          "id": "S4.p1.1",
+          "characters": 666,
+          "agreement": 0.7762762762762763
+        },
+        {
+          "id": "S4.SS0.SSS0.Px1.p1.1",
+          "characters": 1020,
+          "agreement": 0.6843137254901961
+        },
+        {
+          "id": "S4.SS0.SSS0.Px2.p1.1",
+          "characters": 492,
+          "agreement": 1.0
+        },
+        {
+          "id": "S4.SS0.SSS0.Px3.p1.1",
+          "characters": 544,
+          "agreement": 1.0
+        },
+        {
+          "id": "S4.SS0.SSS0.Px4.p1.1",
+          "characters": 549,
+          "agreement": 1.0
+        },
+        {
+          "id": "S4.SS0.SSS0.Px5.p1.1",
+          "characters": 946,
+          "agreement": 0.6617336152219873
+        },
+        {
+          "id": "S5.SS1.p1.1",
+          "characters": 674,
+          "agreement": 1.0
+        },
+        {
+          "id": "S5.SS2.p1.1",
+          "characters": 704,
+          "agreement": 1.0
+        },
+        {
+          "id": "S5.SS2.p2.1",
+          "characters": 1225,
+          "agreement": 1.0
+        },
+        {
+          "id": "S5.SS3.p1.1",
+          "characters": 1005,
+          "agreement": 1.0
+        },
+        {
+          "id": "S6.p1.1",
+          "characters": 1315,
+          "agreement": 1.0
+        },
+        {
+          "id": "Sx1.p1.1",
+          "characters": 1642,
+          "agreement": 1.0
+        },
+        {
+          "id": "S7.p1.1",
+          "characters": 467,
+          "agreement": 1.0
+        },
+        {
+          "id": "S7.SS1.p1.1",
+          "characters": 792,
+          "agreement": 1.0
+        },
+        {
+          "id": "S7.SS2.p1.1",
+          "characters": 571,
+          "agreement": 1.0
+        },
+        {
+          "id": "S7.SS3.p1.1",
+          "characters": 552,
+          "agreement": 0.8405797101449275
+        },
+        {
+          "id": "S7.SS4.p1.1",
+          "characters": 760,
+          "agreement": 0.8473684210526315
+        },
+        {
+          "id": "S8.p1.1",
+          "characters": 530,
+          "agreement": 1.0
+        },
+        {
+          "id": "S8.SS1.p1.1",
+          "characters": 534,
+          "agreement": 1.0
+        },
+        {
+          "id": "S8.SS2.p1.1",
+          "characters": 367,
+          "agreement": 1.0
+        },
+        {
+          "id": "S8.SS3.p1.1",
+          "characters": 488,
+          "agreement": 0.9549180327868853
+        },
+        {
+          "id": "S8.SS4.p1.1",
+          "characters": 397,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.p1.1",
+          "characters": 517,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS1.p1.1",
+          "characters": 244,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS1.SSS1.p1.1",
+          "characters": 353,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS1.SSS2.p1.1",
+          "characters": 386,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS1.SSS3.p1.1",
+          "characters": 358,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS2.p1.1",
+          "characters": 259,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS2.p2.1",
+          "characters": 546,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS2.p3.1",
+          "characters": 530,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS2.p4.1",
+          "characters": 271,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS3.SSS1.p1.1",
+          "characters": 528,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS3.SSS1.p2.1",
+          "characters": 776,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS3.SSS2.p1.1",
+          "characters": 506,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS4.p1.1",
+          "characters": 339,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS5.p1.1",
+          "characters": 631,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS5.SSS0.Px1.p1.1",
+          "characters": 644,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS5.SSS0.Px2.p1.1",
+          "characters": 844,
+          "agreement": 0.95260663507109
+        },
+        {
+          "id": "S9.SS6.p1.1",
+          "characters": 225,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS7.p1.1",
+          "characters": 153,
+          "agreement": 1.0
+        }
+      ]
+    },
+    "after": {
+      "proseCharacters": 46405,
+      "paragraphs": 73,
+      "weightedCharacterAgreement": 0.9431311281111949,
+      "paragraphsAt99Percent": 60,
+      "paragraphsExact": 53,
+      "fragment32": {
+        "matched": 1385,
+        "total": 1419
+      },
+      "headings": {
+        "matched": 41,
+        "expected": 41,
+        "actual": 42,
+        "recall": 1.0,
+        "precision": 0.9761904761904762,
+        "f1": 0.9879518072289156
+      },
+      "tableCells": {
+        "matched": 1223,
+        "expected": 1448,
+        "actual": 1271,
+        "recall": 0.8446132596685083,
+        "precision": 0.962234461054288,
+        "f1": 0.8995954394998161
+      },
+      "paragraphScores": [
+        {
+          "id": "abstract1.1",
+          "characters": 1610,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.p1.1",
+          "characters": 716,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.p2.1",
+          "characters": 1185,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.p3.1",
+          "characters": 1322,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.p4.1",
+          "characters": 1005,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.I1.i1.p1.1",
+          "characters": 231,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.I1.i2.p1.1",
+          "characters": 335,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.I1.i3.p1.1",
+          "characters": 287,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.I1.i4.p1.1",
+          "characters": 254,
+          "agreement": 1.0
+        },
+        {
+          "id": "S2.p1.1",
+          "characters": 654,
+          "agreement": 1.0
+        },
+        {
+          "id": "S2.SS1.p1.1",
+          "characters": 681,
+          "agreement": 0.9985315712187959
+        },
+        {
+          "id": "S2.SS2.p1.1",
+          "characters": 1192,
+          "agreement": 0.99748322147651
+        },
+        {
+          "id": "S2.SS3.p1.1",
+          "characters": 1588,
+          "agreement": 0.7795969773299748
+        },
+        {
+          "id": "S2.SS3.p2.1",
+          "characters": 620,
+          "agreement": 1.0
+        },
+        {
+          "id": "S2.SS4.p1.1",
+          "characters": 160,
+          "agreement": 1.0
+        },
+        {
+          "id": "S2.SS4.SSS0.Px1.p1.1",
+          "characters": 472,
+          "agreement": 0.9957627118644068
+        },
+        {
+          "id": "S2.SS4.SSS0.Px2.p1.1",
+          "characters": 260,
+          "agreement": 1.0
+        },
+        {
+          "id": "S2.SS4.SSS0.Px3.p1.1",
+          "characters": 411,
+          "agreement": 0.9975669099756691
+        },
+        {
+          "id": "S3.SS1.SSS0.Px1.p1.1",
+          "characters": 377,
+          "agreement": 0.8037135278514589
+        },
+        {
+          "id": "S3.SS1.SSS0.Px2.p1.1",
+          "characters": 317,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.I1.i1.p1.1",
+          "characters": 164,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.I1.i2.p1.1",
+          "characters": 625,
+          "agreement": 0.8112
+        },
+        {
+          "id": "S3.SS1.SSS0.Px4.p1.1",
+          "characters": 819,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px1.p1.1",
+          "characters": 762,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px1.p2.pic1.1.1",
+          "characters": 134,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px2.p1.1",
+          "characters": 832,
+          "agreement": 0.6622596153846154
+        },
+        {
+          "id": "S3.SS2.SSS0.Px2.p2.pic1.1.1",
+          "characters": 156,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px3.p1.1",
+          "characters": 1034,
+          "agreement": 0.7059961315280464
+        },
+        {
+          "id": "S3.SS2.SSS0.Px3.p2.pic1.1.1",
+          "characters": 141,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px4.p1.1",
+          "characters": 1013,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px4.p2.pic1.1.1",
+          "characters": 168,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px5.p1.1",
+          "characters": 2299,
+          "agreement": 0.7820791648542844
+        },
+        {
+          "id": "S3.SS2.SSS0.Px5.p2.pic1.1.1",
+          "characters": 231,
+          "agreement": 1.0
+        },
+        {
+          "id": "S4.p1.1",
+          "characters": 666,
+          "agreement": 0.6876876876876876
+        },
+        {
+          "id": "S4.SS0.SSS0.Px1.p1.1",
+          "characters": 1020,
+          "agreement": 0.6186274509803922
+        },
+        {
+          "id": "S4.SS0.SSS0.Px2.p1.1",
+          "characters": 492,
+          "agreement": 0.991869918699187
+        },
+        {
+          "id": "S4.SS0.SSS0.Px3.p1.1",
+          "characters": 544,
+          "agreement": 1.0
+        },
+        {
+          "id": "S4.SS0.SSS0.Px4.p1.1",
+          "characters": 549,
+          "agreement": 1.0
+        },
+        {
+          "id": "S4.SS0.SSS0.Px5.p1.1",
+          "characters": 946,
+          "agreement": 0.8742071881606766
+        },
+        {
+          "id": "S5.SS1.p1.1",
+          "characters": 674,
+          "agreement": 1.0
+        },
+        {
+          "id": "S5.SS2.p1.1",
+          "characters": 704,
+          "agreement": 1.0
+        },
+        {
+          "id": "S5.SS2.p2.1",
+          "characters": 1225,
+          "agreement": 1.0
+        },
+        {
+          "id": "S5.SS3.p1.1",
+          "characters": 1005,
+          "agreement": 1.0
+        },
+        {
+          "id": "S6.p1.1",
+          "characters": 1315,
+          "agreement": 0.996958174904943
+        },
+        {
+          "id": "Sx1.p1.1",
+          "characters": 1642,
+          "agreement": 1.0
+        },
+        {
+          "id": "S7.p1.1",
+          "characters": 467,
+          "agreement": 1.0
+        },
+        {
+          "id": "S7.SS1.p1.1",
+          "characters": 792,
+          "agreement": 1.0
+        },
+        {
+          "id": "S7.SS2.p1.1",
+          "characters": 571,
+          "agreement": 1.0
+        },
+        {
+          "id": "S7.SS3.p1.1",
+          "characters": 552,
+          "agreement": 0.8369565217391304
+        },
+        {
+          "id": "S7.SS4.p1.1",
+          "characters": 760,
+          "agreement": 0.8486842105263158
+        },
+        {
+          "id": "S8.p1.1",
+          "characters": 530,
+          "agreement": 1.0
+        },
+        {
+          "id": "S8.SS1.p1.1",
+          "characters": 534,
+          "agreement": 1.0
+        },
+        {
+          "id": "S8.SS2.p1.1",
+          "characters": 367,
+          "agreement": 1.0
+        },
+        {
+          "id": "S8.SS3.p1.1",
+          "characters": 488,
+          "agreement": 0.9549180327868853
+        },
+        {
+          "id": "S8.SS4.p1.1",
+          "characters": 397,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.p1.1",
+          "characters": 517,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS1.p1.1",
+          "characters": 244,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS1.SSS1.p1.1",
+          "characters": 353,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS1.SSS2.p1.1",
+          "characters": 386,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS1.SSS3.p1.1",
+          "characters": 358,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS2.p1.1",
+          "characters": 259,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS2.p2.1",
+          "characters": 546,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS2.p3.1",
+          "characters": 530,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS2.p4.1",
+          "characters": 271,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS3.SSS1.p1.1",
+          "characters": 528,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS3.SSS1.p2.1",
+          "characters": 776,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS3.SSS2.p1.1",
+          "characters": 506,
+          "agreement": 0.9920948616600791
+        },
+        {
+          "id": "S9.SS4.p1.1",
+          "characters": 339,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS5.p1.1",
+          "characters": 631,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS5.SSS0.Px1.p1.1",
+          "characters": 644,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS5.SSS0.Px2.p1.1",
+          "characters": 844,
+          "agreement": 0.9419431279620853
+        },
+        {
+          "id": "S9.SS6.p1.1",
+          "characters": 225,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS7.p1.1",
+          "characters": 153,
+          "agreement": 1.0
+        }
+      ]
+    },
+    "pymupdf": {
+      "proseCharacters": 46405,
+      "paragraphs": 73,
+      "weightedCharacterAgreement": 0.9379592716302123,
+      "paragraphsAt99Percent": 58,
+      "paragraphsExact": 51,
+      "fragment32": {
+        "matched": 1360,
+        "total": 1419
+      },
+      "headings": {
+        "matched": 0,
+        "expected": 41,
+        "actual": 0,
+        "recall": 0.0,
+        "precision": 0.0,
+        "f1": 0.0
+      },
+      "tableCells": {
+        "matched": 0,
+        "expected": 1448,
+        "actual": 0,
+        "recall": 0.0,
+        "precision": 0.0,
+        "f1": 0.0
+      },
+      "paragraphScores": [
+        {
+          "id": "abstract1.1",
+          "characters": 1610,
+          "agreement": 0.9838509316770186
+        },
+        {
+          "id": "S1.p1.1",
+          "characters": 716,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.p2.1",
+          "characters": 1185,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.p3.1",
+          "characters": 1322,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.p4.1",
+          "characters": 1005,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.I1.i1.p1.1",
+          "characters": 231,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.I1.i2.p1.1",
+          "characters": 335,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.I1.i3.p1.1",
+          "characters": 287,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.I1.i4.p1.1",
+          "characters": 254,
+          "agreement": 1.0
+        },
+        {
+          "id": "S2.p1.1",
+          "characters": 654,
+          "agreement": 1.0
+        },
+        {
+          "id": "S2.SS1.p1.1",
+          "characters": 681,
+          "agreement": 0.9985315712187959
+        },
+        {
+          "id": "S2.SS2.p1.1",
+          "characters": 1192,
+          "agreement": 0.99748322147651
+        },
+        {
+          "id": "S2.SS3.p1.1",
+          "characters": 1588,
+          "agreement": 0.778337531486146
+        },
+        {
+          "id": "S2.SS3.p2.1",
+          "characters": 620,
+          "agreement": 0.7758064516129033
+        },
+        {
+          "id": "S2.SS4.p1.1",
+          "characters": 160,
+          "agreement": 1.0
+        },
+        {
+          "id": "S2.SS4.SSS0.Px1.p1.1",
+          "characters": 472,
+          "agreement": 0.9957627118644068
+        },
+        {
+          "id": "S2.SS4.SSS0.Px2.p1.1",
+          "characters": 260,
+          "agreement": 1.0
+        },
+        {
+          "id": "S2.SS4.SSS0.Px3.p1.1",
+          "characters": 411,
+          "agreement": 0.9975669099756691
+        },
+        {
+          "id": "S3.SS1.SSS0.Px1.p1.1",
+          "characters": 377,
+          "agreement": 0.8037135278514589
+        },
+        {
+          "id": "S3.SS1.SSS0.Px2.p1.1",
+          "characters": 317,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.I1.i1.p1.1",
+          "characters": 164,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.I1.i2.p1.1",
+          "characters": 625,
+          "agreement": 0.8112
+        },
+        {
+          "id": "S3.SS1.SSS0.Px4.p1.1",
+          "characters": 819,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px1.p1.1",
+          "characters": 762,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px1.p2.pic1.1.1",
+          "characters": 134,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px2.p1.1",
+          "characters": 832,
+          "agreement": 0.6598557692307692
+        },
+        {
+          "id": "S3.SS2.SSS0.Px2.p2.pic1.1.1",
+          "characters": 156,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px3.p1.1",
+          "characters": 1034,
+          "agreement": 0.7117988394584139
+        },
+        {
+          "id": "S3.SS2.SSS0.Px3.p2.pic1.1.1",
+          "characters": 141,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px4.p1.1",
+          "characters": 1013,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px4.p2.pic1.1.1",
+          "characters": 168,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px5.p1.1",
+          "characters": 2299,
+          "agreement": 0.781209221400609
+        },
+        {
+          "id": "S3.SS2.SSS0.Px5.p2.pic1.1.1",
+          "characters": 231,
+          "agreement": 1.0
+        },
+        {
+          "id": "S4.p1.1",
+          "characters": 666,
+          "agreement": 0.7762762762762763
+        },
+        {
+          "id": "S4.SS0.SSS0.Px1.p1.1",
+          "characters": 1020,
+          "agreement": 0.6784313725490196
+        },
+        {
+          "id": "S4.SS0.SSS0.Px2.p1.1",
+          "characters": 492,
+          "agreement": 0.991869918699187
+        },
+        {
+          "id": "S4.SS0.SSS0.Px3.p1.1",
+          "characters": 544,
+          "agreement": 1.0
+        },
+        {
+          "id": "S4.SS0.SSS0.Px4.p1.1",
+          "characters": 549,
+          "agreement": 1.0
+        },
+        {
+          "id": "S4.SS0.SSS0.Px5.p1.1",
+          "characters": 946,
+          "agreement": 0.6617336152219873
+        },
+        {
+          "id": "S5.SS1.p1.1",
+          "characters": 674,
+          "agreement": 1.0
+        },
+        {
+          "id": "S5.SS2.p1.1",
+          "characters": 704,
+          "agreement": 1.0
+        },
+        {
+          "id": "S5.SS2.p2.1",
+          "characters": 1225,
+          "agreement": 1.0
+        },
+        {
+          "id": "S5.SS3.p1.1",
+          "characters": 1005,
+          "agreement": 1.0
+        },
+        {
+          "id": "S6.p1.1",
+          "characters": 1315,
+          "agreement": 0.996958174904943
+        },
+        {
+          "id": "Sx1.p1.1",
+          "characters": 1642,
+          "agreement": 1.0
+        },
+        {
+          "id": "S7.p1.1",
+          "characters": 467,
+          "agreement": 1.0
+        },
+        {
+          "id": "S7.SS1.p1.1",
+          "characters": 792,
+          "agreement": 1.0
+        },
+        {
+          "id": "S7.SS2.p1.1",
+          "characters": 571,
+          "agreement": 1.0
+        },
+        {
+          "id": "S7.SS3.p1.1",
+          "characters": 552,
+          "agreement": 0.838768115942029
+        },
+        {
+          "id": "S7.SS4.p1.1",
+          "characters": 760,
+          "agreement": 0.8486842105263158
+        },
+        {
+          "id": "S8.p1.1",
+          "characters": 530,
+          "agreement": 1.0
+        },
+        {
+          "id": "S8.SS1.p1.1",
+          "characters": 534,
+          "agreement": 1.0
+        },
+        {
+          "id": "S8.SS2.p1.1",
+          "characters": 367,
+          "agreement": 1.0
+        },
+        {
+          "id": "S8.SS3.p1.1",
+          "characters": 488,
+          "agreement": 0.9549180327868853
+        },
+        {
+          "id": "S8.SS4.p1.1",
+          "characters": 397,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.p1.1",
+          "characters": 517,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS1.p1.1",
+          "characters": 244,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS1.SSS1.p1.1",
+          "characters": 353,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS1.SSS2.p1.1",
+          "characters": 386,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS1.SSS3.p1.1",
+          "characters": 358,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS2.p1.1",
+          "characters": 259,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS2.p2.1",
+          "characters": 546,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS2.p3.1",
+          "characters": 530,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS2.p4.1",
+          "characters": 271,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS3.SSS1.p1.1",
+          "characters": 528,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS3.SSS1.p2.1",
+          "characters": 776,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS3.SSS2.p1.1",
+          "characters": 506,
+          "agreement": 0.9920948616600791
+        },
+        {
+          "id": "S9.SS4.p1.1",
+          "characters": 339,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS5.p1.1",
+          "characters": 631,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS5.SSS0.Px1.p1.1",
+          "characters": 644,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS5.SSS0.Px2.p1.1",
+          "characters": 844,
+          "agreement": 0.9478672985781991
+        },
+        {
+          "id": "S9.SS6.p1.1",
+          "characters": 225,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS7.p1.1",
+          "characters": 153,
+          "agreement": 1.0
+        }
+      ]
+    },
+    "pdftotext": {
+      "proseCharacters": 46405,
+      "paragraphs": 73,
+      "weightedCharacterAgreement": 0.9394246309664906,
+      "paragraphsAt99Percent": 58,
+      "paragraphsExact": 53,
+      "fragment32": {
+        "matched": 1375,
+        "total": 1419
+      },
+      "headings": {
+        "matched": 0,
+        "expected": 41,
+        "actual": 0,
+        "recall": 0.0,
+        "precision": 0.0,
+        "f1": 0.0
+      },
+      "tableCells": {
+        "matched": 0,
+        "expected": 1448,
+        "actual": 0,
+        "recall": 0.0,
+        "precision": 0.0,
+        "f1": 0.0
+      },
+      "paragraphScores": [
+        {
+          "id": "abstract1.1",
+          "characters": 1610,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.p1.1",
+          "characters": 716,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.p2.1",
+          "characters": 1185,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.p3.1",
+          "characters": 1322,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.p4.1",
+          "characters": 1005,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.I1.i1.p1.1",
+          "characters": 231,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.I1.i2.p1.1",
+          "characters": 335,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.I1.i3.p1.1",
+          "characters": 287,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.I1.i4.p1.1",
+          "characters": 254,
+          "agreement": 1.0
+        },
+        {
+          "id": "S2.p1.1",
+          "characters": 654,
+          "agreement": 1.0
+        },
+        {
+          "id": "S2.SS1.p1.1",
+          "characters": 681,
+          "agreement": 0.9985315712187959
+        },
+        {
+          "id": "S2.SS2.p1.1",
+          "characters": 1192,
+          "agreement": 0.99748322147651
+        },
+        {
+          "id": "S2.SS3.p1.1",
+          "characters": 1588,
+          "agreement": 0.7802267002518892
+        },
+        {
+          "id": "S2.SS3.p2.1",
+          "characters": 620,
+          "agreement": 1.0
+        },
+        {
+          "id": "S2.SS4.p1.1",
+          "characters": 160,
+          "agreement": 1.0
+        },
+        {
+          "id": "S2.SS4.SSS0.Px1.p1.1",
+          "characters": 472,
+          "agreement": 0.9703389830508474
+        },
+        {
+          "id": "S2.SS4.SSS0.Px2.p1.1",
+          "characters": 260,
+          "agreement": 1.0
+        },
+        {
+          "id": "S2.SS4.SSS0.Px3.p1.1",
+          "characters": 411,
+          "agreement": 0.9975669099756691
+        },
+        {
+          "id": "S3.SS1.SSS0.Px1.p1.1",
+          "characters": 377,
+          "agreement": 0.8037135278514589
+        },
+        {
+          "id": "S3.SS1.SSS0.Px2.p1.1",
+          "characters": 317,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.I1.i1.p1.1",
+          "characters": 164,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.I1.i2.p1.1",
+          "characters": 625,
+          "agreement": 0.8112
+        },
+        {
+          "id": "S3.SS1.SSS0.Px4.p1.1",
+          "characters": 819,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px1.p1.1",
+          "characters": 762,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px1.p2.pic1.1.1",
+          "characters": 134,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px2.p1.1",
+          "characters": 832,
+          "agreement": 0.6574519230769231
+        },
+        {
+          "id": "S3.SS2.SSS0.Px2.p2.pic1.1.1",
+          "characters": 156,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px3.p1.1",
+          "characters": 1034,
+          "agreement": 0.7147001934235977
+        },
+        {
+          "id": "S3.SS2.SSS0.Px3.p2.pic1.1.1",
+          "characters": 141,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px4.p1.1",
+          "characters": 1013,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px4.p2.pic1.1.1",
+          "characters": 168,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px5.p1.1",
+          "characters": 2299,
+          "agreement": 0.7851239669421488
+        },
+        {
+          "id": "S3.SS2.SSS0.Px5.p2.pic1.1.1",
+          "characters": 231,
+          "agreement": 1.0
+        },
+        {
+          "id": "S4.p1.1",
+          "characters": 666,
+          "agreement": 0.7762762762762763
+        },
+        {
+          "id": "S4.SS0.SSS0.Px1.p1.1",
+          "characters": 1020,
+          "agreement": 0.7088235294117646
+        },
+        {
+          "id": "S4.SS0.SSS0.Px2.p1.1",
+          "characters": 492,
+          "agreement": 0.7195121951219512
+        },
+        {
+          "id": "S4.SS0.SSS0.Px3.p1.1",
+          "characters": 544,
+          "agreement": 1.0
+        },
+        {
+          "id": "S4.SS0.SSS0.Px4.p1.1",
+          "characters": 549,
+          "agreement": 1.0
+        },
+        {
+          "id": "S4.SS0.SSS0.Px5.p1.1",
+          "characters": 946,
+          "agreement": 0.6638477801268499
+        },
+        {
+          "id": "S5.SS1.p1.1",
+          "characters": 674,
+          "agreement": 1.0
+        },
+        {
+          "id": "S5.SS2.p1.1",
+          "characters": 704,
+          "agreement": 1.0
+        },
+        {
+          "id": "S5.SS2.p2.1",
+          "characters": 1225,
+          "agreement": 1.0
+        },
+        {
+          "id": "S5.SS3.p1.1",
+          "characters": 1005,
+          "agreement": 1.0
+        },
+        {
+          "id": "S6.p1.1",
+          "characters": 1315,
+          "agreement": 0.996958174904943
+        },
+        {
+          "id": "Sx1.p1.1",
+          "characters": 1642,
+          "agreement": 1.0
+        },
+        {
+          "id": "S7.p1.1",
+          "characters": 467,
+          "agreement": 1.0
+        },
+        {
+          "id": "S7.SS1.p1.1",
+          "characters": 792,
+          "agreement": 1.0
+        },
+        {
+          "id": "S7.SS2.p1.1",
+          "characters": 571,
+          "agreement": 1.0
+        },
+        {
+          "id": "S7.SS3.p1.1",
+          "characters": 552,
+          "agreement": 0.838768115942029
+        },
+        {
+          "id": "S7.SS4.p1.1",
+          "characters": 760,
+          "agreement": 0.8486842105263158
+        },
+        {
+          "id": "S8.p1.1",
+          "characters": 530,
+          "agreement": 1.0
+        },
+        {
+          "id": "S8.SS1.p1.1",
+          "characters": 534,
+          "agreement": 1.0
+        },
+        {
+          "id": "S8.SS2.p1.1",
+          "characters": 367,
+          "agreement": 1.0
+        },
+        {
+          "id": "S8.SS3.p1.1",
+          "characters": 488,
+          "agreement": 0.9549180327868853
+        },
+        {
+          "id": "S8.SS4.p1.1",
+          "characters": 397,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.p1.1",
+          "characters": 517,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS1.p1.1",
+          "characters": 244,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS1.SSS1.p1.1",
+          "characters": 353,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS1.SSS2.p1.1",
+          "characters": 386,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS1.SSS3.p1.1",
+          "characters": 358,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS2.p1.1",
+          "characters": 259,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS2.p2.1",
+          "characters": 546,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS2.p3.1",
+          "characters": 530,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS2.p4.1",
+          "characters": 271,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS3.SSS1.p1.1",
+          "characters": 528,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS3.SSS1.p2.1",
+          "characters": 776,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS3.SSS2.p1.1",
+          "characters": 506,
+          "agreement": 0.9920948616600791
+        },
+        {
+          "id": "S9.SS4.p1.1",
+          "characters": 339,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS5.p1.1",
+          "characters": 631,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS5.SSS0.Px1.p1.1",
+          "characters": 644,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS5.SSS0.Px2.p1.1",
+          "characters": 844,
+          "agreement": 0.9514218009478673
+        },
+        {
+          "id": "S9.SS6.p1.1",
+          "characters": 225,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS7.p1.1",
+          "characters": 153,
+          "agreement": 1.0
+        }
+      ]
+    },
+    "pypdf": {
+      "proseCharacters": 46405,
+      "paragraphs": 73,
+      "weightedCharacterAgreement": 0.9556082318715655,
+      "paragraphsAt99Percent": 62,
+      "paragraphsExact": 55,
+      "fragment32": {
+        "matched": 1392,
+        "total": 1419
+      },
+      "headings": {
+        "matched": 0,
+        "expected": 41,
+        "actual": 0,
+        "recall": 0.0,
+        "precision": 0.0,
+        "f1": 0.0
+      },
+      "tableCells": {
+        "matched": 0,
+        "expected": 1448,
+        "actual": 0,
+        "recall": 0.0,
+        "precision": 0.0,
+        "f1": 0.0
+      },
+      "paragraphScores": [
+        {
+          "id": "abstract1.1",
+          "characters": 1610,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.p1.1",
+          "characters": 716,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.p2.1",
+          "characters": 1185,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.p3.1",
+          "characters": 1322,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.p4.1",
+          "characters": 1005,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.I1.i1.p1.1",
+          "characters": 231,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.I1.i2.p1.1",
+          "characters": 335,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.I1.i3.p1.1",
+          "characters": 287,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.I1.i4.p1.1",
+          "characters": 254,
+          "agreement": 1.0
+        },
+        {
+          "id": "S2.p1.1",
+          "characters": 654,
+          "agreement": 1.0
+        },
+        {
+          "id": "S2.SS1.p1.1",
+          "characters": 681,
+          "agreement": 0.9985315712187959
+        },
+        {
+          "id": "S2.SS2.p1.1",
+          "characters": 1192,
+          "agreement": 0.99748322147651
+        },
+        {
+          "id": "S2.SS3.p1.1",
+          "characters": 1588,
+          "agreement": 0.778337531486146
+        },
+        {
+          "id": "S2.SS3.p2.1",
+          "characters": 620,
+          "agreement": 1.0
+        },
+        {
+          "id": "S2.SS4.p1.1",
+          "characters": 160,
+          "agreement": 1.0
+        },
+        {
+          "id": "S2.SS4.SSS0.Px1.p1.1",
+          "characters": 472,
+          "agreement": 0.9957627118644068
+        },
+        {
+          "id": "S2.SS4.SSS0.Px2.p1.1",
+          "characters": 260,
+          "agreement": 1.0
+        },
+        {
+          "id": "S2.SS4.SSS0.Px3.p1.1",
+          "characters": 411,
+          "agreement": 0.9975669099756691
+        },
+        {
+          "id": "S3.SS1.SSS0.Px1.p1.1",
+          "characters": 377,
+          "agreement": 0.8037135278514589
+        },
+        {
+          "id": "S3.SS1.SSS0.Px2.p1.1",
+          "characters": 317,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.I1.i1.p1.1",
+          "characters": 164,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.I1.i2.p1.1",
+          "characters": 625,
+          "agreement": 0.8112
+        },
+        {
+          "id": "S3.SS1.SSS0.Px4.p1.1",
+          "characters": 819,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px1.p1.1",
+          "characters": 762,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px1.p2.pic1.1.1",
+          "characters": 134,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px2.p1.1",
+          "characters": 832,
+          "agreement": 0.6598557692307692
+        },
+        {
+          "id": "S3.SS2.SSS0.Px2.p2.pic1.1.1",
+          "characters": 156,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px3.p1.1",
+          "characters": 1034,
+          "agreement": 0.7263056092843327
+        },
+        {
+          "id": "S3.SS2.SSS0.Px3.p2.pic1.1.1",
+          "characters": 141,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px4.p1.1",
+          "characters": 1013,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px4.p2.pic1.1.1",
+          "characters": 168,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px5.p1.1",
+          "characters": 2299,
+          "agreement": 0.7777294475859069
+        },
+        {
+          "id": "S3.SS2.SSS0.Px5.p2.pic1.1.1",
+          "characters": 231,
+          "agreement": 1.0
+        },
+        {
+          "id": "S4.p1.1",
+          "characters": 666,
+          "agreement": 0.7762762762762763
+        },
+        {
+          "id": "S4.SS0.SSS0.Px1.p1.1",
+          "characters": 1020,
+          "agreement": 1.0
+        },
+        {
+          "id": "S4.SS0.SSS0.Px2.p1.1",
+          "characters": 492,
+          "agreement": 0.991869918699187
+        },
+        {
+          "id": "S4.SS0.SSS0.Px3.p1.1",
+          "characters": 544,
+          "agreement": 1.0
+        },
+        {
+          "id": "S4.SS0.SSS0.Px4.p1.1",
+          "characters": 549,
+          "agreement": 1.0
+        },
+        {
+          "id": "S4.SS0.SSS0.Px5.p1.1",
+          "characters": 946,
+          "agreement": 1.0
+        },
+        {
+          "id": "S5.SS1.p1.1",
+          "characters": 674,
+          "agreement": 1.0
+        },
+        {
+          "id": "S5.SS2.p1.1",
+          "characters": 704,
+          "agreement": 1.0
+        },
+        {
+          "id": "S5.SS2.p2.1",
+          "characters": 1225,
+          "agreement": 1.0
+        },
+        {
+          "id": "S5.SS3.p1.1",
+          "characters": 1005,
+          "agreement": 1.0
+        },
+        {
+          "id": "S6.p1.1",
+          "characters": 1315,
+          "agreement": 0.996958174904943
+        },
+        {
+          "id": "Sx1.p1.1",
+          "characters": 1642,
+          "agreement": 1.0
+        },
+        {
+          "id": "S7.p1.1",
+          "characters": 467,
+          "agreement": 1.0
+        },
+        {
+          "id": "S7.SS1.p1.1",
+          "characters": 792,
+          "agreement": 1.0
+        },
+        {
+          "id": "S7.SS2.p1.1",
+          "characters": 571,
+          "agreement": 1.0
+        },
+        {
+          "id": "S7.SS3.p1.1",
+          "characters": 552,
+          "agreement": 0.838768115942029
+        },
+        {
+          "id": "S7.SS4.p1.1",
+          "characters": 760,
+          "agreement": 0.8486842105263158
+        },
+        {
+          "id": "S8.p1.1",
+          "characters": 530,
+          "agreement": 1.0
+        },
+        {
+          "id": "S8.SS1.p1.1",
+          "characters": 534,
+          "agreement": 1.0
+        },
+        {
+          "id": "S8.SS2.p1.1",
+          "characters": 367,
+          "agreement": 1.0
+        },
+        {
+          "id": "S8.SS3.p1.1",
+          "characters": 488,
+          "agreement": 0.9549180327868853
+        },
+        {
+          "id": "S8.SS4.p1.1",
+          "characters": 397,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.p1.1",
+          "characters": 517,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS1.p1.1",
+          "characters": 244,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS1.SSS1.p1.1",
+          "characters": 353,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS1.SSS2.p1.1",
+          "characters": 386,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS1.SSS3.p1.1",
+          "characters": 358,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS2.p1.1",
+          "characters": 259,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS2.p2.1",
+          "characters": 546,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS2.p3.1",
+          "characters": 530,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS2.p4.1",
+          "characters": 271,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS3.SSS1.p1.1",
+          "characters": 528,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS3.SSS1.p2.1",
+          "characters": 776,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS3.SSS2.p1.1",
+          "characters": 506,
+          "agreement": 0.9920948616600791
+        },
+        {
+          "id": "S9.SS4.p1.1",
+          "characters": 339,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS5.p1.1",
+          "characters": 631,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS5.SSS0.Px1.p1.1",
+          "characters": 644,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS5.SSS0.Px2.p1.1",
+          "characters": 844,
+          "agreement": 0.9466824644549763
+        },
+        {
+          "id": "S9.SS6.p1.1",
+          "characters": 225,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS7.p1.1",
+          "characters": 153,
+          "agreement": 1.0
+        }
+      ]
+    },
+    "pdfplumber": {
+      "proseCharacters": 46405,
+      "paragraphs": 73,
+      "weightedCharacterAgreement": 0.9246201917896778,
+      "paragraphsAt99Percent": 39,
+      "paragraphsExact": 34,
+      "fragment32": {
+        "matched": 1317,
+        "total": 1419
+      },
+      "headings": {
+        "matched": 0,
+        "expected": 41,
+        "actual": 0,
+        "recall": 0.0,
+        "precision": 0.0,
+        "f1": 0.0
+      },
+      "tableCells": {
+        "matched": 2,
+        "expected": 1448,
+        "actual": 227,
+        "recall": 0.0013812154696132596,
+        "precision": 0.00881057268722467,
+        "f1": 0.0023880597014925373
+      },
+      "paragraphScores": [
+        {
+          "id": "abstract1.1",
+          "characters": 1610,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.p1.1",
+          "characters": 716,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.p2.1",
+          "characters": 1185,
+          "agreement": 0.9341772151898734
+        },
+        {
+          "id": "S1.p3.1",
+          "characters": 1322,
+          "agreement": 0.962178517397882
+        },
+        {
+          "id": "S1.p4.1",
+          "characters": 1005,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.I1.i1.p1.1",
+          "characters": 231,
+          "agreement": 0.7835497835497836
+        },
+        {
+          "id": "S1.I1.i2.p1.1",
+          "characters": 335,
+          "agreement": 0.8805970149253731
+        },
+        {
+          "id": "S1.I1.i3.p1.1",
+          "characters": 287,
+          "agreement": 0.9372822299651568
+        },
+        {
+          "id": "S1.I1.i4.p1.1",
+          "characters": 254,
+          "agreement": 0.8661417322834646
+        },
+        {
+          "id": "S2.p1.1",
+          "characters": 654,
+          "agreement": 1.0
+        },
+        {
+          "id": "S2.SS1.p1.1",
+          "characters": 681,
+          "agreement": 0.9985315712187959
+        },
+        {
+          "id": "S2.SS2.p1.1",
+          "characters": 1192,
+          "agreement": 0.99748322147651
+        },
+        {
+          "id": "S2.SS3.p1.1",
+          "characters": 1588,
+          "agreement": 0.7732997481108312
+        },
+        {
+          "id": "S2.SS3.p2.1",
+          "characters": 620,
+          "agreement": 0.7112903225806452
+        },
+        {
+          "id": "S2.SS4.p1.1",
+          "characters": 160,
+          "agreement": 1.0
+        },
+        {
+          "id": "S2.SS4.SSS0.Px1.p1.1",
+          "characters": 472,
+          "agreement": 0.9703389830508474
+        },
+        {
+          "id": "S2.SS4.SSS0.Px2.p1.1",
+          "characters": 260,
+          "agreement": 0.8538461538461538
+        },
+        {
+          "id": "S2.SS4.SSS0.Px3.p1.1",
+          "characters": 411,
+          "agreement": 0.9318734793187348
+        },
+        {
+          "id": "S3.SS1.SSS0.Px1.p1.1",
+          "characters": 377,
+          "agreement": 0.8037135278514589
+        },
+        {
+          "id": "S3.SS1.SSS0.Px2.p1.1",
+          "characters": 317,
+          "agreement": 0.9369085173501577
+        },
+        {
+          "id": "S3.I1.i1.p1.1",
+          "characters": 164,
+          "agreement": 0.8048780487804879
+        },
+        {
+          "id": "S3.I1.i2.p1.1",
+          "characters": 625,
+          "agreement": 0.8112
+        },
+        {
+          "id": "S3.SS1.SSS0.Px4.p1.1",
+          "characters": 819,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px1.p1.1",
+          "characters": 762,
+          "agreement": 0.9711286089238845
+        },
+        {
+          "id": "S3.SS2.SSS0.Px1.p2.pic1.1.1",
+          "characters": 134,
+          "agreement": 0.8805970149253731
+        },
+        {
+          "id": "S3.SS2.SSS0.Px2.p1.1",
+          "characters": 832,
+          "agreement": 0.6598557692307692
+        },
+        {
+          "id": "S3.SS2.SSS0.Px2.p2.pic1.1.1",
+          "characters": 156,
+          "agreement": 0.8974358974358975
+        },
+        {
+          "id": "S3.SS2.SSS0.Px3.p1.1",
+          "characters": 1034,
+          "agreement": 0.690522243713733
+        },
+        {
+          "id": "S3.SS2.SSS0.Px3.p2.pic1.1.1",
+          "characters": 141,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px4.p1.1",
+          "characters": 1013,
+          "agreement": 0.9921026653504442
+        },
+        {
+          "id": "S3.SS2.SSS0.Px4.p2.pic1.1.1",
+          "characters": 168,
+          "agreement": 0.9047619047619048
+        },
+        {
+          "id": "S3.SS2.SSS0.Px5.p1.1",
+          "characters": 2299,
+          "agreement": 0.7807742496737712
+        },
+        {
+          "id": "S3.SS2.SSS0.Px5.p2.pic1.1.1",
+          "characters": 231,
+          "agreement": 0.9307359307359307
+        },
+        {
+          "id": "S4.p1.1",
+          "characters": 666,
+          "agreement": 0.7762762762762763
+        },
+        {
+          "id": "S4.SS0.SSS0.Px1.p1.1",
+          "characters": 1020,
+          "agreement": 0.6784313725490196
+        },
+        {
+          "id": "S4.SS0.SSS0.Px2.p1.1",
+          "characters": 492,
+          "agreement": 0.9573170731707317
+        },
+        {
+          "id": "S4.SS0.SSS0.Px3.p1.1",
+          "characters": 544,
+          "agreement": 0.9761029411764706
+        },
+        {
+          "id": "S4.SS0.SSS0.Px4.p1.1",
+          "characters": 549,
+          "agreement": 0.9890710382513661
+        },
+        {
+          "id": "S4.SS0.SSS0.Px5.p1.1",
+          "characters": 946,
+          "agreement": 0.6617336152219873
+        },
+        {
+          "id": "S5.SS1.p1.1",
+          "characters": 674,
+          "agreement": 1.0
+        },
+        {
+          "id": "S5.SS2.p1.1",
+          "characters": 704,
+          "agreement": 1.0
+        },
+        {
+          "id": "S5.SS2.p2.1",
+          "characters": 1225,
+          "agreement": 1.0
+        },
+        {
+          "id": "S5.SS3.p1.1",
+          "characters": 1005,
+          "agreement": 1.0
+        },
+        {
+          "id": "S6.p1.1",
+          "characters": 1315,
+          "agreement": 0.996958174904943
+        },
+        {
+          "id": "Sx1.p1.1",
+          "characters": 1642,
+          "agreement": 1.0
+        },
+        {
+          "id": "S7.p1.1",
+          "characters": 467,
+          "agreement": 1.0
+        },
+        {
+          "id": "S7.SS1.p1.1",
+          "characters": 792,
+          "agreement": 1.0
+        },
+        {
+          "id": "S7.SS2.p1.1",
+          "characters": 571,
+          "agreement": 1.0
+        },
+        {
+          "id": "S7.SS3.p1.1",
+          "characters": 552,
+          "agreement": 0.838768115942029
+        },
+        {
+          "id": "S7.SS4.p1.1",
+          "characters": 760,
+          "agreement": 0.8486842105263158
+        },
+        {
+          "id": "S8.p1.1",
+          "characters": 530,
+          "agreement": 1.0
+        },
+        {
+          "id": "S8.SS1.p1.1",
+          "characters": 534,
+          "agreement": 1.0
+        },
+        {
+          "id": "S8.SS2.p1.1",
+          "characters": 367,
+          "agreement": 1.0
+        },
+        {
+          "id": "S8.SS3.p1.1",
+          "characters": 488,
+          "agreement": 0.9549180327868853
+        },
+        {
+          "id": "S8.SS4.p1.1",
+          "characters": 397,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.p1.1",
+          "characters": 517,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS1.p1.1",
+          "characters": 244,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS1.SSS1.p1.1",
+          "characters": 353,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS1.SSS2.p1.1",
+          "characters": 386,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS1.SSS3.p1.1",
+          "characters": 358,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS2.p1.1",
+          "characters": 259,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS2.p2.1",
+          "characters": 546,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS2.p3.1",
+          "characters": 530,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS2.p4.1",
+          "characters": 271,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS3.SSS1.p1.1",
+          "characters": 528,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS3.SSS1.p2.1",
+          "characters": 776,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS3.SSS2.p1.1",
+          "characters": 506,
+          "agreement": 0.9920948616600791
+        },
+        {
+          "id": "S9.SS4.p1.1",
+          "characters": 339,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS5.p1.1",
+          "characters": 631,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS5.SSS0.Px1.p1.1",
+          "characters": 644,
+          "agreement": 0.9720496894409938
+        },
+        {
+          "id": "S9.SS5.SSS0.Px2.p1.1",
+          "characters": 844,
+          "agreement": 0.9158767772511849
+        },
+        {
+          "id": "S9.SS6.p1.1",
+          "characters": 225,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS7.p1.1",
+          "characters": 153,
+          "agreement": 1.0
+        }
+      ]
+    },
+    "pymupdf4llm": {
+      "proseCharacters": 46405,
+      "paragraphs": 73,
+      "weightedCharacterAgreement": 0.9403081564486585,
+      "paragraphsAt99Percent": 60,
+      "paragraphsExact": 57,
+      "fragment32": {
+        "matched": 1385,
+        "total": 1419
+      },
+      "headings": {
+        "matched": 41,
+        "expected": 41,
+        "actual": 61,
+        "recall": 1.0,
+        "precision": 0.6721311475409836,
+        "f1": 0.803921568627451
+      },
+      "tableCells": {
+        "matched": 1254,
+        "expected": 1448,
+        "actual": 1425,
+        "recall": 0.8660220994475138,
+        "precision": 0.88,
+        "f1": 0.8729550991994431
+      },
+      "paragraphScores": [
+        {
+          "id": "abstract1.1",
+          "characters": 1610,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.p1.1",
+          "characters": 716,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.p2.1",
+          "characters": 1185,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.p3.1",
+          "characters": 1322,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.p4.1",
+          "characters": 1005,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.I1.i1.p1.1",
+          "characters": 231,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.I1.i2.p1.1",
+          "characters": 335,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.I1.i3.p1.1",
+          "characters": 287,
+          "agreement": 1.0
+        },
+        {
+          "id": "S1.I1.i4.p1.1",
+          "characters": 254,
+          "agreement": 1.0
+        },
+        {
+          "id": "S2.p1.1",
+          "characters": 654,
+          "agreement": 1.0
+        },
+        {
+          "id": "S2.SS1.p1.1",
+          "characters": 681,
+          "agreement": 0.9985315712187959
+        },
+        {
+          "id": "S2.SS2.p1.1",
+          "characters": 1192,
+          "agreement": 0.99748322147651
+        },
+        {
+          "id": "S2.SS3.p1.1",
+          "characters": 1588,
+          "agreement": 0.778337531486146
+        },
+        {
+          "id": "S2.SS3.p2.1",
+          "characters": 620,
+          "agreement": 1.0
+        },
+        {
+          "id": "S2.SS4.p1.1",
+          "characters": 160,
+          "agreement": 1.0
+        },
+        {
+          "id": "S2.SS4.SSS0.Px1.p1.1",
+          "characters": 472,
+          "agreement": 1.0
+        },
+        {
+          "id": "S2.SS4.SSS0.Px2.p1.1",
+          "characters": 260,
+          "agreement": 1.0
+        },
+        {
+          "id": "S2.SS4.SSS0.Px3.p1.1",
+          "characters": 411,
+          "agreement": 0.9975669099756691
+        },
+        {
+          "id": "S3.SS1.SSS0.Px1.p1.1",
+          "characters": 377,
+          "agreement": 0.8037135278514589
+        },
+        {
+          "id": "S3.SS1.SSS0.Px2.p1.1",
+          "characters": 317,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.I1.i1.p1.1",
+          "characters": 164,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.I1.i2.p1.1",
+          "characters": 625,
+          "agreement": 0.8176
+        },
+        {
+          "id": "S3.SS1.SSS0.Px4.p1.1",
+          "characters": 819,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px1.p1.1",
+          "characters": 762,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px1.p2.pic1.1.1",
+          "characters": 134,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px2.p1.1",
+          "characters": 832,
+          "agreement": 0.6646634615384616
+        },
+        {
+          "id": "S3.SS2.SSS0.Px2.p2.pic1.1.1",
+          "characters": 156,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px3.p1.1",
+          "characters": 1034,
+          "agreement": 0.7108317214700193
+        },
+        {
+          "id": "S3.SS2.SSS0.Px3.p2.pic1.1.1",
+          "characters": 141,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px4.p1.1",
+          "characters": 1013,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px4.p2.pic1.1.1",
+          "characters": 168,
+          "agreement": 1.0
+        },
+        {
+          "id": "S3.SS2.SSS0.Px5.p1.1",
+          "characters": 2299,
+          "agreement": 0.7777294475859069
+        },
+        {
+          "id": "S3.SS2.SSS0.Px5.p2.pic1.1.1",
+          "characters": 231,
+          "agreement": 1.0
+        },
+        {
+          "id": "S4.p1.1",
+          "characters": 666,
+          "agreement": 0.7762762762762763
+        },
+        {
+          "id": "S4.SS0.SSS0.Px1.p1.1",
+          "characters": 1020,
+          "agreement": 0.6784313725490196
+        },
+        {
+          "id": "S4.SS0.SSS0.Px2.p1.1",
+          "characters": 492,
+          "agreement": 1.0
+        },
+        {
+          "id": "S4.SS0.SSS0.Px3.p1.1",
+          "characters": 544,
+          "agreement": 1.0
+        },
+        {
+          "id": "S4.SS0.SSS0.Px4.p1.1",
+          "characters": 549,
+          "agreement": 1.0
+        },
+        {
+          "id": "S4.SS0.SSS0.Px5.p1.1",
+          "characters": 946,
+          "agreement": 0.587737843551797
+        },
+        {
+          "id": "S5.SS1.p1.1",
+          "characters": 674,
+          "agreement": 1.0
+        },
+        {
+          "id": "S5.SS2.p1.1",
+          "characters": 704,
+          "agreement": 1.0
+        },
+        {
+          "id": "S5.SS2.p2.1",
+          "characters": 1225,
+          "agreement": 1.0
+        },
+        {
+          "id": "S5.SS3.p1.1",
+          "characters": 1005,
+          "agreement": 1.0
+        },
+        {
+          "id": "S6.p1.1",
+          "characters": 1315,
+          "agreement": 1.0
+        },
+        {
+          "id": "Sx1.p1.1",
+          "characters": 1642,
+          "agreement": 1.0
+        },
+        {
+          "id": "S7.p1.1",
+          "characters": 467,
+          "agreement": 1.0
+        },
+        {
+          "id": "S7.SS1.p1.1",
+          "characters": 792,
+          "agreement": 1.0
+        },
+        {
+          "id": "S7.SS2.p1.1",
+          "characters": 571,
+          "agreement": 1.0
+        },
+        {
+          "id": "S7.SS3.p1.1",
+          "characters": 552,
+          "agreement": 0.8405797101449275
+        },
+        {
+          "id": "S7.SS4.p1.1",
+          "characters": 760,
+          "agreement": 0.8447368421052631
+        },
+        {
+          "id": "S8.p1.1",
+          "characters": 530,
+          "agreement": 1.0
+        },
+        {
+          "id": "S8.SS1.p1.1",
+          "characters": 534,
+          "agreement": 1.0
+        },
+        {
+          "id": "S8.SS2.p1.1",
+          "characters": 367,
+          "agreement": 1.0
+        },
+        {
+          "id": "S8.SS3.p1.1",
+          "characters": 488,
+          "agreement": 0.9528688524590164
+        },
+        {
+          "id": "S8.SS4.p1.1",
+          "characters": 397,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.p1.1",
+          "characters": 517,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS1.p1.1",
+          "characters": 244,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS1.SSS1.p1.1",
+          "characters": 353,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS1.SSS2.p1.1",
+          "characters": 386,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS1.SSS3.p1.1",
+          "characters": 358,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS2.p1.1",
+          "characters": 259,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS2.p2.1",
+          "characters": 546,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS2.p3.1",
+          "characters": 530,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS2.p4.1",
+          "characters": 271,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS3.SSS1.p1.1",
+          "characters": 528,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS3.SSS1.p2.1",
+          "characters": 776,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS3.SSS2.p1.1",
+          "characters": 506,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS4.p1.1",
+          "characters": 339,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS5.p1.1",
+          "characters": 631,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS5.SSS0.Px1.p1.1",
+          "characters": 644,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS5.SSS0.Px2.p1.1",
+          "characters": 844,
+          "agreement": 0.95260663507109
+        },
+        {
+          "id": "S9.SS6.p1.1",
+          "characters": 225,
+          "agreement": 1.0
+        },
+        {
+          "id": "S9.SS7.p1.1",
+          "characters": 153,
+          "agreement": 1.0
+        }
+      ]
+    }
+  },
+  "bookDiagnosticMethod": "Per-page unordered alphanumeric character multiset agreement with PyMuPDF. Headers/footers included in reference. Not ground truth, not reading-order/structure/math accuracy.",
+  "bookDiagnostic": {
+    "harness": {
+      "before": {
+        "referenceCharacters": 106332,
+        "outputCharacters": 106245,
+        "matchedPerPageCharacters": 106245,
+        "recall": 0.9991818079223564,
+        "precision": 1.0,
+        "f1": 0.999590736533115
+      },
+      "after": {
+        "referenceCharacters": 106332,
+        "outputCharacters": 106300,
+        "matchedPerPageCharacters": 106300,
+        "recall": 0.9996990557875334,
+        "precision": 1.0,
+        "f1": 0.9998495052485045
+      }
+    },
+    "axler": {
+      "before": {
+        "referenceCharacters": 540723,
+        "outputCharacters": 516612,
+        "matchedPerPageCharacters": 516611,
+        "recall": 0.9554078520795306,
+        "precision": 0.9999980643113207,
+        "f1": 0.977194550449952
+      },
+      "after": {
+        "referenceCharacters": 540723,
+        "outputCharacters": 511035,
+        "matchedPerPageCharacters": 511026,
+        "recall": 0.9450790885536587,
+        "precision": 0.9999823886817928,
+        "f1": 0.9717558601883703
+      }
+    },
+    "hefferon": {
+      "before": {
+        "referenceCharacters": 649294,
+        "outputCharacters": 656327,
+        "matchedPerPageCharacters": 644906,
+        "recall": 0.9932418904225204,
+        "precision": 0.9825986131912903,
+        "f1": 0.9878915856898748
+      },
+      "after": {
+        "referenceCharacters": 649294,
+        "outputCharacters": 637893,
+        "matchedPerPageCharacters": 637886,
+        "recall": 0.9824301472060423,
+        "precision": 0.9999890263727615,
+        "f1": 0.9911318246688321
+      }
+    },
+    "thinkpython": {
+      "before": {
+        "referenceCharacters": 330618,
+        "outputCharacters": 330064,
+        "matchedPerPageCharacters": 330064,
+        "recall": 0.9983243501563738,
+        "precision": 1.0,
+        "f1": 0.9991614725389825
+      },
+      "after": {
+        "referenceCharacters": 330618,
+        "outputCharacters": 330618,
+        "matchedPerPageCharacters": 330618,
+        "recall": 1.0,
+        "precision": 1.0,
+        "f1": 1.0
+      }
+    },
+    "calculus": {
+      "before": {
+        "referenceCharacters": 194610,
+        "outputCharacters": 193033,
+        "matchedPerPageCharacters": 193033,
+        "recall": 0.9918966137403011,
+        "precision": 1.0,
+        "f1": 0.995931823868869
+      },
+      "after": {
+        "referenceCharacters": 194610,
+        "outputCharacters": 190842,
+        "matchedPerPageCharacters": 190842,
+        "recall": 0.9806381994758748,
+        "precision": 1.0,
+        "f1": 0.9902244637464587
+      }
+    }
+  }
+}

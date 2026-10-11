@@ -33,6 +33,10 @@ func markdownRuns(b Block) string {
 	}
 	var out strings.Builder
 	for _, r := range b.Runs {
+		if r.Asset != "" {
+			out.WriteString("![" + escapeMD(r.Text) + "](" + r.Asset + ")")
+			continue
+		}
 		t := escapeMD(r.Text)
 		prefix, suffix := "", ""
 		if len(t) > 0 && unicode.IsSpace(rune(t[0])) {
@@ -42,6 +46,9 @@ func markdownRuns(b Block) string {
 		if strings.HasSuffix(t, " ") {
 			suffix = " "
 			t = strings.TrimRight(t, " ")
+		}
+		if r.Script == "sup" || r.Script == "sub" {
+			t = "<" + r.Script + ">" + t + "</" + r.Script + ">"
 		}
 		if r.Bold && b.Kind != "heading" {
 			t = "**" + t + "**"
@@ -99,7 +106,7 @@ func Markdown(d *Document) string {
 					}
 				}
 				out.WriteString("\n")
-			case "image":
+			case "image", "math":
 				out.WriteString("![" + escapeMD(b.Alt) + "](" + b.Asset + ")\n\n")
 			default:
 				out.WriteString(markdownRuns(b) + "\n\n")
@@ -121,7 +128,14 @@ func htmlRuns(b Block) string {
 	}
 	var out strings.Builder
 	for _, r := range b.Runs {
+		if r.Asset != "" {
+			fmt.Fprintf(&out, `<img class="math-inline" data-math-representation="positioned" data-math-monochrome="%t" src="%s" alt="%s" style="height:%.4fem;vertical-align:-%.4fem"/>`, r.Monochrome, xmlText(r.Asset), xmlText(r.Text), r.Height, r.Depth)
+			continue
+		}
 		t := xmlText(r.Text)
+		if r.Script == "sup" || r.Script == "sub" {
+			t = "<" + r.Script + ">" + t + "</" + r.Script + ">"
+		}
 		if r.Bold && b.Kind != "heading" {
 			t = "<strong>" + t + "</strong>"
 		}
@@ -145,6 +159,8 @@ func pageHTML(page Page) string {
 			fmt.Fprintf(&out, `<h%s id="b-%d">%s</h%s>`, level, j, htmlRuns(b), level)
 		case "code":
 			fmt.Fprintf(&out, `<pre><code class="language-%s">%s</code></pre>`, xmlText(b.Language), xmlText(b.Text))
+		case "math":
+			fmt.Fprintf(&out, `<figure class="math-display"><img data-math-representation="positioned" data-math-monochrome="%t" src="%s" alt="%s" style="--pdf-math-width:%.4fem;width:%.4fem;max-width:100%%;height:auto"/></figure>`, b.Monochrome, xmlText(b.Asset), xmlText(b.Text), b.WidthEm, b.WidthEm)
 		case "image":
 			fmt.Fprintf(&out, `<figure><img src="%s" alt="%s"/></figure>`, xmlText(b.Asset), xmlText(b.Alt))
 		case "table":
@@ -254,6 +270,11 @@ func EPUB(d *Document) ([]byte, error) {
 			if strings.HasSuffix(b.Asset, ".svg") {
 				hasSVG = true
 			}
+			for _, r := range b.Runs {
+				if strings.HasSuffix(r.Asset, ".svg") {
+					hasSVG = true
+				}
+			}
 		}
 		props := ""
 		if hasSVG {
@@ -287,7 +308,7 @@ func EPUB(d *Document) ([]byte, error) {
 	if e := add("OEBPS/nav.xhtml", []byte(xhtml("Contents", `<nav epub:type="toc" id="toc"><h1>Contents</h1><ol>`+toc+`</ol></nav>`)), false); e != nil {
 		return nil, e
 	}
-	css := `body { line-height:1.6; } img,svg { max-width:100%; height:auto; } table { border-collapse:collapse; width:100%; margin:1em 0; } td,th { border:1px solid currentColor; padding:.4em .65em; text-align:left; } pre { white-space:pre-wrap; overflow-wrap:anywhere; font-family:monospace; padding:1em; } figure { margin:1.4em 0; } .caption,.footnote { font-size:.9em; } .caption { font-style:italic; } .list-item { padding-left:1em; } h1,h2,h3 { line-height:1.3; }`
+	css := `body { line-height:1.6; } .math-inline { display:inline; width:auto; max-width:none; margin:0; } .math-display { text-align:center; overflow-x:auto; } .math-display img { width:auto; max-width:100%; } sup,sub { font-size:.7em; line-height:0; } img,svg { max-width:100%; height:auto; } table { border-collapse:collapse; width:100%; margin:1em 0; } td,th { border:1px solid currentColor; padding:.4em .65em; text-align:left; } pre { white-space:pre-wrap; overflow-wrap:anywhere; font-family:monospace; padding:1em; } figure { margin:1.4em 0; } .caption,.footnote { font-size:.9em; } .caption { font-style:italic; } .list-item { padding-left:1em; } h1,h2,h3 { line-height:1.3; }`
 	if e := add("OEBPS/style.css", []byte(css), false); e != nil {
 		return nil, e
 	}

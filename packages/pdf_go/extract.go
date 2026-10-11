@@ -100,6 +100,15 @@ func Extract(data []byte, options Options) (*Document, error) {
 			return fmt.Errorf("%w: missing MediaBox", ErrInvalid)
 		}
 		x0, y0, x1, y1 := number(box[0]), number(box[1]), number(box[2]), number(box[3])
+		// The visible page is the intersection of CropBox and MediaBox.
+		// Some real books have a crop extending beyond the physical medium.
+		media := p.array(props["MediaBox"])
+		if len(media) == 4 {
+			x0 = math.Max(x0, number(media[0]))
+			y0 = math.Max(y0, number(media[1]))
+			x1 = math.Min(x1, number(media[2]))
+			y1 = math.Min(y1, number(media[3]))
+		}
 		w, h := x1-x0, y1-y0
 		if w <= 0 || h <= 0 || w > 1000000 || h > 1000000 {
 			return fmt.Errorf("%w: page dimensions", ErrInvalid)
@@ -182,6 +191,8 @@ func Extract(data []byte, options Options) (*Document, error) {
 				out.Stats.Images++
 			case "table":
 				out.Stats.Tables++
+			case "math":
+				out.Stats.Math++
 			case "heading":
 				out.Stats.Headings++
 			}

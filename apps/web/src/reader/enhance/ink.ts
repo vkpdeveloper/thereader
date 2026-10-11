@@ -180,6 +180,10 @@ export function watchInk(root: Element, options: InkOptions = {}): () => void {
   const todo: HTMLImageElement[] = [];
   for (const img of imgs) {
     if (hasClass(img, 'tr-hidden') || hasClass(img, 'tr-ink') || hasClass(img, 'tr-ink-paper')) continue;
+    if (img.getAttribute('data-math-representation') === 'positioned' && img.getAttribute('data-math-monochrome') === 'true') {
+      addClass(img, 'tr-ink-paper');
+      continue;
+    }
     const src = img.currentSrc || img.src;
     const known = src ? cache?.get(src) : undefined;
     if (known && INK_CLASS[known]) addClass(img, INK_CLASS[known]!);

@@ -11,7 +11,7 @@ import { anchorQuote, TextIndex } from '../epub/text';
 import type { ZipArchive } from '../epub/zip';
 import { applyHighlight, declaredLanguage, prepareCode, tokensOf, type Highlighter } from './code';
 import { enhanceContent, hydrateMath, needs } from './index';
-import { inkVerdict } from './ink';
+import { inkVerdict, watchInk } from './ink';
 import { parseMarkup } from './formats';
 import { findDelimited, scrubMathml, texOfImage } from './math';
 import { MAX_MATHML_NODES, needsRebuild, rebuildMathml, styled } from './mathml';
@@ -112,6 +112,18 @@ describe('math', () => {
     expect(hosts[0].textContent).toBe('');
     expect(hosts[1].classList.contains('tr-math-display')).toBe(true);
     for (const img of Array.from(bodyOf(doc).querySelectorAll('img'))) expect(img.classList.contains('tr-hidden')).toBe(true);
+  });
+
+  test('positioned PDF math keeps its glyph image even when its linear alt resembles TeX', async () => {
+    const doc = xhtml(`<figure class="math-display"><img data-math-representation="positioned" data-math-monochrome="true" src="assets/equation.svg" alt="F = {x_1, x_2}" style="width:20em"/></figure>`);
+    await enhanceAll(doc);
+    const img = bodyOf(doc).querySelector('img')!;
+    expect(texOfImage(img)).toBe(null);
+    expect(bodyOf(doc).querySelector('.tr-math')).toBe(null);
+    expect(img.classList.contains('tr-hidden')).toBe(false);
+    const stop = watchInk(bodyOf(doc));
+    expect(img.classList.contains('tr-ink-paper')).toBe(true);
+    stop();
   });
 
   test('figures, file-name alts and unparseable TeX keep their image', () => {

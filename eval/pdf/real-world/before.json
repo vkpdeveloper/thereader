@@ -1,0 +1,196 @@
+[
+  {
+    "engine": "before",
+    "version": "0.1.0",
+    "id": "harness",
+    "pages": 43,
+    "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+    "samplesMs": [
+      383.225333,
+      388.318708,
+      388.217875
+    ],
+    "medianMs": 388.217875,
+    "msPerPage": 9.028322674418604,
+    "characters": 135485,
+    "outputSha256": "afb10f54a530c0dc5e46d6b2210ef4c4e7db13f629434e34e98b2ccd1e56cff8",
+    "stats": {
+      "pages": 43,
+      "characters": 133213,
+      "images": 45,
+      "tables": 38,
+      "headings": 16,
+      "durationMs": 388.21775
+    },
+    "complete": false,
+    "warnings": {
+      "clipping": 15,
+      "icc-profile": 1,
+      "image-matte": 1,
+      "color-space": 13
+    },
+    "unknownCharacters": 0,
+    "assetBytes": 8730170,
+    "blockCounts": {
+      "heading": 16,
+      "paragraph": 1200,
+      "image": 45,
+      "list": 87,
+      "table": 38
+    }
+  },
+  {
+    "engine": "before",
+    "version": "0.1.0",
+    "id": "axler",
+    "pages": 404,
+    "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+    "samplesMs": [
+      233.09,
+      241.950208,
+      246.118
+    ],
+    "medianMs": 241.950208,
+    "msPerPage": 0.5988866534653465,
+    "characters": 744930,
+    "outputSha256": "8648d5778100c08a83a982a97f638ddcb874edcd83e645a6b3e8f7376a3801a1",
+    "stats": {
+      "pages": 404,
+      "characters": 727070,
+      "images": 294,
+      "tables": 21,
+      "headings": 513,
+      "durationMs": 246.117583
+    },
+    "complete": false,
+    "warnings": {
+      "clipping": 22,
+      "image": 13
+    },
+    "unknownCharacters": 0,
+    "assetBytes": 671427,
+    "blockCounts": {
+      "heading": 513,
+      "image": 294,
+      "paragraph": 16721,
+      "list": 222,
+      "table": 21
+    }
+  },
+  {
+    "engine": "before",
+    "version": "0.1.0",
+    "id": "hefferon",
+    "pages": 525,
+    "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+    "samplesMs": [
+      275.70475,
+      273.888375,
+      277.954167
+    ],
+    "medianMs": 275.70475,
+    "msPerPage": 0.5251519047619048,
+    "characters": 931166,
+    "outputSha256": "af69d1f0e3793b469bf53328d83905fd0c058d62c53012cb185de69967a1436d",
+    "stats": {
+      "pages": 525,
+      "characters": 912395,
+      "images": 256,
+      "tables": 71,
+      "headings": 131,
+      "durationMs": 277.953917
+    },
+    "complete": false,
+    "warnings": {
+      "clipping": 7,
+      "color-space": 5,
+      "unmapped-glyph": 434
+    },
+    "unknownCharacters": 10685,
+    "assetBytes": 5835697,
+    "blockCounts": {
+      "heading": 131,
+      "image": 256,
+      "code": 25,
+      "paragraph": 17285,
+      "table": 71,
+      "list": 29
+    }
+  },
+  {
+    "engine": "before",
+    "version": "0.1.0",
+    "id": "thinkpython",
+    "pages": 244,
+    "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+    "samplesMs": [
+      74.436791,
+      74.414417,
+      73.353
+    ],
+    "medianMs": 74.414417,
+    "msPerPage": 0.30497711885245904,
+    "characters": 444567,
+    "outputSha256": "70321d66ef3470b98edc941e806defd068f6fc1c0025ea87f7b706b6f34fe5d7",
+    "stats": {
+      "pages": 244,
+      "characters": 440704,
+      "images": 21,
+      "tables": 28,
+      "headings": 527,
+      "durationMs": 73.352917
+    },
+    "complete": false,
+    "warnings": {
+      "clipping": 23
+    },
+    "unknownCharacters": 0,
+    "assetBytes": 37878,
+    "blockCounts": {
+      "heading": 527,
+      "paragraph": 2528,
+      "list": 335,
+      "table": 28,
+      "image": 21
+    }
+  },
+  {
+    "engine": "before",
+    "version": "0.1.0",
+    "id": "calculus",
+    "pages": 292,
+    "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+    "samplesMs": [
+      131.030709,
+      130.341375,
+      130.285334
+    ],
+    "medianMs": 130.341375,
+    "msPerPage": 0.4463745719178082,
+    "characters": 276673,
+    "outputSha256": "7aeb0af44dee078400f655c2220ba7128c7f17c0d0926faccc5727c3b56e3911",
+    "stats": {
+      "pages": 292,
+      "characters": 266433,
+      "images": 449,
+      "tables": 26,
+      "headings": 92,
+      "durationMs": 130.28525
+    },
+    "complete": false,
+    "warnings": {
+      "clipping": 1,
+      "unmapped-glyph": 87,
+      "image-stencil": 39
+    },
+    "unknownCharacters": 348,
+    "assetBytes": 876446,
+    "blockCounts": {
+      "paragraph": 9324,
+      "heading": 92,
+      "image": 449,
+      "list": 54,
+      "table": 26
+    }
+  }
+]
