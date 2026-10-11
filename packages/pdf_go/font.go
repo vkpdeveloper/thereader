@@ -19,6 +19,13 @@ type font struct {
 	lengths                           []int
 	widths                            map[uint32]float64
 	defaultWidth                      float64
+	math                              bool
+	descriptor                        dict
+	source                            dict
+	program                           *outlineFont
+	programRead                       bool
+	gidMap                            any
+	names                             [256]string
 }
 
 func utf16String(b []byte) string {
@@ -135,6 +142,12 @@ func glyphName(s string) string {
 	if v, ok := greek[s]; ok {
 		return v
 	}
+	if v := adobeGlyph(s); v != "" {
+		return v
+	}
+	if v := texGlyph(s); v != "" {
+		return v
+	}
 	return "�"
 }
 
@@ -147,10 +160,13 @@ func (p *pdf) font(v any, page int) *font {
 	}
 	d := p.dict(v)
 	f := &font{base: named(d["BaseFont"]), widths: map[uint32]float64{}, defaultWidth: 500}
+	f.source = d
 	lower := strings.ToLower(f.base)
-	f.bold = strings.Contains(lower, "bold") || strings.Contains(lower, "black") || strings.Contains(lower, "demi")
-	f.italic = strings.Contains(lower, "italic") || strings.Contains(lower, "oblique")
-	f.mono = strings.Contains(lower, "courier") || strings.Contains(lower, "mono") || strings.Contains(lower, "consolas")
+	bare := lower[strings.LastIndex(lower, "+")+1:]
+	f.bold = strings.Contains(lower, "bold") || strings.Contains(lower, "black") || strings.Contains(lower, "demi") || strings.HasSuffix(lower, "-bd") || strings.HasPrefix(bare, "cmbx") || strings.HasPrefix(bare, "sfbx")
+	f.italic = strings.Contains(lower, "ital") || strings.Contains(lower, "oblique") || strings.HasPrefix(bare, "cmti") || strings.HasPrefix(bare, "sfti")
+	f.mono = strings.Contains(lower, "courier") || strings.Contains(lower, "mono") || strings.Contains(lower, "consolas") || strings.HasPrefix(bare, "cmtt") || strings.HasPrefix(bare, "sftt") || strings.HasPrefix(bare, "sfvt") || strings.HasPrefix(bare, "sfit")
+	f.math = strings.Contains(lower, "math") || strings.HasPrefix(bare, "cmmi") || strings.HasPrefix(bare, "cmsy") || strings.HasPrefix(bare, "cmex") || strings.HasPrefix(bare, "msam") || strings.HasPrefix(bare, "msbm") || strings.HasPrefix(bare, "eurm") || strings.HasPrefix(bare, "eufm")
 	f.cid = named(d["Subtype"]) == "Type0"
 	enc := p.resolve(d["Encoding"])
 	kind := named(enc)
@@ -180,6 +196,7 @@ func (p *pdf) font(v any, page int) *font {
 			}
 			if code >= 0 && code < 256 {
 				f.encoding[code] = glyphName(string(n))
+				f.names[code] = string(n)
 			}
 			code++
 			i++
@@ -240,11 +257,19 @@ func (p *pdf) font(v any, page int) *font {
 		}
 	} else {
 		first := integer(d["FirstChar"])
+		widthScale := 1.0
+		if named(d["Subtype"]) == "Type3" {
+			if m := p.array(d["FontMatrix"]); len(m) == 6 {
+				widthScale = number(m[0]) * 1000
+			}
+		}
 		for i, w := range p.array(d["Widths"]) {
-			f.widths[uint32(first+i)] = number(w)
+			f.widths[uint32(first+i)] = number(w) * widthScale
 		}
 	}
 	descriptor := p.dict(fd["FontDescriptor"])
+	f.descriptor = descriptor
+	f.gidMap = fd["CIDToGIDMap"]
 	flags := integer(descriptor["Flags"])
 	f.mono = f.mono || flags&1 != 0
 	f.italic = f.italic || flags&64 != 0
@@ -266,6 +291,20 @@ func (p *pdf) font(v any, page int) *font {
 				}
 				p.warn("font-unicode", page, e.Error())
 			}
+		}
+	}
+	// Simple embedded fonts without an explicit PDF Encoding use the
+	// encoding in their font program, not StandardEncoding. ToUnicode may map
+	// only some codes: its presence must not disable this fallback for the rest.
+	if !f.cid && d["Encoding"] == nil && (descriptor["FontFile"] != nil || descriptor["FontFile3"] != nil) {
+		if p.fontProgram(f, page) != nil {
+			for code, n := range f.names {
+				if n != "" {
+					f.encoding[code] = glyphName(n)
+				}
+			}
+		} else {
+			p.warn("font-encoding", page, "Embedded simple-font encoding could not be resolved; StandardEncoding fallback is approximate.")
 		}
 	}
 	if f.cid && len(f.unicode) == 0 {

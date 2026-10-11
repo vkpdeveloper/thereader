@@ -1,0 +1,56 @@
+{
+  "method": "Three deliberately selected Type 3 cases. Largest overlap inline SVG, original PDF vs extracted glyph at 216 dpi, one pixel ink tolerance. Visual only, not recovered Unicode.",
+  "regions": [
+    {
+      "id": "calculus-bitmap-year",
+      "document": "calculus",
+      "page": 5,
+      "box": [
+        182,
+        516,
+        211,
+        533
+      ],
+      "asset": "assets/0d346fbce6479765c17a50dd.svg",
+      "inkRecall": 1.0,
+      "inkPrecision": 1.0,
+      "inkF1": 1.0,
+      "referenceInkPixels": 492,
+      "outputInkPixels": 495
+    },
+    {
+      "id": "calculus-bitmap-pound",
+      "document": "calculus",
+      "page": 18,
+      "box": [
+        270.3,
+        332,
+        278,
+        345
+      ],
+      "asset": "assets/fc2ba0bb5f343590e90b96bf.svg",
+      "inkRecall": 1.0,
+      "inkPrecision": 1.0,
+      "inkF1": 1.0,
+      "referenceInkPixels": 129,
+      "outputInkPixels": 131
+    },
+    {
+      "id": "calculus-bitmap-asterisk",
+      "document": "calculus",
+      "page": 18,
+      "box": [
+        144.8,
+        465,
+        150,
+        475
+      ],
+      "asset": "assets/eb855ee2fa387d77b27ddfcf.svg",
+      "inkRecall": 1.0,
+      "inkPrecision": 1.0,
+      "inkF1": 1.0,
+      "referenceInkPixels": 40,
+      "outputInkPixels": 40
+    }
+  ]
+}

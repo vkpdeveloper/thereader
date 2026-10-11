@@ -1,0 +1,130 @@
+{
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "cpu": "Apple M5",
+  "binarySHA256": "85a4d35b857453e6ff89ab597a301c6bc565efc6cd4a96299a42b2ce5deb504e",
+  "python": "3.12.13 (main, Apr 14 2026, 14:33:40) [Clang 22.1.3 ]",
+  "warmups": 1,
+  "repeats": 3,
+  "rows": [
+    {
+      "engine": "pdf-extractor",
+      "version": "0.3.0",
+      "id": "harness",
+      "pages": 43,
+      "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+      "samplesMs": [
+        480.090875,
+        494.242625,
+        509.380416
+      ],
+      "medianMs": 494.242625,
+      "msPerPage": 11.49401453488372,
+      "outputSha256": "c3a313ffa7d32ee53505f6603789f15d15927d778f17e7e4e7d1083ff65e5029",
+      "stats": {
+        "pages": 43,
+        "characters": 135149,
+        "images": 31,
+        "tables": 13,
+        "math": 0,
+        "headings": 42,
+        "durationMs": 509.380334
+      }
+    },
+    {
+      "engine": "pdf-extractor",
+      "version": "0.3.0",
+      "id": "axler",
+      "pages": 404,
+      "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+      "samplesMs": [
+        595.247333,
+        583.69625,
+        575.487167
+      ],
+      "medianMs": 583.69625,
+      "msPerPage": 1.4447926980198018,
+      "outputSha256": "2d93a654cd4b70f30a026d99a26fa6fa81c221b79f796b4125f8e2d9fd0094e5",
+      "stats": {
+        "pages": 404,
+        "characters": 714479,
+        "images": 56,
+        "tables": 31,
+        "math": 1458,
+        "headings": 206,
+        "durationMs": 575.486959
+      }
+    },
+    {
+      "engine": "pdf-extractor",
+      "version": "0.3.0",
+      "id": "hefferon",
+      "pages": 525,
+      "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+      "samplesMs": [
+        605.668917,
+        630.901875,
+        616.403375
+      ],
+      "medianMs": 616.403375,
+      "msPerPage": 1.1741016666666666,
+      "outputSha256": "30016abf3f0b56b507c6e8c8a3669f6f648ae506c1424c6d68bdbeac7ae1bb9f",
+      "stats": {
+        "pages": 525,
+        "characters": 912654,
+        "images": 264,
+        "tables": 16,
+        "math": 1904,
+        "headings": 128,
+        "durationMs": 616.403208
+      }
+    },
+    {
+      "engine": "pdf-extractor",
+      "version": "0.3.0",
+      "id": "thinkpython",
+      "pages": 244,
+      "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+      "samplesMs": [
+        148.173458,
+        146.433834,
+        149.911666
+      ],
+      "medianMs": 148.173458,
+      "msPerPage": 0.6072682704918033,
+      "outputSha256": "ff732e2a36378310dedda2bc42549d16115223ac55e6266719ce0418c3e3d647",
+      "stats": {
+        "pages": 244,
+        "characters": 444146,
+        "images": 42,
+        "tables": 18,
+        "math": 8,
+        "headings": 562,
+        "durationMs": 149.911584
+      }
+    },
+    {
+      "engine": "pdf-extractor",
+      "version": "0.3.0",
+      "id": "calculus",
+      "pages": 292,
+      "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+      "samplesMs": [
+        255.85575,
+        257.434208,
+        259.810083
+      ],
+      "medianMs": 257.434208,
+      "msPerPage": 0.8816240000000001,
+      "outputSha256": "8f227a5b5de33939c4354bc177098c0263a83ea6609e157171b5e474d0690a69",
+      "stats": {
+        "pages": 292,
+        "characters": 268146,
+        "images": 460,
+        "tables": 8,
+        "math": 885,
+        "headings": 75,
+        "durationMs": 259.809875
+      }
+    }
+  ]
+}

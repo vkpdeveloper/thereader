@@ -18,6 +18,8 @@ type pdf struct {
 	trailer                            dict
 	fonts                              map[ref]*font
 	assetIDs                           map[*stream]string
+	assetNames                         map[string]bool
+	assetBytes, outlineBytes           int
 	decodedSize, operations, spanCount int
 	err                                error
 	out                                *Document

@@ -1,0 +1,27 @@
+{
+  "unitTests": "passed",
+  "raceTests": "passed",
+  "goVet": "passed",
+  "faxFuzz": {
+    "seconds": 10,
+    "executions": 304748,
+    "passed": true
+  },
+  "extractFuzz": {
+    "seconds": 15,
+    "executions": 162548,
+    "passed": true
+  },
+  "logSHA256": {
+    "fax": "d4a66f7f85eb95ccadad82d3fc8bc947049a799e6e71e6e5118228940a38d326",
+    "extract": "c482c77d430243bd32cd56ed35178a14a6fd4fd7d64de82945ccbcc769dedc90"
+  },
+  "review": {
+    "tool": "CodeRabbit CLI 0.7.6",
+    "rounds": 6,
+    "lastRoundFindings": 1,
+    "lastFinding": "Benchmark CPU metadata portability; fixed with platform fallback.",
+    "unresolved": 0
+  },
+  "libraryBinarySHA256": "85a4d35b857453e6ff89ab597a301c6bc565efc6cd4a96299a42b2ce5deb504e"
+}

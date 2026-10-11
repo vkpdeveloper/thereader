@@ -1,0 +1,82 @@
+[
+  {
+    "engine": "pymupdf",
+    "version": "1.28.2",
+    "id": "harness",
+    "pages": 43,
+    "scope": "text only, sort=True",
+    "samplesMs": [
+      479.9885000102222,
+      477.7718329860363,
+      480.593417014461
+    ],
+    "medianMs": 479.9885000102222,
+    "msPerPage": 11.16252325605168,
+    "characters": 200330,
+    "outputSha256": "2d4a143d9df708a5f051e53a6c1a1721c3573242915d15f0a2b28b8ffe27e6b3"
+  },
+  {
+    "engine": "pymupdf",
+    "version": "1.28.2",
+    "id": "axler",
+    "pages": 404,
+    "scope": "text only, sort=True",
+    "samplesMs": [
+      2485.6117090093903,
+      2491.6821669903584,
+      2560.4542499931995
+    ],
+    "medianMs": 2491.6821669903584,
+    "msPerPage": 6.1675301163127685,
+    "characters": 867143,
+    "outputSha256": "577acd49a7de60b73ea984642c7247dab06c4c3371df66bb5dd350b2515cf8de"
+  },
+  {
+    "engine": "pymupdf",
+    "version": "1.28.2",
+    "id": "hefferon",
+    "pages": 525,
+    "scope": "text only, sort=True",
+    "samplesMs": [
+      3389.1196670010686,
+      3435.648874990875,
+      3385.357124992879
+    ],
+    "medianMs": 3389.1196670010686,
+    "msPerPage": 6.455466032382988,
+    "characters": 1202113,
+    "outputSha256": "6aaac1f7416e6064b231881e6a0e59e46947d0cc3867035dfc084f67414fdaff"
+  },
+  {
+    "engine": "pymupdf",
+    "version": "1.28.2",
+    "id": "thinkpython",
+    "pages": 244,
+    "scope": "text only, sort=True",
+    "samplesMs": [
+      1527.841624978464,
+      1610.247917007655,
+      1538.4204580041114
+    ],
+    "medianMs": 1538.4204580041114,
+    "msPerPage": 6.30500187706603,
+    "characters": 504048,
+    "outputSha256": "fca3754edbf519953fab8ef880e2b05d245d9ccb516d8d7b4f574f67dabe42d0"
+  },
+  {
+    "engine": "pymupdf",
+    "version": "1.28.2",
+    "id": "calculus",
+    "pages": 292,
+    "scope": "text only, sort=True",
+    "samplesMs": [
+      1055.9787079982925,
+      1045.3934999823105,
+      1049.754000006942
+    ],
+    "medianMs": 1049.754000006942,
+    "msPerPage": 3.5950479452292536,
+    "characters": 394036,
+    "outputSha256": "587028e493eb60a3cc11b19d7905437421fdedafa272768b4419041dd858ded1"
+  }
+]

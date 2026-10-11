@@ -1,0 +1,185 @@
+{
+  "recordedAt": "2026-10-11",
+  "scope": "Local platform PDF upload -> Go 0.2.0 -> EPUB -> shared reader. Desktop and mobile-width Chromium browser, not a native mobile-device run. Public media are limited excerpts; source books and extracted full text are not redistributed.",
+  "media": [
+    {
+      "id": "comparison",
+      "url": "https://pub-db5cc934f02943a19d855c11f462c1e9.r2.dev/pr-assets/thereader/pdf-real-math-comparison-8d743373.png",
+      "caption": "Original PDF crops beside exported glyph SVGs: Axler pp. 20 and 86, Calculus Made Easy p. 34.",
+      "sha256": "5eac6a32861e361758e4f3bd061921ba26c3f1ac13a5af3cf7166bda03907c77",
+      "bytes": 147611
+    },
+    {
+      "id": "desktop",
+      "url": "https://pub-db5cc934f02943a19d855c11f462c1e9.r2.dev/pr-assets/thereader/pdf-real-reader-desktop-86a252a0.png",
+      "caption": "Axler physical page 20 in the actual desktop reader, 1280 \u00d7 900.",
+      "sha256": "144992164c5f79060d1ff91781a8474c1c88330e2c6619f521e677e1aee320ff",
+      "bytes": 137223
+    },
+    {
+      "id": "mobile",
+      "url": "https://pub-db5cc934f02943a19d855c11f462c1e9.r2.dev/pr-assets/thereader/pdf-real-reader-mobile-07a05995.png",
+      "caption": "The same reader at 390 \u00d7 844 CSS pixels; browser viewport, not a native simulator.",
+      "sha256": "1f4bd29bd6996dd1756dd4afc0b0114fa5e55a9d4a835ce4f76fe149becd0970",
+      "bytes": 156805
+    },
+    {
+      "id": "video",
+      "url": "https://pub-db5cc934f02943a19d855c11f462c1e9.r2.dev/pr-assets/thereader/pdf-real-upload-read-4e2cb1cf.mp4",
+      "caption": "Unedited 32-second local recording: upload Axler PDF, verify saved book, open reader, inspect extraction notes and navigate to mathematics.",
+      "durationSeconds": 32.1167,
+      "sha256": "b7e1b9ab7709106277c77559f2ecec961d2542c043b04f92980be1dc71d80eca",
+      "bytes": 1323196
+    },
+    {
+      "id": "paper",
+      "url": "https://pub-db5cc934f02943a19d855c11f462c1e9.r2.dev/pr-assets/thereader/pdf-real-paper-85267ae5.png",
+      "caption": "Requested arXiv paper, recovered appendix and section hierarchy in the actual reader.",
+      "sha256": "e22d3a52c189db07f18a10db7f74d8a971d279d95f30e7b93c7a1b8b6905fde9",
+      "bytes": 148483
+    },
+    {
+      "id": "table",
+      "url": "https://pub-db5cc934f02943a19d855c11f462c1e9.r2.dev/pr-assets/thereader/pdf-real-paper-table-4787a7fb.png",
+      "caption": "Actual requested-paper table in the reader. Merged column headings and grouped row labels remain fragmented; wide tables scroll horizontally.",
+      "sha256": "970fbea7f570aa5cd200b176ac724accce59a947f88114a521a411a0c15253ea",
+      "bytes": 103109
+    }
+  ],
+  "browser": {
+    "desktop": {
+      "page": "page-20",
+      "displayMath": [
+        {
+          "width": 20,
+          "hidden": false,
+          "complete": true,
+          "style": "--pdf-math-width:1.1263em;width:1.1263em;max-width:100%;height:auto"
+        },
+        {
+          "width": 338,
+          "hidden": false,
+          "complete": true,
+          "style": "--pdf-math-width:18.7960em;width:18.7960em;max-width:100%;height:auto"
+        },
+        {
+          "width": 315,
+          "hidden": false,
+          "complete": true,
+          "style": "--pdf-math-width:17.4992em;width:17.4992em;max-width:100%;height:auto"
+        },
+        {
+          "width": 384,
+          "hidden": false,
+          "complete": true,
+          "style": "--pdf-math-width:21.3182em;width:21.3182em;max-width:100%;height:auto"
+        }
+      ],
+      "horizontalOverflow": false
+    },
+    "mobile": {
+      "page": "page-20",
+      "viewport": 390,
+      "horizontalOverflow": false,
+      "math": [
+        {
+          "width": 20.265625,
+          "hidden": false,
+          "loaded": true
+        },
+        {
+          "width": 338.3203125,
+          "hidden": false,
+          "loaded": true
+        },
+        {
+          "width": 314.984375,
+          "hidden": false,
+          "loaded": true
+        },
+        {
+          "width": 344,
+          "hidden": false,
+          "loaded": true
+        }
+      ]
+    },
+    "paper": {
+      "sourceId": "harness",
+      "convertedBookId": "84cfa4e9bef72958653e48b982c8488333fd1b360638c9a7015c5f1b3d1a6ba3",
+      "verifiedUpload": true,
+      "chapter": "Appendix / A Harness Prompts",
+      "codeBlocksInChapter": 1,
+      "codeOverflowX": "auto",
+      "horizontalOverflow": false,
+      "table": {
+        "rows": 28,
+        "columns": 9,
+        "horizontalPageOverflow": false,
+        "containerOverflowX": "auto",
+        "containerWidth": 612,
+        "tableWidth": 875,
+        "note": "Merged headers and grouped row labels remain fragmented."
+      }
+    }
+  },
+  "validation": {
+    "go": [
+      "go test -race ./...",
+      "go vet ./..."
+    ],
+    "web": {
+      "command": "bun test src/reader/enhance",
+      "tests": 89,
+      "assertions": 3300,
+      "build": "bun run build",
+      "mobileReaderAssets": "bun run build:enhance"
+    },
+    "fuzz": {
+      "fontPrograms": {
+        "executions": 541985,
+        "seconds": 21
+      },
+      "extract": {
+        "executions": 293920,
+        "seconds": 16
+      },
+      "fixedCrash": "CFF INDEX intermediate offsets could exceed the final offset and panic before validation; bounded and minimized regression saved in testdata/fuzz/FuzzFontPrograms/569f45a05180d805"
+    },
+    "review": {
+      "tool": "CodeRabbit CLI 0.7.6",
+      "rounds": 3,
+      "resolved": [
+        "Portable processor detection",
+        "Remove stale benchmark outputs on failure",
+        "Warn on unsupported implicit name-keyed CFF encoding",
+        "Resolve indirect Type 1 font lengths",
+        "Recompute math classification after removing spans"
+      ],
+      "retained": "Invalid font matrices still return ErrLimit as a resource-bound guard."
+    }
+  },
+  "provenance": {
+    "sourceHashes": "corpus.json",
+    "measuredBinaryAndSourceHashes": "environment.json",
+    "measurementOutputs": "after.json",
+    "note": "Browser proof was captured during the 0.2.0 development session. Final benchmark hashes identify the final measured implementation; the video preceded two minor font/layout corrections. Full PDFs are not hosted as proof."
+  },
+  "reportBrowserChecks": {
+    "desktopWidth": 1280,
+    "mobileWidth": 390,
+    "horizontalOverflow": false,
+    "loadedImages": 5,
+    "videoDurationSeconds": 32.1167,
+    "videoDimensions": [
+      2560,
+      1800
+    ]
+  },
+  "report": {
+    "url": "https://pub-db5cc934f02943a19d855c11f462c1e9.r2.dev/doc/thereader/pdf-real-world-report-4070e723.html",
+    "sha256": "2ac9c18afe22cdc26db84032b909e77156f9a64bbf287289bc8449bef05b0c03",
+    "bytes": 2716854,
+    "verification": "Full public HTTP GET: byte length and SHA-256 match the local standalone HTML."
+  }
+}

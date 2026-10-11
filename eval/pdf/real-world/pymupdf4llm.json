@@ -1,0 +1,82 @@
+[
+  {
+    "engine": "pymupdf4llm",
+    "version": "1.28.2",
+    "id": "harness",
+    "pages": 43,
+    "scope": "Markdown with layout model; OCR off; images embedded; header/footer cleanup on",
+    "samplesMs": [
+      6620.685374975437,
+      6736.176999984309,
+      6647.938999987673
+    ],
+    "medianMs": 6647.938999987673,
+    "msPerPage": 154.60323255785286,
+    "characters": 135708,
+    "outputSha256": "ca76e9aa623893982617ad974d8041df9a7951fd11f643a5e365f85ea48fdd62"
+  },
+  {
+    "engine": "pymupdf4llm",
+    "version": "1.28.2",
+    "id": "axler",
+    "pages": 404,
+    "scope": "Markdown with layout model; OCR off; images embedded; header/footer cleanup on",
+    "samplesMs": [
+      27263.292624993483,
+      28483.044625027105,
+      31299.632291978924
+    ],
+    "medianMs": 28483.044625027105,
+    "msPerPage": 70.50258570551264,
+    "characters": 665897,
+    "outputSha256": "679e5cc08c8fcae0b7c7a1086a6b62e515c33b186d3fbb8f4043877484383fab"
+  },
+  {
+    "engine": "pymupdf4llm",
+    "version": "1.28.2",
+    "id": "hefferon",
+    "pages": 525,
+    "scope": "Markdown with layout model; OCR off; images embedded; header/footer cleanup on",
+    "samplesMs": [
+      46597.57433398045,
+      47585.45708400197,
+      48501.59470801009
+    ],
+    "medianMs": 47585.45708400197,
+    "msPerPage": 90.63896587428947,
+    "characters": 818598,
+    "outputSha256": "f67a594fd208966669be7232ee61afc5bf652c29d6b303333d6feed45c339858"
+  },
+  {
+    "engine": "pymupdf4llm",
+    "version": "1.28.2",
+    "id": "thinkpython",
+    "pages": 244,
+    "scope": "Markdown with layout model; OCR off; images embedded; header/footer cleanup on",
+    "samplesMs": [
+      18446.551667002495,
+      18510.1897919958,
+      18542.382000014186
+    ],
+    "medianMs": 18510.1897919958,
+    "msPerPage": 75.86143357375327,
+    "characters": 403867,
+    "outputSha256": "b45e8d88a1c4847961c350edc71ab31395c35086e67ccd55b6a5d61c3ef1b022"
+  },
+  {
+    "engine": "pymupdf4llm",
+    "version": "1.28.2",
+    "id": "calculus",
+    "pages": 292,
+    "scope": "Markdown with layout model; OCR off; images embedded; header/footer cleanup on",
+    "samplesMs": [
+      22447.532249992946,
+      24577.76808401104,
+      22038.01841600216
+    ],
+    "medianMs": 22447.532249992946,
+    "msPerPage": 76.87511044518132,
+    "characters": 234654,
+    "outputSha256": "9cf771c3c4b9f9eefd6c0494049ac7dfd76642650b00cc6c5faf0881fb347475"
+  }
+]

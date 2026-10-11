@@ -1,0 +1,90 @@
+{
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "cpu": "Apple M5",
+  "binarySHA256": null,
+  "python": "3.12.13 (main, Apr 14 2026, 14:33:40) [Clang 22.1.3 ]",
+  "warmups": 1,
+  "repeats": 3,
+  "rows": [
+    {
+      "engine": "pdfplumber",
+      "version": "0.11.10",
+      "id": "harness",
+      "pages": 43,
+      "scope": "text plus default extract_tables; no Markdown/image export",
+      "samplesMs": [
+        4190.138540987391,
+        4101.671290991362,
+        4244.822250009747
+      ],
+      "medianMs": 4190.138540987391,
+      "msPerPage": 97.44508234854398,
+      "outputSha256": "39880d04a9169bc4e412520537bd76aef6c875e43e3ee82012c8ef4f6d66baac",
+      "stats": null
+    },
+    {
+      "engine": "pdfplumber",
+      "version": "0.11.10",
+      "id": "axler",
+      "pages": 404,
+      "scope": "text plus default extract_tables; no Markdown/image export",
+      "samplesMs": [
+        9369.026624975959,
+        9557.620459003374,
+        9171.360167005332
+      ],
+      "medianMs": 9369.026624975959,
+      "msPerPage": 23.19065996281178,
+      "outputSha256": "2c7822507a50ad5a1174af48808d17900229fb97123e79c88d94518116d7be41",
+      "stats": null
+    },
+    {
+      "engine": "pdfplumber",
+      "version": "0.11.10",
+      "id": "hefferon",
+      "pages": 525,
+      "scope": "text plus default extract_tables; no Markdown/image export",
+      "samplesMs": [
+        13003.74150002608,
+        11552.512000023853,
+        11737.503957992885
+      ],
+      "medianMs": 11737.503957992885,
+      "msPerPage": 22.357150396176923,
+      "outputSha256": "2d34e6016da20475fbd818021e6c22df9bb039ba3ec72e3b00a10f41ac0f8dd0",
+      "stats": null
+    },
+    {
+      "engine": "pdfplumber",
+      "version": "0.11.10",
+      "id": "thinkpython",
+      "pages": 244,
+      "scope": "text plus default extract_tables; no Markdown/image export",
+      "samplesMs": [
+        4431.181249994552,
+        4448.380999994697,
+        4281.118916987907
+      ],
+      "medianMs": 4431.181249994552,
+      "msPerPage": 18.160578893420293,
+      "outputSha256": "2ea29e7cc912141daf9ddc88fc39e973dcb8a16a8408ef37c12286d9db76b6fc",
+      "stats": null
+    },
+    {
+      "engine": "pdfplumber",
+      "version": "0.11.10",
+      "id": "calculus",
+      "pages": 292,
+      "scope": "text plus default extract_tables; no Markdown/image export",
+      "samplesMs": [
+        4247.488708002493,
+        4240.847166016465,
+        4425.853082997492
+      ],
+      "medianMs": 4247.488708002493,
+      "msPerPage": 14.54619420548799,
+      "outputSha256": "2f95f29b541af32d8f33013aed9af00412722d701a8036db459f74ab127b1d9b",
+      "stats": null
+    }
+  ]
+}

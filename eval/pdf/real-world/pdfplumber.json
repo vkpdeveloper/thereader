@@ -1,0 +1,82 @@
+[
+  {
+    "engine": "pdfplumber",
+    "version": "0.11.10",
+    "id": "harness",
+    "pages": 43,
+    "scope": "text plus default extract_tables; no Markdown/image export",
+    "samplesMs": [
+      3796.7757919977885,
+      3723.0915410036687,
+      3794.0830410225317
+    ],
+    "medianMs": 3794.0830410225317,
+    "msPerPage": 88.23448932610539,
+    "characters": 133614,
+    "outputSha256": "39880d04a9169bc4e412520537bd76aef6c875e43e3ee82012c8ef4f6d66baac"
+  },
+  {
+    "engine": "pdfplumber",
+    "version": "0.11.10",
+    "id": "axler",
+    "pages": 404,
+    "scope": "text plus default extract_tables; no Markdown/image export",
+    "samplesMs": [
+      8530.218959000194,
+      8625.235084007727,
+      8752.734667010373
+    ],
+    "medianMs": 8625.235084007727,
+    "msPerPage": 21.349591792098334,
+    "characters": 663701,
+    "outputSha256": "2c7822507a50ad5a1174af48808d17900229fb97123e79c88d94518116d7be41"
+  },
+  {
+    "engine": "pdfplumber",
+    "version": "0.11.10",
+    "id": "hefferon",
+    "pages": 525,
+    "scope": "text plus default extract_tables; no Markdown/image export",
+    "samplesMs": [
+      10438.841083989246,
+      10674.622416001512,
+      10775.500042014755
+    ],
+    "medianMs": 10674.622416001512,
+    "msPerPage": 20.332614125717164,
+    "characters": 983767,
+    "outputSha256": "2d34e6016da20475fbd818021e6c22df9bb039ba3ec72e3b00a10f41ac0f8dd0"
+  },
+  {
+    "engine": "pdfplumber",
+    "version": "0.11.10",
+    "id": "thinkpython",
+    "pages": 244,
+    "scope": "text plus default extract_tables; no Markdown/image export",
+    "samplesMs": [
+      4049.737583991373,
+      4084.411124989856,
+      4136.776917002862
+    ],
+    "medianMs": 4084.411124989856,
+    "msPerPage": 16.739389856515803,
+    "characters": 402071,
+    "outputSha256": "2ea29e7cc912141daf9ddc88fc39e973dcb8a16a8408ef37c12286d9db76b6fc"
+  },
+  {
+    "engine": "pdfplumber",
+    "version": "0.11.10",
+    "id": "calculus",
+    "pages": 292,
+    "scope": "text plus default extract_tables; no Markdown/image export",
+    "samplesMs": [
+      3980.864332988858,
+      3944.3401669850573,
+      3832.433250005124
+    ],
+    "medianMs": 3944.3401669850573,
+    "msPerPage": 13.508014270496771,
+    "characters": 274862,
+    "outputSha256": "2f95f29b541af32d8f33013aed9af00412722d701a8036db459f74ab127b1d9b"
+  }
+]

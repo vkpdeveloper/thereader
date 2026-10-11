@@ -118,6 +118,8 @@ export const classMatches = (re: RegExp) => (e: Element) => {
  * or text-relative sizing; figures whose alt is a file name never match.
  */
 export function texOfImage(img: Element): { tex: string; display: boolean } | null {
+  // PDF glyph positions are already rendered. Their accessible linear text is not TeX.
+  if (img.getAttribute('data-math-representation') === 'positioned') return null;
   const alt = (img.getAttribute('alt') ?? '').trim();
   if (!alt || alt.length > 4000) return null;
   const src = img.getAttribute('src') ?? '';

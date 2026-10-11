@@ -1,4 +1,4 @@
-/* The Reader content enhancer v4. Pair with enhance.js; TheReaderMath.woff2 sits next to this file.
+/* The Reader content enhancer v5. Pair with enhance.js; TheReaderMath.woff2 sits next to this file.
  * GENERATED from apps/web/src/reader/enhance by `cd apps/web && bun run build:enhance`; do not edit.
  * Includes temml (MIT) and highlight.js (BSD-3-Clause). */
 @font-face{font-family:"TheReader Math";src:url("TheReaderMath.woff2") format("woff2");font-style:normal;font-weight:400;font-display:swap;}
@@ -28,6 +28,9 @@
   display:inline !important;top:auto !important;left:auto !important;line-height:normal !important;font-size:inherit !important;
   -webkit-user-select:text !important;user-select:text !important;}
 :root:not(#tr-none) .tr-shown > math[display="block"], :root:not(#tr-none) .tr-shown > .tr-math-scroll, :root:not(#tr-none) .tr-shown > .tr-math-display{display:block !important;}
+
+/* The reader's generic image reset must not shrink positioned PDF equations. */
+:root:not(#tr-none) .math-display img[data-math-representation="positioned"]{width:var(--pdf-math-width,auto) !important;max-width:100% !important;height:auto !important;}
 
 /* ---- code (rule 5) */
 :root:not(#tr-none) pre{display:block !important;white-space:pre !important;word-break:normal !important;overflow-wrap:normal !important;

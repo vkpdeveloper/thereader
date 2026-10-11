@@ -1,0 +1,82 @@
+[
+  {
+    "engine": "pypdf",
+    "version": "6.20.0",
+    "id": "harness",
+    "pages": 43,
+    "scope": "text only, default extraction",
+    "samplesMs": [
+      1137.2977499850094,
+      1120.5019160115626,
+      1101.439207996009
+    ],
+    "medianMs": 1120.5019160115626,
+    "msPerPage": 26.05818409329215,
+    "characters": 134860,
+    "outputSha256": "0cc81e76b04bc9b4b6ca47b185ac4f70a0a9ce7c6bc67a7a63c0665a23b1a397"
+  },
+  {
+    "engine": "pypdf",
+    "version": "6.20.0",
+    "id": "axler",
+    "pages": 404,
+    "scope": "text only, default extraction",
+    "samplesMs": [
+      3226.2265000026673,
+      3275.110916001722,
+      3331.191540986765
+    ],
+    "medianMs": 3275.110916001722,
+    "msPerPage": 8.106710188123074,
+    "characters": 745633,
+    "outputSha256": "0c38c2097e4055941446b59bc359efaec8c5cdfe636da3f6712ab2397f452b6b"
+  },
+  {
+    "engine": "pypdf",
+    "version": "6.20.0",
+    "id": "hefferon",
+    "pages": 525,
+    "scope": "text only, default extraction",
+    "samplesMs": [
+      3186.4053749886807,
+      3167.2275000019,
+      3158.4195000177715
+    ],
+    "medianMs": 3167.2275000019,
+    "msPerPage": 6.032814285717905,
+    "characters": 899439,
+    "outputSha256": "738ea0436c6b02ca579ea2f9e7aae0a79a3d96b90752d56ea50649e52f286b5a"
+  },
+  {
+    "engine": "pypdf",
+    "version": "6.20.0",
+    "id": "thinkpython",
+    "pages": 244,
+    "scope": "text only, default extraction",
+    "samplesMs": [
+      1219.4033330015372,
+      1179.6322500158567,
+      1186.118458979763
+    ],
+    "medianMs": 1186.118458979763,
+    "msPerPage": 4.8611412253268975,
+    "characters": 441054,
+    "outputSha256": "848a78896725a00b71413fa97c39b4829219794068e310a5dc2bdf8fe5f14d97"
+  },
+  {
+    "engine": "pypdf",
+    "version": "6.20.0",
+    "id": "calculus",
+    "pages": 292,
+    "scope": "text only, default extraction",
+    "samplesMs": [
+      1579.7766670002602,
+      1584.3052919954062,
+      1588.734207995003
+    ],
+    "medianMs": 1584.3052919954062,
+    "msPerPage": 5.425703054778788,
+    "characters": 273727,
+    "outputSha256": "b2211de4da59155cae89943c6d43463fb8ef59fc73856fd036d674ab4f07c5f6"
+  }
+]

@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const Version = "0.1.0"
+const Version = "0.3.0"
 
 var (
 	ErrInvalid   = errors.New("invalid PDF")
@@ -28,6 +28,7 @@ type Limits struct {
 	Operations   int
 	Spans        int
 	ImagePixels  int
+	AssetBytes   int // generated assets plus cached glyph outlines
 }
 
 type Options struct {
@@ -41,9 +42,9 @@ func (o Options) normalized() Options {
 	if o.Context == nil {
 		o.Context = context.Background()
 	}
-	d := Limits{64 << 20, 256 << 20, 200000, 10000, 5000000, 2000000, 20000000}
-	fields := []*int{&o.Limits.InputBytes, &o.Limits.DecodedBytes, &o.Limits.Objects, &o.Limits.Pages, &o.Limits.Operations, &o.Limits.Spans, &o.Limits.ImagePixels}
-	defaults := []int{d.InputBytes, d.DecodedBytes, d.Objects, d.Pages, d.Operations, d.Spans, d.ImagePixels}
+	d := Limits{64 << 20, 256 << 20, 200000, 10000, 5000000, 2000000, 20000000, 128 << 20}
+	fields := []*int{&o.Limits.InputBytes, &o.Limits.DecodedBytes, &o.Limits.Objects, &o.Limits.Pages, &o.Limits.Operations, &o.Limits.Spans, &o.Limits.ImagePixels, &o.Limits.AssetBytes}
+	defaults := []int{d.InputBytes, d.DecodedBytes, d.Objects, d.Pages, d.Operations, d.Spans, d.ImagePixels, d.AssetBytes}
 	for i, f := range fields {
 		if *f <= 0 {
 			*f = defaults[i]
@@ -60,22 +61,51 @@ type Rect struct {
 	H float64 `json:"height"`
 }
 type Run struct {
-	Text   string `json:"text"`
-	Bold   bool   `json:"bold,omitempty"`
-	Italic bool   `json:"italic,omitempty"`
-	Link   string `json:"link,omitempty"`
+	Text       string  `json:"text"`
+	Bold       bool    `json:"bold,omitempty"`
+	Italic     bool    `json:"italic,omitempty"`
+	Link       string  `json:"link,omitempty"`
+	Script     string  `json:"script,omitempty"` // sup or sub; inferred from the baseline
+	Asset      string  `json:"asset,omitempty"`  // inline positioned math, when present
+	Height     float64 `json:"heightEm,omitempty"`
+	Depth      float64 `json:"depthEm,omitempty"`
+	Monochrome bool    `json:"monochrome,omitempty"`
 }
 type Block struct {
-	Kind     string     `json:"kind"` // heading, paragraph, list, table, image, code
-	Text     string     `json:"text,omitempty"`
-	Runs     []Run      `json:"runs,omitempty"`
-	Level    int        `json:"level,omitempty"`
-	Rows     [][]string `json:"rows,omitempty"`
-	Asset    string     `json:"asset,omitempty"`
-	Alt      string     `json:"alt,omitempty"`
-	Role     string     `json:"role,omitempty"`     // e.g. reference, index, caption, footnote
-	Language string     `json:"language,omitempty"` // code language, when recognizable
-	Box      Rect       `json:"box"`
+	Kind           string     `json:"kind"` // heading, paragraph, list, table, image, code, math
+	Text           string     `json:"text,omitempty"`
+	Runs           []Run      `json:"runs,omitempty"`
+	Level          int        `json:"level,omitempty"`
+	Rows           [][]string `json:"rows,omitempty"`
+	Table          *Table     `json:"table,omitempty"` // semantic cells; Rows retains text at each anchor
+	Asset          string     `json:"asset,omitempty"`
+	Alt            string     `json:"alt,omitempty"`
+	Role           string     `json:"role,omitempty"`           // e.g. reference, index, caption, footnote
+	Language       string     `json:"language,omitempty"`       // code language, when recognizable
+	Representation string     `json:"representation,omitempty"` // positioned for visual math; not semantic LaTeX
+	WidthEm        float64    `json:"widthEm,omitempty"`        // positioned display math width relative to body text
+	Monochrome     bool       `json:"monochrome,omitempty"`
+	Box            Rect       `json:"box"`
+}
+
+// Table preserves cell relationships independently of an output format.
+// Coordinates are zero-based; covered positions have no separate cell.
+type Table struct {
+	Rows       int         `json:"rows"`
+	Columns    int         `json:"columns"`
+	HeaderRows int         `json:"headerRows,omitempty"`
+	Cells      []TableCell `json:"cells"`
+}
+type TableCell struct {
+	Row     int    `json:"row"`
+	Column  int    `json:"column"`
+	RowSpan int    `json:"rowSpan"`
+	ColSpan int    `json:"colSpan"`
+	Text    string `json:"text"`
+	Runs    []Run  `json:"runs,omitempty"`
+	Header  bool   `json:"header,omitempty"`
+	Scope   string `json:"scope,omitempty"` // col, colgroup, row, or rowgroup
+	Box     Rect   `json:"box"`
 }
 type Page struct {
 	Number   int     `json:"number"`
@@ -106,6 +136,7 @@ type Stats struct {
 	Characters int     `json:"characters"`
 	Images     int     `json:"images"`
 	Tables     int     `json:"tables"`
+	Math       int     `json:"math"`
 	Headings   int     `json:"headings"`
 	DurationMS float64 `json:"durationMs"`
 }

@@ -1,0 +1,287 @@
+{
+  "method": "14 manually selected display-formula crops from three books. Largest-overlap single math block; original-PDF vs extracted-glyph raster at 216 dpi, grayscale ink <160 with chroma spread <60; 1-pixel dilation tolerance. Mean over regions, not whole-book accuracy; does not measure semantic math or prose reading order.",
+  "meanInkF1": 0.9819341880353293,
+  "regionsAt99PercentF1": 12,
+  "regions": [
+    {
+      "id": "axler-set",
+      "document": "axler",
+      "page": 20,
+      "box": [
+        88,
+        209,
+        292,
+        232
+      ],
+      "description": "Set notation, subscripts and superscripts",
+      "inkRecall": 1.0,
+      "inkPrecision": 1.0,
+      "inkF1": 1.0,
+      "referenceInkPixels": 1800,
+      "outputInkPixels": 1777,
+      "candidateMathBlocks": 1,
+      "selectedAsset": "assets/ab7c69f9562572896714711c.svg",
+      "selectedBlockTextSha256": "08e22abbc51e80e651b620aea14e4bd1de3c7dc553e6680a26f8926750079ee4"
+    },
+    {
+      "id": "axler-vector-addition",
+      "document": "axler",
+      "page": 20,
+      "box": [
+        77,
+        525,
+        297,
+        546
+      ],
+      "description": "Addition of coordinate vectors",
+      "inkRecall": 1.0,
+      "inkPrecision": 1.0,
+      "inkF1": 1.0,
+      "referenceInkPixels": 1750,
+      "outputInkPixels": 1779,
+      "candidateMathBlocks": 1,
+      "selectedAsset": "assets/ee6f824d309eb0c84215bdeb.svg",
+      "selectedBlockTextSha256": "8baac39bba2756de73e25618be46ba30e0adc93870714117d26129a22dcfc240"
+    },
+    {
+      "id": "axler-matrices",
+      "document": "axler",
+      "page": 86,
+      "box": [
+        28,
+        78,
+        347,
+        111
+      ],
+      "description": "Five matrices, addition and scalar multiplication",
+      "inkRecall": 1.0,
+      "inkPrecision": 1.0,
+      "inkF1": 1.0,
+      "referenceInkPixels": 4264,
+      "outputInkPixels": 4198,
+      "candidateMathBlocks": 1,
+      "selectedAsset": "assets/4ca6fff910bea0d7984c61c8.svg",
+      "selectedBlockTextSha256": "da423e086db7657b2980a7bcfaf0bc3e165b8797ee723756112a3053adf92998"
+    },
+    {
+      "id": "axler-accent",
+      "document": "axler",
+      "page": 116,
+      "box": [
+        138,
+        251,
+        234,
+        273
+      ],
+      "description": "Tilde accent on a quotient map",
+      "inkRecall": 1.0,
+      "inkPrecision": 1.0,
+      "inkF1": 1.0,
+      "referenceInkPixels": 1012,
+      "outputInkPixels": 1021,
+      "candidateMathBlocks": 1,
+      "selectedAsset": "assets/d3a098bbb565e92931222dc5.svg",
+      "selectedBlockTextSha256": "87de4694d63f30d9ccb5ba1f08a63426816fe2211810ed390dad499a73e688eb"
+    },
+    {
+      "id": "axler-sum",
+      "document": "axler",
+      "page": 128,
+      "box": [
+        141,
+        72,
+        232,
+        103
+      ],
+      "description": "Summation with upper and lower limits",
+      "inkRecall": 1.0,
+      "inkPrecision": 1.0,
+      "inkF1": 1.0,
+      "referenceInkPixels": 1161,
+      "outputInkPixels": 1141,
+      "candidateMathBlocks": 1,
+      "selectedAsset": "assets/4a49f3c7ef42027d67188cdf.svg",
+      "selectedBlockTextSha256": "f123a7fd7f133c805362472051e2ec6edf1f4b8dc7e21c4a6d780246f0ed061c"
+    },
+    {
+      "id": "axler-multiline-sums",
+      "document": "axler",
+      "page": 128,
+      "box": [
+        119,
+        192,
+        256,
+        288
+      ],
+      "description": "Multi-line derivation with two summations",
+      "inkRecall": 1.0,
+      "inkPrecision": 1.0,
+      "inkF1": 1.0,
+      "referenceInkPixels": 3769,
+      "outputInkPixels": 3727,
+      "candidateMathBlocks": 1,
+      "selectedAsset": "assets/fc3901ee28f95043b43a3efb.svg",
+      "selectedBlockTextSha256": "781e5e2a0126c7eed2c9cb9bb19e14d47195793dcfcf9349aeda24650c9073b3"
+    },
+    {
+      "id": "hefferon-elimination",
+      "document": "hefferon",
+      "page": 25,
+      "box": [
+        139,
+        115,
+        377,
+        204
+      ],
+      "description": "Elimination systems, row-operation arrows and subscripts",
+      "inkRecall": 1.0,
+      "inkPrecision": 1.0,
+      "inkF1": 1.0,
+      "referenceInkPixels": 4980,
+      "outputInkPixels": 5415,
+      "candidateMathBlocks": 1,
+      "selectedAsset": "assets/39e37bcec5974c3071420efc.svg",
+      "selectedBlockTextSha256": "ad22921958367b861626c3de23e452c9cb1ef34c24dd8b6dbc7cddc334b15f6b"
+    },
+    {
+      "id": "hefferon-matrix",
+      "document": "hefferon",
+      "page": 25,
+      "box": [
+        210,
+        421,
+        306,
+        458
+      ],
+      "description": "Two-by-three matrix with a decimal entry",
+      "inkRecall": 1.0,
+      "inkPrecision": 1.0,
+      "inkF1": 1.0,
+      "referenceInkPixels": 1276,
+      "outputInkPixels": 1284,
+      "candidateMathBlocks": 1,
+      "selectedAsset": "assets/ab91b98824ec1165128c79cb.svg",
+      "selectedBlockTextSha256": "6b642c29767b2b0db018d98433a54e0961811adbbf646ac130c8cc602b1bcc48"
+    },
+    {
+      "id": "hefferon-vector",
+      "document": "hefferon",
+      "page": 27,
+      "box": [
+        234,
+        94,
+        281,
+        143
+      ],
+      "description": "Column vector and arrow accent",
+      "inkRecall": 1.0,
+      "inkPrecision": 1.0,
+      "inkF1": 1.0,
+      "referenceInkPixels": 1128,
+      "outputInkPixels": 1150,
+      "candidateMathBlocks": 1,
+      "selectedAsset": "assets/18bab77421b9092b117384a7.svg",
+      "selectedBlockTextSha256": "c6558354d028cdc0eae6f2275bfd529b3dfe3ee31c21ba86c8dcb419dea993be"
+    },
+    {
+      "id": "hefferon-vector-addition",
+      "document": "hefferon",
+      "page": 27,
+      "box": [
+        166,
+        378,
+        348,
+        431
+      ],
+      "description": "Vector addition with tall delimiters and vertical ellipses",
+      "inkRecall": 1.0,
+      "inkPrecision": 1.0,
+      "inkF1": 1.0,
+      "referenceInkPixels": 3909,
+      "outputInkPixels": 3910,
+      "candidateMathBlocks": 1,
+      "selectedAsset": "assets/9d6536e714248fb31f2715bc.svg",
+      "selectedBlockTextSha256": "332a278f6bbb154c1405a6361568a5fc0e096cfadddfcd8b2cd0e77957ddf22c"
+    },
+    {
+      "id": "calculus-binomial",
+      "document": "calculus",
+      "page": 34,
+      "box": [
+        82,
+        62,
+        344,
+        129
+      ],
+      "description": "Binomial expansion with nested fractions and scripts",
+      "inkRecall": 1.0,
+      "inkPrecision": 1.0,
+      "inkF1": 1.0,
+      "referenceInkPixels": 6257,
+      "outputInkPixels": 6042,
+      "candidateMathBlocks": 1,
+      "selectedAsset": "assets/1593a63d84b4569296fc49f4.svg",
+      "selectedBlockTextSha256": "fc097477d23b268fd3e6d22962cafa4312fc7b7378bfb00b8aaa54f14fb29bf7"
+    },
+    {
+      "id": "calculus-fractional-power",
+      "document": "calculus",
+      "page": 34,
+      "box": [
+        59,
+        378,
+        332,
+        467
+      ],
+      "description": "Fractional powers, square roots and stacked fractions",
+      "inkRecall": 0.660281690140845,
+      "inkPrecision": 1.0,
+      "inkF1": 0.7953851374278927,
+      "referenceInkPixels": 7100,
+      "outputInkPixels": 4695,
+      "candidateMathBlocks": 1,
+      "selectedAsset": "assets/c4be26647bd5e10964738ce4.svg",
+      "selectedBlockTextSha256": "6ff21adb1836825e2d0654ed7ad7b87f5f5a7ed4ca513b667d4d87b27da2d47a"
+    },
+    {
+      "id": "calculus-integrals",
+      "document": "calculus",
+      "page": 239,
+      "box": [
+        15,
+        97,
+        372,
+        151
+      ],
+      "description": "Chain of integrals with nested fractions",
+      "inkRecall": 0.9166803345907824,
+      "inkPrecision": 1.0,
+      "inkF1": 0.9565291802156427,
+      "referenceInkPixels": 6097,
+      "outputInkPixels": 5486,
+      "candidateMathBlocks": 1,
+      "selectedAsset": "assets/1ddf33f025d77d09f61d44f4.svg",
+      "selectedBlockTextSha256": "a87670402bead4d08124f7dcd5b4d60b3e162b5fddb5458f7f13f5c6d2cdd499"
+    },
+    {
+      "id": "calculus-substitution",
+      "document": "calculus",
+      "page": 239,
+      "box": [
+        29,
+        191,
+        364,
+        226
+      ],
+      "description": "Integral substitution and a square-root denominator",
+      "inkRecall": 0.993465206640763,
+      "inkPrecision": 0.9968692449355433,
+      "inkF1": 0.9951643148510734,
+      "referenceInkPixels": 5662,
+      "outputInkPixels": 5430,
+      "candidateMathBlocks": 1,
+      "selectedAsset": "assets/1ddf33f025d77d09f61d44f4.svg",
+      "selectedBlockTextSha256": "a87670402bead4d08124f7dcd5b4d60b3e162b5fddb5458f7f13f5c6d2cdd499"
+    }
+  ]
+}

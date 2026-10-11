@@ -23,7 +23,7 @@ import { prepareTables } from './tables';
  * Bump whenever the output changes (rules, CSS, bundled libraries): mobile
  * keys its enhanced copy of each EPUB on it.
  */
-export const ENHANCE_VERSION = '4';
+export const ENHANCE_VERSION = '5';
 
 export { UI_ATTR, ENHANCED_ATTR } from './dom';
 export { enhanceCss, themeDeclarations, MATH_FONT_FILE, type EnhanceTheme } from './css';

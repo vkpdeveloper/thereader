@@ -1,0 +1,16 @@
+[
+  {"id":"axler-set", "document":"axler", "page":20, "box":[88,209,292,232], "description":"Set notation, subscripts and superscripts"},
+  {"id":"axler-vector-addition", "document":"axler", "page":20, "box":[77,525,297,546], "description":"Addition of coordinate vectors"},
+  {"id":"axler-matrices", "document":"axler", "page":86, "box":[28,78,347,111], "description":"Five matrices, addition and scalar multiplication"},
+  {"id":"axler-accent", "document":"axler", "page":116, "box":[138,251,234,273], "description":"Tilde accent on a quotient map"},
+  {"id":"axler-sum", "document":"axler", "page":128, "box":[141,72,232,103], "description":"Summation with upper and lower limits"},
+  {"id":"axler-multiline-sums", "document":"axler", "page":128, "box":[119,192,256,288], "description":"Multi-line derivation with two summations"},
+  {"id":"hefferon-elimination", "document":"hefferon", "page":25, "box":[139,115,377,204], "description":"Elimination systems, row-operation arrows and subscripts"},
+  {"id":"hefferon-matrix", "document":"hefferon", "page":25, "box":[210,421,306,458], "description":"Two-by-three matrix with a decimal entry"},
+  {"id":"hefferon-vector", "document":"hefferon", "page":27, "box":[234,94,281,143], "description":"Column vector and arrow accent"},
+  {"id":"hefferon-vector-addition", "document":"hefferon", "page":27, "box":[166,378,348,431], "description":"Vector addition with tall delimiters and vertical ellipses"},
+  {"id":"calculus-binomial", "document":"calculus", "page":34, "box":[82,62,344,129], "description":"Binomial expansion with nested fractions and scripts"},
+  {"id":"calculus-fractional-power", "document":"calculus", "page":34, "box":[59,378,332,467], "description":"Fractional powers, square roots and stacked fractions"},
+  {"id":"calculus-integrals", "document":"calculus", "page":239, "box":[15,97,372,151], "description":"Chain of integrals with nested fractions"},
+  {"id":"calculus-substitution", "document":"calculus", "page":239, "box":[29,191,364,226], "description":"Integral substitution and a square-root denominator"}
+]

@@ -15,11 +15,21 @@ import (
 func (p *pdf) addAsset(b []byte, mime, ext string, w, h int) string {
 	hash := sha256.Sum256(b)
 	id := fmt.Sprintf("assets/%x.%s", hash[:12], ext)
-	for _, a := range p.out.Assets {
-		if a.Name == id {
-			return id
+	if p.assetNames == nil {
+		p.assetNames = map[string]bool{}
+		for _, a := range p.out.Assets {
+			p.assetNames[a.Name] = true
 		}
 	}
+	if p.assetNames[id] {
+		return id
+	}
+	if len(b) > p.opts.Limits.AssetBytes-p.assetBytes-p.outlineBytes {
+		p.err = ErrLimit
+		return ""
+	}
+	p.assetBytes += len(b)
+	p.assetNames[id] = true
 	p.out.Assets = append(p.out.Assets, Asset{id, mime, w, h, b})
 	return id
 }
@@ -59,6 +69,19 @@ func (p *pdf) image(s *stream, page int) (string, error) {
 			}
 		} else {
 			id = p.addAsset(b, "image/jpeg", "jpg", w, h)
+		}
+	case "CCITTFaxDecode", "CCF":
+		b, e = p.faxImage(s, b, w, h)
+		if e != nil {
+			return "", e
+		}
+		img, err := p.raster(s, b, w, h, page)
+		if err != nil {
+			return "", err
+		}
+		id, err = p.pngAsset(img, w, h)
+		if err != nil {
+			return "", err
 		}
 	case "JPXDecode":
 		return "", fmt.Errorf("JPEG 2000 images require an unsupported decoder")
@@ -176,8 +199,9 @@ func (p *pdf) raster(s *stream, b []byte, w, h, page int) (image.Image, error) {
 			if len(a) < 4 {
 				return nil, ErrInvalid
 			}
-			if named(p.resolve(a[1])) != "DeviceRGB" {
-				return nil, fmt.Errorf("unsupported indexed image base color space")
+			base, err := p.imageBaseColor(a[1], page)
+			if err != nil {
+				return nil, err
 			}
 			indexed = true
 			high = integer(p.resolve(a[2]))
@@ -193,6 +217,10 @@ func (p *pdf) raster(s *stream, b []byte, w, h, page int) (image.Image, error) {
 				if e != nil {
 					return nil, e
 				}
+			}
+			palette, err = indexedRGB(palette, high, base)
+			if err != nil {
+				return nil, err
 			}
 		case "CalRGB":
 			kind = "DeviceRGB"
@@ -305,16 +333,13 @@ func (p *pdf) softMask(s *stream, img *image.NRGBA, page int) error {
 		if mw < 1 || mh < 1 || mw > p.opts.Limits.ImagePixels/mh {
 			return ErrLimit
 		}
-		if integer(p.resolve(sm.dict["BitsPerComponent"])) != 8 {
-			return fmt.Errorf("unsupported soft mask bit depth")
-		}
 		if sm.dict["Matte"] != nil {
 			if mw != w || mh != h {
 				return fmt.Errorf("matte soft mask dimensions must match the image")
 			}
 			p.warn("image-matte", page, "Soft-mask matte colors are not unblended; edge colors need visual review.")
 		}
-		alpha, err := p.decode(sm)
+		alpha, err := p.maskSamples(sm, mw, mh)
 		if err != nil {
 			return err
 		}
@@ -352,32 +377,99 @@ func (p *pdf) softMask(s *stream, img *image.NRGBA, page int) error {
 	return nil
 }
 
-func (p *pdf) vectorAsset(pc *pageContent, tables []Block) {
-	var paths []string
-	box := Rect{}
+// Group connected drawing geometry and retain its labels in the same asset.
+// Background panels with substantial prose remain reflowable text.
+func (p *pdf) vectorAsset(pc *pageContent, represented []Block, lines []*line) {
+	if len(pc.paths) > 5000 {
+		p.warn("vector-complexity", pc.page.Number, "More than 5000 paths on a page; vector grouping skipped.")
+		return
+	}
+	type component struct {
+		box   Rect
+		paths []vectorPath
+	}
+	groups := []component{}
 	for _, path := range pc.paths {
-		inTable := false
-		for _, table := range tables {
-			r := table.Box
-			if path.box.X >= r.X-12 && path.box.X+path.box.W <= r.X+r.W+12 && path.box.Y >= r.Y-20 && path.box.Y+path.box.H <= r.Y+r.H+20 {
-				inTable = true
+		used := false
+		for _, b := range represented {
+			if contained(path.box, b.Box, 2) {
+				used = true
 				break
 			}
 		}
-		if inTable {
+		if used {
 			continue
 		}
-		if len(paths) == 0 {
-			box = path.box
-		} else {
-			box = union(box, path.box)
+		if path.box.W < .1 || path.box.H < .1 {
+			continue
 		}
-		paths = append(paths, path.svg)
+		c := component{path.box, []vectorPath{path}}
+		for j := 0; j < len(groups); {
+			if intersects(expand(c.box, 2), groups[j].box) {
+				c.box = union(c.box, groups[j].box)
+				c.paths = append(c.paths, groups[j].paths...)
+				groups = append(groups[:j], groups[j+1:]...)
+				j = 0
+			} else {
+				j++
+			}
+		}
+		groups = append(groups, c)
 	}
-	if len(paths) == 0 || box.W < 12 || box.H < 12 {
-		return
+	for _, group := range groups {
+		box := group.box
+		if box.W < 12 || box.H < 12 {
+			continue
+		}
+		labels := []span{}
+		labelText := []string{}
+		textChars := 0
+		for _, l := range lines {
+			if l.used {
+				continue
+			}
+			for _, s := range l.spans {
+				if contained(s.box, box, 2) {
+					labels = append(labels, s)
+					labelText = append(labelText, s.text)
+					textChars += len(s.text)
+				}
+			}
+		}
+		if len(group.paths) < 8 && textChars > 50 {
+			continue
+		}
+		if len(group.paths) == 1 && textChars == 0 { // Keep complex illustrations, discard empty callout borders.
+			if strings.Count(group.paths[0].svg, "C") < 5 {
+				continue
+			}
+		}
+		for _, l := range lines {
+			if l.used {
+				continue
+			}
+			kept := l.spans[:0]
+			for _, s := range l.spans {
+				if !contained(s.box, box, 2) {
+					kept = append(kept, s)
+				}
+			}
+			if len(kept) == len(l.spans) {
+				continue
+			}
+			l.spans = kept
+			if len(kept) == 0 {
+				l.used = true
+			} else {
+				l.box = kept[0].box
+				for _, s := range kept[1:] {
+					l.box = union(l.box, s.box)
+				}
+				finishLine(l)
+			}
+		}
+		text := strings.Join(labelText, " ")
+		asset, visualBox := p.positionedAsset(pc, labels, group.paths, box, text)
+		pc.images = append(pc.images, Block{Kind: "image", Asset: asset, Alt: "Vector illustration", Text: text, Box: visualBox, Representation: "positioned"})
 	}
-	svg := `<svg xmlns="http://www.w3.org/2000/svg" viewBox="` + fnum(box.X) + " " + fnum(box.Y) + " " + fnum(box.W) + " " + fnum(box.H) + `">` + strings.Join(paths, "") + `</svg>`
-	id := p.addAsset([]byte(svg), "image/svg+xml", "svg", int(box.W), int(box.H))
-	pc.images = append(pc.images, Block{Kind: "image", Asset: id, Alt: "Vector illustration", Box: box})
 }

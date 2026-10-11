@@ -58,6 +58,11 @@ type span struct {
 	bold, italic, mono bool
 	link, role         string
 	mcid               int
+	baseline           float64
+	script             string
+	font               *font
+	encoded            string
+	graphics           graphics
 }
 type ruling struct{ x1, y1, x2, y2 float64 }
 type vectorPath struct {
@@ -419,6 +424,7 @@ func (i *interpreter) op(op string, a array, l *lexer) error {
 }
 func (i *interpreter) show(s string) error {
 	g := &i.g
+	encoded := s
 	if g.font == nil {
 		g.font = i.p.font(nil, i.page.page.Number)
 		i.p.warn("missing-font", i.page.page.Number, "Text without a font uses fallback positioning.")
@@ -439,6 +445,7 @@ func (i *interpreter) show(s string) error {
 	}
 	str := text.String()
 	transform := g.ctm.mul(g.tm)
+	saved := *g
 	box := transform.rect(0, g.rise-g.size*0.22, width, g.size)
 	g.tm = g.tm.mul(translation(width, 0))
 	if str == "" {
@@ -464,7 +471,16 @@ func (i *interpreter) show(s string) error {
 	if i.p.spanCount > i.p.opts.Limits.Spans {
 		return ErrLimit
 	}
-	i.page.spans = append(i.page.spans, span{str, box, math.Abs(g.size) * math.Hypot(transform[2], transform[3]), g.font.bold, g.font.italic, g.font.mono, "", role, mcid})
+	size := math.Abs(g.size) * math.Hypot(transform[2], transform[3])
+	if size == 0 {
+		return nil
+	} // A singular transform has no visible text height.
+	_, baseline := transform.point(0, g.rise)
+	// A rotated side-margin stamp is publishing furniture, not a giant heading.
+	if !i.p.opts.KeepArtifacts && math.Abs(transform[1]) > math.Abs(transform[0])*2 && (box.X+box.W < i.page.page.Width*.08 || box.X > i.page.page.Width*.92) {
+		return nil
+	}
+	i.page.spans = append(i.page.spans, span{text: str, box: box, size: size, bold: g.font.bold, italic: g.font.italic, mono: g.font.mono, role: role, mcid: mcid, baseline: baseline, font: g.font, encoded: encoded, graphics: saved})
 	return nil
 }
 func finiteRect(r Rect) bool {
@@ -565,7 +581,7 @@ func (i *interpreter) paint(op string) {
 		}
 		// Page backgrounds and thin separators do not belong in a reflowable book.
 		background := fill == "#ffffff" && i.pathBox.W >= i.page.page.Width*.95 && i.pathBox.H >= i.page.page.Height*.95
-		if !background && i.pathBox.W >= 3 && i.pathBox.H >= 3 {
+		if !background && (i.pathBox.W > .05 || i.pathBox.H > .05) {
 			i.page.paths = append(i.page.paths, vectorPath{`<path d="` + i.path.String() + close + `" fill="` + fill + `" stroke="` + stroke + `" stroke-width="` + fnum(math.Abs(i.g.lineWidth)) + `" fill-rule="` + rule + `"/>`, i.pathBox})
 		}
 		if !i.page.hasPath {

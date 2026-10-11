@@ -1,0 +1,618 @@
+{
+  "version": "0.3.0",
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "cpu": "Apple M5",
+  "go": "go version go1.27.1 darwin/arm64",
+  "sourceSHA256": "867cf7518bd08e50c32d4d91e26ba37fb47458bba2f8f7697ab2efb34a86747b",
+  "sources": [
+    {
+      "path": "packages/pdf_go/algorithm.go",
+      "sha256": "482d670e09327bce531452982a8c02f8b2d7225cb2a93470c3f055d8b2389bb0"
+    },
+    {
+      "path": "packages/pdf_go/cff_names.go",
+      "sha256": "3f8d626e16c848901d9042709a65c4eec80ebd6adcf0c41b74567bdebccd9b50"
+    },
+    {
+      "path": "packages/pdf_go/cmd/pdf/main.go",
+      "sha256": "42efc3ae3fd71eb94a1159bcaf1fd11ff3681e8eace1e0b09e50fd77bb009676"
+    },
+    {
+      "path": "packages/pdf_go/cmd/pdfserver/main.go",
+      "sha256": "f27d2a6526dd74072aca23849ee3524ff8ceaa991e6138d86dedc2aa414945fe"
+    },
+    {
+      "path": "packages/pdf_go/content.go",
+      "sha256": "80bf3c95296e351f5b83dd741551d3108f5857b91d1b1680daef96d7a294b35a"
+    },
+    {
+      "path": "packages/pdf_go/data/FONTTOOLS-LICENSE",
+      "sha256": "6787208f83f659ccbc2223b2fde952ffa6f7e8aca62f1a8a2bf5bc51bb1b2383"
+    },
+    {
+      "path": "packages/pdf_go/data/README.md",
+      "sha256": "933a95455f2ff3598d1539b049a20c65e0f4ed685ea51fce167591241ccdac66"
+    },
+    {
+      "path": "packages/pdf_go/data/cff-expert-charset.txt",
+      "sha256": "4563f3dc3a7cfe819a70a323c28870699365c98923236816c39470b771fe2df1"
+    },
+    {
+      "path": "packages/pdf_go/data/cff-expert-subset-charset.txt",
+      "sha256": "98003dcead217f52282484c1ba1a4191909685d8b5610703e738b3f5877d304a"
+    },
+    {
+      "path": "packages/pdf_go/data/cff-standard-encoding.txt",
+      "sha256": "ca72466b7da0d30730e0f26b6bd63fadc1e6b42e377794e5d3400e8a721f80e2"
+    },
+    {
+      "path": "packages/pdf_go/data/cff-strings.txt",
+      "sha256": "612baa53d6c83cd3654d8fdc9e918087966de9d179cca912a42a3eb76bb1a634"
+    },
+    {
+      "path": "packages/pdf_go/data/glyphlist.txt",
+      "sha256": "a3b2f61ced9f3644cc0d4ecde5c59df34ca286c689d9484a43a710a81c466789"
+    },
+    {
+      "path": "packages/pdf_go/dehyphenate.go",
+      "sha256": "3de950df29ecd98d78a58c8655b23b36f1a65136a48618621dd78910c315641a"
+    },
+    {
+      "path": "packages/pdf_go/extract.go",
+      "sha256": "c27a243fc477439c76fabe550fdb9d4168def4c04f090b5a39b0804f196512cb"
+    },
+    {
+      "path": "packages/pdf_go/fax.go",
+      "sha256": "742a7d9bcce3adbe90338fbc9568d1e3407eb5ca7c8bfb55214a3ba877192a5f"
+    },
+    {
+      "path": "packages/pdf_go/fax_codes.go",
+      "sha256": "43bcdf8abf14ae9ea89146f7c845d057e2371289b424e40ba11f7b9519733f16"
+    },
+    {
+      "path": "packages/pdf_go/filters.go",
+      "sha256": "6dd2b032b77d528a79f2eafef1c536243590e64f144f9ea27a54818ca7f141cc"
+    },
+    {
+      "path": "packages/pdf_go/font.go",
+      "sha256": "3cfb834ee0727f16645a0eb61021ff32085a258275c24d952ec6fd13a2ffc767"
+    },
+    {
+      "path": "packages/pdf_go/glyphlist.go",
+      "sha256": "3b1f70eeeec0f5b83ec155464efd3c96137485e4bb953fbcd0999c3497cd52d7"
+    },
+    {
+      "path": "packages/pdf_go/go.mod",
+      "sha256": "a3916e8958457c31f1487596dc474e049cac2969315712640d27ccaaf6e70323"
+    },
+    {
+      "path": "packages/pdf_go/image_mask.go",
+      "sha256": "13a19b2168304fe0d4934678b1d4f42d56a7f7ee8ac768adb68841cb45f981c1"
+    },
+    {
+      "path": "packages/pdf_go/image_palette.go",
+      "sha256": "c3b05f835df27ad8a331535a3cb8d8d9dea5a1f21cf5a40c9f39cb7bdd3ce91f"
+    },
+    {
+      "path": "packages/pdf_go/images.go",
+      "sha256": "6c5175f593f32b5ca41a9afcd567f0d5dd99354b3942f730dc8678ca5d699517"
+    },
+    {
+      "path": "packages/pdf_go/inline_image.go",
+      "sha256": "31e528d17f5348470c7ab2193ad44e3f80615e963ee72200b55ee13009831dd8"
+    },
+    {
+      "path": "packages/pdf_go/layout.go",
+      "sha256": "e3da68d1ed5dd1dc3713bc577ec5782b80d1d3ad9cec3aa0237c50b56d16c772"
+    },
+    {
+      "path": "packages/pdf_go/math.go",
+      "sha256": "0bdcc4ce854a09e91e717efbb616af947f581b5b8d4a62e15f81728c6ef7a8cb"
+    },
+    {
+      "path": "packages/pdf_go/metadata.go",
+      "sha256": "337f8d2a8e8937dc1416c30ed38de4a432958e60fabaa29a584946775e27d3b2"
+    },
+    {
+      "path": "packages/pdf_go/model.go",
+      "sha256": "bb46b7fa6e7e526506f86812522380338ff736837daa274dcccdb5b95b98c3ce"
+    },
+    {
+      "path": "packages/pdf_go/outline.go",
+      "sha256": "439a682ed51ed81dc3578f2f055e32d0c3cb66fd6459054794e9a12e9a217ab8"
+    },
+    {
+      "path": "packages/pdf_go/parser.go",
+      "sha256": "27bad97bf68087a1a2865feb4709ce2e6902f0dca52e4453e6087ce1f80e3774"
+    },
+    {
+      "path": "packages/pdf_go/render.go",
+      "sha256": "8501d5698adc75730adeb0961925136f09f4be7c7e27d8ffed350ba1fa258b97"
+    },
+    {
+      "path": "packages/pdf_go/server/server.go",
+      "sha256": "ed051bec92e3d28ec59ec2123c458fccef473b6d624ff9088bd6b0ff7731222f"
+    },
+    {
+      "path": "packages/pdf_go/syntax.go",
+      "sha256": "9c5c409adc68903759b1d224f4f68f7451d258d8572eafe3f21d1e490b508e27"
+    },
+    {
+      "path": "packages/pdf_go/table.go",
+      "sha256": "fcf1746ccc83fe93b82da3e4af6d4845d9368a619fa75748d220c7147a59a445"
+    },
+    {
+      "path": "packages/pdf_go/table_render.go",
+      "sha256": "803746fae3b1c41add92cbb139a9dabfc6351c4b3dc59bf2777a407a2f4f3e14"
+    },
+    {
+      "path": "packages/pdf_go/table_structure.go",
+      "sha256": "f28c646d3b7bece7a349ebce7334bd4d63e9d859cdc2db269f967bfc7f62e095"
+    },
+    {
+      "path": "packages/pdf_go/truetype.go",
+      "sha256": "88fcd75edce3734febd1fa108ab9e6bd6d127d6fc18891b944734e03fb085db6"
+    },
+    {
+      "path": "packages/pdf_go/type1.go",
+      "sha256": "e0486d3d1cbd1b58da55db9185303c8dcac120897cf74f09863c7ae3800fc106"
+    },
+    {
+      "path": "packages/pdf_go/type3.go",
+      "sha256": "08a9b2744392f824871590783f4c65888488895890e9b62c095e0d42c0fee056"
+    },
+    {
+      "path": "packages/pdf_go/type3_bitmap.go",
+      "sha256": "74645fc9f984342b39344fc66af0347fc1fc571335a1b8694b154cb7229289ba"
+    }
+  ],
+  "binarySHA256": "85a4d35b857453e6ff89ab597a301c6bc565efc6cd4a96299a42b2ce5deb504e",
+  "bulkTiming": [
+    {
+      "engine": "pdf-extractor",
+      "version": "0.3.0",
+      "msPerPage": 1.3925397320954904,
+      "pages": 1508,
+      "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+      "rank": 1
+    },
+    {
+      "engine": "pdftotext",
+      "version": "pdftotext version 26.10.0",
+      "msPerPage": 1.6146579628835915,
+      "pages": 1508,
+      "scope": "text only; CLI startup included (no in-process API)",
+      "rank": 2
+    },
+    {
+      "engine": "pymupdf",
+      "version": "1.28.2",
+      "msPerPage": 6.207858200944017,
+      "pages": 1508,
+      "scope": "text only, sort=True",
+      "rank": 3
+    },
+    {
+      "engine": "pypdf",
+      "version": "6.20.0",
+      "msPerPage": 7.317629614703645,
+      "pages": 1508,
+      "scope": "text only, default extraction",
+      "rank": 4
+    },
+    {
+      "engine": "pdfplumber",
+      "version": "0.11.10",
+      "msPerPage": 22.53006570421305,
+      "pages": 1508,
+      "scope": "text plus default extract_tables; no Markdown/image export",
+      "rank": 5
+    },
+    {
+      "engine": "pymupdf4llm",
+      "version": "1.28.2",
+      "msPerPage": 96.10068100731232,
+      "pages": 1508,
+      "scope": "Markdown with layout model; OCR off; images embedded; header/footer cleanup on",
+      "rank": 6
+    }
+  ],
+  "paperTiming": [
+    {
+      "engine": "pdftotext",
+      "version": "pdftotext version 26.10.0",
+      "msPerPage": 4.486938953388829,
+      "scope": "text only; CLI startup included (no in-process API)",
+      "rank": 1
+    },
+    {
+      "engine": "pdf-extractor",
+      "version": "0.3.0",
+      "msPerPage": 11.49401453488372,
+      "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+      "rank": 2
+    },
+    {
+      "engine": "pymupdf",
+      "version": "1.28.2",
+      "msPerPage": 13.810428302751335,
+      "scope": "text only, sort=True",
+      "rank": 3
+    },
+    {
+      "engine": "pypdf",
+      "version": "6.20.0",
+      "msPerPage": 27.587989348577075,
+      "scope": "text only, default extraction",
+      "rank": 4
+    },
+    {
+      "engine": "pdfplumber",
+      "version": "0.11.10",
+      "msPerPage": 97.44508234854398,
+      "scope": "text plus default extract_tables; no Markdown/image export",
+      "rank": 5
+    },
+    {
+      "engine": "pymupdf4llm",
+      "version": "1.28.2",
+      "msPerPage": 185.58981686053517,
+      "scope": "Markdown with layout model; OCR off; images embedded; header/footer cleanup on",
+      "rank": 6
+    },
+    {
+      "engine": "marker",
+      "version": "2.0.0",
+      "msPerPage": 187.38009109362136,
+      "scope": "CPU fast mode (CPU default), OCR/LLM off; 4 torch threads, 1 pdftext worker; Markdown + image extraction; input file reading included",
+      "rank": 7
+    },
+    {
+      "engine": "docling",
+      "version": "2.137.0",
+      "msPerPage": 889.2986017447182,
+      "scope": "CPU, 4 threads; accurate tables; OCR off; Markdown with embedded pictures; warm conversion + Markdown export",
+      "rank": 8
+    }
+  ],
+  "paperTables": [
+    {
+      "engine": "pdf-extractor",
+      "predictedTables": 13,
+      "exactTables": 13,
+      "cellTextF1": 1.0,
+      "cellPositionAndSpanF1": 1.0,
+      "rank": 1
+    },
+    {
+      "engine": "pymupdf4llm",
+      "predictedTables": 13,
+      "exactTables": 1,
+      "cellTextF1": 0.9190116678105696,
+      "cellPositionAndSpanF1": 0.8943033630748113,
+      "rank": 2
+    },
+    {
+      "engine": "docling",
+      "predictedTables": 14,
+      "exactTables": 4,
+      "cellTextF1": 0.9094693028095734,
+      "cellPositionAndSpanF1": 0.6007630939993063,
+      "rank": 3
+    },
+    {
+      "engine": "marker",
+      "predictedTables": 13,
+      "exactTables": 0,
+      "cellTextF1": 0.8348806366047745,
+      "cellPositionAndSpanF1": 0.09350132625994695,
+      "rank": 4
+    },
+    {
+      "engine": "pdfplumber-text",
+      "predictedTables": 43,
+      "exactTables": 0,
+      "cellTextF1": 0.20176991150442478,
+      "cellPositionAndSpanF1": 0.0035398230088495575,
+      "rank": 5
+    },
+    {
+      "engine": "pymupdf-text-tables",
+      "predictedTables": 43,
+      "exactTables": 0,
+      "cellTextF1": 0.12850812407680945,
+      "cellPositionAndSpanF1": 0.002148516181012488,
+      "rank": 6
+    },
+    {
+      "engine": "pymupdf-tables",
+      "predictedTables": 17,
+      "exactTables": 0,
+      "cellTextF1": 0.0013333333333333333,
+      "cellPositionAndSpanF1": 0.0,
+      "rank": 7
+    },
+    {
+      "engine": "pdfplumber",
+      "predictedTables": 213,
+      "exactTables": 0,
+      "cellTextF1": 0.001176470588235294,
+      "cellPositionAndSpanF1": 0.0,
+      "rank": 8
+    }
+  ],
+  "paperProse": [
+    {
+      "engine": "docling",
+      "weightedCharacterAgreement": 0.9647451783213016,
+      "rank": 1
+    },
+    {
+      "engine": "marker",
+      "weightedCharacterAgreement": 0.9562547139316884,
+      "rank": 2
+    },
+    {
+      "engine": "pypdf",
+      "weightedCharacterAgreement": 0.9556082318715655,
+      "rank": 3
+    },
+    {
+      "engine": "pdf-extractor",
+      "weightedCharacterAgreement": 0.9430880293071867,
+      "rank": 4
+    },
+    {
+      "engine": "pymupdf4llm",
+      "weightedCharacterAgreement": 0.9403297058506627,
+      "rank": 5
+    },
+    {
+      "engine": "pdftotext",
+      "weightedCharacterAgreement": 0.9394246309664906,
+      "rank": 6
+    },
+    {
+      "engine": "pymupdf",
+      "weightedCharacterAgreement": 0.9379592716302123,
+      "rank": 7
+    },
+    {
+      "engine": "pdfplumber",
+      "weightedCharacterAgreement": 0.9246201917896778,
+      "rank": 8
+    }
+  ],
+  "independent": {
+    "0.2": {
+      "candidate": "before",
+      "datasetRevision": "54a96a6fb6a2bd3b297e59869491db4d3625b711",
+      "evaluatorRevision": "f7cfe4c22098b154c76b6ec950d1c0a464eecf8d",
+      "pdfs": 1403,
+      "tests": 8413,
+      "overallMacroPassRate": 0.2995402153411567,
+      "bootstrap95CI": [
+        0.2908007348105697,
+        0.3079537905874321
+      ],
+      "categories": {
+        "arxiv_math": {
+          "passed": 16,
+          "total": 2927,
+          "passRate": 0.005466347796378545
+        },
+        "baseline": {
+          "passed": 1381,
+          "total": 1394,
+          "passRate": 0.990674318507891
+        },
+        "headers_footers": {
+          "passed": 455,
+          "total": 760,
+          "passRate": 0.5986842105263158
+        },
+        "long_tiny_text": {
+          "passed": 73,
+          "total": 442,
+          "passRate": 0.16515837104072398
+        },
+        "multi_column": {
+          "passed": 316,
+          "total": 884,
+          "passRate": 0.3574660633484163
+        },
+        "old_scans": {
+          "passed": 70,
+          "total": 526,
+          "passRate": 0.13307984790874525
+        },
+        "old_scans_math": {
+          "passed": 0,
+          "total": 458,
+          "passRate": 0.0
+        },
+        "table_tests": {
+          "passed": 149,
+          "total": 1022,
+          "passRate": 0.14579256360078277
+        }
+      },
+      "testTypes": {
+        "math": {
+          "passed": 16.0,
+          "total": 3385,
+          "passRate": 0.004726735598227474
+        },
+        "absent": {
+          "passed": 518.0,
+          "total": 823,
+          "passRate": 0.6294046172539489
+        },
+        "baseline": {
+          "passed": 1390.0,
+          "total": 1403,
+          "passRate": 0.9907341411261582
+        },
+        "present": {
+          "passed": 73.0,
+          "total": 721,
+          "passRate": 0.10124826629680998
+        },
+        "order": {
+          "passed": 316.0,
+          "total": 1061,
+          "passRate": 0.29783223374175305
+        },
+        "table": {
+          "passed": 147.0,
+          "total": 1020,
+          "passRate": 0.14411764705882352
+        }
+      },
+      "testResults": "olmocr-before-tests.jsonl",
+      "testResultsSHA256": "347757912a9558631c1d795c83e736560abe8975bb406b2ff963fa9642dedb07",
+      "errors": 12,
+      "needsOCR": 134,
+      "warnings": {
+        "unmapped-glyph": 283,
+        "math-positioned": 455,
+        "clipping": 365,
+        "image-stencil": 185,
+        "font-outline": 2435,
+        "color-space": 246,
+        "icc-profile": 17,
+        "glyph-outline": 18,
+        "symbol-font": 19,
+        "missing-unicode": 43,
+        "vector-complexity": 5,
+        "annotation": 9,
+        "shading": 11,
+        "image-matte": 10,
+        "transparency": 10,
+        "image": 166,
+        "content-stream": 21,
+        "needs-ocr": 134,
+        "font-encoding": 5,
+        "image-mask": 5
+      }
+    },
+    "0.3": {
+      "candidate": "release",
+      "datasetRevision": "54a96a6fb6a2bd3b297e59869491db4d3625b711",
+      "evaluatorRevision": "f7cfe4c22098b154c76b6ec950d1c0a464eecf8d",
+      "pdfs": 1403,
+      "tests": 8413,
+      "overallMacroPassRate": 0.3033110936410476,
+      "bootstrap95CI": [
+        0.29454142651994575,
+        0.31145846649013537
+      ],
+      "categories": {
+        "arxiv_math": {
+          "passed": 16,
+          "total": 2927,
+          "passRate": 0.005466347796378545
+        },
+        "baseline": {
+          "passed": 1382,
+          "total": 1394,
+          "passRate": 0.9913916786226685
+        },
+        "headers_footers": {
+          "passed": 458,
+          "total": 760,
+          "passRate": 0.6026315789473684
+        },
+        "long_tiny_text": {
+          "passed": 71,
+          "total": 442,
+          "passRate": 0.16063348416289594
+        },
+        "multi_column": {
+          "passed": 314,
+          "total": 884,
+          "passRate": 0.3552036199095023
+        },
+        "old_scans": {
+          "passed": 70,
+          "total": 526,
+          "passRate": 0.13307984790874525
+        },
+        "old_scans_math": {
+          "passed": 0,
+          "total": 458,
+          "passRate": 0.0
+        },
+        "table_tests": {
+          "passed": 182,
+          "total": 1022,
+          "passRate": 0.1780821917808219
+        }
+      },
+      "testTypes": {
+        "math": {
+          "passed": 16.0,
+          "total": 3385,
+          "passRate": 0.004726735598227474
+        },
+        "absent": {
+          "passed": 521.0,
+          "total": 823,
+          "passRate": 0.6330498177399757
+        },
+        "baseline": {
+          "passed": 1391.0,
+          "total": 1403,
+          "passRate": 0.9914468995010691
+        },
+        "present": {
+          "passed": 71.0,
+          "total": 721,
+          "passRate": 0.09847434119278779
+        },
+        "order": {
+          "passed": 314.0,
+          "total": 1061,
+          "passRate": 0.29594721960414705
+        },
+        "table": {
+          "passed": 180.0,
+          "total": 1020,
+          "passRate": 0.17647058823529413
+        }
+      },
+      "testResults": "olmocr-release-tests.jsonl",
+      "testResultsSHA256": "1aa2eabbbca6bc9b21bf265f9105273f6cf4c3b187976ede93284683ae1a56b7",
+      "errors": 12,
+      "needsOCR": 164,
+      "warnings": {
+        "math-positioned": 455,
+        "clipping": 365,
+        "image-stencil": 198,
+        "unmapped-glyph": 217,
+        "color-space": 249,
+        "icc-profile": 36,
+        "glyph-outline": 27,
+        "symbol-font": 19,
+        "missing-unicode": 43,
+        "font-outline": 166,
+        "vector-complexity": 5,
+        "annotation": 9,
+        "shading": 11,
+        "image-matte": 10,
+        "transparency": 10,
+        "content-stream": 21,
+        "needs-ocr": 164,
+        "image": 64,
+        "font-encoding": 1,
+        "image-mask": 6
+      }
+    }
+  },
+  "mathVisual": {
+    "method": "14 manually selected display-formula crops from three books. Largest-overlap single math block; original-PDF vs extracted-glyph raster at 216 dpi, grayscale ink <160 with chroma spread <60; 1-pixel dilation tolerance. Mean over regions, not whole-book accuracy; does not measure semantic math or prose reading order.",
+    "meanInkF1": 0.9996026317503747,
+    "regionsAt99PercentF1": 14
+  },
+  "scope": "Shared development host, sequential warm calls, one warmup and three measured runs. Conversion scopes differ; no market-wide speed or accuracy rank. Paper is a development example. Independent corpus has now also informed a regression fix, not a blind holdout."
+}

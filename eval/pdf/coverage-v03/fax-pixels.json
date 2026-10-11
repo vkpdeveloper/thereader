@@ -1,0 +1,693 @@
+{
+  "method": "Every CCITTFaxDecode image in documents that reported that encoding as unsupported before this change. Extracted PNG RGB bytes compared exactly against MuPDF 1.28.2 rendering of the original image object; no resampling/tolerance. Extraction does not use MuPDF.",
+  "images": [
+    {
+      "pdf": "headers_footers/008086eec0621732163bc07b8aca9fe02e6954af_page_2_processed.pdf",
+      "xref": 9,
+      "width": 2528,
+      "height": 3328,
+      "exactPixels": true,
+      "asset": "assets/638848e749f80ab09069f5d3.png"
+    },
+    {
+      "pdf": "headers_footers/0383177b7342945f0657dea30a721222eaa22a81_page_1_processed.pdf",
+      "xref": 17,
+      "width": 2035,
+      "height": 3215,
+      "exactPixels": true,
+      "asset": "assets/232babaa5419a65350ed2276.png"
+    },
+    {
+      "pdf": "headers_footers/060c2cf840811e4f998ff25f6dae1ab7309fb8b4_page_9_processed.pdf",
+      "xref": 5,
+      "width": 2320,
+      "height": 3408,
+      "exactPixels": true,
+      "asset": "assets/562526564f5503fa837e410c.png"
+    },
+    {
+      "pdf": "headers_footers/06c19ee3727ac306cd018bb1c43f71b551673420_page_1_processed.pdf",
+      "xref": 7,
+      "excluded": "stencil colors depend on page graphics state"
+    },
+    {
+      "pdf": "headers_footers/11253d83d886378909f8b24d24d8a90412099087_page_4.pdf",
+      "xref": 6,
+      "width": 2496,
+      "height": 3508,
+      "exactPixels": true,
+      "asset": "assets/f263c7a2fd577d8dded206ff.png"
+    },
+    {
+      "pdf": "headers_footers/1218c2e64afa8cbdcb4880220c7abb6540d38e51_page_3_processed.pdf",
+      "xref": 5,
+      "width": 2560,
+      "height": 3300,
+      "exactPixels": true,
+      "asset": "assets/1ab333d2bc150023ff73b6ac.png"
+    },
+    {
+      "pdf": "headers_footers/14cd43ae9b6ad4d5a839bf1c7c1a7cf84046657b_page_7.pdf",
+      "xref": 22,
+      "width": 800,
+      "height": 589,
+      "exactPixels": true,
+      "asset": "assets/1f77db9817be0195c3de114f.png"
+    },
+    {
+      "pdf": "headers_footers/30bf26b6243e63ec6a2e0531e01a079ba86a026a_page_38.pdf",
+      "xref": 5,
+      "width": 1696,
+      "height": 2192,
+      "exactPixels": true,
+      "asset": "assets/213b7c35f6d004c8a991c139.png"
+    },
+    {
+      "pdf": "headers_footers/3102ce9927fa920d267b414bd89179079fddddfe_page_3.pdf",
+      "xref": 21,
+      "width": 1218,
+      "height": 815,
+      "exactPixels": true,
+      "asset": "assets/f6f41671966f719b5feeb1c1.png"
+    },
+    {
+      "pdf": "headers_footers/3102ce9927fa920d267b414bd89179079fddddfe_page_3.pdf",
+      "xref": 14,
+      "width": 984,
+      "height": 823,
+      "exactPixels": true,
+      "asset": "assets/c7a73e5feba05acb75d07f4e.png"
+    },
+    {
+      "pdf": "headers_footers/3f4659b0291c5acbd144111c14668eab984b5ae4_page_1.pdf",
+      "xref": 6,
+      "width": 2736,
+      "height": 4192,
+      "exactPixels": true,
+      "asset": "assets/30b6edaa8e1a5757eeb1d015.png"
+    },
+    {
+      "pdf": "headers_footers/451431d13066daad9f4ba592952451dd07f542d9_page_1.pdf",
+      "xref": 10,
+      "width": 2480,
+      "height": 3507,
+      "exactPixels": true,
+      "asset": "assets/555cf2446bfe8416070c9187.png"
+    },
+    {
+      "pdf": "headers_footers/4b91e05fb0fe865391f0f25c41a83c9c5fd37c08_page_1.pdf",
+      "xref": 21,
+      "width": 3296,
+      "height": 4677,
+      "exactPixels": true,
+      "asset": "assets/e3244686458faaf3349f9b6f.png"
+    },
+    {
+      "pdf": "headers_footers/4f4c20ab94dda3045bedc9bbcd3f4f41d3ff237a_page_1.pdf",
+      "xref": 15,
+      "excluded": "stencil colors depend on page graphics state"
+    },
+    {
+      "pdf": "headers_footers/7f757df3765dcaae45710b624bb76553ded10b50_page_4.pdf",
+      "xref": 8,
+      "excluded": "stencil colors depend on page graphics state"
+    },
+    {
+      "pdf": "headers_footers/7f757df3765dcaae45710b624bb76553ded10b50_page_4.pdf",
+      "xref": 9,
+      "excluded": "stencil colors depend on page graphics state"
+    },
+    {
+      "pdf": "headers_footers/7f757df3765dcaae45710b624bb76553ded10b50_page_4.pdf",
+      "xref": 10,
+      "excluded": "stencil colors depend on page graphics state"
+    },
+    {
+      "pdf": "headers_footers/8dcbce41908541abaf65e574b852b0e89445f75f_page_13.pdf",
+      "xref": 5,
+      "width": 2476,
+      "height": 3504,
+      "exactPixels": true,
+      "asset": "assets/94d7e6896b3fb6f9c6d5ccf9.png"
+    },
+    {
+      "pdf": "headers_footers/957b896300cbee7e2535a6513f84f09c78a982fe_page_8.pdf",
+      "xref": 7,
+      "width": 1656,
+      "height": 2338,
+      "exactPixels": true,
+      "asset": "assets/5c23cf5419a5c11ffe4f4889.png"
+    },
+    {
+      "pdf": "headers_footers/ad08db17adb365b1e5c3954776a45f57f61c24e2_page_7.pdf",
+      "xref": 7,
+      "width": 2023,
+      "height": 2866,
+      "exactPixels": true,
+      "asset": "assets/60dc30c38f24dca5ec6be52a.png"
+    },
+    {
+      "pdf": "headers_footers/b2ca8e0034542f65bd80e927f16e65c7d466b18c_page_2.pdf",
+      "xref": 18,
+      "excluded": "stencil colors depend on page graphics state"
+    },
+    {
+      "pdf": "headers_footers/c863e36ed1e5fd97f3330d84a7a25ca034fe20dc_page_1.pdf",
+      "xref": 16,
+      "width": 3231,
+      "height": 4134,
+      "exactPixels": true,
+      "asset": "assets/d8fd3ea98b84ee76467231b9.png"
+    },
+    {
+      "pdf": "headers_footers/d660c61fbcb505d9f6e8ae38f435bed6822bd23b_page_12.pdf",
+      "xref": 5,
+      "width": 2255,
+      "height": 3284,
+      "exactPixels": true,
+      "asset": "assets/acc7c76f043701f011983084.png"
+    },
+    {
+      "pdf": "headers_footers/d8b9c4cd0ba9b036e09168c8dccccd1d43315ef4_page_1.pdf",
+      "xref": 7,
+      "width": 3507,
+      "height": 2480,
+      "exactPixels": true,
+      "asset": "assets/ec6e49dcf4d937e321b7b7bb.png"
+    },
+    {
+      "pdf": "multi_column/0083fb2109e58be50aec2eca07fcbfe1230b_page_1_pg1.pdf",
+      "xref": 12,
+      "excluded": "stencil colors depend on page graphics state"
+    },
+    {
+      "pdf": "multi_column/00d8a44d3066bbc4bd8df149d0dafb96f423_page_1_pg1.pdf",
+      "xref": 5,
+      "width": 2144,
+      "height": 3035,
+      "exactPixels": true,
+      "asset": "assets/b0b037105e4fe908b4742cd4.png"
+    },
+    {
+      "pdf": "multi_column/00d8a44d3066bbc4bd8df149d0dafb96f423_page_3_pg1.pdf",
+      "xref": 5,
+      "width": 2144,
+      "height": 3035,
+      "exactPixels": true,
+      "asset": "assets/0282e0bee79918f0ba53d15c.png"
+    },
+    {
+      "pdf": "multi_column/02e31046996b59b4997b8413f09ae163ade5_page_10_pg1.pdf",
+      "xref": 8,
+      "excluded": "stencil colors depend on page graphics state"
+    },
+    {
+      "pdf": "multi_column/02e31046996b59b4997b8413f09ae163ade5_page_2_pg1.pdf",
+      "xref": 8,
+      "excluded": "stencil colors depend on page graphics state"
+    },
+    {
+      "pdf": "multi_column/02e31046996b59b4997b8413f09ae163ade5_page_5_pg1.pdf",
+      "xref": 8,
+      "excluded": "stencil colors depend on page graphics state"
+    },
+    {
+      "pdf": "multi_column/04e88521bffcae275b79ed2c89e24c1f8855_page_1_pg1.pdf",
+      "xref": 22,
+      "width": 2511,
+      "height": 3186,
+      "exactPixels": true,
+      "asset": "assets/1ab6a723677ddb0c28f180b5.png"
+    },
+    {
+      "pdf": "multi_column/04e88521bffcae275b79ed2c89e24c1f8855_page_2_pg1.pdf",
+      "xref": 13,
+      "width": 2511,
+      "height": 3186,
+      "exactPixels": true,
+      "asset": "assets/fb38f2eb25b73330b29226c0.png"
+    },
+    {
+      "pdf": "multi_column/05a0e5bc2881eb1d246b2e41906bf8b24de2_page_3_pg1.pdf",
+      "xref": 53,
+      "excluded": "stencil colors depend on page graphics state"
+    },
+    {
+      "pdf": "multi_column/05a0e5bc2881eb1d246b2e41906bf8b24de2_page_3_pg1.pdf",
+      "xref": 54,
+      "excluded": "stencil colors depend on page graphics state"
+    },
+    {
+      "pdf": "multi_column/07c14b471fd33c56b988cc7a58dae211d16f_page_13_pg1.pdf",
+      "xref": 5,
+      "width": 2320,
+      "height": 3408,
+      "exactPixels": true,
+      "asset": "assets/79d2a90a7fff0e0cdaa56939.png"
+    },
+    {
+      "pdf": "multi_column/07c14b471fd33c56b988cc7a58dae211d16f_page_14_pg1.pdf",
+      "xref": 5,
+      "width": 2320,
+      "height": 3408,
+      "exactPixels": true,
+      "asset": "assets/2cff0e8daa22d362a592442d.png"
+    },
+    {
+      "pdf": "multi_column/07c14b471fd33c56b988cc7a58dae211d16f_page_9_pg1.pdf",
+      "xref": 5,
+      "width": 2320,
+      "height": 3408,
+      "exactPixels": true,
+      "asset": "assets/b557ff7f9576fd1f1796ab0d.png"
+    },
+    {
+      "pdf": "multi_column/0b128decb905a38700baf486672b8634c308_page_4_pg1.pdf",
+      "xref": 49,
+      "excluded": "stencil colors depend on page graphics state"
+    },
+    {
+      "pdf": "multi_column/0b2e551bbc33b030f810311118e2088d7ae3_page_12_pg1.pdf",
+      "xref": 5,
+      "width": 2560,
+      "height": 3300,
+      "exactPixels": true,
+      "asset": "assets/628c43ca1b8701c6b6d6403b.png"
+    },
+    {
+      "pdf": "multi_column/0b2e551bbc33b030f810311118e2088d7ae3_page_9_pg1.pdf",
+      "xref": 5,
+      "width": 2560,
+      "height": 3300,
+      "exactPixels": true,
+      "asset": "assets/ec3beab20846736f1c065bd5.png"
+    },
+    {
+      "pdf": "old_scans_math/1_pg10.pdf",
+      "xref": 5,
+      "width": 2763,
+      "height": 4146,
+      "exactPixels": true,
+      "asset": "assets/6a2e03274a909f8474e33775.png"
+    },
+    {
+      "pdf": "old_scans_math/1_pg113.pdf",
+      "xref": 5,
+      "width": 2763,
+      "height": 4146,
+      "exactPixels": true,
+      "asset": "assets/d2c84941181883a8dcc42501.png"
+    },
+    {
+      "pdf": "old_scans_math/1_pg125.pdf",
+      "xref": 5,
+      "width": 2763,
+      "height": 4146,
+      "exactPixels": true,
+      "asset": "assets/27c8382ea6abdd402183fc77.png"
+    },
+    {
+      "pdf": "old_scans_math/1_pg131.pdf",
+      "xref": 5,
+      "width": 2763,
+      "height": 4146,
+      "exactPixels": true,
+      "asset": "assets/07e95f945d992c7006601333.png"
+    },
+    {
+      "pdf": "old_scans_math/1_pg19.pdf",
+      "xref": 5,
+      "width": 2763,
+      "height": 4146,
+      "exactPixels": true,
+      "asset": "assets/e9c4c6a7ce838c19e1904639.png"
+    },
+    {
+      "pdf": "old_scans_math/1_pg40.pdf",
+      "xref": 5,
+      "width": 2763,
+      "height": 4146,
+      "exactPixels": true,
+      "asset": "assets/eb750b2bf1415884d13218b7.png"
+    },
+    {
+      "pdf": "old_scans_math/1_pg61.pdf",
+      "xref": 5,
+      "width": 2763,
+      "height": 4146,
+      "exactPixels": true,
+      "asset": "assets/ee2939607b04021299b4b822.png"
+    },
+    {
+      "pdf": "old_scans_math/1_pg63.pdf",
+      "xref": 5,
+      "width": 2763,
+      "height": 4146,
+      "exactPixels": true,
+      "asset": "assets/5a530e4d6919e3f1f03c1a20.png"
+    },
+    {
+      "pdf": "old_scans_math/1_pg72.pdf",
+      "xref": 5,
+      "width": 2763,
+      "height": 4146,
+      "exactPixels": true,
+      "asset": "assets/b1b6a60cb5d7208b4092874d.png"
+    },
+    {
+      "pdf": "old_scans_math/3_pg101.pdf",
+      "xref": 5,
+      "width": 1013,
+      "height": 1561,
+      "exactPixels": true,
+      "asset": "assets/f21329dea66518779fe9fe09.png"
+    },
+    {
+      "pdf": "old_scans_math/3_pg148.pdf",
+      "xref": 5,
+      "width": 993,
+      "height": 1573,
+      "exactPixels": true,
+      "asset": "assets/81f04df164620b1971c22666.png"
+    },
+    {
+      "pdf": "old_scans_math/3_pg199.pdf",
+      "xref": 5,
+      "width": 1019,
+      "height": 1565,
+      "exactPixels": true,
+      "asset": "assets/cb678a0448148d86b2d14969.png"
+    },
+    {
+      "pdf": "old_scans_math/3_pg204.pdf",
+      "xref": 5,
+      "width": 1040,
+      "height": 1602,
+      "exactPixels": true,
+      "asset": "assets/ddd388115d876318ffc3306a.png"
+    },
+    {
+      "pdf": "old_scans_math/3_pg251.pdf",
+      "xref": 5,
+      "width": 1031,
+      "height": 1572,
+      "exactPixels": true,
+      "asset": "assets/96ed9d8bb32cdf6e0d3abd72.png"
+    },
+    {
+      "pdf": "old_scans_math/3_pg270.pdf",
+      "xref": 5,
+      "width": 1030,
+      "height": 1596,
+      "exactPixels": true,
+      "asset": "assets/c3bbbe8c8663219c56eeada4.png"
+    },
+    {
+      "pdf": "old_scans_math/3_pg39.pdf",
+      "xref": 5,
+      "width": 1013,
+      "height": 1561,
+      "exactPixels": true,
+      "asset": "assets/ee0a2a6a0dc815b2ca079c48.png"
+    },
+    {
+      "pdf": "old_scans_math/3_pg634.pdf",
+      "xref": 5,
+      "width": 1032,
+      "height": 1598,
+      "exactPixels": true,
+      "asset": "assets/d20c55a43242e93d3a97d3da.png"
+    },
+    {
+      "pdf": "old_scans_math/3_pg94.pdf",
+      "xref": 5,
+      "width": 968,
+      "height": 1588,
+      "exactPixels": true,
+      "asset": "assets/465a2186ccdaf0543246a6c6.png"
+    },
+    {
+      "pdf": "tables/11e12a3ddca3b1743f6ec1c22a52cdbf9ffe_pg8_pg1.pdf",
+      "xref": 5,
+      "width": 2640,
+      "height": 3575,
+      "exactPixels": true,
+      "asset": "assets/a8dbb7b9f29840e2b4226a60.png"
+    },
+    {
+      "pdf": "tables/1a67d1114deeff1a4ad4a6bee9422afebbb1_pg1_pg1.pdf",
+      "xref": 81,
+      "excluded": "stencil colors depend on page graphics state"
+    },
+    {
+      "pdf": "tables/30c92c35171cd45479bd3083dbf574b31c9a_pg44.pdf",
+      "xref": 10,
+      "width": 2510,
+      "height": 3522,
+      "exactPixels": true,
+      "asset": "assets/9f66ef02523def0f4c34a1e8.png"
+    },
+    {
+      "pdf": "tables/426df27cf990a3426b9e0731ad346f28184f_pg9.pdf",
+      "xref": 7,
+      "width": 2011,
+      "height": 2866,
+      "exactPixels": true,
+      "asset": "assets/3c50402095ac880ca41df696.png"
+    },
+    {
+      "pdf": "tables/533600ba1ea641b726c0942b913f18529719_pg20_pg1.pdf",
+      "xref": 12,
+      "excluded": "stencil colors depend on page graphics state"
+    },
+    {
+      "pdf": "tables/53d3f304da5d1943dd4f650937f7cdbfda90_pg3.pdf",
+      "xref": 17,
+      "excluded": "stencil colors depend on page graphics state"
+    },
+    {
+      "pdf": "tables/6130975d8b7c4f5bf39f0afa041776f8e07f_pg11.pdf",
+      "xref": 12,
+      "width": 2219,
+      "height": 117,
+      "exactPixels": true,
+      "asset": "assets/b66baf51a09a4a891634d0a6.png"
+    },
+    {
+      "pdf": "tables/6130975d8b7c4f5bf39f0afa041776f8e07f_pg11.pdf",
+      "xref": 13,
+      "width": 2219,
+      "height": 117,
+      "exactPixels": true,
+      "asset": "assets/b7ab1845d8fb53040b8d23b8.png"
+    },
+    {
+      "pdf": "tables/6130975d8b7c4f5bf39f0afa041776f8e07f_pg11.pdf",
+      "xref": 14,
+      "width": 2219,
+      "height": 117,
+      "exactPixels": true,
+      "asset": "assets/778018ab4a7f173a50155e05.png"
+    },
+    {
+      "pdf": "tables/6130975d8b7c4f5bf39f0afa041776f8e07f_pg11.pdf",
+      "xref": 15,
+      "width": 2219,
+      "height": 117,
+      "exactPixels": true,
+      "asset": "assets/2f158cc61d0df6f3395928f6.png"
+    },
+    {
+      "pdf": "tables/6130975d8b7c4f5bf39f0afa041776f8e07f_pg11.pdf",
+      "xref": 16,
+      "width": 2219,
+      "height": 117,
+      "exactPixels": true,
+      "asset": "assets/21a6fb04df9655b2678a1b63.png"
+    },
+    {
+      "pdf": "tables/6130975d8b7c4f5bf39f0afa041776f8e07f_pg11.pdf",
+      "xref": 17,
+      "width": 2219,
+      "height": 117,
+      "exactPixels": true,
+      "asset": "assets/42a77c228eb03b87291eecd8.png"
+    },
+    {
+      "pdf": "tables/6130975d8b7c4f5bf39f0afa041776f8e07f_pg11.pdf",
+      "xref": 18,
+      "width": 2219,
+      "height": 117,
+      "exactPixels": true,
+      "asset": "assets/f0db9bfd46b880d1a3132d33.png"
+    },
+    {
+      "pdf": "tables/6130975d8b7c4f5bf39f0afa041776f8e07f_pg11.pdf",
+      "xref": 19,
+      "width": 2219,
+      "height": 117,
+      "exactPixels": true,
+      "asset": "assets/b92af9154010c367234bb8e7.png"
+    },
+    {
+      "pdf": "tables/6130975d8b7c4f5bf39f0afa041776f8e07f_pg11.pdf",
+      "xref": 20,
+      "width": 2219,
+      "height": 117,
+      "exactPixels": true,
+      "asset": "assets/7ddfb976577695696abd5f9a.png"
+    },
+    {
+      "pdf": "tables/6130975d8b7c4f5bf39f0afa041776f8e07f_pg11.pdf",
+      "xref": 21,
+      "width": 2219,
+      "height": 117,
+      "exactPixels": true,
+      "asset": "assets/0d32c954c86f722d413b2368.png"
+    },
+    {
+      "pdf": "tables/6130975d8b7c4f5bf39f0afa041776f8e07f_pg11.pdf",
+      "xref": 22,
+      "width": 2219,
+      "height": 117,
+      "exactPixels": true,
+      "asset": "assets/01074b004477ed3165154a9d.png"
+    },
+    {
+      "pdf": "tables/6130975d8b7c4f5bf39f0afa041776f8e07f_pg11.pdf",
+      "xref": 23,
+      "width": 2219,
+      "height": 117,
+      "exactPixels": true,
+      "asset": "assets/842d76f965942165350be581.png"
+    },
+    {
+      "pdf": "tables/6130975d8b7c4f5bf39f0afa041776f8e07f_pg11.pdf",
+      "xref": 24,
+      "width": 2219,
+      "height": 117,
+      "exactPixels": true,
+      "asset": "assets/63acc7846fb6b9830a66958e.png"
+    },
+    {
+      "pdf": "tables/6130975d8b7c4f5bf39f0afa041776f8e07f_pg11.pdf",
+      "xref": 25,
+      "width": 2219,
+      "height": 117,
+      "exactPixels": true,
+      "asset": "assets/a3b7868677b0522e2f26aa35.png"
+    },
+    {
+      "pdf": "tables/6130975d8b7c4f5bf39f0afa041776f8e07f_pg11.pdf",
+      "xref": 26,
+      "width": 2219,
+      "height": 117,
+      "exactPixels": true,
+      "asset": "assets/e778da04915a653fcbe6de5d.png"
+    },
+    {
+      "pdf": "tables/6130975d8b7c4f5bf39f0afa041776f8e07f_pg11.pdf",
+      "xref": 27,
+      "width": 2219,
+      "height": 117,
+      "exactPixels": true,
+      "asset": "assets/cf24eebbdcb3b8000009f8d9.png"
+    },
+    {
+      "pdf": "tables/6130975d8b7c4f5bf39f0afa041776f8e07f_pg11.pdf",
+      "xref": 28,
+      "width": 2219,
+      "height": 117,
+      "exactPixels": true,
+      "asset": "assets/0c652dca798e0bfec2114ebd.png"
+    },
+    {
+      "pdf": "tables/6130975d8b7c4f5bf39f0afa041776f8e07f_pg11.pdf",
+      "xref": 29,
+      "width": 2219,
+      "height": 117,
+      "exactPixels": true,
+      "asset": "assets/20b0b7cdeb5d8629f69a3d18.png"
+    },
+    {
+      "pdf": "tables/6130975d8b7c4f5bf39f0afa041776f8e07f_pg11.pdf",
+      "xref": 30,
+      "width": 2219,
+      "height": 117,
+      "exactPixels": true,
+      "asset": "assets/f877c7a5157144ff4c175d84.png"
+    },
+    {
+      "pdf": "tables/6130975d8b7c4f5bf39f0afa041776f8e07f_pg11.pdf",
+      "xref": 31,
+      "width": 2219,
+      "height": 117,
+      "exactPixels": true,
+      "asset": "assets/63c4616380f1ec7347f01d8f.png"
+    },
+    {
+      "pdf": "tables/6130975d8b7c4f5bf39f0afa041776f8e07f_pg11.pdf",
+      "xref": 32,
+      "width": 2219,
+      "height": 117,
+      "exactPixels": true,
+      "asset": "assets/fc78c91b18083b36f1693ce0.png"
+    },
+    {
+      "pdf": "tables/6130975d8b7c4f5bf39f0afa041776f8e07f_pg11.pdf",
+      "xref": 33,
+      "width": 2219,
+      "height": 117,
+      "exactPixels": true,
+      "asset": "assets/c4b9f6f065e64ba0552cb34b.png"
+    },
+    {
+      "pdf": "tables/6130975d8b7c4f5bf39f0afa041776f8e07f_pg11.pdf",
+      "xref": 34,
+      "width": 2219,
+      "height": 117,
+      "exactPixels": true,
+      "asset": "assets/fa0705737839e878d2d462a6.png"
+    },
+    {
+      "pdf": "tables/6130975d8b7c4f5bf39f0afa041776f8e07f_pg11.pdf",
+      "xref": 35,
+      "width": 2219,
+      "height": 117,
+      "exactPixels": true,
+      "asset": "assets/8b619133ac298451bacda47c.png"
+    },
+    {
+      "pdf": "tables/6130975d8b7c4f5bf39f0afa041776f8e07f_pg11.pdf",
+      "xref": 36,
+      "width": 2219,
+      "height": 117,
+      "exactPixels": true,
+      "asset": "assets/348e64da544ed8eccece5f92.png"
+    },
+    {
+      "pdf": "tables/6130975d8b7c4f5bf39f0afa041776f8e07f_pg11.pdf",
+      "xref": 37,
+      "width": 2219,
+      "height": 81,
+      "exactPixels": true,
+      "asset": "assets/d0f9c4c4174a760780326d30.png"
+    },
+    {
+      "pdf": "tables/7b9b73157809310ba970693297b7b998ee1c_pg19.pdf",
+      "xref": 17,
+      "width": 2544,
+      "height": 3300,
+      "exactPixels": true,
+      "asset": "assets/9a1567b0d25e3de58738753f.png"
+    },
+    {
+      "pdf": "tables/d896f9ae5405c8d6b147ae9c9c20a0abb6c4_pg4_pg1.pdf",
+      "xref": 8,
+      "width": 1632,
+      "height": 2144,
+      "exactPixels": true,
+      "asset": "assets/fc32620e9699cb45955bd4c6.png"
+    }
+  ]
+}
