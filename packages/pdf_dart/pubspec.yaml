@@ -1,0 +1,16 @@
+name: pdf_extractor
+description: Independent Dart PDF extraction to structured blocks, Markdown and EPUB, including browser support.
+version: 0.3.0
+publish_to: 'none'
+environment:
+  sdk: ^3.11.0
+resolution: workspace
+dependencies:
+  archive: 4.4.0
+  crypto: 3.0.7
+  image: 4.11.1
+  web: 1.1.1
+  xml: 7.0.1
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.0

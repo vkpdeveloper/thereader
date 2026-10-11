@@ -1,0 +1,54 @@
+{
+  "document": {
+    "engine": "PDF Extractor",
+    "version": "0.3.0",
+    "title": "Untitled PDF",
+    "language": "en",
+    "sha256": "cc720d5a85e5f3edd331f47999cf24120e88a65b7e71b59eab409cf4d048da53",
+    "pages": [
+      {
+        "number": 1,
+        "width": 612,
+        "height": 792,
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "x2 + y",
+            "runs": [
+              {
+                "text": "x"
+              },
+              {
+                "text": "2",
+                "script": "sup"
+              },
+              {
+                "text": " + y"
+              }
+            ],
+            "box": {
+              "x": 54,
+              "y": 80.76,
+              "width": 30.671999999999997,
+              "height": 13.879999999999995
+            }
+          }
+        ]
+      }
+    ],
+    "assets": [],
+    "outline": [],
+    "warnings": [],
+    "complete": true,
+    "markdown": "\u003ca id=\"page-1\"\u003e\u003c/a\u003e\n\nx\u003csup\u003e2\u003c/sup\u003e + y\n",
+    "stats": {
+      "pages": 1,
+      "characters": 6,
+      "images": 0,
+      "tables": 0,
+      "math": 0,
+      "headings": 0,
+      "durationMs": 0
+    }
+  }
+}

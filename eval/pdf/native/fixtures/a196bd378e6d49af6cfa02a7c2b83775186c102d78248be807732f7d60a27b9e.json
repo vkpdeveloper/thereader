@@ -1,0 +1,63 @@
+{
+  "document": {
+    "engine": "PDF Extractor",
+    "version": "0.3.0",
+    "title": "Chapter One",
+    "language": "en",
+    "sha256": "a196bd378e6d49af6cfa02a7c2b83775186c102d78248be807732f7d60a27b9e",
+    "pages": [
+      {
+        "number": 1,
+        "width": 612,
+        "height": 792,
+        "blocks": [
+          {
+            "kind": "heading",
+            "text": "Chapter One",
+            "runs": [
+              {
+                "text": "Chapter One"
+              }
+            ],
+            "level": 1,
+            "box": {
+              "x": 54,
+              "y": 73.28,
+              "width": 134.688,
+              "height": 24
+            }
+          },
+          {
+            "kind": "paragraph",
+            "text": "A longer body paragraph establishes the normal reading size.",
+            "runs": [
+              {
+                "text": "A longer body paragraph establishes the normal reading size."
+              }
+            ],
+            "box": {
+              "x": 54,
+              "y": 132.64,
+              "width": 323.29200000000003,
+              "height": 12
+            }
+          }
+        ]
+      }
+    ],
+    "assets": [],
+    "outline": [],
+    "warnings": [],
+    "complete": true,
+    "markdown": "\u003ca id=\"page-1\"\u003e\u003c/a\u003e\n\n# Chapter One\n\nA longer body paragraph establishes the normal reading size.\n",
+    "stats": {
+      "pages": 1,
+      "characters": 71,
+      "images": 0,
+      "tables": 0,
+      "math": 0,
+      "headings": 1,
+      "durationMs": 0
+    }
+  }
+}

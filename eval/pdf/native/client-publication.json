@@ -1,0 +1,6 @@
+{
+  "url": "https://pub-db5cc934f02943a19d855c11f462c1e9.r2.dev/doc/thereader/pdf-client-integration-7fcae4fa.html",
+  "sha256": "43b303e16db9d98fac9dab0c65124351bda60ce23d56c36084b1949e01d0ea2a",
+  "bytes": 222582,
+  "verification": "Uploader PUT completed but its S3 size check returned 0. Public HTTPS GET verified byte-for-byte against client-report.html; exact temporary source then removed."
+}

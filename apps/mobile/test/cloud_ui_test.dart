@@ -136,7 +136,7 @@ void main() {
     expect(button, findsOneWidget);
     final title = find.text('Library').first;
     expect(tester.getRect(button).left, greaterThan(tester.getRect(title).right));
-    expect(find.textContaining('import an EPUB, MOBI, CBZ or CBR'), findsOneWidget);
+    expect(find.textContaining('import a PDF, EPUB, MOBI, CBZ or CBR'), findsOneWidget);
 
     await tester.tap(button);
     await tester.pump();

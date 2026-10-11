@@ -1,0 +1,7 @@
+{
+  "url": "https://pub-db5cc934f02943a19d855c11f462c1e9.r2.dev/doc/thereader/pdf-browser-engines-c5c810a4.html",
+  "sha256": "a967d459e909f60c9a2515348f3ba31fcb78b7a4976ff4dba2edcc2a159ca6a0",
+  "bytes": 134852,
+  "verification": "Uploader completed the PUT but its native S3 size check returned 0. Public HEAD returned the exact length; a full HTTPS GET was byte-for-byte compared with report.html before deleting the exact temporary source.",
+  "temporaryFileRemoved": true
+}

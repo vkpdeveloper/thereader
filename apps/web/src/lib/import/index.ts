@@ -34,7 +34,7 @@ export function sourceKind(head: Uint8Array): SourceKind {
   return null;
 }
 
-export const inspectFile: InspectFile = async (file, options) => {
+export const inspectFile: InspectFile = async (file) => {
   const kind = sourceKind(new Uint8Array(await file.slice(0, SNIFF_BYTES).arrayBuffer()));
   if (kind === null) throw new ImportError('Choose a PDF, EPUB, MOBI, CBZ or CBR file.', 'UNSUPPORTED_FILE');
   if (kind === 'rar') return inspectCbr(file);
@@ -43,9 +43,7 @@ export const inspectFile: InspectFile = async (file, options) => {
   let epub: Blob;
   let bytes: Uint8Array;
   if (kind === 'pdf') {
-    const origin = options?.origin ?? (typeof location === 'undefined' ? undefined : location.origin);
-    if (!origin) throw new ImportError('Choose a reading server before importing a PDF.', 'PDF_UNAVAILABLE');
-    epub = await convertPdf(file, origin);
+    epub = await convertPdf(file);
     bytes = new Uint8Array(await epub.arrayBuffer());
   } else if (kind === 'mobi') {
     // Conversion materializes input and output. Keep it bounded; EPUBs use the 512 MiB path.

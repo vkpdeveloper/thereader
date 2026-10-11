@@ -1,0 +1,74 @@
+{
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "cpu": "Apple M5",
+  "binarySHA256": "eeabb5e15f3955520a9fe4df16189127607b9b0c83623d3da3ca7b7fabceb127",
+  "warmups": 1,
+  "repeats": 3,
+  "rows": [
+    {
+      "name": "harness",
+      "inputSHA256": "a39a9e03aaaa877b294a4b702ff07ae09110dcb1a2b0c0196a72ea46e0ec390e",
+      "pages": 43,
+      "samplesMs": [
+        458.526541,
+        453.225792,
+        461.095666,
+        454.650458
+      ],
+      "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+      "medianMs": 454.650458
+    },
+    {
+      "name": "axler",
+      "inputSHA256": "1207d90a1310e79dea2ec3068f853e20b8306928eda122ae13fdfab50f41ea08",
+      "pages": 404,
+      "samplesMs": [
+        567.328458,
+        546.979416,
+        544.661583,
+        552.548542
+      ],
+      "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+      "medianMs": 546.979416
+    },
+    {
+      "name": "hefferon",
+      "inputSHA256": "5240f2782e645bc6351ad9eba69d8c19500142a5cca9c90450c17b3765a1a400",
+      "pages": 525,
+      "samplesMs": [
+        606.498208,
+        584.981333,
+        594.011625,
+        592.022833
+      ],
+      "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+      "medianMs": 592.022833
+    },
+    {
+      "name": "thinkpython",
+      "inputSHA256": "6033000bac3f9268ad75ee041bf8e5d9a3bc8a33bb156399cbd014918cb59f94",
+      "pages": 244,
+      "samplesMs": [
+        145.163833,
+        141.998917,
+        143.500292,
+        147.854041
+      ],
+      "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+      "medianMs": 143.500292
+    },
+    {
+      "name": "calculus",
+      "inputSHA256": "0a6957ae86625bbabcb71e070ef32e5dc7197cebb8bf90f0275caab45e71baf6",
+      "pages": 292,
+      "samplesMs": [
+        246.066042,
+        242.865708,
+        241.965917,
+        241.919459
+      ],
+      "scope": "in-memory parse + decode + layout + images + Markdown (EPUB and file I/O excluded)",
+      "medianMs": 241.965917
+    }
+  ]
+}

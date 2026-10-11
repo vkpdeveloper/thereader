@@ -1,0 +1,135 @@
+{
+  "engine": "dart",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+  "hardwareConcurrency": 10,
+  "warmups": 1,
+  "repeats": 3,
+  "scope": "Input bytes in memory. Dedicated worker, first extraction recorded separately; measured samples 1\u20133 include structured content, images and Markdown. Wall time additionally includes messaging.",
+  "rows": [
+    {
+      "name": "harness",
+      "samples": [
+        {
+          "extractionMs": 1934,
+          "wallMs": 1950.9000000059605,
+          "pages": 43
+        },
+        {
+          "extractionMs": 1664,
+          "wallMs": 1663.699999988079,
+          "pages": 43
+        },
+        {
+          "extractionMs": 1634,
+          "wallMs": 1634.5,
+          "pages": 43
+        },
+        {
+          "extractionMs": 1591,
+          "wallMs": 1591.3999999761581,
+          "pages": 43
+        }
+      ]
+    },
+    {
+      "name": "axler",
+      "samples": [
+        {
+          "extractionMs": 2161,
+          "wallMs": 2176.199999988079,
+          "pages": 404
+        },
+        {
+          "extractionMs": 2108,
+          "wallMs": 2109,
+          "pages": 404
+        },
+        {
+          "extractionMs": 2102,
+          "wallMs": 2103.5,
+          "pages": 404
+        },
+        {
+          "extractionMs": 2078,
+          "wallMs": 2079,
+          "pages": 404
+        }
+      ]
+    },
+    {
+      "name": "hefferon",
+      "samples": [
+        {
+          "extractionMs": 2097,
+          "wallMs": 2112.9000000059605,
+          "pages": 525
+        },
+        {
+          "extractionMs": 1985,
+          "wallMs": 1987.0999999940395,
+          "pages": 525
+        },
+        {
+          "extractionMs": 2068,
+          "wallMs": 2069.600000023842,
+          "pages": 525
+        },
+        {
+          "extractionMs": 1969,
+          "wallMs": 1969.5999999940395,
+          "pages": 525
+        }
+      ]
+    },
+    {
+      "name": "thinkpython",
+      "samples": [
+        {
+          "extractionMs": 559,
+          "wallMs": 576.3999999761581,
+          "pages": 244
+        },
+        {
+          "extractionMs": 502,
+          "wallMs": 502.2999999821186,
+          "pages": 244
+        },
+        {
+          "extractionMs": 470,
+          "wallMs": 470,
+          "pages": 244
+        },
+        {
+          "extractionMs": 465,
+          "wallMs": 465.59999999403954,
+          "pages": 244
+        }
+      ]
+    },
+    {
+      "name": "calculus",
+      "samples": [
+        {
+          "extractionMs": 950,
+          "wallMs": 965.1999999880791,
+          "pages": 292
+        },
+        {
+          "extractionMs": 853,
+          "wallMs": 853.4000000059605,
+          "pages": 292
+        },
+        {
+          "extractionMs": 896,
+          "wallMs": 896.6999999880791,
+          "pages": 292
+        },
+        {
+          "extractionMs": 841,
+          "wallMs": 841.5,
+          "pages": 292
+        }
+      ]
+    }
+  ]
+}

@@ -1,42 +1,29 @@
+import { extractInWorker } from '@thereader/pdf-extractor/browser';
+import { PdfError } from '@thereader/pdf-extractor';
 import { ImportError } from './contract';
 
 export const maxPdfBytes = 64 * 1024 * 1024;
 const maxResultBytes = 128 * 1024 * 1024;
 
-/** Convert on the configured backend; callers inspect and store the EPUB normally. */
-export async function convertPdf(file: File, origin: string, fetcher: typeof fetch = fetch): Promise<Blob> {
+/** Convert locally; PDF bytes are never sent to an extraction service. */
+export async function convertPdf(file: File, options: { signal?: AbortSignal; workerFactory?: () => Worker } = {}): Promise<Blob> {
   if (file.size === 0 || file.size > maxPdfBytes) throw new ImportError('PDF imports are limited to 64 MiB.', 'TOO_LARGE');
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 65_000);
   try {
-    const response = await fetcher(new URL('/v1/pdf/extract', origin).href, {
-      method: 'POST', headers: { 'Content-Type': 'application/pdf', Accept: 'application/epub+zip' },
-      body: file, signal: controller.signal, redirect: 'error',
+    const { result } = await extractInWorker(new Uint8Array(await file.arrayBuffer()), 'epub', {
+      workerFactory: options.workerFactory ?? (() => new Worker(new URL('./pdf.worker.ts', import.meta.url), { type: 'module' })),
+      signal: options.signal,
+      timeoutMs: 65_000,
     });
-    if (!response.body) throw new ImportError('The PDF service returned an empty response.', 'BAD_RESPONSE');
-    const reader = response.body.getReader();
-    const chunks: Uint8Array[] = [];
-    let total = 0;
-    try {
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        total += value.byteLength;
-        if (total > (response.ok ? maxResultBytes : 64 * 1024)) throw new ImportError('The converted PDF is too large.', 'TOO_LARGE');
-        chunks.push(value);
-      }
-    } finally { await reader.cancel().catch(() => undefined); }
-    const blob = new Blob(chunks as BlobPart[], { type: 'application/epub+zip' });
-    if (!response.ok) {
-      let error: { error?: { code?: unknown; message?: unknown } } = {};
-      try { error = JSON.parse(await blob.text()); } catch { /* Use a bounded fallback. */ }
-      throw new ImportError(typeof error.error?.message === 'string' ? error.error.message : 'PDF conversion failed. Try again shortly.', typeof error.error?.code === 'string' ? error.error.code : 'PDF_FAILED');
-    }
-    if (response.headers.get('Content-Type')?.split(';')[0]?.trim() !== 'application/epub+zip') throw new ImportError('The PDF service returned an invalid reading edition.', 'BAD_RESPONSE');
-    return blob;
+    if (result.byteLength > maxResultBytes) throw new ImportError('The converted PDF is too large.', 'TOO_LARGE');
+    return new Blob([result as BlobPart], { type: 'application/epub+zip' });
   } catch (error) {
     if (error instanceof ImportError) throw error;
-    if (controller.signal.aborted) throw new ImportError('PDF conversion timed out. Try a smaller document.', 'TIMEOUT', true);
-    throw new ImportError('PDF imports need a connection to your reading server. Check your connection and try again.', 'NETWORK', true);
-  } finally { clearTimeout(timer); }
+    if (error instanceof PdfError) {
+      if (error.code === 'TIMEOUT' || error.code === 'ABORTED') throw new ImportError('PDF conversion was cancelled or took too long. Try a smaller document.', error.code);
+      if (error.code === 'RESOURCE_LIMIT') throw new ImportError('This PDF exceeds the browser extraction limits. Try a smaller document.', error.code);
+      if (error.code === 'WORKER_FAILED') throw new ImportError('The PDF worker could not start. Reload the reader and try again.', error.code);
+      throw new ImportError(error.message, error.code);
+    }
+    throw new ImportError('PDF conversion failed in this browser.', 'PDF_FAILED');
+  }
 }

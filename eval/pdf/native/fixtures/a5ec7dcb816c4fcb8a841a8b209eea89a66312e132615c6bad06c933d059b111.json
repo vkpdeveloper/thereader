@@ -1,0 +1,65 @@
+{
+  "document": {
+    "engine": "PDF Extractor",
+    "version": "0.3.0",
+    "title": "Untitled PDF",
+    "language": "en",
+    "sha256": "a5ec7dcb816c4fcb8a841a8b209eea89a66312e132615c6bad06c933d059b111",
+    "pages": [
+      {
+        "number": 1,
+        "width": 300,
+        "height": 300,
+        "blocks": [
+          {
+            "kind": "paragraph",
+            "text": "��",
+            "runs": [
+              {
+                "text": "��",
+                "asset": "assets/9cb8c0659af9ac6ef1ad8427.svg",
+                "heightEm": 1.2,
+                "depthEm": 0.3200000000000003,
+                "monochrome": true
+              }
+            ],
+            "box": {
+              "x": 20,
+              "y": 92.2,
+              "width": 10,
+              "height": 10
+            }
+          }
+        ]
+      }
+    ],
+    "assets": [
+      {
+        "name": "assets/9cb8c0659af9ac6ef1ad8427.svg",
+        "mediaType": "image/svg+xml",
+        "width": 12,
+        "height": 12,
+        "data": "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjE5LjAwMCA5MS4yMDAgMTIuMDAwIDEyLjAwMCIgd2lkdGg9IjEyLjAwMCIgaGVpZ2h0PSIxMi4wMDAiIHJvbGU9ImltZyI+PHRpdGxlPu+/ve+/vTwvdGl0bGU+PHJlY3QgeD0iMTkuMDAwIiB5PSI5MS4yMDAiIHdpZHRoPSIxMi4wMDAiIGhlaWdodD0iMTIuMDAwIiBmaWxsPSJ3aGl0ZSIvPjxkZWZzPjxwYXRoIGlkPSJnMCIgZD0iTTAuMDAwIDAuMDAwIEw1MC4wMDAgMC4wMDAgTDUwLjAwMCA1MC4wMDAgWiIvPjwvZGVmcz48dXNlIGhyZWY9IiNnMCIgdHJhbnNmb3JtPSJtYXRyaXgoMC4xIDAgMCAtMC4xIDIwIDEwMCkiIGZpbGw9IiMwMDAwMDAiLz48dXNlIGhyZWY9IiNnMCIgdHJhbnNmb3JtPSJtYXRyaXgoMC4xIDAgMCAtMC4xIDI1IDEwMCkiIGZpbGw9IiMwMDAwMDAiLz48L3N2Zz4="
+      }
+    ],
+    "outline": [],
+    "warnings": [
+      {
+        "code": "unmapped-glyph",
+        "page": 1,
+        "message": "Some glyphs could not be mapped to Unicode."
+      }
+    ],
+    "complete": false,
+    "markdown": "\u003e Extraction notes: this document contains features that need review. See the structured warnings or the reading edition's extraction notes.\n\n\u003ca id=\"page-1\"\u003e\u003c/a\u003e\n\n![��](assets/9cb8c0659af9ac6ef1ad8427.svg)\n",
+    "stats": {
+      "pages": 1,
+      "characters": 2,
+      "images": 0,
+      "tables": 0,
+      "math": 0,
+      "headings": 0,
+      "durationMs": 0
+    }
+  }
+}

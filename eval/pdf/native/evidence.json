@@ -1,0 +1,481 @@
+{
+  "date": "2026-10-11",
+  "goBaselineCommit": "625d6b202da5759e13dc67c743022a22c2e07175",
+  "versions": {
+    "bun": "1.4.0",
+    "dart": "Dart SDK version: 3.13.4 (stable) (Tue Sep 15 01:01:15 2026 -0700) on \"macos_arm64\"",
+    "go": "go version go1.27.1 darwin/arm64"
+  },
+  "sourceFiles": [
+    {
+      "path": "bun.lock",
+      "sha256": "6105e88d79db247ddfd763414e05588ec6a3167227fa698d4f2edc497adba10c"
+    },
+    {
+      "path": "packages/pdf_dart/lib/browser.dart",
+      "sha256": "6b28c3895eca53dcf748df6a8935222fd5a194133bf4dcbb536a32c78560eafe"
+    },
+    {
+      "path": "packages/pdf_dart/lib/pdf_extractor.dart",
+      "sha256": "50f5ac0f752f1bacba6d5500433e9e2bf5e44473f902ec2b7600ed8716021399"
+    },
+    {
+      "path": "packages/pdf_dart/lib/src/assets.dart",
+      "sha256": "6b8afdba683570c15de9b4a0a11f37529629b25b1ba8d38cf352bd541a795b39"
+    },
+    {
+      "path": "packages/pdf_dart/lib/src/cff.dart",
+      "sha256": "94dddad64d418c849190c404c242b0fdd6f15f6f150d383817b3a37339bb941f"
+    },
+    {
+      "path": "packages/pdf_dart/lib/src/cff_data.dart",
+      "sha256": "16aa48986f48243778f7ea57a56da9c9a6c1069021a519aa946e4110fe4b4cc3"
+    },
+    {
+      "path": "packages/pdf_dart/lib/src/content.dart",
+      "sha256": "3176f3f14a34ca00bb0dd94b0f0db9d3bdbe6c2ea8e16366d58661824513a7bd"
+    },
+    {
+      "path": "packages/pdf_dart/lib/src/extract.dart",
+      "sha256": "715df103a46aab70f490933c436e085e7ef323fc95b09bdba5777661db773a68"
+    },
+    {
+      "path": "packages/pdf_dart/lib/src/fax.dart",
+      "sha256": "760e2070ebe6db6cb4140215bacf4c1c97c936e78159d226bdf62637f58a74bb"
+    },
+    {
+      "path": "packages/pdf_dart/lib/src/fax_data.dart",
+      "sha256": "28470512188bf21ea3b98e67dd95aa94a1198a6f833a7c64b6af92b952403c30"
+    },
+    {
+      "path": "packages/pdf_dart/lib/src/filters.dart",
+      "sha256": "951e8f8ec5301bec7bfcff516c1566bd210e9f2bf838fe8fd97e9443e2d02775"
+    },
+    {
+      "path": "packages/pdf_dart/lib/src/font.dart",
+      "sha256": "9dda91b39432febcbdab447811b581b267b1c39f088a782e678561fd5c54c704"
+    },
+    {
+      "path": "packages/pdf_dart/lib/src/font_program.dart",
+      "sha256": "982920dde730b84b8d22244581340ea1588d9f7343ff227c5e840abaa8b58e54"
+    },
+    {
+      "path": "packages/pdf_dart/lib/src/geometry.dart",
+      "sha256": "1dc7964a2c5f575150f3beeacab76133f160864ee888ed976ef6795126370880"
+    },
+    {
+      "path": "packages/pdf_dart/lib/src/glyph_data.dart",
+      "sha256": "cf0f1847a9e3660782b310b6152129920117124a0e8117f243f33c6747e04483"
+    },
+    {
+      "path": "packages/pdf_dart/lib/src/images.dart",
+      "sha256": "d05afe21374cf7ff9b32f8ca0310e8c2066a17e41898fb6d19e889b093f05c0e"
+    },
+    {
+      "path": "packages/pdf_dart/lib/src/layout.dart",
+      "sha256": "ee9eee05a11399b41916cd72fe92edee52b1fe7308f76b03ec35a9fcff47da48"
+    },
+    {
+      "path": "packages/pdf_dart/lib/src/lines.dart",
+      "sha256": "4a5e1735ec372a5138006c58801cbacf738b4a422ac277ae464f70f2c602b72f"
+    },
+    {
+      "path": "packages/pdf_dart/lib/src/math.dart",
+      "sha256": "30e92cdb45b2e77f69173da12303665f1f100020b0dc342a5e5935d4c07a9ebb"
+    },
+    {
+      "path": "packages/pdf_dart/lib/src/metadata.dart",
+      "sha256": "08d95fee633f48ef036bd61fa2626ef66a3fe0b2b28e4dd09885cac5629674ee"
+    },
+    {
+      "path": "packages/pdf_dart/lib/src/model.dart",
+      "sha256": "b2876232325b8d97140fabb70906d4542a86cfdd416ce38521e8db3f0cb65603"
+    },
+    {
+      "path": "packages/pdf_dart/lib/src/parser.dart",
+      "sha256": "2ec2a743a8249c36e8882b0457c830a28dd16f999753b926e5474a03784606ed"
+    },
+    {
+      "path": "packages/pdf_dart/lib/src/render.dart",
+      "sha256": "ff96391092f5614ef49d931172c6ed720ee6c36925fa042f501c386998dac4fe"
+    },
+    {
+      "path": "packages/pdf_dart/lib/src/syntax.dart",
+      "sha256": "f3a2620f0c4f1999ea755587d4924be02716ee481ea9b9eff64cf036a6745fb2"
+    },
+    {
+      "path": "packages/pdf_dart/lib/src/tables.dart",
+      "sha256": "2b222c8a4317c3209a7473ecceb9a44e20114d00f79f257c5abe92e006a79caf"
+    },
+    {
+      "path": "packages/pdf_dart/lib/src/truetype.dart",
+      "sha256": "6da61539736985530d46785ebf473fe9227c4ea438a6623c661527fd9db0ef71"
+    },
+    {
+      "path": "packages/pdf_dart/lib/src/type3.dart",
+      "sha256": "fe7decf3d54064f1bb2ce608ae9fd753e5bdbb2a36e914918c690729dedb9d51"
+    },
+    {
+      "path": "packages/pdf_dart/web/worker.dart",
+      "sha256": "31dc2ce62c5a0beb0a8e994240200b2bc3512727eaca03e552a30bef14242890"
+    },
+    {
+      "path": "packages/pdf_ts/src/algorithm.ts",
+      "sha256": "e36eeb72b4a408d4cdd0d5e7b8e69f2d13d04187e75dc1c85344e3c34f874721"
+    },
+    {
+      "path": "packages/pdf_ts/src/assets.ts",
+      "sha256": "bbfe1eb9722585a44fc5559472d344c5a1c9602e2cd8c63956c6eb8a97d50119"
+    },
+    {
+      "path": "packages/pdf_ts/src/browser.ts",
+      "sha256": "ad0bace33c88b912dc02d9f6ed10ea841ea550f57f95106fca6dd1269e6ce5ad"
+    },
+    {
+      "path": "packages/pdf_ts/src/cff-data.ts",
+      "sha256": "20405b8fa0fe6f64f850827fa5f502c7cbd8f31dedf50d67efdb47945c39c201"
+    },
+    {
+      "path": "packages/pdf_ts/src/cff.ts",
+      "sha256": "5c58ead4b31ec3f913cedfe40ceef23f259728198ea338aaa9147d309c0968c6"
+    },
+    {
+      "path": "packages/pdf_ts/src/content.ts",
+      "sha256": "75abea7046da40c1ab09ed3a9a67a17575eac4044acdccfb57dbfba958a183a7"
+    },
+    {
+      "path": "packages/pdf_ts/src/deflate-boundary.ts",
+      "sha256": "784d43d25997fcbff5afdd43d63d82fd709620a4444bab7a46edff8fb8a1a49b"
+    },
+    {
+      "path": "packages/pdf_ts/src/extract.ts",
+      "sha256": "11c58970e918580f1e727f4d121e5650cebf6e3f5c3198057f00c45b46a360e7"
+    },
+    {
+      "path": "packages/pdf_ts/src/fax-data.ts",
+      "sha256": "0e2f81b948fda07a11b5749486671db3dba42b5ee80962a4f8bffe351c9d83ca"
+    },
+    {
+      "path": "packages/pdf_ts/src/fax.ts",
+      "sha256": "90cf3cb1319f9353901584c8a9ce395e4041b0aee9daf884b7199049c1c3505a"
+    },
+    {
+      "path": "packages/pdf_ts/src/filters.ts",
+      "sha256": "27428384968f8ec339691ab6672eaf076c26b274884782177db16dfcd5885688"
+    },
+    {
+      "path": "packages/pdf_ts/src/font-program.ts",
+      "sha256": "a2f0e3b48447d097f4bd229ef6947f37589097262eadbe88689a1389b8b627fb"
+    },
+    {
+      "path": "packages/pdf_ts/src/font.ts",
+      "sha256": "c1298d69e03133d51de3ecfd7400f36d24d3cdfa5816adeb591af5c3f4150e6f"
+    },
+    {
+      "path": "packages/pdf_ts/src/geometry.ts",
+      "sha256": "b3627c38e78dd13fa3c35458986809d63676a08625b924c7b7ea7a81bb8af9ca"
+    },
+    {
+      "path": "packages/pdf_ts/src/glyph-data.ts",
+      "sha256": "537c0a98d2c4eee598e694483b87ed75a1e347b8ddca20d1cd5a41e70bad8869"
+    },
+    {
+      "path": "packages/pdf_ts/src/hash.ts",
+      "sha256": "d31b3390791477414a536b4f874c32c67e50b49737fa3b048b374d606f8184d1"
+    },
+    {
+      "path": "packages/pdf_ts/src/images.ts",
+      "sha256": "15feaaca9f24228691af347d8119cde1e120fca8f7349b830bfe2c437b16fdf4"
+    },
+    {
+      "path": "packages/pdf_ts/src/index.ts",
+      "sha256": "f607508bcadd94f8e02c537e21baf39dcd5875752a6d04173bd0f19d17047e24"
+    },
+    {
+      "path": "packages/pdf_ts/src/layout.ts",
+      "sha256": "46667ef2302859ec2bc01edb6012dc863343680be59cb5fabd40a2dc34d0f488"
+    },
+    {
+      "path": "packages/pdf_ts/src/lines.ts",
+      "sha256": "ae33123f26756aa48011aaa4c6fb7cfde0eaaf56987b4f61270b5a8dd422741c"
+    },
+    {
+      "path": "packages/pdf_ts/src/math.ts",
+      "sha256": "89daab9eebb58c942a62cccfe7e8c79f1e300565be052b04b4cfc3213af40c82"
+    },
+    {
+      "path": "packages/pdf_ts/src/metadata.ts",
+      "sha256": "9ec58e139a4373c47fceae360d8029d23a94512a7877323375a34ce041075626"
+    },
+    {
+      "path": "packages/pdf_ts/src/model.ts",
+      "sha256": "70f9e3ed7dae36f118b3c67c2f6a4a8478d1cb849465df971296d9372242cb02"
+    },
+    {
+      "path": "packages/pdf_ts/src/parser.ts",
+      "sha256": "55884e4cbd858036c86eb1f88119c6d0cc97404631ff806d5ce0bd0e219811e7"
+    },
+    {
+      "path": "packages/pdf_ts/src/render.ts",
+      "sha256": "afbc32dd1897bf490b84940b6b6e19ed994051c83fd467c81791affb1fccc82f"
+    },
+    {
+      "path": "packages/pdf_ts/src/syntax.ts",
+      "sha256": "088cacbede396fca113b4f7ba86a0fbc1f9184389850683b072bda6d49721b0c"
+    },
+    {
+      "path": "packages/pdf_ts/src/tables.ts",
+      "sha256": "10ec7022e997613e8670c64bc89a0656d5adec20153ab5b103bbfaf6db2cbe00"
+    },
+    {
+      "path": "packages/pdf_ts/src/truetype.ts",
+      "sha256": "6bf0e97a0b7be0099042b32721a5c3b679e6ddee640b8ef2198c2257cf962c2e"
+    },
+    {
+      "path": "packages/pdf_ts/src/type3.ts",
+      "sha256": "bf69ae302a637d3e2e416abc2b5b41a3919c9be6d44c88ddfca3f207b3f2d415"
+    },
+    {
+      "path": "packages/pdf_ts/src/worker.ts",
+      "sha256": "cd9d902c10e8c1341cf4be2d777d5fb21197891ca44820cc0b48c47d75cd4481"
+    },
+    {
+      "path": "pubspec.lock",
+      "sha256": "b579c1b2e45769bd9a60823f2722fe7ec9a321e404df5fc1f998ea675b9fee33"
+    }
+  ],
+  "sourceManifestSHA256": "82d3afe20907e3cb6ee30cf40c43f225a849b1360cb0f0ed46f5bd628277252a",
+  "browserBuilds": [
+    {
+      "engine": "ts",
+      "sha256": "a9f9a03f8a777a30c698f2d5e610f63515f2d99ed1af325f50cec4bbc0f18336",
+      "bytes": 265402
+    },
+    {
+      "engine": "dart",
+      "sha256": "880f3d0181aebe9dd9d0eb22312897ea0cb5c745ddae599cb9fa1ea80bfdfd07",
+      "bytes": 764942
+    }
+  ],
+  "buildCommands": [
+    "bun build packages/pdf_ts/src/worker.ts --target browser --minify --outfile test-corpus/pdf/native/browser/ts-worker.js",
+    "dart compile js -O2 packages/pdf_dart/web/worker.dart -o test-corpus/pdf/native/browser/dart-worker.js"
+  ],
+  "runtimeOutputParity": [
+    {
+      "engine": "ts",
+      "markdownFilesCompared": 1403,
+      "byteMismatches": [],
+      "browserErrors": [
+        {
+          "pdf": "tables/0091c5b23fe54b3a7cbe5b0b8c26057b7d70_pg3_pg1.pdf",
+          "error": {
+            "code": "RESOURCE_LIMIT",
+            "message": "PDF resource limit exceeded"
+          }
+        },
+        {
+          "pdf": "tables/2e5fbee1a02ad5dde299c81b1c11c16ad8c9_pg5.pdf",
+          "error": {
+            "code": "RESOURCE_LIMIT",
+            "message": "PDF resource limit exceeded"
+          }
+        },
+        {
+          "pdf": "tables/26076dc369efd78b3087643cc7153509bd18_pg3_pg1.pdf",
+          "error": {
+            "code": "RESOURCE_LIMIT",
+            "message": "PDF resource limit exceeded"
+          }
+        },
+        {
+          "pdf": "headers_footers/e7f89d27e9cc33c4e86d92c27cc578a95a323b24_page_1.pdf",
+          "error": {
+            "code": "RESOURCE_LIMIT",
+            "message": "PDF resource limit exceeded"
+          }
+        },
+        {
+          "pdf": "headers_footers/39e0e582e2aeb751d615308c4486e5d9422a37db_page_2.pdf",
+          "error": {
+            "code": "RESOURCE_LIMIT",
+            "message": "PDF resource limit exceeded"
+          }
+        },
+        {
+          "pdf": "headers_footers/275579590090bf114f27e3f7ce3939cece9a7b25_page_1.pdf",
+          "error": {
+            "code": "RESOURCE_LIMIT",
+            "message": "PDF resource limit exceeded"
+          }
+        },
+        {
+          "pdf": "multi_column/0cf93d937e0f519965d4ff67daec8dd5dea1_page_5_pg1.pdf",
+          "error": {
+            "code": "RESOURCE_LIMIT",
+            "message": "PDF resource limit exceeded"
+          }
+        },
+        {
+          "pdf": "multi_column/01119fb525785eb7153ee600241ff1e01959_page_2_pg1.pdf",
+          "error": {
+            "code": "RESOURCE_LIMIT",
+            "message": "PDF resource limit exceeded"
+          }
+        },
+        {
+          "pdf": "arxiv_math/2503.04486_pg21.pdf",
+          "error": {
+            "code": "RESOURCE_LIMIT",
+            "message": "PDF resource limit exceeded"
+          }
+        },
+        {
+          "pdf": "old_scans/57.pdf",
+          "error": {
+            "code": "RESOURCE_LIMIT",
+            "message": "PDF resource limit exceeded"
+          }
+        },
+        {
+          "pdf": "old_scans/51.pdf",
+          "error": {
+            "code": "RESOURCE_LIMIT",
+            "message": "PDF resource limit exceeded"
+          }
+        },
+        {
+          "pdf": "old_scans/48.pdf",
+          "error": {
+            "code": "RESOURCE_LIMIT",
+            "message": "PDF resource limit exceeded"
+          }
+        }
+      ]
+    },
+    {
+      "engine": "dart",
+      "markdownFilesCompared": 1403,
+      "byteMismatches": [],
+      "browserErrors": [
+        {
+          "pdf": "tables/0091c5b23fe54b3a7cbe5b0b8c26057b7d70_pg3_pg1.pdf",
+          "error": {
+            "code": "RESOURCE_LIMIT",
+            "message": "PDF resource limit exceeded"
+          }
+        },
+        {
+          "pdf": "tables/2e5fbee1a02ad5dde299c81b1c11c16ad8c9_pg5.pdf",
+          "error": {
+            "code": "RESOURCE_LIMIT",
+            "message": "PDF resource limit exceeded"
+          }
+        },
+        {
+          "pdf": "tables/26076dc369efd78b3087643cc7153509bd18_pg3_pg1.pdf",
+          "error": {
+            "code": "RESOURCE_LIMIT",
+            "message": "PDF resource limit exceeded"
+          }
+        },
+        {
+          "pdf": "headers_footers/e7f89d27e9cc33c4e86d92c27cc578a95a323b24_page_1.pdf",
+          "error": {
+            "code": "RESOURCE_LIMIT",
+            "message": "PDF resource limit exceeded"
+          }
+        },
+        {
+          "pdf": "headers_footers/39e0e582e2aeb751d615308c4486e5d9422a37db_page_2.pdf",
+          "error": {
+            "code": "RESOURCE_LIMIT",
+            "message": "PDF resource limit exceeded"
+          }
+        },
+        {
+          "pdf": "headers_footers/275579590090bf114f27e3f7ce3939cece9a7b25_page_1.pdf",
+          "error": {
+            "code": "RESOURCE_LIMIT",
+            "message": "PDF resource limit exceeded"
+          }
+        },
+        {
+          "pdf": "multi_column/0cf93d937e0f519965d4ff67daec8dd5dea1_page_5_pg1.pdf",
+          "error": {
+            "code": "RESOURCE_LIMIT",
+            "message": "PDF resource limit exceeded"
+          }
+        },
+        {
+          "pdf": "multi_column/01119fb525785eb7153ee600241ff1e01959_page_2_pg1.pdf",
+          "error": {
+            "code": "RESOURCE_LIMIT",
+            "message": "PDF resource limit exceeded"
+          }
+        },
+        {
+          "pdf": "arxiv_math/2503.04486_pg21.pdf",
+          "error": {
+            "code": "RESOURCE_LIMIT",
+            "message": "PDF resource limit exceeded"
+          }
+        },
+        {
+          "pdf": "old_scans/57.pdf",
+          "error": {
+            "code": "RESOURCE_LIMIT",
+            "message": "PDF resource limit exceeded"
+          }
+        },
+        {
+          "pdf": "old_scans/51.pdf",
+          "error": {
+            "code": "RESOURCE_LIMIT",
+            "message": "PDF resource limit exceeded"
+          }
+        },
+        {
+          "pdf": "old_scans/48.pdf",
+          "error": {
+            "code": "RESOURCE_LIMIT",
+            "message": "PDF resource limit exceeded"
+          }
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "typescriptTests": 56,
+    "dartTests": 46,
+    "typescriptTypecheck": "passed",
+    "dartAnalyze": "passed",
+    "webProductionBuild": "passed",
+    "standaloneDartWithoutFlutter": "pub get, analyze, 46 tests, JS compile passed",
+    "go": "go test ./... and go vet ./... passed",
+    "chromeWorkerAPI": [
+      "TS structured document: 43 pages, 35 assets, 12413345 asset bytes",
+      "Dart public client EPUB ZIP magic, 43 pages, original input retained, cancellation",
+      "Full 1403-PDF corpus in each browser worker"
+    ],
+    "reader": "Requested PDF uploaded with /v1/pdf/extract blocked; EPUB opened with merged Table 3",
+    "review": "review.md retains two deferred inherited Go limitations"
+  },
+  "proof": [
+    {
+      "kind": "table",
+      "sha256": "c2526dbb13993c9190fecdfe8792593bfd893ad68a42ec4d96a05ed5d9410fad",
+      "url": "https://pub-db5cc934f02943a19d855c11f462c1e9.r2.dev/pr-assets/thereader/pdf-browser-table-305433fd.png"
+    },
+    {
+      "kind": "video",
+      "sha256": "a18e90b639b3db739ae56af04b2913a1104cfed35fa1d9e6a05a9587871a4bbd",
+      "url": "https://pub-db5cc934f02943a19d855c11f462c1e9.r2.dev/pr-assets/thereader/pdf-browser-upload-29647d4b.mp4"
+    },
+    {
+      "kind": "title",
+      "sha256": "763ba36ff734343f8fb90e7f09d5b942ebfb90d119d25dc569b8a2aa6eb44990",
+      "url": "https://pub-db5cc934f02943a19d855c11f462c1e9.r2.dev/pr-assets/thereader/pdf-browser-title-f7087bd9.png"
+    }
+  ]
+}

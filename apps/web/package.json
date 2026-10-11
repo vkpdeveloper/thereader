@@ -21,7 +21,8 @@
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "temml": "0.13.5",
-    "truffle": "workspace:*"
+    "truffle": "workspace:*",
+    "@thereader/pdf-extractor": "workspace:*"
   },
   "devDependencies": {
     "@types/jsdom": "^21.1.7",

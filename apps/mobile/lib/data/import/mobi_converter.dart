@@ -226,7 +226,6 @@ Uint8List convertMobi(Uint8List source) {
     css: fixedCss,
     fonts: fontAssets,
   );
-  _normalizeZipTimestamps(epub);
   return epub;
 }
 
@@ -670,7 +669,9 @@ class _ThereaderEpubBuilder {
       );
     }
 
-    return ZipEncoder().encodeBytes(archive);
+    // Set timestamps through the encoder. Streamed ZIP entries use data
+    // descriptors, so walking local headers by compressed size is not valid.
+    return ZipEncoder().encodeBytes(archive, modified: DateTime(1980, 1, 1));
   }
 
   static void _addUtf8(Archive archive, String path, String content) {
@@ -1039,42 +1040,3 @@ const _containerXml = '<?xml version="1.0" encoding="UTF-8"?>\n'
     '    <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>\n'
     '  </rootfiles>\n'
     '</container>\n';
-
-void _normalizeZipTimestamps(Uint8List bytes) {
-  final view = ByteData.sublistView(bytes);
-  var offset = 0;
-  while (offset + 4 <= bytes.length) {
-    final signature = view.getUint32(offset, Endian.little);
-    if (signature == 0x04034b50) {
-      if (offset + 30 > bytes.length) {
-        throw const FormatException('Invalid converted EPUB.');
-      }
-      view.setUint16(offset + 10, 0, Endian.little);
-      view.setUint16(offset + 12, 33, Endian.little);
-      offset +=
-          30 +
-          view.getUint16(offset + 26, Endian.little) +
-          view.getUint16(offset + 28, Endian.little) +
-          view.getUint32(offset + 18, Endian.little);
-    } else if (signature == 0x02014b50) {
-      if (offset + 46 > bytes.length) {
-        throw const FormatException('Invalid converted EPUB.');
-      }
-      view.setUint16(offset + 12, 0, Endian.little);
-      view.setUint16(offset + 14, 33, Endian.little);
-      offset +=
-          46 +
-          view.getUint16(offset + 28, Endian.little) +
-          view.getUint16(offset + 30, Endian.little) +
-          view.getUint16(offset + 32, Endian.little);
-    } else if (signature == 0x06054b50) {
-      return;
-    } else {
-      throw const FormatException('Invalid converted EPUB.');
-    }
-    if (offset > bytes.length) {
-      throw const FormatException('Invalid converted EPUB.');
-    }
-  }
-  throw const FormatException('Invalid converted EPUB.');
-}
