@@ -359,4 +359,26 @@ void main() {
       expect(library.entries, isEmpty);
     },
   );
+
+  test('only the picker\'s own copies are cleared, never the whole temp', () {
+    final copy = Directory('${temp.path}/A1B2-C3D4')..createSync();
+    final picked = File('${copy.path}/timmy.cbr')..writeAsStringSync('x');
+    final inbox = Directory('${temp.path}/com.example.app-Inbox')..createSync();
+    final inboxCopy = File('${inbox.path}/timmy.cbr')..writeAsStringSync('x');
+    File('${inbox.path}/other.cbr').writeAsStringSync('x');
+    File('${temp.path}/thereader-import-1/timmy.cbr')
+        .createSync(recursive: true);
+    List<String> copies(String picked, String tempPath) => [
+      for (final e in pickerCopies(picked, tempPath)) e.path,
+    ];
+
+    expect(copies(picked.path, temp.path), [copy.path, inboxCopy.path]);
+    // The same folder reached through a symlink (iOS /var vs /private/var).
+    final link = Link('${temp.path}-link')..createSync(temp.path);
+    addTearDown(link.deleteSync);
+    expect(copies(picked.path, link.path), hasLength(2));
+    // A file directly in temp or picked in place is left alone.
+    expect(copies('${temp.path}/timmy.cbr', temp.path), isEmpty);
+    expect(copies('/Users/me/Comics/timmy.cbr', temp.path), isEmpty);
+  });
 }

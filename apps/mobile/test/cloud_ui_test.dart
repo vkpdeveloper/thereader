@@ -116,7 +116,7 @@ void main() {
   testWidgets('without services the cloud UI is absent everywhere', (tester) async {
     final services = await makeServices(existing: _entry());
     await pumpApp(tester, services);
-    expect(find.byTooltip('Import EPUB or MOBI'), findsNothing);
+    expect(find.byTooltip('Import a book or comic'), findsNothing);
     expect(cloudIcons(), findsNothing);
 
     await tester.tap(find.text('Settings'));
@@ -132,11 +132,11 @@ void main() {
     final services = await makeServices(imports: imports);
     await pumpApp(tester, services);
 
-    final button = find.byTooltip('Import EPUB or MOBI');
+    final button = find.byTooltip('Import a book or comic');
     expect(button, findsOneWidget);
     final title = find.text('Library').first;
     expect(tester.getRect(button).left, greaterThan(tester.getRect(title).right));
-    expect(find.textContaining('import an EPUB or MOBI'), findsOneWidget);
+    expect(find.textContaining('import an EPUB, MOBI, CBZ or CBR'), findsOneWidget);
 
     await tester.tap(button);
     await tester.pump();
@@ -153,12 +153,12 @@ void main() {
     final imports = FakeImports()..result = null;
     final services = await makeServices(imports: imports);
     await pumpApp(tester, services);
-    await tester.tap(find.byTooltip('Import EPUB or MOBI'));
+    await tester.tap(find.byTooltip('Import a book or comic'));
     imports.completePick();
     await tester.pumpAndSettle();
     expect(find.byType(BookDetailScreen), findsNothing);
     expect(find.byType(SnackBar), findsNothing);
-    expect(find.byTooltip('Import EPUB or MOBI'), findsOneWidget);
+    expect(find.byTooltip('Import a book or comic'), findsOneWidget);
   });
 
   testWidgets('the library stays quiet through waiting, uploading and failed uploads',
@@ -223,12 +223,12 @@ void main() {
     final imports = FakeImports()..pickError = StateError('not an EPUB');
     final services = await makeServices(imports: imports);
     await pumpApp(tester, services);
-    await tester.tap(find.byTooltip('Import EPUB or MOBI'));
+    await tester.tap(find.byTooltip('Import a book or comic'));
     imports.completePick();
     await tester.pumpAndSettle();
     expect(find.byType(SnackBar), findsOneWidget);
     expect(find.textContaining('Could not import that file.'), findsOneWidget);
-    expect(find.byTooltip('Import EPUB or MOBI'), findsOneWidget);
+    expect(find.byTooltip('Import a book or comic'), findsOneWidget);
   });
 
   testWidgets('settings shows a Cloud sync section with last sync, pending, error and Sync now',

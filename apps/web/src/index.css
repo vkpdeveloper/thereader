@@ -1388,7 +1388,25 @@ html[data-sidebar='collapsed'] .sidebar-label {
   user-select: none;
 }
 .grid-cover {
+  position: relative;
   transition: transform var(--motion-base) var(--ease);
+}
+/* A quiet format mark on comic covers: small caps on a dark scrim, never a colour. */
+.format-badge {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  padding: 2px 5px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.72);
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.6px;
+  line-height: 1.2;
+  text-transform: uppercase;
+  pointer-events: none;
 }
 @media (hover: hover) {
   .grid-link:hover .grid-cover {

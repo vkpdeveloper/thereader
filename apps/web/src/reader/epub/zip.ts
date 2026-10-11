@@ -151,6 +151,11 @@ export class ZipArchive {
     return this.entry(path) !== null;
   }
 
+  /** Every file entry's (normalized) name, in directory order. */
+  names(): string[] {
+    return [...this.byName.keys()];
+  }
+
   async read(path: string): Promise<Uint8Array | null> {
     const e = this.entry(path);
     if (!e) return null;

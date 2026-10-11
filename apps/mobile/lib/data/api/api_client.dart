@@ -225,7 +225,7 @@ class ApiClient {
   Future<DownloadStream> openDownload(Book book) async {
     final uri = resolve(book.downloadUrl);
     final request = http.Request('GET', uri)
-      ..headers['accept'] = 'application/epub+zip';
+      ..headers['accept'] = book.mediaType;
     final http.StreamedResponse response;
     try {
       response = await _client.send(request).timeout(timeout);
@@ -294,7 +294,7 @@ class ApiClient {
     final request =
         http.AbortableRequest('GET', uri, abortTrigger: requestAbort.future)
           ..headers.addAll({
-            'accept': 'application/epub+zip',
+            'accept': book.mediaType,
             'accept-encoding': 'identity',
             'range': 'bytes=$start-${end - 1}',
             'if-range': '"${book.sha256}"',

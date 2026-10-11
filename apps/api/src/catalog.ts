@@ -1,5 +1,5 @@
 import { ApiError } from "./errors";
-import type { Book, CatalogBook, CatalogManifest, Env } from "./types";
+import type { Book, BookFormat, CatalogBook, CatalogManifest, Env } from "./types";
 
 export const CATALOG_KEY = "catalog/v1/manifest.json";
 const MAX_CATALOG_BYTES = 1_000_000;
@@ -8,6 +8,7 @@ const ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 const LANGUAGE_PATTERN = /^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/;
 const OBJECT_KEY_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._/-]*$/;
+const OBJECT_SUFFIX: Record<BookFormat, string> = { epub: ".epub", comic: ".cbz" };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -45,6 +46,7 @@ function parseBook(value: unknown): CatalogBook | null {
   if (!isRecord(value)) return null;
   const {
     id,
+    format = "epub",
     version,
     title,
     author,
@@ -64,6 +66,7 @@ function parseBook(value: unknown): CatalogBook | null {
   if (
     !isNonEmptyString(id, 128) ||
     !ID_PATTERN.test(id) ||
+    (format !== "epub" && format !== "comic") ||
     !isNonEmptyString(version, 64) ||
     !isNonEmptyString(title, 300) ||
     containsHeaderUnsafeCharacters(title) ||
@@ -82,7 +85,7 @@ function parseBook(value: unknown): CatalogBook | null {
     !isNonEmptyString(sha256, 64) ||
     !SHA256_PATTERN.test(sha256) ||
     !isCanonicalIsoDate(updatedAt) ||
-    !isSafeObjectKey(objectKey, ".epub")
+    !isSafeObjectKey(objectKey, OBJECT_SUFFIX[format as BookFormat])
   ) {
     return null;
   }
@@ -116,6 +119,7 @@ function parseBook(value: unknown): CatalogBook | null {
 
   return {
     id,
+    format: format as BookFormat,
     version,
     title,
     author,
@@ -135,6 +139,7 @@ function parseBook(value: unknown): CatalogBook | null {
 
 interface UploadedBookRow {
   id: string;
+  format: string;
   sha256: string;
   version: string;
   title: string;
@@ -161,6 +166,7 @@ function uploadedRowToBook(row: UploadedBookRow): CatalogBook {
   }
   const parsed = parseBook({
     id: row.id,
+    format: row.format,
     version: row.version,
     title: row.title,
     author: row.author,
@@ -187,7 +193,7 @@ function uploadedRowToBook(row: UploadedBookRow): CatalogBook {
 
 async function loadUploadedBooks(env: Env): Promise<CatalogBook[]> {
   const result = await env.DB.prepare(
-    `SELECT id, sha256, version, title, author, description, language,
+    `SELECT id, format, sha256, version, title, author, description, language,
             subjects_json, file_size, object_key, updated_at,
             cover_id, cover_object_key, cover_content_type, cover_file_size, cover_etag
        FROM uploaded_books
@@ -267,7 +273,7 @@ export async function findPublishedBookBySha(env: Env, sha256: string): Promise<
   const legacyBook = legacy?.books.find((book) => book.sha256 === sha256);
   if (legacyBook !== undefined) return legacyBook;
   const row = await env.DB.prepare(
-    `SELECT id, sha256, version, title, author, description, language,
+    `SELECT id, format, sha256, version, title, author, description, language,
             subjects_json, file_size, object_key, updated_at,
             cover_id, cover_object_key, cover_content_type, cover_file_size, cover_etag
        FROM uploaded_books WHERE sha256 = ?`,

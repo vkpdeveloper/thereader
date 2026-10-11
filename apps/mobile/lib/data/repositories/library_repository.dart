@@ -6,6 +6,8 @@ import 'package:flutter/foundation.dart';
 
 import '../api/api_client.dart';
 import '../api/catalog_source.dart';
+import '../comic/comic_transfers.dart';
+import '../comic/remote_comic_file.dart';
 import '../download/downloader.dart';
 import '../download/progressive_download.dart';
 import '../models/book.dart';
@@ -19,20 +21,35 @@ class LibraryRepository extends ChangeNotifier {
   LibraryRepository({
     required KeyValueStore store,
     required BookStore bookStore,
+    ApiClient Function(String origin)? clientForOrigin,
+    ComicTransfers? comicTransfers,
   }) : _store = store,
        _bookStore = bookStore,
-       _downloader = Downloader(store: bookStore);
+       _downloader = Downloader(store: bookStore),
+       _clientForOrigin = clientForOrigin,
+       _transfers = comicTransfers;
 
   static const _key = 'library.v1';
 
   final KeyValueStore _store;
   final BookStore _bookStore;
   final Downloader _downloader;
+  final ApiClient Function(String origin)? _clientForOrigin;
+  final Map<String, ApiClient> _clients = {};
   final Map<String, LibraryEntry> _entries = {};
   final Set<String> _cancelRequests = {};
   final Map<String, String> _aliases = {};
   final Map<String, ProgressiveDownload> _progressive = {};
   final Map<String, LibraryEntry> _verifiedBeforeUpdate = {};
+  final ComicTransfers? _transfers;
+
+  /// Comics whose OS transfer is running, and who waits for each.
+  final Map<String, Completer<void>> _comicTransfers = {};
+  final Set<String> _finishing = {};
+
+  /// Cancelled here; late reports from the OS must not revive them.
+  final Set<String> _cancelledTransfers = {};
+  StreamSubscription<ComicTransfer>? _transferUpdates;
   bool _loaded = false;
   Future<void> _writes = Future.value();
 
@@ -66,31 +83,54 @@ class LibraryRepository extends ChangeNotifier {
   }
 
   /// Partial publications stay online-only until their final SHA is verified.
+  /// API comics are always readable: until their offline copy is verified
+  /// they are read by HTTP range, and a failing range surfaces in the reader.
   bool canRead(String id) {
     id = _resolveId(id);
-    return _entries[id]?.download.isReady == true ||
-        (_entries[id]?.download.isActive == true &&
-            _progressive[id]?.canRead == true);
+    final entry = _entries[id];
+    return entry?.download.isReady == true ||
+        _readsOnline(entry) ||
+        (entry?.download.isActive == true && _progressive[id]?.canRead == true);
   }
 
+  static bool _readsOnline(LibraryEntry? entry) =>
+      entry != null && entry.book.isComic && entry.source == BookSource.api;
+
+  /// A verified local file, else (comics) a [ProvisionalBookFile] reading the
+  /// edition by range from the API, else an early-reading EPUB lease.
   Future<BookFile> openForReading(String id) async {
     id = _resolveId(id);
     final entry = _entries[id];
     if (entry?.download.isReady == true) {
       return _bookStore.open(entry!.download.path!);
     }
+    if (_readsOnline(entry)) {
+      return RemoteComicFile(book: entry!.book, client: _client(entry.origin));
+    }
     final partial = _progressive[id];
     if (partial?.canRead == true) return partial!.open();
     throw StateError('This book is not ready to read yet.');
   }
 
+  ApiClient _client(String origin) =>
+      _clientForOrigin?.call(origin) ??
+      _clients.putIfAbsent(origin, () => ApiClient(baseUrl: origin));
+
   Future<void> load() async {
     final json = await _store.readJson(_key);
+    // `DownloadState.fromJson` reports interrupted downloads as failed. Comic
+    // transfers belong to the OS and may still be running: reconcile them.
+    final interruptedComics = <String>{};
     if (json != null) {
       for (final raw in (json['entries'] as List<dynamic>? ?? const [])) {
         try {
           final e = LibraryEntry.fromJson((raw as Map).cast<String, dynamic>());
           _entries[e.id] = e;
+          final status = (raw['download'] as Map?)?['status'];
+          if (_downloadsInBackground(e) &&
+              const {'queued', 'downloading', 'verifying'}.contains(status)) {
+            interruptedComics.add(e.id);
+          }
         } catch (_) {
           // Skip a corrupt record instead of losing the whole library.
         }
@@ -112,6 +152,7 @@ class LibraryRepository extends ChangeNotifier {
     _loaded = true;
     notifyListeners();
     await _persist();
+    if (_transfers != null) await _startTransfers(interruptedComics);
   }
 
   Future<void> _persist() {
@@ -144,6 +185,9 @@ class LibraryRepository extends ChangeNotifier {
   /// Returns when the download finishes or fails; state is observable
   /// through [entry] while it runs.
   Future<void> download(Book book, CatalogSource source) async {
+    if (_transfers != null && book.isComic && source.source == BookSource.api) {
+      return _downloadComic(book, source);
+    }
     final id = LibraryEntry.identity(book.id, source.source, source.origin);
     final existing = _entries[id];
     if (existing != null && existing.download.isActive) return;
@@ -284,7 +328,9 @@ class LibraryRepository extends ChangeNotifier {
   void cancelDownload(String bookId) {
     bookId = _resolveId(bookId);
     final e = _entries[bookId];
-    if (e != null && e.download.isActive) {
+    if (_comicTransfers.containsKey(bookId)) {
+      unawaited(_cancelComic(bookId));
+    } else if (e != null && e.download.isActive) {
       _cancelRequests.add(bookId);
       unawaited(_progressive[bookId]?.cancel());
     }
@@ -292,6 +338,7 @@ class LibraryRepository extends ChangeNotifier {
 
   Future<void> remove(String bookId, {bool keepMetadata = false}) async {
     bookId = _resolveId(bookId);
+    if (_comicTransfers.containsKey(bookId)) await _cancelComic(bookId);
     if (_entries[bookId]?.download.isActive == true) return;
     final e = _entries.remove(bookId);
     if (keepMetadata && e != null) {
@@ -431,6 +478,311 @@ class LibraryRepository extends ChangeNotifier {
       _put(next);
       await flush();
     }
+  }
+
+  // Comic downloads in the OS ------------------------------------------------
+
+  bool _downloadsInBackground(LibraryEntry e) =>
+      _transfers != null && e.book.isComic && e.source == BookSource.api;
+
+  Future<void> _downloadComic(Book book, CatalogSource source) async {
+    final id = LibraryEntry.identity(book.id, source.source, source.origin);
+    final existing = _entries[id];
+    if (_comicTransfers[id] case final running?) return running.future;
+    // A comic's id is its SHA-256: a verified copy is the current edition.
+    if (existing?.download.isReady == true) return;
+    if (existing?.download.isActive == true) return;
+    final entry =
+        (existing ??
+                LibraryEntry(
+                  book: book,
+                  source: source.source,
+                  origin: source.origin,
+                  addedAt: DateTime.now(),
+                ))
+            .copyWith(book: book);
+    _put(entry);
+    try {
+      await _transfers!.requestNotificationPermission();
+    } catch (_) {
+      // No notification permission: the download still runs.
+    }
+    final done = _enqueueComic(entry);
+    await flush();
+    return done;
+  }
+
+  /// Hands [entry] to the OS and returns when its transfer is settled.
+  Future<void> _enqueueComic(LibraryEntry entry) {
+    final id = entry.id;
+    _cancelledTransfers.remove(id);
+    final done = _comicTransfers[id] = Completer<void>();
+    _put(
+      entry.copyWith(
+        download: DownloadState(
+          status: DownloadStatus.queued,
+          totalBytes: entry.book.fileSize,
+        ),
+      ),
+    );
+    () async {
+      try {
+        final accepted = await _transfers!.enqueue(
+          ComicTransferRequest(
+            entryId: id,
+            url: _client(entry.origin).resolve(entry.book.downloadUrl),
+            headers: {'accept': entry.book.mediaType},
+            displayName: entry.book.title,
+            sha256: entry.book.sha256,
+            fileSize: entry.book.fileSize,
+          ),
+        );
+        if (!accepted) _failComic(id, 'The download could not be started.');
+      } catch (_) {
+        _failComic(id, 'The download could not be started.');
+      }
+    }();
+    return done.future;
+  }
+
+  Future<void> _startTransfers(Set<String> interrupted) async {
+    final transfers = _transfers!;
+    _transferUpdates ??= transfers.updates.listen(_onTransfer);
+    final List<ComicTransfer> records;
+    try {
+      records = await transfers.start().timeout(const Duration(seconds: 15));
+    } catch (e) {
+      debugPrint('Comic downloads unavailable: $e');
+      for (final id in interrupted) {
+        _failComic(id, 'Interrupted before it finished.');
+      }
+      return;
+    }
+    final byId = {for (final r in records) r.entryId: r};
+    for (final record in records) {
+      final entry = _entries[record.entryId];
+      if (entry == null ||
+          !_downloadsInBackground(entry) ||
+          (record.sha256 != null && record.sha256 != entry.book.sha256)) {
+        // Removed from the library, or another edition: nothing to adopt.
+        unawaited(_forgetTransfer(record.entryId, cancel: true));
+      } else if (record.state == TransferState.failed ||
+          record.state == TransferState.notFound ||
+          record.state == TransferState.canceled) {
+        if (interrupted.contains(record.entryId) && !entry.download.isReady) {
+          if (record.state == TransferState.canceled) {
+            _put(
+              entry.copyWith(
+                download: DownloadState(totalBytes: entry.book.fileSize),
+              ),
+            );
+          } else {
+            _failComic(record.entryId, _transferError(record));
+          }
+        }
+        unawaited(_forgetTransfer(record.entryId));
+      } else {
+        _onTransfer(record);
+      }
+    }
+    // In flight when the app stopped, but the OS has no task: start again.
+    for (final id in interrupted) {
+      final entry = _entries[id];
+      if (byId.containsKey(id) || entry == null || entry.download.isReady) {
+        continue;
+      }
+      unawaited(_enqueueComic(entry));
+    }
+  }
+
+  void _onTransfer(ComicTransfer update) {
+    final id = update.entryId;
+    final entry = _entries[id];
+    if (entry == null || !_downloadsInBackground(entry)) return;
+    if (update.sha256 != null && update.sha256 != entry.book.sha256) return;
+    // Stale reports about a comic that is already offline or was cancelled.
+    if (entry.download.isReady) {
+      if (update.state == TransferState.complete) {
+        unawaited(_forgetTransfer(id));
+      }
+      return;
+    }
+    if (_finishing.contains(id) || _cancelledTransfers.contains(id)) return;
+    switch (update.state) {
+      case TransferState.complete:
+        unawaited(_finishComic(id));
+      case TransferState.failed || TransferState.notFound:
+        if (!_comicTransfers.containsKey(id)) return;
+        _failComic(id, _transferError(update));
+        unawaited(_forgetTransfer(id));
+      case TransferState.canceled:
+        if (!_comicTransfers.containsKey(id)) return;
+        _settleComic(
+          id,
+          entry.copyWith(
+            download: DownloadState(totalBytes: entry.book.fileSize),
+          ),
+        );
+        unawaited(_forgetTransfer(id));
+      case TransferState.enqueued ||
+          TransferState.running ||
+          TransferState.paused ||
+          TransferState.retrying:
+        _comicTransfers.putIfAbsent(id, Completer.new);
+        final size = entry.book.fileSize;
+        final progress = update.progress;
+        final received = progress == null
+            ? entry.download.receivedBytes
+            : (progress.clamp(0, 1) * size).round();
+        final status = update.state == TransferState.enqueued
+            ? DownloadStatus.queued
+            : DownloadStatus.downloading;
+        final download = entry.download;
+        final changed =
+            download.status != status ||
+            download.error != null ||
+            received - download.receivedBytes >= size * .01 ||
+            received == size;
+        if (!changed) return;
+        // Progress is not persisted per tick; status changes are.
+        _put(
+          entry.copyWith(
+            download: DownloadState(
+              status: status,
+              receivedBytes: received,
+              totalBytes: size,
+              error: update.state == TransferState.retrying
+                  ? 'Waiting to retry…'
+                  : update.state == TransferState.paused
+                  ? 'Paused'
+                  : null,
+            ),
+          ),
+          persist: download.status != status,
+        );
+    }
+  }
+
+  /// Verifies size and SHA-256 off the UI isolate, then moves the file into
+  /// the book store; only then is the comic offline.
+  Future<void> _finishComic(String id) async {
+    if (!_finishing.add(id)) return;
+    _comicTransfers.putIfAbsent(id, Completer.new);
+    var entry = _entries[id]!;
+    final book = entry.book;
+    _put(
+      entry = entry.copyWith(
+        download: DownloadState(
+          status: DownloadStatus.verifying,
+          receivedBytes: book.fileSize,
+          totalBytes: book.fileSize,
+        ),
+      ),
+      persist: false,
+    );
+    try {
+      final path = await _transfers!.filePath(id);
+      if (!await verifyTransferredFile(path, book.fileSize, book.sha256)) {
+        throw DownloadFailure(
+          'The downloaded comic did not match the server’s checksum. Try again.',
+        );
+      }
+      final key = await _bookStore.adoptFile(
+        path,
+        bookId: id,
+        version: book.version,
+      );
+      final latest = _entries[id];
+      if (latest == null || latest.book.sha256 != book.sha256) {
+        // Removed while verifying.
+        await _bookStore.delete(key);
+      } else {
+        _settleComic(
+          id,
+          latest.copyWith(
+            download: DownloadState(
+              status: DownloadStatus.ready,
+              receivedBytes: book.fileSize,
+              totalBytes: book.fileSize,
+              path: key,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      _failComic(
+        id,
+        e is DownloadFailure ? e.message : 'The comic could not be saved.',
+      );
+    } finally {
+      _finishing.remove(id);
+      await _forgetTransfer(id);
+      await flush();
+    }
+  }
+
+  void _failComic(String id, String message) {
+    final entry = _entries[id];
+    if (entry == null) return;
+    _settleComic(
+      id,
+      entry.copyWith(
+        download: DownloadState(
+          status: DownloadStatus.failed,
+          totalBytes: entry.book.fileSize,
+          error: message,
+        ),
+      ),
+    );
+  }
+
+  void _settleComic(String id, LibraryEntry next) {
+    _put(next);
+    final done = _comicTransfers.remove(id);
+    if (done != null && !done.isCompleted) done.complete();
+  }
+
+  Future<void> _cancelComic(String id) async {
+    if (_finishing.contains(id)) return;
+    _cancelledTransfers.add(id);
+    try {
+      await _transfers!.cancel(id);
+    } catch (_) {
+      // The task may already be gone; the record is dropped below.
+    }
+    final entry = _entries[id];
+    if (entry != null && !entry.download.isReady) {
+      _settleComic(
+        id,
+        entry.copyWith(
+          download: DownloadState(totalBytes: entry.book.fileSize),
+        ),
+      );
+    } else {
+      _comicTransfers.remove(id)?.complete();
+    }
+    await _forgetTransfer(id);
+    await flush();
+  }
+
+  Future<void> _forgetTransfer(String id, {bool cancel = false}) async {
+    try {
+      if (cancel) await _transfers!.cancel(id);
+      await _transfers!.forget(id);
+    } catch (e) {
+      debugPrint('Could not clear the comic transfer $id: $e');
+    }
+  }
+
+  static String _transferError(ComicTransfer transfer) =>
+      transfer.state == TransferState.notFound
+      ? 'This comic is no longer on the server.'
+      : 'The download failed. Check your connection and try again.';
+
+  @override
+  void dispose() {
+    unawaited(_transferUpdates?.cancel());
+    super.dispose();
   }
 
   Future<void> markOpened(String bookId, {String? expectedSha256}) async {

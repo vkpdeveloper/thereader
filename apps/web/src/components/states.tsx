@@ -19,6 +19,11 @@ export function Tag({ children, color, filled }: { children: ReactNode; color?: 
   );
 }
 
+/** The quiet "Comic" mark on a cover; books need none. */
+export function FormatBadge() {
+  return <span className="format-badge">Comic</span>;
+}
+
 /** Top-of-screen serif title with an optional trailing action centred on its glyphs. */
 export function ScreenHeader({ title, size = 'lg', trailing }: { title: string; size?: 'lg' | 'sm'; trailing?: ReactNode }) {
   return (

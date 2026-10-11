@@ -165,27 +165,41 @@ class EpubImportService extends ChangeNotifier {
     await load();
     final preparedPath = await platform.prepareBook(sourcePath);
     try {
-      return await _importPrepared(preparedPath, origin);
+      return await _importPrepared(preparedPath, sourcePath, origin);
     } finally {
       await platform.cleanPreparedBook(sourcePath, preparedPath);
     }
   }
 
-  Future<LibraryEntry> _importPrepared(String sourcePath, String origin) async {
+  /// EPUBs (MOBI converted to one) and comics (a CBZ, CBR repacked to one)
+  /// share storage, the upload queue and the library from here on.
+  Future<LibraryEntry> _importPrepared(
+    String preparedPath,
+    String originalPath,
+    String origin,
+  ) async {
     // Origin was captured before picker/file work; never close its shared client.
-    final metadata = await platform.inspectEpub(sourcePath);
+    final sourcePath = preparedPath;
+    final metadata = await platform.inspectBook(preparedPath, originalPath);
     final sha = metadata['sha256'] as String;
     final cover = metadata.remove('coverBytes') as Uint8List?;
     if (cover != null) {
-      await (await CoverCache.shared).storeEmbedded(sha, cover);
+      try {
+        await (await CoverCache.shared).storeEmbedded(sha, cover);
+      } on CoverUnavailable {
+        // Comics keep page 1 as their cover when it qualifies; else none.
+        if (metadata['format'] != 'comic') rethrow;
+      }
     }
+    final prefix = metadata['format'] == 'comic' ? 'comic' : 'epub';
     final book = Book.fromJson({
       ...metadata,
-      'id': 'epub-$sha',
+      'id': '$prefix-$sha',
       'version': sha.substring(0, 12),
-      'downloadUrl': '/v1/books/epub-$sha/download',
+      'downloadUrl': '/v1/books/$prefix-$sha/download',
       'updatedAt': DateTime.now().toUtc().toIso8601String(),
     });
+    final label = book.isComic ? 'comic' : 'EPUB';
     final existing = _library.entries
         .where(
           (e) =>
@@ -198,15 +212,14 @@ class EpubImportService extends ChangeNotifier {
     }
     final id = LibraryEntry.identity(book.id, BookSource.api, origin);
     if (_library.entry(id)?.download.isActive == true) {
-      throw const FormatException(
-        'A download of this EPUB is already running.',
-      );
+      throw FormatException('A download of this $label is already running.');
     }
     final sink = await _books.openSink(
       // Separate staging namespace prevents a concurrently started catalog
       // download from sharing this import's .part file before adoption.
       bookId: 'import-$id',
       version: '${book.version}-$sha',
+      extension: book.isComic ? 'cbz' : 'epub',
     );
     String? storedPath;
     var queued = false;
@@ -217,14 +230,14 @@ class EpubImportService extends ChangeNotifier {
       await for (final chunk in platform.readImportFile(sourcePath)) {
         bytes += chunk.length;
         if (bytes > book.fileSize) {
-          throw const FormatException('The EPUB changed while importing.');
+          throw FormatException('The $label changed while importing.');
         }
         hash.add(chunk);
         await sink.add(chunk);
       }
       hash.close();
       if (bytes != book.fileSize || digest.value.toString() != sha) {
-        throw const FormatException('The EPUB changed while importing.');
+        throw FormatException('The $label changed while importing.');
       }
       storedPath = await sink.commit();
       _pending[id] = _Pending(book: book, origin: origin, path: storedPath);
@@ -312,7 +325,7 @@ class EpubImportService extends ChangeNotifier {
 
               if (file.length != pending.book.fileSize) {
                 throw const FormatException(
-                  'The local EPUB size changed. Import it again.',
+                  'The local file size changed. Import it again.',
                 );
               }
               var lastPaint = DateTime.now();

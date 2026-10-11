@@ -1,25 +1,43 @@
 import type { Book } from '../types';
 import { ImportError, type InspectFile, type InspectedBook } from './contract';
 import { ascii, ownBuffer, startsWith } from './bytes';
+import { inspectCbr, inspectCbz, maxComicBytes, zipIsEpub } from './comic';
 import { coverMediaType, inspectEpub, maxImportBytes } from './epub';
 import { convertMobiFile, maxMobiBytes } from './mobi';
 import { uploadBook } from './upload';
 
 export * from './contract';
-export { uploadBook, maxImportBytes, maxMobiBytes };
+export { uploadBook, maxImportBytes, maxMobiBytes, maxComicBytes };
 
-type SourceKind = 'epub' | 'mobi' | null;
+export type SourceKind = 'zip' | 'rar' | 'mobi' | null;
 
-/** Content sniffing, not extensions: ZIP container or a Kindle PalmDB. */
-function sourceKind(head: Uint8Array): SourceKind {
-  if (startsWith(head, [0x50, 0x4b])) return 'epub';
+/** Bytes needed by `sourceKind` (a TAR header's magic sits at 257). */
+export const SNIFF_BYTES = 263;
+
+/**
+ * Content sniffing, not extensions: a ZIP (EPUB or CBZ), a RAR4/RAR5 archive
+ * (CBR) or a Kindle PalmDB. Comic containers we cannot read are refused with
+ * a message naming them.
+ */
+export function sourceKind(head: Uint8Array): SourceKind {
+  if (startsWith(head, [0x50, 0x4b])) return 'zip';
+  if (startsWith(head, [...ascii('Rar!'), 0x1a, 0x07, 0x00]) || startsWith(head, [...ascii('Rar!'), 0x1a, 0x07, 0x01, 0x00])) return 'rar';
   if (head.length >= 68 && (startsWith(head, ascii('BOOKMOBI'), 60) || startsWith(head, ascii('TEXtREAd'), 60))) return 'mobi';
+  if (startsWith(head, [0x37, 0x7a, 0xbc, 0xaf, 0x27, 0x1c])) {
+    throw new ImportError('CB7 (7-Zip) comics are not supported. Convert it to CBZ first.', 'UNSUPPORTED_FILE');
+  }
+  if (startsWith(head, ascii('ustar'), 257)) {
+    throw new ImportError('CBT (TAR) comics are not supported. Convert it to CBZ first.', 'UNSUPPORTED_FILE');
+  }
+  if (startsWith(head, ascii('%PDF'))) throw new ImportError('PDF files are not supported.', 'UNSUPPORTED_FILE');
   return null;
 }
 
 export const inspectFile: InspectFile = async (file) => {
-  const kind = sourceKind(new Uint8Array(await file.slice(0, 78).arrayBuffer()));
-  if (kind === null) throw new ImportError('Choose an EPUB or MOBI file.', 'UNSUPPORTED_FILE');
+  const kind = sourceKind(new Uint8Array(await file.slice(0, SNIFF_BYTES).arrayBuffer()));
+  if (kind === null) throw new ImportError('Choose an EPUB, MOBI, CBZ or CBR file.', 'UNSUPPORTED_FILE');
+  if (kind === 'rar') return inspectCbr(file);
+  if (kind === 'zip' && !(await zipIsEpub(file))) return inspectCbz(file);
   if (file.size > maxImportBytes) throw new ImportError('Book imports are limited to 512 MiB.', 'TOO_LARGE');
   let epub: Blob;
   let bytes: Uint8Array;
@@ -51,8 +69,9 @@ export const inspectFile: InspectFile = async (file) => {
 /** The provisional local `Book` mobile `_importPrepared` builds before the server canonicalizes it. */
 export function bookFromInspected(inspected: InspectedBook): Book {
   const sha = inspected.sha256;
+  const format = inspected.format ?? 'epub';
   return {
-    id: `epub-${sha}`,
+    id: `${format}-${sha}`,
     version: sha.substring(0, 12),
     title: inspected.title,
     author: inspected.author,
@@ -60,9 +79,10 @@ export function bookFromInspected(inspected: InspectedBook): Book {
     language: inspected.language,
     subjects: [...inspected.subjects],
     coverUrl: null,
-    downloadUrl: `/v1/books/epub-${sha}/download`,
+    downloadUrl: `/v1/books/${format}-${sha}/download`,
     fileSize: inspected.fileSize,
     sha256: sha,
     updatedAt: new Date().toISOString(),
+    format,
   };
 }

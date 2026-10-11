@@ -110,6 +110,7 @@ export function parseBook(json: unknown): Book {
     fileSize: Math.trunc(size),
     sha256: sha.toLowerCase(),
     updatedAt,
+    format: json.format === 'comic' ? 'comic' : 'epub',
   };
 }
 

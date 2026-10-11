@@ -25,9 +25,9 @@ import {
 import { ContextMenu, hasOpenOverlay, menuPoint, useContextMenu, type MenuItem, type MenuPoint } from '../components/overlay';
 import { useRemoveArticle } from '../components/RemoveArticle';
 import { canRemove, removeLabel, useRemoveBook } from '../components/RemoveBook';
-import { Eyebrow, LoadingLine, ProgressLine, ProgressRing, ScreenHeader, StateMessage, Tag } from '../components/states';
+import { Eyebrow, FormatBadge, LoadingLine, ProgressLine, ProgressRing, ScreenHeader, StateMessage, Tag } from '../components/states';
 import { useToast } from '../components/toast';
-import { importAccept } from '../lib/import/contract';
+import { importAccept, importExtensions } from '../lib/import/contract';
 import {
   articleLink,
   bookLink,
@@ -40,7 +40,7 @@ import {
 } from '../lib/hooks';
 import { findArticleUrl } from '../lib/services/articles';
 import { loadArticle, loadBook, loadReader } from './lazy';
-import { downloadFraction, entryPercent, formatBytes, isDownloadActive, isDownloadReady } from '../lib/format';
+import { canResume, downloadFraction, entryPercent, formatBytes, isDownloadActive, isDownloadReady } from '../lib/format';
 import type { AppServices } from '../lib/services/contract';
 import { useServices, useStore } from '../lib/services/react';
 import type { ArticleSummary, LibraryEntry } from '../lib/types';
@@ -56,8 +56,6 @@ const filters: { id: Filter; label: string }[] = [
 ];
 
 const isUnfinished = (fraction: number | null) => (fraction ?? 0) < 0.995;
-
-const importExtensions = /\.(epub|mobi|azw3?|prc)$/i;
 
 /** Mobile breakpoints (2/3/4/5 by width) measured on the content column, plus 6 on wide desktops. */
 export function columnsFor(width: number): number {
@@ -172,7 +170,7 @@ export function LibraryScreen() {
       const files = Array.from(e.dataTransfer?.files ?? []);
       const books = files.filter((f) => importExtensions.test(f.name));
       if (books.length === 0) {
-        toast.show('Could not import that file. Choose an EPUB or MOBI book.');
+        toast.show('Could not import that file. Choose an EPUB, MOBI, CBZ or CBR file.');
         return;
       }
       void importLatest.current(books);
@@ -235,7 +233,7 @@ export function LibraryScreen() {
         ) : (
           <div className="library-actions">
             <IconButton icon={AddIcon} label="Add article from link" onClick={openAddArticle} />
-            <IconButton icon={UploadIcon} label="Import EPUB or MOBI" tooltipSide="left" onClick={() => picker.current?.click()} />
+            <IconButton icon={UploadIcon} label="Import a book or comic" tooltipSide="left" onClick={() => picker.current?.click()} />
           </div>
         )
       }
@@ -308,7 +306,7 @@ export function LibraryScreen() {
       {everything.length === 0 && articles.items.length === 0 ? (
         <StateMessage
           title="Nothing here yet."
-          body="Browse the library and download a book, import an EPUB or MOBI with the upload button, or save any article from a link with the plus button. You can also drop a book file or paste a link onto this page. Everything is kept on this device for offline reading."
+          body="Browse the library and download a book, import an EPUB, MOBI or comic (CBZ, CBR) with the upload button, or save any article from a link with the plus button. You can also drop a book file or paste a link onto this page. Everything is kept on this device for offline reading."
           actionLabel="Browse books"
           onAction={() => void navigate({ to: '/browse' })}
           secondary={<QuietButton label="Add article from link" icon={AddIcon} onClick={openAddArticle} />}
@@ -415,7 +413,7 @@ export function LibraryScreen() {
           <div className="drop-overlay-card">
             <UploadIcon size={28} />
             <div className="t-headline">Drop to import</div>
-            <div className="t-body-sm">EPUB or MOBI. The book is copied to this device first.</div>
+            <div className="t-body-sm">EPUB, MOBI, CBZ or CBR. The file is copied to this device first.</div>
           </div>
         </div>
       )}
@@ -488,7 +486,11 @@ export function entryActions(
     }
   } else if (!isDownloadReady(d)) {
     items.push({
-      label: d.status === 'failed' ? 'Try download again' : `Download · ${formatBytes(entry.book.fileSize)}`,
+      label: canResume(entry)
+        ? 'Resume download'
+        : d.status === 'failed'
+          ? 'Try download again'
+          : `Download · ${formatBytes(entry.book.fileSize)}`,
       icon: ArrowDownwardIcon,
       onSelect: () => void services.library.downloadEntry(entry.id),
     });
@@ -629,6 +631,7 @@ export const GridItem = memo(function GridItem({
       <Link {...(readable ? readLink(entry) : bookLink(entry))} className="grid-link" aria-label={label}>
         <div className="grid-cover">
           <CoverArt book={entry.book} origin={entry.origin} />
+          {entry.book.format === 'comic' && <FormatBadge />}
         </div>
         <div className="grid-title t-title-sm clamp-2">{entry.book.title}</div>
         <div className="grid-author t-body-sm clamp-1">{entry.book.author}</div>

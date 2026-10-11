@@ -33,6 +33,8 @@ export function makeBook(overrides: Partial<Book> = {}): Book {
     fileSize: 10,
     sha256: sha,
     updatedAt: '2026-01-01T00:00:00.000Z',
+    // As parsed from the API, which always names the format.
+    format: 'epub',
     ...overrides,
   };
 }

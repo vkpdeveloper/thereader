@@ -15,8 +15,11 @@ class MemoryBookStore implements BookStore {
   String get description => 'Downloads last for this session only';
 
   @override
-  Future<BookSink> openSink({required String bookId, required String version}) async =>
-      _MemorySink(this, 'mem://$bookId/$version.epub');
+  Future<BookSink> openSink({
+    required String bookId,
+    required String version,
+    String extension = 'epub',
+  }) async => _MemorySink(this, 'mem://$bookId/$version.$extension');
 
   @override
   Future<bool> exists(String pathOrKey) async => files.containsKey(pathOrKey);
@@ -37,6 +40,13 @@ class MemoryBookStore implements BookStore {
   @override
   Future<void> deleteBook(String bookId) async =>
       files.removeWhere((k, _) => k.startsWith('mem://$bookId/'));
+
+  @override
+  Future<String> adoptFile(
+    String path, {
+    required String bookId,
+    required String version,
+  }) => throw UnsupportedError('There are no native files in memory storage.');
 }
 
 class _MemorySink implements BookSink {

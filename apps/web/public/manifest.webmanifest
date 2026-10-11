@@ -23,7 +23,9 @@
       "action": "/library",
       "accept": {
         "application/epub+zip": [".epub"],
-        "application/x-mobipocket-ebook": [".mobi", ".azw", ".azw3", ".prc"]
+        "application/x-mobipocket-ebook": [".mobi", ".azw", ".azw3", ".prc"],
+        "application/vnd.comicbook+zip": [".cbz"],
+        "application/vnd.comicbook-rar": [".cbr"]
       }
     }
   ],

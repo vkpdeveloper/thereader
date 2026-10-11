@@ -65,11 +65,20 @@ class MainActivity : FlutterFragmentActivity() {
         val extension = when {
             suffix == "mobi" || mimeType == "application/x-mobipocket-ebook" -> "mobi"
             suffix == "epub" || mimeType == "application/epub+zip" -> "epub"
+            suffix == "cbz" || mimeType == "application/vnd.comicbook+zip" || mimeType == "application/x-cbz" -> "cbz"
+            suffix == "cbr" || mimeType == "application/vnd.comicbook-rar" || mimeType == "application/x-cbr" -> "cbr"
             else -> error("Unsupported book type")
         }
         val directory = File(cacheDir, "external-book-${UUID.randomUUID()}")
         check(directory.mkdir())
-        val target = File(directory, "book.$extension")
+        // A comic keeps its file name: it is the title when ComicInfo has none.
+        val comic = extension == "cbz" || extension == "cbr"
+        val name = displayName?.replace('/', '_')
+        val target = File(
+            directory,
+            if (comic && name != null && !name.startsWith(".") && name.lowercase().endsWith(".$extension")) name
+            else "book.$extension",
+        )
         try {
             val source = contentResolver.openInputStream(uri) ?: error("File unavailable")
             source.use { input ->
@@ -80,7 +89,11 @@ class MainActivity : FlutterFragmentActivity() {
                         val read = input.read(buffer)
                         if (read < 0) break
                         count += read
-                        val maximum = if (extension == "mobi") 64L * 1024 * 1024 else 512L * 1024 * 1024
+                        val maximum = when {
+                            extension == "mobi" -> 64L * 1024 * 1024
+                            comic -> 1024L * 1024 * 1024
+                            else -> 512L * 1024 * 1024
+                        }
                         if (count > maximum) error("Book too large")
                         output.write(buffer, 0, read)
                     }

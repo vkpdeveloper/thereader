@@ -55,6 +55,11 @@ export function downloadFraction(d: DownloadState): number | null {
   return Math.min(1, Math.max(0, d.receivedBytes / total));
 }
 
+/** A failed comic download that kept a verified prefix: retrying continues after it. */
+export function canResume(entry: Pick<LibraryEntry, 'book' | 'download'>): boolean {
+  return entry.book.format === 'comic' && entry.download.status === 'failed' && entry.download.receivedBytes > 0;
+}
+
 /** Reading progress 0..1, or null when never opened. */
 export function entryPercent(entry: LibraryEntry): number | null {
   const p = entry.progress;

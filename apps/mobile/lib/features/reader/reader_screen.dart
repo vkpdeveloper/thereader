@@ -12,6 +12,7 @@ import '../../data/models/highlight.dart';
 import '../../data/models/library.dart';
 import '../../data/storage/book_store.dart';
 import '../../reader/engine/reader_engine.dart';
+import '../comic/comic_reader_screen.dart';
 import '../shared/states.dart';
 import 'highlight_sheets.dart';
 import 'reader_settings_sheet.dart';
@@ -29,6 +30,7 @@ class ReaderScreen extends StatefulWidget {
   static Completer<void>? _routeDone;
 
   /// File-manager opens replace any current book and start reading at once.
+  /// Comics open in [ComicReaderScreen] through the same two entry points.
   static Future<void> openExternal(
     BuildContext context,
     LibraryEntry entry,
@@ -48,7 +50,9 @@ class ReaderScreen extends StatefulWidget {
       final route = PageRouteBuilder<void>(
         transitionDuration: Motion.of(context, Motion.slow),
         reverseTransitionDuration: Motion.of(context, Motion.base),
-        pageBuilder: (_, _, _) => ReaderScreen._(entry, session),
+        pageBuilder: (_, _, _) => entry.book.isComic
+            ? ComicReaderScreen(entry: entry)
+            : ReaderScreen._(entry, session),
         transitionsBuilder: (_, anim, _, child) => FadeTransition(
           opacity: CurvedAnimation(parent: anim, curve: Motion.curve),
           child: child,

@@ -1,5 +1,11 @@
 import { ApiError } from "./errors";
-import type { CatalogBook, Env } from "./types";
+import type { BookFormat, CatalogBook, Env } from "./types";
+
+export const BOOK_CONTENT_TYPE: Record<BookFormat, string> = {
+  epub: "application/epub+zip",
+  comic: "application/vnd.comicbook+zip",
+};
+const FILE_EXTENSION: Record<BookFormat, string> = { epub: "epub", comic: "cbz" };
 
 interface ByteRange {
   offset: number;
@@ -46,9 +52,10 @@ function matchesEtag(header: string | null, etag: string): boolean {
     .some((value) => value === "*" || value === etag);
 }
 
-function contentDisposition(title: string, id: string): string {
-  const fallback = `${id}.epub`;
-  const displayName = `${title}.epub`;
+function contentDisposition(book: CatalogBook): string {
+  const extension = FILE_EXTENSION[book.format];
+  const fallback = `${book.id}.${extension}`;
+  const displayName = `${book.title}.${extension}`;
   const encodedDisplayName = encodeURIComponent(displayName).replace(/[!'()*]/g, (character) =>
     `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
   );
@@ -59,8 +66,8 @@ function baseHeaders(book: CatalogBook): Headers {
   const headers = new Headers({
     "Accept-Ranges": "bytes",
     "Cache-Control": "public, no-cache",
-    "Content-Disposition": contentDisposition(book.title, book.id),
-    "Content-Type": "application/epub+zip",
+    "Content-Disposition": contentDisposition(book),
+    "Content-Type": BOOK_CONTENT_TYPE[book.format],
     ETag: `"${book.sha256}"`,
     "Last-Modified": new Date(book.updatedAt).toUTCString(),
   });

@@ -39,7 +39,8 @@ class MultipartUpload {
         RegExp(r'[\x00-\x1f\x7f]').hasMatch(id) ||
         size != 8 * 1024 * 1024 ||
         listed is! List ||
-        listed.length > 64) {
+        // 1 GiB comics take up to 128 parts of 8 MiB.
+        listed.length > 128) {
       throw ApiException(
         'The multipart upload response is invalid.',
         code: 'BAD_RESPONSE',
@@ -91,6 +92,7 @@ class UploadApi {
           ..headers['content-type'] = 'application/json'
           ..body = jsonEncode({
             for (final key in [
+              'format',
               'sha256',
               'fileSize',
               'title',
@@ -150,19 +152,19 @@ class UploadApi {
       await for (final chunk in bytes) {
         sent += chunk.length;
         if (sent > book.fileSize) {
-          throw const FormatException('The local EPUB changed before upload.');
+          throw const FormatException('The local file changed before upload.');
         }
         onProgress(sent);
         yield chunk;
       }
       if (sent != book.fileSize) {
-        throw const FormatException('The local EPUB is incomplete.');
+        throw const FormatException('The local file is incomplete.');
       }
     }
 
     final request = _StreamingPut(_uploadUri(url), body(), _abort.future)
       ..contentLength = book.fileSize
-      ..headers['content-type'] = 'application/epub+zip';
+      ..headers['content-type'] = book.mediaType;
     final json = await _send(request, const Duration(minutes: 10));
     if (json['uploaded'] != true) {
       throw ApiException('The upload was not published.', code: 'BAD_RESPONSE');
@@ -200,14 +202,14 @@ class UploadApi {
           sent += chunk.length;
           if (sent > end - start) {
             throw const FormatException(
-              'The EPUB part contains too many bytes.',
+              'The upload part contains too many bytes.',
             );
           }
           onProgress(acknowledged + sent);
           yield chunk;
         }
         if (sent != end - start) {
-          throw const FormatException('The EPUB part is incomplete.');
+          throw const FormatException('The upload part is incomplete.');
         }
       }
 
@@ -229,7 +231,7 @@ class UploadApi {
           etag.isEmpty ||
           etag.length > 1024) {
         throw ApiException(
-          'The server did not acknowledge the EPUB part.',
+          'The server did not acknowledge the upload part.',
           code: 'BAD_RESPONSE',
         );
       }
@@ -248,7 +250,7 @@ class UploadApi {
     final response = await _send(complete, const Duration(minutes: 10));
     if (response['uploaded'] != true) {
       throw ApiException(
-        'The EPUB is uploaded but has not passed verification.',
+        'The ${book.isComic ? 'comic' : 'EPUB'} is uploaded but has not passed verification.',
         code: 'BAD_RESPONSE',
       );
     }
@@ -259,7 +261,7 @@ class UploadApi {
     final book = Book.fromJson((json['book'] as Map).cast<String, dynamic>());
     if (book.sha256 != expected.sha256 || book.fileSize != expected.fileSize) {
       throw ApiException(
-        'The upload response describes a different EPUB.',
+        'The upload response describes a different book.',
         code: 'BAD_RESPONSE',
       );
     }

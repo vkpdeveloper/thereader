@@ -43,7 +43,7 @@ import UIKit
 
   func acceptBook(_ url: URL) {
     let ext = url.pathExtension.lowercased()
-    guard url.isFileURL, ext == "epub" || ext == "mobi" else { return }
+    guard url.isFileURL, ["epub", "mobi", "cbz", "cbr"].contains(ext) else { return }
     copyQueue.async { [weak self] in
       let item: [String: String]
       do {
@@ -64,7 +64,11 @@ import UIKit
     let directory = FileManager.default.temporaryDirectory
       .appendingPathComponent("external-book-\(UUID().uuidString)", isDirectory: true)
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-    let target = directory.appendingPathComponent("book.\(ext)")
+    // A comic keeps its file name: it is the title when ComicInfo has none.
+    let comic = ext == "cbz" || ext == "cbr"
+    let name = url.lastPathComponent
+    let target = directory.appendingPathComponent(
+      comic && !name.hasPrefix(".") ? name : "book.\(ext)")
     do {
       var coordinationError: NSError?
       var copyError: Error?
@@ -85,7 +89,7 @@ import UIKit
             if read < 0 { throw input.streamError ?? CocoaError(.fileReadUnknown) }
             if read == 0 { break }
             count += read
-            let maximum = ext == "mobi" ? 64 * 1024 * 1024 : 512 * 1024 * 1024
+            let maximum = ext == "mobi" ? 64 * 1024 * 1024 : comic ? 1024 * 1024 * 1024 : 512 * 1024 * 1024
             if count > maximum { throw CocoaError(.fileReadTooLarge) }
             var written = 0
             while written < read {

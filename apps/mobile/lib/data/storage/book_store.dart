@@ -45,12 +45,25 @@ abstract class BookStore {
   /// Human-readable description shown in Settings.
   String get description;
 
-  Future<BookSink> openSink({required String bookId, required String version});
+  /// [extension] names the stored file: `cbz` for comics.
+  Future<BookSink> openSink({
+    required String bookId,
+    required String version,
+    String extension = 'epub',
+  });
   Future<bool> exists(String pathOrKey);
   Future<int?> sizeOf(String pathOrKey);
   Future<BookFile> open(String pathOrKey);
   Future<void> delete(String pathOrKey);
   Future<void> deleteBook(String bookId);
+
+  /// Moves an already verified file at native [path] (a finished background
+  /// download) into the store, atomically, and returns its key.
+  Future<String> adoptFile(
+    String path, {
+    required String bookId,
+    required String version,
+  });
 
   static Future<BookStore> create() => impl.createBookStore();
 }

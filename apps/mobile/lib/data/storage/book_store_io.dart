@@ -40,10 +40,11 @@ class IoBookStore implements BookStore {
   Future<BookSink> openSink({
     required String bookId,
     required String version,
+    String extension = 'epub',
   }) async {
     final dir = _bookDir(bookId);
     await dir.create(recursive: true);
-    final finalPath = p.join(dir.path, '${_safe(version)}.epub');
+    final finalPath = p.join(dir.path, '${_safe(version)}.${_safe(extension)}');
     final partPath = '$finalPath.part';
     final part = File(partPath);
     if (await part.exists()) await part.delete();
@@ -88,6 +89,27 @@ class IoBookStore implements BookStore {
   Future<void> delete(String pathOrKey) async {
     final f = _resolve(pathOrKey);
     if (await f.exists()) await f.delete();
+  }
+
+  @override
+  Future<String> adoptFile(
+    String path, {
+    required String bookId,
+    required String version,
+  }) async {
+    final dir = _bookDir(bookId);
+    await dir.create(recursive: true);
+    final target = File(p.join(dir.path, '${_safe(version)}.cbz'));
+    try {
+      await File(path).rename(target.path);
+    } on FileSystemException {
+      // Another volume: copy beside the target, then rename into place.
+      final part = File('${target.path}.part');
+      await File(path).copy(part.path);
+      await part.rename(target.path);
+      await File(path).delete();
+    }
+    return p.relative(target.path, from: root.path);
   }
 
   @override

@@ -323,6 +323,7 @@ describe("EPUB download", () => {
     const checksum = await sha256(bookBytes);
     const book: CatalogBook = {
       id: "the-quiet-hour",
+      format: "epub",
       version: "1",
       title: "The Quiet Hour",
       author: "The Reader",
@@ -378,6 +379,7 @@ describe("EPUB download", () => {
     const checksum = await sha256(bookBytes);
     const book: CatalogBook = {
       id: "the-quiet-hour",
+      format: "epub",
       version: "1",
       title: "The Quiet Hour",
       author: "The Reader",

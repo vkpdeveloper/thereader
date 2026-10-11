@@ -1,0 +1,275 @@
+/* Comic reader: pure black stage, pages fitted to the viewport, 3D page turns. */
+
+.comic-reader {
+  position: fixed;
+  inset: 0;
+  height: 100vh;
+  height: 100dvh;
+  background: #000;
+  color: var(--fg);
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  /* Pinches zoom the comic, not the whole app (the viewport stays zoomable elsewhere). */
+  touch-action: none;
+}
+
+.comic-stage {
+  position: absolute;
+  top: var(--safe-top);
+  bottom: var(--safe-bottom);
+  left: env(safe-area-inset-left, 0px);
+  right: env(safe-area-inset-right, 0px);
+  /* Swipes turn pages and pinches zoom the page: no scrolling, browser zoom or history gestures. */
+  touch-action: none;
+  cursor: default;
+}
+/* Zoomed pages are clipped to the stage and dragged around. */
+.comic-stage[data-zoomed] {
+  overflow: hidden;
+  cursor: grab;
+}
+.comic-stage[data-panning] {
+  cursor: grabbing;
+}
+
+.comic-spread {
+  position: absolute;
+  inset: 0;
+  perspective-origin: 50% 50%;
+  --angle: 0deg;
+  --front-shade: 0;
+  --back-shade: 0;
+  --cast-left: 0;
+  --cast-right: 0;
+  --leaf-opacity: 1;
+  --fade: 0;
+}
+
+.comic-page {
+  position: absolute;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.comic-page img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  -webkit-user-drag: none;
+}
+/* The spine: a soft fold shadow where facing pages meet. */
+.comic-page.has-gutter-left::after,
+.comic-page.has-gutter-right::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 9%;
+  pointer-events: none;
+}
+.comic-page.has-gutter-left::after {
+  left: 0;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.34), rgba(0, 0, 0, 0.1) 40%, transparent);
+}
+.comic-page.has-gutter-right::after {
+  right: 0;
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.34), rgba(0, 0, 0, 0.1) 40%, transparent);
+}
+
+/* A page that has not arrived yet (still downloading) or failed. */
+.comic-spinner {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--element);
+  border-top-color: var(--subtle);
+  animation: comic-spin 0.9s linear infinite;
+}
+@keyframes comic-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.comic-page-note {
+  color: var(--subtle);
+  text-align: center;
+  padding: var(--space-md);
+}
+
+/* ------------------------------------------------------------ turning */
+
+.comic-half {
+  position: absolute;
+  overflow: hidden;
+}
+
+.comic-leaf {
+  position: absolute;
+  z-index: 2;
+  transform-origin: 0 50%;
+  transform: rotateY(var(--angle));
+  transform-style: preserve-3d;
+  will-change: transform;
+  pointer-events: none;
+}
+.comic-leaf.is-single {
+  opacity: var(--leaf-opacity);
+}
+.comic-face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+.comic-face.is-back {
+  transform: rotateY(180deg);
+}
+/* A face with no page is the stage itself: it hides what it passes over, unshaded. */
+.comic-face.is-void {
+  background: #000;
+}
+/* The leaf throws a soft shadow over the page it moves across. */
+.comic-leaf .comic-page {
+  box-shadow: 0 0 28px rgba(0, 0, 0, 0.6);
+}
+.comic-face .comic-shade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+/* Light falls from the front: the leaf darkens as it stands up, most at the fold. */
+.comic-shade.is-front {
+  background: linear-gradient(
+    to right,
+    rgba(0, 0, 0, calc(var(--front-shade) * 1.25)) 0%,
+    rgba(0, 0, 0, var(--front-shade)) 35%,
+    rgba(0, 0, 0, calc(var(--front-shade) * 0.75)) 100%
+  );
+}
+.comic-shade.is-back {
+  background: linear-gradient(
+    to left,
+    rgba(0, 0, 0, calc(var(--back-shade) * 1.25)) 0%,
+    rgba(0, 0, 0, var(--back-shade)) 35%,
+    rgba(0, 0, 0, calc(var(--back-shade) * 0.75)) 100%
+  );
+}
+.comic-paper-back {
+  position: absolute;
+  background: linear-gradient(to left, #1a1a1a, #101010 60%, #0c0c0c);
+}
+
+/* The shadow the leaf casts on the page below, just past its free edge. */
+.comic-cast {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 42%;
+  pointer-events: none;
+}
+.comic-cast.is-right {
+  left: calc(var(--edge-x) - var(--spine));
+  background: linear-gradient(to right, rgba(0, 0, 0, var(--cast-right)), rgba(0, 0, 0, calc(var(--cast-right) * 0.35)) 30%, transparent);
+}
+.comic-cast.is-left {
+  right: calc(var(--spine) - var(--edge-x));
+  background: linear-gradient(to left, rgba(0, 0, 0, var(--cast-left)), rgba(0, 0, 0, calc(var(--cast-left) * 0.35)) 30%, transparent);
+}
+.comic-cast-clip {
+  position: absolute;
+  overflow: hidden;
+  pointer-events: none;
+}
+.comic-cast.is-single {
+  width: 55%;
+  left: calc(var(--edge-x) - var(--origin-x));
+  background: linear-gradient(to right, rgba(0, 0, 0, var(--cast-right)), rgba(0, 0, 0, calc(var(--cast-right) * 0.35)) 30%, transparent);
+}
+/* Behind the leaf (the part not yet uncovered) the page lies in shadow too. */
+.comic-cast.is-right::before,
+.comic-cast.is-single::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 100%;
+  width: 100vw;
+  background: rgba(0, 0, 0, var(--cast-right));
+}
+.comic-cast.is-left::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 100%;
+  width: 100vw;
+  background: rgba(0, 0, 0, var(--cast-left));
+}
+
+/* Reduced motion: the next spread fades in over the current one. */
+.comic-fade {
+  position: absolute;
+  inset: 0;
+  opacity: var(--fade);
+  background: #000;
+}
+
+/* ------------------------------------------------------------ chrome */
+
+.comic-reader .reader-top,
+.comic-reader .reader-bottom {
+  padding-left: max(4px, env(safe-area-inset-left, 0px));
+  padding-right: max(4px, env(safe-area-inset-right, 0px));
+}
+.comic-top-page {
+  flex: none;
+  color: var(--muted);
+  padding: 0 12px 0 4px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.comic-bottom {
+  gap: var(--space-sm);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.comic-scrubber {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+/* A taller hit area for fingers on the thin track. */
+.comic-scrubber .slider {
+  height: 44px;
+}
+.comic-scrub-label {
+  flex: none;
+  min-width: 92px;
+  text-align: right;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.comic-download-note {
+  position: absolute;
+  left: max(var(--gutter), env(safe-area-inset-left, 0px));
+  bottom: calc(var(--safe-bottom) + 72px);
+  z-index: 11;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--muted);
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+.comic-reader .reader-edge-progress {
+  right: max(var(--gutter), env(safe-area-inset-right, 0px));
+}

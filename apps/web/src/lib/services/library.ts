@@ -18,15 +18,18 @@ import {
   sameBookJson,
   stableStringify,
 } from './models';
+import type { Sha256State } from './hash';
 import { Emitter, WriteQueue } from './observable';
 import {
   DownloadCancelled,
   DownloadFailure,
-  EPUB_TYPE,
   ProgressiveDownload,
+  mimeTypeFor,
   type DownloadClient,
+  type ResumePoint,
+  type SpilledRun,
 } from './progressiveDownload';
-import type { SegmentPolicy } from './segmentPlan';
+import { SEGMENT_ALIGNMENT, type SegmentPolicy } from './segmentPlan';
 import { noopBus, type TabBus } from './tabs';
 
 export { DownloadFailure } from './progressiveDownload';
@@ -35,6 +38,31 @@ const LIBRARY_KEY = 'library.v1';
 
 /** IndexedDB key of an edition's verified EPUB blob. */
 export const bookBlobKey = (entryId: string, sha256: string): string => `book:${entryId}:${sha256}`;
+
+/**
+ * IndexedDB key of an interrupted comic download's manifest; its verified
+ * runs are stored at `${key}:${start}`. A comic can be 1 GiB, so a reload
+ * resumes after the saved prefix instead of starting over.
+ */
+export const partialKey = (entryId: string, sha256: string): string => `partial:${entryId}:${sha256}`;
+
+interface PartialManifest {
+  size: number;
+  /** The saved prefix is `[0, end)`. */
+  end: number;
+  hasher: Sha256State;
+  /** Start offset of each run, in order. */
+  runs: number[];
+}
+
+function parseManifest(json: unknown, size: number): PartialManifest | null {
+  if (!isRecord(json) || json.size !== size || !isRecord(json.hasher) || !Array.isArray(json.runs)) return null;
+  const end = json.end;
+  const runs = json.runs as unknown[];
+  if (typeof end !== 'number' || end <= 0 || end >= size || end % SEGMENT_ALIGNMENT !== 0 || runs[0] !== 0) return null;
+  if (!runs.every((start, i) => typeof start === 'number' && (i === 0 || start > (runs[i - 1] as number)) && start < end)) return null;
+  return { size, end, hasher: json.hasher as unknown as Sha256State, runs: runs as number[] };
+}
 
 export interface LibraryDeps {
   kv: KeyValueStore;
@@ -138,6 +166,7 @@ export class LibraryStoreImpl extends Emitter<LibrarySnapshot> implements Librar
     // and a verified blob saved just before the page closed (its record still
     // says interrupted) is adopted rather than downloaded again.
     const keys = new Set(await this.deps.books.keys().catch(() => [] as string[]));
+    await this.reconcilePartials(keys);
     for (const e of [...this.entries.values()]) {
       if (isReady(e.download) && !keys.has(e.download.path!)) {
         this.entries.set(e.id, { ...e, download: { ...emptyDownload(), status: 'failed', error: MISSING_FILE } });
@@ -149,6 +178,58 @@ export class LibraryStoreImpl extends Emitter<LibrarySnapshot> implements Librar
     }
     this.publish(true);
     await this.persist();
+  }
+
+  /**
+   * Drops saved comic prefixes no unfinished entry can resume, and shows how
+   * much of each resumable one is already local.
+   */
+  private async reconcilePartials(keys: Set<string>): Promise<void> {
+    const wanted = new Map<string, LibraryEntry>();
+    for (const e of this.entries.values()) {
+      if (e.book.format === 'comic' && !isReady(e.download)) wanted.set(partialKey(e.id, e.book.sha256), e);
+    }
+    for (const key of keys) {
+      if (!key.startsWith('partial:')) continue;
+      const manifest = key.split(':').slice(0, 3).join(':');
+      if (!wanted.has(manifest)) await this.deps.books.remove(key).catch(() => undefined);
+    }
+    for (const [key, e] of wanted) {
+      if (!keys.has(key)) continue;
+      const manifest = parseManifest(await this.deps.books.get(key).catch(() => null), e.book.fileSize);
+      if (manifest && e.download.status === 'failed') {
+        this.entries.set(e.id, { ...e, download: { ...e.download, receivedBytes: manifest.end, totalBytes: e.book.fileSize } });
+      }
+    }
+  }
+
+  /** The verified prefix of an interrupted comic download, or null to start over. */
+  private async readPartial(id: string, book: Book): Promise<{ resume: ResumePoint; runs: number[] } | null> {
+    if (book.format !== 'comic') return null;
+    const key = partialKey(id, book.sha256);
+    try {
+      const manifest = parseManifest(await this.deps.books.get(key), book.fileSize);
+      if (!manifest) return null;
+      const runs: Blob[] = [];
+      for (const [i, start] of manifest.runs.entries()) {
+        const blob = await this.deps.books.get<Blob>(`${key}:${start}`);
+        const end = manifest.runs[i + 1] ?? manifest.end;
+        if (!(blob instanceof Blob) || blob.size !== end - start) return null;
+        runs.push(blob);
+      }
+      return { resume: { prefix: new Blob(runs), hasher: manifest.hasher }, runs: manifest.runs };
+    } catch {
+      return null;
+    }
+  }
+
+  /** Removes saved comic prefixes of `id`, except the edition `keepSha256`. */
+  private async clearPartials(id: string, keepSha256?: string): Promise<void> {
+    const keep = keepSha256 === undefined ? null : partialKey(id, keepSha256);
+    for (const key of await this.deps.books.keys().catch(() => [] as string[])) {
+      if (!key.startsWith(`partial:${id}:`) || (keep !== null && (key === keep || key.startsWith(`${keep}:`)))) continue;
+      await this.deps.books.remove(key).catch(() => undefined);
+    }
   }
 
   private async readStored(): Promise<Map<string, LibraryEntry>> {
@@ -259,7 +340,13 @@ export class LibraryStoreImpl extends Emitter<LibrarySnapshot> implements Librar
     let e: LibraryEntry = existing
       ? { ...existing, book, progress: existing.book.sha256 !== book.sha256 ? null : existing.progress }
       : newEntry(book, origin, nowIso(this.now));
-    e = { ...e, download: { status: 'queued', receivedBytes: 0, totalBytes: book.fileSize, path: null, error: null } };
+    // A failed comic of this edition reports its saved prefix until the
+    // download confirms it, so resuming does not flash back to zero.
+    const resumable =
+      book.format === 'comic' && existing?.download.status === 'failed' && existing.book.sha256 === book.sha256
+        ? existing.download.receivedBytes
+        : 0;
+    e = { ...e, download: { status: 'queued', receivedBytes: resumable, totalBytes: book.fileSize, path: null, error: null } };
     this.cancelRequests.delete(id);
     this.put(e);
 
@@ -271,6 +358,29 @@ export class LibraryStoreImpl extends Emitter<LibrarySnapshot> implements Librar
       this.put(e, persist);
     };
     const cancelled = () => this.cancelRequests.has(id);
+    // Comics keep their verified prefix in IndexedDB as it is hashed (runs,
+    // then the manifest naming them), so a reload can resume the download.
+    const comic = book.format === 'comic';
+    const manifestKey = partialKey(id, book.sha256);
+    let saving = Promise.resolve();
+    let saved = 0;
+    let savedRuns: number[] = [];
+    let saveFailed = false;
+    const keepRun = (run: SpilledRun) => {
+      saving = saving.then(async () => {
+        if (saveFailed || cancelled()) return;
+        try {
+          await this.deps.books.set(`${manifestKey}:${run.start}`, run.blob);
+          savedRuns = [...savedRuns, run.start];
+          const manifest: PartialManifest = { size: book.fileSize, end: run.end, hasher: run.hasher, runs: savedRuns };
+          await this.deps.books.set(manifestKey, manifest);
+          saved = run.end;
+        } catch {
+          // Out of space: this download still finishes, it just cannot resume.
+          saveFailed = true;
+        }
+      });
+    };
 
     try {
       let lastPaint = this.now();
@@ -283,11 +393,34 @@ export class LibraryStoreImpl extends Emitter<LibrarySnapshot> implements Librar
           setDownload({ status: done ? 'verifying' : 'downloading', receivedBytes: received, totalBytes: total }, false);
         }
       };
-      const partial = new ProgressiveDownload(book, this.deps.clientFor(origin), {
+      let resume: ResumePoint | null = null;
+      if (comic) {
+        await this.clearPartials(id, book.sha256);
+        const kept = await this.readPartial(id, book);
+        if (kept) {
+          resume = kept.resume;
+          saved = resume.prefix.size;
+          savedRuns = kept.runs;
+        } else {
+          await this.clearPartials(id);
+        }
+      }
+      const options = {
         onProgress: progress,
         onReadable: () => this.publish(),
         policy: this.deps.segmentPolicy,
-      });
+        ...(comic ? { onSpill: keepRun } : {}),
+      };
+      let partial: ProgressiveDownload;
+      try {
+        partial = new ProgressiveDownload(book, this.deps.clientFor(origin), resume ? { ...options, resume } : options);
+      } catch (error) {
+        if (!resume) throw error;
+        await this.clearPartials(id);
+        saved = 0;
+        savedRuns = [];
+        partial = new ProgressiveDownload(book, this.deps.clientFor(origin), options);
+      }
       this.progressive.set(id, partial);
       if (cancelled()) {
         partial.cancel();
@@ -309,10 +442,16 @@ export class LibraryStoreImpl extends Emitter<LibrarySnapshot> implements Librar
       if (existing?.download.path && existing.download.path !== path) {
         await this.deps.books.remove(existing.download.path).catch(() => undefined);
       }
+      if (comic) {
+        await saving;
+        await this.clearPartials(id);
+      }
       this.deps.onDownloaded?.();
     } catch (error) {
       const verified = this.verifiedBeforeUpdate.get(id) ?? existing;
+      await saving;
       if (error instanceof DownloadCancelled || cancelled()) {
+        if (comic) await this.clearPartials(id);
         this.put(
           verified && isReady(verified.download)
             ? verified
@@ -326,7 +465,11 @@ export class LibraryStoreImpl extends Emitter<LibrarySnapshot> implements Librar
         this.put(
           verified && isReady(verified.download)
             ? { ...verified, download: { ...verified.download, error: `Update failed. ${message}` } }
-            : { ...current(), download: { ...emptyDownload(book.fileSize), status: 'failed', error: message } },
+            : {
+                ...current(),
+                // `receivedBytes` of a failed comic is its saved prefix: what a retry resumes from.
+                download: { ...emptyDownload(book.fileSize), status: 'failed', receivedBytes: comic ? saved : 0, error: message },
+              },
         );
       }
     } finally {
@@ -365,9 +508,9 @@ export class LibraryStoreImpl extends Emitter<LibrarySnapshot> implements Librar
     this.publish();
     if (e) {
       if (e.download.path) await this.deps.books.remove(e.download.path).catch(() => undefined);
-      const prefix = `book:${id}:`;
+      const prefixes = [`book:${id}:`, `partial:${id}:`];
       for (const key of await this.deps.books.keys().catch(() => [] as string[])) {
-        if (key.startsWith(prefix)) await this.deps.books.remove(key).catch(() => undefined);
+        if (prefixes.some((prefix) => key.startsWith(prefix))) await this.deps.books.remove(key).catch(() => undefined);
       }
     }
     await this.persist();
@@ -397,7 +540,8 @@ export class LibraryStoreImpl extends Emitter<LibrarySnapshot> implements Librar
       throw new Error(MISSING_FILE);
     }
     // Re-typing is a zero-copy slice; the bytes stay in IndexedDB's blob store.
-    return blob.type === EPUB_TYPE ? blob : blob.slice(0, blob.size, EPUB_TYPE);
+    const type = mimeTypeFor(e.book);
+    return blob.type === type ? blob : blob.slice(0, blob.size, type);
   }
 
   /** Resolves once the entry's download is no longer running. */

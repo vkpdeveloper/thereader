@@ -26,8 +26,9 @@ Paths are versioned beneath `/v1`.
 - `GET /health` -> `{ "status": "ok", "service": "thereader-api" }`
 - `GET /v1/books?limit=24&cursor=...&q=...` -> `{ "items": Book[], "nextCursor": string | null }`
 - `GET /v1/books/:id` -> `{ "book": Book }`
-- `GET /v1/books/:id/download` -> streamed `application/epub+zip` bytes, Content-Length,
-  ETag, Content-Disposition. Support HEAD and valid single byte ranges if feasible.
+- `GET /v1/books/:id/download` -> streamed `application/epub+zip` bytes (comics:
+  `application/vnd.comicbook+zip`, `.cbz` file name), Content-Length, ETag,
+  Content-Disposition. Supports HEAD, If-Range and single byte ranges.
 - `GET /v1/books/:id/cover` -> optional cover image; 404 if none.
 - `GET /v1/article-source?url=...` -> the raw HTML of a public article page (see below).
 - `GET /v1/media?url=...` -> an article image, video or audio file whose host
@@ -40,6 +41,7 @@ Book fields (all present unless explicitly nullable):
 ```json
 {
   "id": "the-quiet-hour",
+  "format": "epub",
   "version": "1",
   "title": "The Quiet Hour",
   "author": "The Reader",
@@ -54,7 +56,8 @@ Book fields (all present unless explicitly nullable):
 }
 ```
 
-URLs may be relative to the API origin; the client must resolve them. IDs are URL-safe lowercase slugs.
+`format` is `"epub"` or `"comic"` (a CBZ, see [comic books](comics.md)); treat a
+missing `format` as `"epub"`. URLs may be relative to the API origin; the client must resolve them. IDs are URL-safe lowercase slugs.
 Book version + checksum identify a file edition. `fileSize` must describe real bytes.
 
 Errors: `{ "error": { "code": "NOT_FOUND", "message": "Book not found." } }`.
@@ -184,14 +187,18 @@ and accessible labels. No fake controls or fake success.
 The live protocol, validation limits and response examples are documented in
 [the API README](../apps/api/README.md). Routes include:
 
-- `POST /v1/uploads/prepare`: SHA-based deduplication and upload preparation.
-- `PUT /v1/uploads/:sha`: streamed verified upload up to 64 MiB.
-- `PUT /v1/uploads/:sha/parts/:number`: resumable 8 MiB parts for larger EPUBs.
-- `POST /v1/uploads/:sha/complete`: whole-object SHA and EPUB validation.
+- `POST /v1/uploads/prepare`: SHA-based deduplication and upload preparation;
+  optional `format` (`epub` default, or `comic`).
+- `PUT /v1/uploads/:sha`: streamed verified upload up to 64 MiB, as
+  `application/epub+zip` or `application/vnd.comicbook+zip`.
+- `PUT /v1/uploads/:sha/parts/:number`: resumable 8 MiB parts for larger files.
+- `POST /v1/uploads/:sha/complete`: whole-object SHA and EPUB or CBZ validation.
 - `GET /v1/sync` and `POST /v1/sync`: library membership, locators, cumulative
   reading sessions, highlights and saved articles. Reader settings are
   per-device and never sync.
 
-Maximum EPUB size is 512 MiB. The mobile app first saves and verifies an imported
+Maximum EPUB size is 512 MiB; maximum comic (CBZ) size is 1 GiB. A comic
+must contain at least one page, at most 10,000 entries and no encryption; its
+first page becomes the cover when it fits the cover limits. The mobile app first saves and verifies an imported
 file locally; it never downloads that same imported file to make it readable.
 See [cloud sync](cloud-sync.md) for local persistence, lifecycle and conflicts.

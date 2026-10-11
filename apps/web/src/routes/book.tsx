@@ -10,7 +10,7 @@ import { hasOpenOverlay } from '../components/overlay';
 import { canRemove, removeLabel, useRemoveBook } from '../components/RemoveBook';
 import { RichText } from '../components/RichText';
 import { Eyebrow, LoadingLine, ProgressLine, StateMessage, Tag } from '../components/states';
-import { downloadFraction, emptyDownload, formatBytes, formatDate, isDownloadReady } from '../lib/format';
+import { canResume, downloadFraction, emptyDownload, formatBytes, formatDate, isDownloadReady } from '../lib/format';
 import { isTypingTarget, readLink, useDocumentTitle, useGoBack } from '../lib/hooks';
 import { fetchBook, RemoteError } from '../lib/remote';
 import { useServices, useStore } from '../lib/services/react';
@@ -134,6 +134,9 @@ function BookDetail({
   const d = entry?.download ?? emptyDownload;
   const origin = entry?.origin ?? services.settings.currentOrigin();
   const outdated = entry != null && entry.book.sha256 !== book.sha256 && isDownloadReady(d);
+  const comic = current.format === 'comic';
+  // A comic's "Comics" subject repeats its format tag.
+  const subjects = comic ? current.subjects.filter((s) => s.toLowerCase() !== 'comics') : current.subjects;
 
   return (
     <div className="book-page">
@@ -167,7 +170,8 @@ function BookDetail({
                 {category.name}
               </Link>
             )}
-            {current.subjects.map((s) => (
+            {comic && <Tag>Comic</Tag>}
+            {subjects.map((s) => (
               <Tag key={s}>{s}</Tag>
             ))}
             {current.language && <Tag>{current.language.toUpperCase()}</Tag>}
@@ -183,6 +187,8 @@ function BookDetail({
           <section className="book-section">
             <Eyebrow as="h2">Edition</Eyebrow>
             <dl className="facts">
+              <dt>Format</dt>
+              <dd>{comic ? 'Comic (CBZ)' : 'EPUB'}</dd>
               <dt>Version</dt>
               <dd>{current.version}</dd>
               <dt>Updated</dt>
@@ -253,18 +259,29 @@ function DownloadPanel({ book, entry, outdated }: { book: Book; entry: LibraryEn
         </>
       );
       break;
-    case 'failed':
+    case 'failed': {
+      // Only the edition whose prefix was saved can continue from it.
+      const resume = entry != null && canResume(entry) && entry.book.sha256 === book.sha256;
       inner = (
         <>
           <p className="t-body is-error">{d.error ?? 'Download failed.'}</p>
-          <QuietButton className="download-primary" label="Try again" emphasis expand onClick={download} />
+          {resume && (
+            <>
+              <p className="t-body-sm tabular">
+                {formatBytes(d.receivedBytes)} of {formatBytes(d.totalBytes ?? book.fileSize)} saved on this device
+              </p>
+              <ProgressLine value={downloadFraction(d)} label="Saved download progress" />
+            </>
+          )}
+          <QuietButton className="download-primary" label={resume ? 'Resume download' : 'Try again'} emphasis expand onClick={download} />
         </>
       );
       break;
+    }
     default:
       inner = (
         <>
-          <p className="t-body-sm">Saved offline and checksum-verified.</p>
+          <p className="t-body-sm">Downloads are saved offline and checksum-verified.</p>
           <QuietButton
             className="download-primary"
             label={`Download · ${formatBytes(book.fileSize)}`}

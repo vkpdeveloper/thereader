@@ -14,6 +14,7 @@
         "fflate": "0.8.2",
         "highlight.js": "11.12.0",
         "localforage": "1.10.0",
+        "node-unrar-js": "2.0.2",
         "radix-ui": "^1.6.7",
         "react": "18.2.0",
         "react-dom": "18.2.0",
@@ -767,6 +768,8 @@
     "node-fetch": ["node-fetch@2.7.0", "", { "dependencies": { "whatwg-url": "^5.0.0" }, "peerDependencies": { "encoding": "^0.1.0" }, "optionalPeers": ["encoding"] }, "sha512-c4FRfUm/dbcWZ7U+1Wq0AwCyFL+3nt2bEw05wfxSz+DWpWsitgmSgYmy2dQdWyKC1694ELPqMs/YzUSNozLt8A=="],
 
     "node-releases": ["node-releases@2.0.57", "", {}, "sha512-kQK9LGGFiHtrWiNhZtA7Qbw17AQz+dmsEKODRIVTXA9+e5MS/2gZEBhYJt13GrAz5/IOZKddH/0Z3TP/Zgo+yw=="],
+
+    "node-unrar-js": ["node-unrar-js@2.0.2", "", {}, "sha512-hLNmoJzqaKJnod8yiTVGe9hnlNRHotUi0CreSv/8HtfRi/3JnRC8DvsmKfeGGguRjTEulhZK6zXX5PXoVuDZ2w=="],
 
     "nth-check": ["nth-check@1.0.2", "", { "dependencies": { "boolbase": "~1.0.0" } }, "sha512-WeBOdju8SnzPN5vTUJYxYUxLeXpCaVP5i5e0LF8fg7WORF2Wd7wFX/pk0tYZk7s8T+J7VLy0Da6J1+wCT0AtHg=="],
 

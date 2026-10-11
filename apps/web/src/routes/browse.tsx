@@ -15,7 +15,7 @@ import {
 } from '../components/icons';
 import { ContextMenu, menuPoint, useContextMenu, type MenuItem, type MenuPoint } from '../components/overlay';
 import { LoadingLine, ProgressRing, ScreenHeader, StateMessage } from '../components/states';
-import { downloadFraction, formatBytes, isDownloadActive, isDownloadReady } from '../lib/format';
+import { canResume, downloadFraction, formatBytes, isDownloadActive, isDownloadReady } from '../lib/format';
 import { isTypingTarget, readLink, useDocumentTitle, useSentinel } from '../lib/hooks';
 import { useServices, useStore } from '../lib/services/react';
 import type { Book, LibraryEntry } from '../lib/types';
@@ -92,7 +92,12 @@ export function BrowseScreen() {
         }
       } else if (!d || !isDownloadReady(d)) {
         items.push({
-          label: d?.status === 'failed' ? 'Try download again' : `Download · ${formatBytes(book.fileSize)}`,
+          label:
+            entry && canResume(entry) && entry.book.sha256 === book.sha256
+              ? 'Resume download'
+              : d?.status === 'failed'
+                ? 'Try download again'
+                : `Download · ${formatBytes(book.fileSize)}`,
           icon: ArrowDownwardIcon,
           // A failed entry retries from its own origin (the same one here).
           onSelect: () => void (entry ? services.library.downloadEntry(entry.id, book) : services.library.download(book, { origin })),
@@ -286,7 +291,7 @@ const CatalogRow = memo(function CatalogRow({
         <div className="catalog-row-text">
           <div className="t-body-lg clamp-1">{book.title}</div>
           <div className="t-body-sm clamp-1">
-            {[book.author, book.subjects[0], formatBytes(book.fileSize)].filter(Boolean).join(' · ')}
+            {[book.author, book.format === 'comic' ? 'Comic' : book.subjects[0], formatBytes(book.fileSize)].filter(Boolean).join(' · ')}
           </div>
         </div>
         <span className="catalog-row-trailing">{trailing}</span>
