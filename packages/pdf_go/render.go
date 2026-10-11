@@ -73,7 +73,7 @@ func Markdown(d *Document) string {
 	}
 	for _, page := range d.Pages {
 		fmt.Fprintf(&out, "<a id=\"page-%d\"></a>\n\n", page.Number)
-		for _, b := range page.Blocks {
+		for bi, b := range page.Blocks {
 			switch b.Kind {
 			case "heading":
 				out.WriteString(strings.Repeat("#", max(1, min(6, b.Level))) + " " + markdownRuns(b) + "\n\n")
@@ -92,6 +92,10 @@ func Markdown(d *Document) string {
 				}
 				out.WriteString("- " + t + "\n\n")
 			case "table":
+				if complexTable(b.Table) {
+					out.WriteString(tableHTML(b, fmt.Sprintf("table-%d-%d", page.Number, bi)) + "\n\n")
+					continue
+				}
 				for j, row := range b.Rows {
 					out.WriteString("| ")
 					for k, cell := range row {
@@ -164,19 +168,7 @@ func pageHTML(page Page) string {
 		case "image":
 			fmt.Fprintf(&out, `<figure><img src="%s" alt="%s"/></figure>`, xmlText(b.Asset), xmlText(b.Alt))
 		case "table":
-			out.WriteString("<table>")
-			for r, row := range b.Rows {
-				out.WriteString("<tr>")
-				tag := "td"
-				if r == 0 {
-					tag = "th"
-				}
-				for _, cell := range row {
-					out.WriteString("<" + tag + ">" + xmlText(cell) + "</" + tag + ">")
-				}
-				out.WriteString("</tr>")
-			}
-			out.WriteString("</table>")
+			out.WriteString(tableHTML(b, fmt.Sprintf("table-%d-%d", page.Number, j)))
 		case "list":
 			out.WriteString("<p class=\"list-item\">" + htmlRuns(b) + "</p>")
 		default:

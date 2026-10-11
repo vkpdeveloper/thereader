@@ -5,7 +5,7 @@ formula into separate blocks is penalized. MuPDF is evaluation-only. The
 regions were chosen from original PDF pages and include known difficult cases.
 """
 from pathlib import Path
-import base64, hashlib, json, re
+import argparse, base64, hashlib, json, re
 import numpy as np
 from PIL import Image, ImageFilter
 import pymupdf
@@ -60,14 +60,19 @@ def intersection(b, region):
 
 
 def main():
-    out = LOCAL/'visual'
+    ap=argparse.ArgumentParser()
+    ap.add_argument('--predictions',type=Path,default=LOCAL/'after')
+    ap.add_argument('--results',type=Path,default=DEST/'math-visual.json')
+    ap.add_argument('--images',type=Path,default=LOCAL/'visual')
+    args=ap.parse_args()
+    out = args.images
     out.mkdir(exist_ok=True)
     rows = []
     docs = {}
     for r in REGIONS:
         id = r['document']
         if id not in docs:
-            data = json.loads((LOCAL/'after'/f'{id}.json').read_text())
+            data = json.loads((args.predictions/f'{id}.json').read_text())
             docs[id] = data, {a['name']:base64.b64decode(a['data']) for a in data['assets']}
         data, assets = docs[id]
         page = data['pages'][r['page']-1]
@@ -91,6 +96,6 @@ def main():
         print(r['id'], f"F1={score['inkF1']:.4%}", f"recall={score['inkRecall']:.4%}",len(candidates))
     report = {'method':'14 manually selected display-formula crops from three books. Largest-overlap single math block; original-PDF vs extracted-glyph raster at 216 dpi, grayscale ink <160 with chroma spread <60; 1-pixel dilation tolerance. Mean over regions, not whole-book accuracy; does not measure semantic math or prose reading order.',
               'meanInkF1':sum(r['inkF1'] for r in rows)/len(rows), 'regionsAt99PercentF1':sum(r['inkF1']>=.99 for r in rows), 'regions':rows}
-    (DEST/'math-visual.json').write_text(json.dumps(report,indent=2))
+    args.results.write_text(json.dumps(report,indent=2))
 
 if __name__=='__main__':main()

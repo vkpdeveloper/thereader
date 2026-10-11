@@ -188,10 +188,11 @@ func parseCFF(b []byte) (*outlineFont, error) {
 		return nil, ErrInvalid
 	}
 	at = next
-	_, at, e = cffIndex(b, at)
+	stringsIndex, next, e := cffIndex(b, at)
 	if e != nil {
 		return nil, e
 	}
+	at = next
 	global, _, e := cffIndex(b, at)
 	if e != nil {
 		return nil, e
@@ -339,8 +340,9 @@ func parseCFF(b []byte) (*outlineFont, error) {
 			return nil, e
 		}
 		f.local = [][][]byte{sub}
-		// Non-CID CFF encodings are deliberately not guessed as Unicode/GIDs.
-		return nil, fmt.Errorf("name-keyed CFF outlines not supported")
+		if e := cffNamedCharset(f, b, d, stringsIndex); e != nil {
+			return nil, e
+		}
 	}
 	return f, nil
 }
@@ -738,7 +740,7 @@ func (c *charstring) run(b []byte, depth int) error {
 }
 func (f *outlineFont) outline(code uint32, name string) (string, matrix, error) {
 	gid, ok := f.codes[code]
-	if f.type1 || f.type3 {
+	if f.names != nil {
 		gid, ok = f.names[name]
 	}
 	limit := len(f.chars)

@@ -1,0 +1,430 @@
+{
+  "version": "0.3.0",
+  "htmlSHA256": "ccd482c65a81672a0b827d9c5c53460fdd49a5e95c55a3b8c47be3b19b035190",
+  "hiddenNodesRemoved": 6,
+  "referenceTables": 13,
+  "predictedTables": 13,
+  "matchedTables": 13,
+  "exactNonemptyCellTables": 13,
+  "cellText": {
+    "matched": 1473,
+    "reference": 1473,
+    "predicted": 1473,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0
+  },
+  "cellPositionAndSpan": {
+    "matched": 1473,
+    "reference": 1473,
+    "predicted": 1473,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0
+  },
+  "tables": [
+    {
+      "id": "S2.T1",
+      "page": 4,
+      "referenceGrid": [
+        17,
+        4
+      ],
+      "predictedGrid": [
+        17,
+        4
+      ],
+      "cellText": {
+        "matched": 50,
+        "reference": 50,
+        "predicted": 50,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "cellPositionAndSpan": {
+        "matched": 50,
+        "reference": 50,
+        "predicted": 50,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "missingText": [],
+      "unexpectedText": [],
+      "wrongOrMissingCells": []
+    },
+    {
+      "id": "S2.T2",
+      "page": 5,
+      "referenceGrid": [
+        6,
+        4
+      ],
+      "predictedGrid": [
+        6,
+        4
+      ],
+      "cellText": {
+        "matched": 23,
+        "reference": 23,
+        "predicted": 23,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "cellPositionAndSpan": {
+        "matched": 23,
+        "reference": 23,
+        "predicted": 23,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "missingText": [],
+      "unexpectedText": [],
+      "wrongOrMissingCells": []
+    },
+    {
+      "id": "S3.T3",
+      "page": 7,
+      "referenceGrid": [
+        24,
+        10
+      ],
+      "predictedGrid": [
+        24,
+        10
+      ],
+      "cellText": {
+        "matched": 215,
+        "reference": 215,
+        "predicted": 215,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "cellPositionAndSpan": {
+        "matched": 215,
+        "reference": 215,
+        "predicted": 215,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "missingText": [],
+      "unexpectedText": [],
+      "wrongOrMissingCells": []
+    },
+    {
+      "id": "S3.T4",
+      "page": 8,
+      "referenceGrid": [
+        24,
+        10
+      ],
+      "predictedGrid": [
+        24,
+        10
+      ],
+      "cellText": {
+        "matched": 215,
+        "reference": 215,
+        "predicted": 215,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "cellPositionAndSpan": {
+        "matched": 215,
+        "reference": 215,
+        "predicted": 215,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "missingText": [],
+      "unexpectedText": [],
+      "wrongOrMissingCells": []
+    },
+    {
+      "id": "S3.T5",
+      "page": 11,
+      "referenceGrid": [
+        6,
+        7
+      ],
+      "predictedGrid": [
+        6,
+        7
+      ],
+      "cellText": {
+        "matched": 37,
+        "reference": 37,
+        "predicted": 37,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "cellPositionAndSpan": {
+        "matched": 37,
+        "reference": 37,
+        "predicted": 37,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "missingText": [],
+      "unexpectedText": [],
+      "wrongOrMissingCells": []
+    },
+    {
+      "id": "S4.T6",
+      "page": 13,
+      "referenceGrid": [
+        6,
+        5
+      ],
+      "predictedGrid": [
+        6,
+        5
+      ],
+      "cellText": {
+        "matched": 27,
+        "reference": 27,
+        "predicted": 27,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "cellPositionAndSpan": {
+        "matched": 27,
+        "reference": 27,
+        "predicted": 27,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "missingText": [],
+      "unexpectedText": [],
+      "wrongOrMissingCells": []
+    },
+    {
+      "id": "S4.T7",
+      "page": 14,
+      "referenceGrid": [
+        6,
+        7
+      ],
+      "predictedGrid": [
+        6,
+        7
+      ],
+      "cellText": {
+        "matched": 38,
+        "reference": 38,
+        "predicted": 38,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "cellPositionAndSpan": {
+        "matched": 38,
+        "reference": 38,
+        "predicted": 38,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "missingText": [],
+      "unexpectedText": [],
+      "wrongOrMissingCells": []
+    },
+    {
+      "id": "S9.T8",
+      "page": 28,
+      "referenceGrid": [
+        6,
+        4
+      ],
+      "predictedGrid": [
+        6,
+        4
+      ],
+      "cellText": {
+        "matched": 24,
+        "reference": 24,
+        "predicted": 24,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "cellPositionAndSpan": {
+        "matched": 24,
+        "reference": 24,
+        "predicted": 24,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "missingText": [],
+      "unexpectedText": [],
+      "wrongOrMissingCells": []
+    },
+    {
+      "id": "S9.T9",
+      "page": 29,
+      "referenceGrid": [
+        11,
+        4
+      ],
+      "predictedGrid": [
+        11,
+        4
+      ],
+      "cellText": {
+        "matched": 38,
+        "reference": 38,
+        "predicted": 38,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "cellPositionAndSpan": {
+        "matched": 38,
+        "reference": 38,
+        "predicted": 38,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "missingText": [],
+      "unexpectedText": [],
+      "wrongOrMissingCells": []
+    },
+    {
+      "id": "S9.T10",
+      "page": 30,
+      "referenceGrid": [
+        30,
+        7
+      ],
+      "predictedGrid": [
+        30,
+        7
+      ],
+      "cellText": {
+        "matched": 180,
+        "reference": 180,
+        "predicted": 180,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "cellPositionAndSpan": {
+        "matched": 180,
+        "reference": 180,
+        "predicted": 180,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "missingText": [],
+      "unexpectedText": [],
+      "wrongOrMissingCells": []
+    },
+    {
+      "id": "S9.T11",
+      "page": 39,
+      "referenceGrid": [
+        30,
+        10
+      ],
+      "predictedGrid": [
+        30,
+        10
+      ],
+      "cellText": {
+        "matched": 268,
+        "reference": 268,
+        "predicted": 268,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "cellPositionAndSpan": {
+        "matched": 268,
+        "reference": 268,
+        "predicted": 268,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "missingText": [],
+      "unexpectedText": [],
+      "wrongOrMissingCells": []
+    },
+    {
+      "id": "S9.T12",
+      "page": 40,
+      "referenceGrid": [
+        31,
+        10
+      ],
+      "predictedGrid": [
+        31,
+        10
+      ],
+      "cellText": {
+        "matched": 270,
+        "reference": 270,
+        "predicted": 270,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "cellPositionAndSpan": {
+        "matched": 270,
+        "reference": 270,
+        "predicted": 270,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "missingText": [],
+      "unexpectedText": [],
+      "wrongOrMissingCells": []
+    },
+    {
+      "id": "S9.T13",
+      "page": 40,
+      "referenceGrid": [
+        10,
+        10
+      ],
+      "predictedGrid": [
+        10,
+        10
+      ],
+      "cellText": {
+        "matched": 88,
+        "reference": 88,
+        "predicted": 88,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "cellPositionAndSpan": {
+        "matched": 88,
+        "reference": 88,
+        "predicted": 88,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "missingText": [],
+      "unexpectedText": [],
+      "wrongOrMissingCells": []
+    }
+  ]
+}

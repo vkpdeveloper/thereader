@@ -1,0 +1,3 @@
+# Keep machine-generated measurements available while focusing PR diffs on code.
+*.json linguist-generated=true
+*.jsonl linguist-generated=true

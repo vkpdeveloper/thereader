@@ -1,0 +1,26 @@
+{
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "cpu": "Apple M5",
+  "binarySHA256": null,
+  "python": "3.12.13 (main, Apr 14 2026, 14:33:40) [Clang 22.1.3 ]",
+  "warmups": 1,
+  "repeats": 3,
+  "rows": [
+    {
+      "engine": "docling",
+      "version": "2.137.0",
+      "id": "harness",
+      "pages": 43,
+      "scope": "CPU, 4 threads; accurate tables; OCR off; Markdown with embedded pictures; warm conversion + Markdown export",
+      "samplesMs": [
+        32964.6401659993,
+        38239.83987502288,
+        41128.20379101322
+      ],
+      "medianMs": 38239.83987502288,
+      "msPerPage": 889.2986017447182,
+      "outputSha256": "2893154869867434e72132b92bb02d6ffac826bfae4c780b856264875d4b53cb",
+      "stats": null
+    }
+  ]
+}

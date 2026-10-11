@@ -70,6 +70,19 @@ func (p *pdf) image(s *stream, page int) (string, error) {
 		} else {
 			id = p.addAsset(b, "image/jpeg", "jpg", w, h)
 		}
+	case "CCITTFaxDecode", "CCF":
+		b, e = p.faxImage(s, b, w, h)
+		if e != nil {
+			return "", e
+		}
+		img, err := p.raster(s, b, w, h, page)
+		if err != nil {
+			return "", err
+		}
+		id, err = p.pngAsset(img, w, h)
+		if err != nil {
+			return "", err
+		}
 	case "JPXDecode":
 		return "", fmt.Errorf("JPEG 2000 images require an unsupported decoder")
 	case "":
@@ -186,8 +199,9 @@ func (p *pdf) raster(s *stream, b []byte, w, h, page int) (image.Image, error) {
 			if len(a) < 4 {
 				return nil, ErrInvalid
 			}
-			if named(p.resolve(a[1])) != "DeviceRGB" {
-				return nil, fmt.Errorf("unsupported indexed image base color space")
+			base, err := p.imageBaseColor(a[1], page)
+			if err != nil {
+				return nil, err
 			}
 			indexed = true
 			high = integer(p.resolve(a[2]))
@@ -203,6 +217,10 @@ func (p *pdf) raster(s *stream, b []byte, w, h, page int) (image.Image, error) {
 				if e != nil {
 					return nil, e
 				}
+			}
+			palette, err = indexedRGB(palette, high, base)
+			if err != nil {
+				return nil, err
 			}
 		case "CalRGB":
 			kind = "DeviceRGB"
@@ -315,16 +333,13 @@ func (p *pdf) softMask(s *stream, img *image.NRGBA, page int) error {
 		if mw < 1 || mh < 1 || mw > p.opts.Limits.ImagePixels/mh {
 			return ErrLimit
 		}
-		if integer(p.resolve(sm.dict["BitsPerComponent"])) != 8 {
-			return fmt.Errorf("unsupported soft mask bit depth")
-		}
 		if sm.dict["Matte"] != nil {
 			if mw != w || mh != h {
 				return fmt.Errorf("matte soft mask dimensions must match the image")
 			}
 			p.warn("image-matte", page, "Soft-mask matte colors are not unblended; edge colors need visual review.")
 		}
-		alpha, err := p.decode(sm)
+		alpha, err := p.maskSamples(sm, mw, mh)
 		if err != nil {
 			return err
 		}

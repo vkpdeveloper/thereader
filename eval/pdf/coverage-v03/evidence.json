@@ -1,0 +1,63 @@
+{
+  "reader": "Local web app -> Worker API -> standalone Go server -> EPUB upload -> reader",
+  "source": "https://arxiv.org/pdf/2609.20804",
+  "pdfUploadStatus": 200,
+  "epubStoreStatus": 201,
+  "desktopViewport": [
+    1280,
+    800
+  ],
+  "mobileViewport": [
+    390,
+    844
+  ],
+  "desktopPageHorizontalOverflow": 0,
+  "mobilePageHorizontalOverflow": 0,
+  "desktopTableScrollWidth": 778,
+  "desktopTableViewportWidth": 612,
+  "mobileTableHorizontalScroll": 434,
+  "verifiedRowGroups": [
+    [
+      "32K",
+      5
+    ],
+    [
+      "64K",
+      5
+    ],
+    [
+      "96K",
+      5
+    ],
+    [
+      "128K",
+      7
+    ]
+  ],
+  "verifiedModelColumnSpans": [
+    [
+      "Nemotron-3 30B",
+      2
+    ],
+    [
+      "Nemotron-3 120B",
+      2
+    ],
+    [
+      "Nemotron-3 550B",
+      2
+    ],
+    [
+      "Mistral-3.5-128B",
+      2
+    ]
+  ],
+  "screenshot": "https://pub-db5cc934f02943a19d855c11f462c1e9.r2.dev/pr-assets/thereader/pdf-v03-final-table-6b6db4af.png",
+  "mobileScreenshot": "https://pub-db5cc934f02943a19d855c11f462c1e9.r2.dev/pr-assets/thereader/pdf-v03-final-mobile-fdae4f43.png",
+  "video": "https://pub-db5cc934f02943a19d855c11f462c1e9.r2.dev/pr-assets/thereader/pdf-v03-final-reader-75b05ce7.mp4",
+  "note": "Real reader captures after importing the original PDF. Mobile is viewport emulation, not a physical-device test. Wide tables scroll horizontally; row/column spans are retained.",
+  "verifiedTableBodyGroups": 4,
+  "readerEntry": "367d5b3f5e9283db5ee8e7e172d76370d41549033e46eedd5c967b6e152cfbcb",
+  "epubSHA256": "afbf571ba62b4bbd45d566f523840605bcc78449c9e07bfca0d04a62d68722cf",
+  "serverBinarySHA256": "0b30df50e7574df4b9984f44e95d15b3232a0ea8543a3fdf5705bf31a5692f93"
+}

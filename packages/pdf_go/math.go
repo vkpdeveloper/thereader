@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode"
 	"unicode/utf8"
 )
 
@@ -73,7 +74,7 @@ func (p *pdf) positionedAsset(pc *pageContent, spans []span, paths []vectorPath,
 				previous := len(program.cache)
 				path, fm, e := program.outline(code, name)
 				gid := program.codes[code]
-				if program.type1 || program.type3 {
+				if program.names != nil {
 					gid = program.names[name]
 				}
 				if len(program.cache) > previous {
@@ -95,7 +96,7 @@ func (p *pdf) positionedAsset(pc *pageContent, spans []span, paths []vectorPath,
 					}
 					body.WriteString(`<use href="#` + id + `" transform="` + matrixSVG(placedGlyph) + `" fill="` + g.fill + `"/>`)
 					gid = program.codes[code]
-					if program.type1 || program.type3 {
+					if program.names != nil {
 						gid = program.names[name]
 					}
 					cached := program.cache[gid]
@@ -233,6 +234,61 @@ func (p *pdf) mathBlocks(pc *pageContent, lines []*line) []Block {
 			box = union(box, next.box)
 			text += " " + next.text
 		}
+		// A display can include a short prose annotation on a mathematical
+		// baseline ("so that", "terms with higher ..."). Keep it with the
+		// formula when the surrounding baselines already establish its region.
+		for k, candidate := range lines {
+			if candidate.used || !candidate.math || candidate.baseline < box.Y || candidate.baseline > box.Y+box.H || candidate.box.X > box.X+box.W+l.size*2 || candidate.box.X+candidate.box.W < box.X-l.size*2 {
+				continue
+			}
+			words := 0
+			letters := 0
+			for _, word := range proseWord.FindAllString(candidate.text, -1) {
+				if !mathWords[strings.ToLower(word)] {
+					words++
+					letters += len(word)
+				}
+			}
+			if words == 0 || letters > 28 || !strings.ContainsAny(candidate.text, "=+−×÷∑∫√≤≥∈→") {
+				continue
+			}
+			mathCount := 0
+			annotationX := math.Inf(1)
+			for _, s := range candidate.spans {
+				if s.font != nil && s.font.math {
+					mathCount += utf8.RuneCountInString(s.text)
+				}
+				for _, word := range proseWord.FindAllString(s.text, -1) {
+					if !mathWords[strings.ToLower(word)] {
+						annotationX = math.Min(annotationX, s.box.X)
+					}
+				}
+			}
+			if mathCount < 3 {
+				continue
+			}
+			candidate.used = true
+			group = append(group, candidate.spans...)
+			box = union(box, candidate.box)
+			text += " " + candidate.text
+			// A right-hand annotation can wrap independently of the formula.
+			if k+1 < len(lines) && annotationX > box.X+box.W*.45 {
+				n := k + 1
+				for n < len(lines) && lines[n].used {
+					n++
+				}
+				if n == len(lines) {
+					continue
+				}
+				next := lines[n]
+				if !next.used && annotationContinuation(candidate, next) && math.Abs(next.box.X-annotationX) <= l.size && next.box.X+next.box.W <= box.X+box.W+l.size && next.baseline > candidate.baseline && next.baseline-candidate.baseline < l.size*2 && len(next.text) < 70 {
+					next.used = true
+					group = append(group, next.spans...)
+					box = union(box, next.box)
+					text += " " + next.text
+				}
+			}
+		}
 		// A baseline can mix prose with pieces of a multi-line formula.
 		// Recover only mathematical spans inside the region, leaving prose in
 		// the normal text flow. This catches fraction signs and raised powers.
@@ -280,6 +336,17 @@ func (p *pdf) mathBlocks(pc *pageContent, lines []*line) []Block {
 	return blocks
 }
 
+func annotationContinuation(previous, next *line) bool {
+	// Geometric proximity alone also matches a new sentence or heading.
+	// Continue only unfinished prose into a short, lowercase-starting line.
+	text := strings.TrimSpace(previous.text)
+	if text == "" || strings.ContainsRune(".!?;:", rune(text[len(text)-1])) || next.mono || next.size > previous.size*1.1 {
+		return false
+	}
+	first, _ := utf8.DecodeRuneInString(strings.TrimSpace(next.text))
+	return unicode.IsLower(first) && len(proseWord.FindAllString(next.text, -1)) > 0
+}
+
 func (p *pdf) inlineMath(pc *pageContent, l *line) {
 	// Preserve a contiguous math-font expression, including scripts, as one
 	// baseline-aligned asset. Ordinary single variables remain selectable text.
@@ -296,13 +363,15 @@ func (p *pdf) inlineMath(pc *pageContent, l *line) {
 				end++
 			}
 		}
-		visual := false
+		unmapped, visual := false, false
 		box := s.box
 		for k := j; k < end; k++ {
 			v := l.spans[k]
+			unmapped = unmapped || (v.font != nil && strings.Contains(v.text, "�"))
 			box = union(box, v.box)
 			visual = visual || v.script != "" || v.size > l.size*1.35
 		}
+		visual = visual || unmapped
 		prefix := ""
 		if j > 0 {
 			prev := l.spans[j-1]
@@ -310,7 +379,7 @@ func (p *pdf) inlineMath(pc *pageContent, l *line) {
 				prefix = " "
 			}
 		}
-		if visual && s.font != nil && s.font.math {
+		if visual && s.font != nil && (s.font.math || unmapped) {
 			text := ""
 			for _, v := range l.spans[j:end] {
 				text += deLigature.Replace(v.text)

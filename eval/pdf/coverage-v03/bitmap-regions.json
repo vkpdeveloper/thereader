@@ -1,0 +1,35 @@
+[
+  {
+    "id": "calculus-bitmap-year",
+    "document": "calculus",
+    "page": 5,
+    "box": [
+      182,
+      516,
+      211,
+      533
+    ]
+  },
+  {
+    "id": "calculus-bitmap-pound",
+    "document": "calculus",
+    "page": 18,
+    "box": [
+      270.3,
+      332,
+      278,
+      345
+    ]
+  },
+  {
+    "id": "calculus-bitmap-asterisk",
+    "document": "calculus",
+    "page": 18,
+    "box": [
+      144.8,
+      465,
+      150,
+      475
+    ]
+  }
+]

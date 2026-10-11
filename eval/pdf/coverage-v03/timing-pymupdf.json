@@ -1,0 +1,90 @@
+{
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "cpu": "Apple M5",
+  "binarySHA256": null,
+  "python": "3.12.13 (main, Apr 14 2026, 14:33:40) [Clang 22.1.3 ]",
+  "warmups": 1,
+  "repeats": 3,
+  "rows": [
+    {
+      "engine": "pymupdf",
+      "version": "1.28.2",
+      "id": "harness",
+      "pages": 43,
+      "scope": "text only, sort=True",
+      "samplesMs": [
+        640.0504580233246,
+        559.7153750131838,
+        593.8484170183074
+      ],
+      "medianMs": 593.8484170183074,
+      "msPerPage": 13.810428302751335,
+      "outputSha256": "2d4a143d9df708a5f051e53a6c1a1721c3573242915d15f0a2b28b8ffe27e6b3",
+      "stats": null
+    },
+    {
+      "engine": "pymupdf",
+      "version": "1.28.2",
+      "id": "axler",
+      "pages": 404,
+      "scope": "text only, sort=True",
+      "samplesMs": [
+        2613.842791004572,
+        2598.0622499773744,
+        2586.797249998199
+      ],
+      "medianMs": 2598.0622499773744,
+      "msPerPage": 6.430847153409343,
+      "outputSha256": "577acd49a7de60b73ea984642c7247dab06c4c3371df66bb5dd350b2515cf8de",
+      "stats": null
+    },
+    {
+      "engine": "pymupdf",
+      "version": "1.28.2",
+      "id": "hefferon",
+      "pages": 525,
+      "scope": "text only, sort=True",
+      "samplesMs": [
+        3541.7716660012957,
+        3495.042334019672,
+        3499.0461250126828
+      ],
+      "medianMs": 3499.0461250126828,
+      "msPerPage": 6.664849761928919,
+      "outputSha256": "6aaac1f7416e6064b231881e6a0e59e46947d0cc3867035dfc084f67414fdaff",
+      "stats": null
+    },
+    {
+      "engine": "pymupdf",
+      "version": "1.28.2",
+      "id": "thinkpython",
+      "pages": 244,
+      "scope": "text only, sort=True",
+      "samplesMs": [
+        1570.89754199842,
+        1579.291000001831,
+        1564.0105830098037
+      ],
+      "medianMs": 1570.89754199842,
+      "msPerPage": 6.438104680321393,
+      "outputSha256": "fca3754edbf519953fab8ef880e2b05d245d9ccb516d8d7b4f574f67dabe42d0",
+      "stats": null
+    },
+    {
+      "engine": "pymupdf",
+      "version": "1.28.2",
+      "id": "calculus",
+      "pages": 292,
+      "scope": "text only, sort=True",
+      "samplesMs": [
+        1101.5227079915348,
+        1070.7965409965254,
+        1099.5958330167923
+      ],
+      "medianMs": 1099.5958330167923,
+      "msPerPage": 3.765739154167097,
+      "outputSha256": "587028e493eb60a3cc11b19d7905437421fdedafa272768b4419041dd858ded1",
+      "stats": null
+    }
+  ]
+}

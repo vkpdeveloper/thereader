@@ -1,0 +1,101 @@
+{
+  "repository": "https://github.com/allenai/olmocr",
+  "revision": "f7cfe4c22098b154c76b6ec950d1c0a464eecf8d",
+  "files": [
+    {
+      "path": "olmocr/__init__.py",
+      "gitBlobSHA1": "b230225699f8a12d10e41e3e146d088b7eecbe14",
+      "sha256": "4466ba72645ddde5f8f4dc286eb8602c4197d2d194f0bbe61aa6f36c757b7743"
+    },
+    {
+      "path": "olmocr/bench/__init__.py",
+      "gitBlobSHA1": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "olmocr/bench/benchmark.py",
+      "gitBlobSHA1": "86d3e832dab8958bc6cf34c9de165b029db68efe",
+      "sha256": "7857eeafeb4bcef911116eb84813fa0a7949d2706c6baf3ee0a9cec706337bc2"
+    },
+    {
+      "path": "olmocr/bench/convert.py",
+      "gitBlobSHA1": "62d366a13150ea23f62016419121894708414c69",
+      "sha256": "eb191ab56c27d37b7e76a5a85bf0597ac5e5731844f65a318b8509f46301b015"
+    },
+    {
+      "path": "olmocr/bench/katex/__init__.py",
+      "gitBlobSHA1": "f81af1b4b18c681a83574bb9dab9537ddf83a14f",
+      "sha256": "dc168cb576c0a62f3b173016bb02d5f4f11d0fcf373f23ac20e168d1261aa5c9"
+    },
+    {
+      "path": "olmocr/bench/katex/auto-render.min.js",
+      "gitBlobSHA1": "32a7dd8a40580c26c8df0ec4b6743c073bf39a34",
+      "sha256": "bb53eb953394531aae36fdd537065c4244eb8542901a3ce914601d932675b8ac"
+    },
+    {
+      "path": "olmocr/bench/katex/katex.min.css",
+      "gitBlobSHA1": "30156f0857ddafd0a7bceeb12546e17161ba10c6",
+      "sha256": "f787891b550d554c214aa8902f39ac46df2dbd48fdec500a2040a5dce1e8ab58"
+    },
+    {
+      "path": "olmocr/bench/katex/katex.min.js",
+      "gitBlobSHA1": "8490543b6df7a8e53283e5f3d42aaa47e3545126",
+      "sha256": "863811e2baa0849c77bc92d26d44f4d0a4843c2a8ab52c462017dea57316e4d8"
+    },
+    {
+      "path": "olmocr/bench/katex/render.py",
+      "gitBlobSHA1": "4cb08301a61b3c01f6ff0284116a21c519debf00",
+      "sha256": "7e04305b57255013362ecc43e183ccd319fb187d1b900c941df575b871c9df0b"
+    },
+    {
+      "path": "olmocr/bench/prompts.py",
+      "gitBlobSHA1": "b8c355a7be27c10fb94e1e7f98fae9e296e2ce39",
+      "sha256": "3bd6c793e86003498ca7331071a58b644810906a12a1ff88df9912648539dc33"
+    },
+    {
+      "path": "olmocr/bench/report.py",
+      "gitBlobSHA1": "4f61b3bc386b4e4465b7c5c9a570503752e52774",
+      "sha256": "daa867e9b5ea3a8ec7f8787e29db0a607d0f475f650bed4cd8808cdf780b67e5"
+    },
+    {
+      "path": "olmocr/bench/review_app.py",
+      "gitBlobSHA1": "cf1495eeee0de694e101d12c0f02effd385f22f9",
+      "sha256": "85fe70b4c32682a4df677cb8baf3e613d23494c1a1407246de7b661bb2d3f0d1"
+    },
+    {
+      "path": "olmocr/bench/review_app_latex.py",
+      "gitBlobSHA1": "04fd57ee069cc7ea4015a1863548f2cbb333fc49",
+      "sha256": "7381c52ecf68094a2fd8e520865bda6e5d3eef888cc03211464ac161fc5228cf"
+    },
+    {
+      "path": "olmocr/bench/table_parsing.py",
+      "gitBlobSHA1": "2c92d127633b140c14c6fb219d0ba93131f018ec",
+      "sha256": "f120f7a207f2f9ff99b7a5d7cc8b144250b60f4ce9bb160405228866d93dbb79"
+    },
+    {
+      "path": "olmocr/bench/tests.py",
+      "gitBlobSHA1": "996eb9feb92d8ec06055f706031b398c59e703c0",
+      "sha256": "ff36b3cdf81c4a94f3e43cb78de8a31607eb6a0d140d0bfbfb2fe44122b55727"
+    },
+    {
+      "path": "olmocr/bench/utils.py",
+      "gitBlobSHA1": "5fe5f3845ec21cdb70bd7b954faa0904d3c5aaa8",
+      "sha256": "dc0b8cde64c9be796e3642094b63f308fd19fe1835396b3340ab4c3a6c9b50f0"
+    },
+    {
+      "path": "olmocr/data/renderpdf.py",
+      "gitBlobSHA1": "d33a7ca9e4bd81a3be78d4744ab9b541ead8bc57",
+      "sha256": "7f4a7e0cb1666cf2fb3d24817bf2a38827d535df51dabd2ac7060650eb49d159"
+    },
+    {
+      "path": "olmocr/repeatdetect.py",
+      "gitBlobSHA1": "03dcbe5ee1ad6407ac77e261f1fecb83f9a176a9",
+      "sha256": "29d7ef1fc2a2fa7259eba40a00fa7eca355634f8f4f1af6c086682c8164ae317"
+    },
+    {
+      "path": "olmocr/version.py",
+      "gitBlobSHA1": "74c6940647dfdad56276dba33459347c489d1b95",
+      "sha256": "d21af9d7bd593378f0ef8e8c04cedd20785f6a18e62f8d9478be871083ee474f"
+    }
+  ]
+}

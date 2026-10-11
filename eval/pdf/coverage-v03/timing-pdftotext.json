@@ -1,0 +1,90 @@
+{
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "cpu": "Apple M5",
+  "binarySHA256": null,
+  "python": "3.12.13 (main, Apr 14 2026, 14:33:40) [Clang 22.1.3 ]",
+  "warmups": 1,
+  "repeats": 3,
+  "rows": [
+    {
+      "engine": "pdftotext",
+      "version": "pdftotext version 26.10.0",
+      "id": "harness",
+      "pages": 43,
+      "scope": "text only; CLI startup included (no in-process API)",
+      "samplesMs": [
+        194.60091699147597,
+        190.76270799268968,
+        192.93837499571964
+      ],
+      "medianMs": 192.93837499571964,
+      "msPerPage": 4.486938953388829,
+      "outputSha256": "ec1e210673041d017224aebc0c0b48ccec5f919231f78cef60b1f82ac2416853",
+      "stats": null
+    },
+    {
+      "engine": "pdftotext",
+      "version": "pdftotext version 26.10.0",
+      "id": "axler",
+      "pages": 404,
+      "scope": "text only; CLI startup included (no in-process API)",
+      "samplesMs": [
+        373.64825000986457,
+        367.37324998830445,
+        380.33120799809694
+      ],
+      "medianMs": 373.64825000986457,
+      "msPerPage": 0.9248719059650113,
+      "outputSha256": "b0b487f8f7065d677d60d891c550c20321e301db1ac20467621e961cd8eb97ec",
+      "stats": null
+    },
+    {
+      "engine": "pdftotext",
+      "version": "pdftotext version 26.10.0",
+      "id": "hefferon",
+      "pages": 525,
+      "scope": "text only; CLI startup included (no in-process API)",
+      "samplesMs": [
+        1085.1267920224927,
+        1086.95512500708,
+        1221.6315419937018
+      ],
+      "medianMs": 1086.95512500708,
+      "msPerPage": 2.0703907142992,
+      "outputSha256": "acc299263e6ec5d90ac1c170f5292b6ea7a797a6d1294dea35acbdb1dace7a35",
+      "stats": null
+    },
+    {
+      "engine": "pdftotext",
+      "version": "pdftotext version 26.10.0",
+      "id": "thinkpython",
+      "pages": 244,
+      "scope": "text only; CLI startup included (no in-process API)",
+      "samplesMs": [
+        328.19337499677204,
+        310.6987500214018,
+        304.24637501710095
+      ],
+      "medianMs": 310.6987500214018,
+      "msPerPage": 1.2733555328745976,
+      "outputSha256": "2acda069332316b725d63870de48d8498af853baa55205122755093c3519eceb",
+      "stats": null
+    },
+    {
+      "engine": "pdftotext",
+      "version": "pdftotext version 26.10.0",
+      "id": "calculus",
+      "pages": 292,
+      "scope": "text only; CLI startup included (no in-process API)",
+      "samplesMs": [
+        470.6637079943903,
+        466.3422500016168,
+        483.35120899719186
+      ],
+      "medianMs": 470.6637079943903,
+      "msPerPage": 1.6118620136794188,
+      "outputSha256": "5a0c5cfa1fbc574e8dfcbdd300420655825ba331924716988d38e0b0cbaf2ebf",
+      "stats": null
+    }
+  ]
+}

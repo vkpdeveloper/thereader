@@ -214,6 +214,33 @@ func (p *pdf) fontProgram(f *font, page int) *outlineFont {
 		err = e
 		if e == nil {
 			f.program, err = parseCFF(data)
+			if err == nil && f.program.names != nil {
+				byGID := map[int]string{}
+				byUnicode := map[string]string{}
+				keys := []string{}
+				for name := range f.program.names {
+					keys = append(keys, name)
+				}
+				sort.Strings(keys)
+				for _, name := range keys {
+					byGID[f.program.names[name]] = name
+					if u := glyphName(name); u != "�" && u != "" {
+						byUnicode[u] = name
+					}
+				}
+				for code := range f.names {
+					if f.names[code] != "" {
+						continue
+					}
+					if f.source["Encoding"] == nil {
+						if gid, ok := f.program.codes[uint32(code)]; ok {
+							f.names[code] = byGID[gid]
+						}
+					} else {
+						f.names[code] = byUnicode[f.encoding[code]]
+					}
+				}
+			}
 		}
 	} else if s, ok := p.resolve(f.descriptor["FontFile2"]).(*stream); ok {
 		data, e := p.decode(s)

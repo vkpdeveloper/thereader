@@ -11,3 +11,15 @@ the top of the file and embedded with the data in library binaries. This is a
 glyph-name-to-Unicode reference table, not a parser or extraction library.
 The Go PDF and font-program parsers are implemented in this package. Extra TeX
 glyph aliases live separately in `glyphlist.go`.
+
+## CFF reference tables
+
+`cff-*.txt` contains the standard strings, Expert/ExpertSubset charsets and
+StandardEncoding defined in Adobe Technical Note 5176, appendices A–C:
+https://adobe-type-tools.github.io/font-tech-notes/pdfs/5176.CFF.pdf
+
+These format tables were exported from the corresponding constants in
+FontTools 4.66.1 (`cffLib` and `encodings.StandardEncoding`). The MIT license
+is retained in `FONTTOOLS-LICENSE` and embedded alongside the tables. No
+FontTools parsing or outline implementation is included or used at runtime.
+The bounded Go charset/encoding reader is implemented in `cff_names.go`.

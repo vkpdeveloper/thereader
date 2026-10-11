@@ -9,7 +9,7 @@ import (
 // Repeated long rules define the whole table, including group labels and
 // headers. Column boundaries come from the consensus of its populated rows.
 // This avoids splitting one table every time a cell is blank or spans columns.
-func ruledTables(lines []*line, rules []ruling, body float64) []Block {
+func legacyRuledTables(lines []*line, rules []ruling, body float64) []Block {
 	type ruleGroup struct {
 		x1, x2 float64
 		ys     []float64

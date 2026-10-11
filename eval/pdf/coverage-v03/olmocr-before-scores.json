@@ -1,0 +1,88 @@
+{
+  "candidate": "before",
+  "datasetRevision": "54a96a6fb6a2bd3b297e59869491db4d3625b711",
+  "evaluatorRevision": "f7cfe4c22098b154c76b6ec950d1c0a464eecf8d",
+  "pdfs": 1403,
+  "tests": 8413,
+  "overallMacroPassRate": 0.2995402153411567,
+  "bootstrap95CI": [
+    0.2908007348105697,
+    0.3079537905874321
+  ],
+  "categories": {
+    "arxiv_math": {
+      "passed": 16,
+      "total": 2927,
+      "passRate": 0.005466347796378545
+    },
+    "baseline": {
+      "passed": 1381,
+      "total": 1394,
+      "passRate": 0.990674318507891
+    },
+    "headers_footers": {
+      "passed": 455,
+      "total": 760,
+      "passRate": 0.5986842105263158
+    },
+    "long_tiny_text": {
+      "passed": 73,
+      "total": 442,
+      "passRate": 0.16515837104072398
+    },
+    "multi_column": {
+      "passed": 316,
+      "total": 884,
+      "passRate": 0.3574660633484163
+    },
+    "old_scans": {
+      "passed": 70,
+      "total": 526,
+      "passRate": 0.13307984790874525
+    },
+    "old_scans_math": {
+      "passed": 0,
+      "total": 458,
+      "passRate": 0.0
+    },
+    "table_tests": {
+      "passed": 149,
+      "total": 1022,
+      "passRate": 0.14579256360078277
+    }
+  },
+  "testTypes": {
+    "math": {
+      "passed": 16.0,
+      "total": 3385,
+      "passRate": 0.004726735598227474
+    },
+    "absent": {
+      "passed": 518.0,
+      "total": 823,
+      "passRate": 0.6294046172539489
+    },
+    "baseline": {
+      "passed": 1390.0,
+      "total": 1403,
+      "passRate": 0.9907341411261582
+    },
+    "present": {
+      "passed": 73.0,
+      "total": 721,
+      "passRate": 0.10124826629680998
+    },
+    "order": {
+      "passed": 316.0,
+      "total": 1061,
+      "passRate": 0.29783223374175305
+    },
+    "table": {
+      "passed": 147.0,
+      "total": 1020,
+      "passRate": 0.14411764705882352
+    }
+  },
+  "testResults": "olmocr-before-tests.jsonl",
+  "testResultsSHA256": "347757912a9558631c1d795c83e736560abe8975bb406b2ff963fa9642dedb07"
+}

@@ -238,6 +238,7 @@ func finishLine(l *line) {
 
 func (p *pdf) layout(pc *pageContent, bodySize float64) []Block {
 	lines := makeLines(pc.spans)
+	algorithms := algorithmBlocks(lines, pc.rules, bodySize)
 	mathBlocks := p.mathBlocks(pc, lines)
 	p.vectorAsset(pc, mathBlocks, lines)
 	tables := detectTables(lines, pc.rules, bodySize)
@@ -252,8 +253,9 @@ func (p *pdf) layout(pc *pageContent, bodySize float64) []Block {
 		}
 	}
 	ordered := columnOrder(remaining, pc.page.Width)
+	words := pageWords(ordered)
 	for _, l := range ordered {
-		if l.math {
+		if l.math || strings.Contains(l.text, "�") {
 			p.inlineMath(pc, l)
 		}
 	}
@@ -299,6 +301,10 @@ func (p *pdf) layout(pc *pageContent, bodySize float64) []Block {
 				}
 				indent := int(math.Round(math.Max(0, l.box.X-current.Box.X) / math.Max(1, l.size*.6)))
 				separator += strings.Repeat(" ", min(indent, 80))
+			} else if kind == "paragraph" && !previous.math && !l.math && witnessedHyphen(current.Text, l.text, words) {
+				current.Text = strings.TrimSuffix(current.Text, "-")
+				trimRunHyphen(current.Runs)
+				separator = ""
 			} else if canDehyphenate(current.Text, l.text) || endsSoftHyphen(previous) {
 				// A soft hyphen explicitly marks a discretionary break and was
 				// removed during normalization. A visible hyphen could belong to
@@ -321,7 +327,7 @@ func (p *pdf) layout(pc *pageContent, bodySize float64) []Block {
 	flush()
 	// Tables and images are inserted near their original vertical position. Text
 	// blocks keep column order; sorting the entire page by Y would interleave them.
-	for _, b := range append(append(mathBlocks, tables...), pc.images...) {
+	for _, b := range append(append(append(algorithms, mathBlocks...), tables...), pc.images...) {
 		at := len(blocks)
 		for j, t := range blocks {
 			if t.Box.Y > b.Box.Y+b.Box.H*.25 {

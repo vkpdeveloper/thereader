@@ -257,8 +257,14 @@ func (p *pdf) font(v any, page int) *font {
 		}
 	} else {
 		first := integer(d["FirstChar"])
+		widthScale := 1.0
+		if named(d["Subtype"]) == "Type3" {
+			if m := p.array(d["FontMatrix"]); len(m) == 6 {
+				widthScale = number(m[0]) * 1000
+			}
+		}
 		for i, w := range p.array(d["Widths"]) {
-			f.widths[uint32(first+i)] = number(w)
+			f.widths[uint32(first+i)] = number(w) * widthScale
 		}
 	}
 	descriptor := p.dict(fd["FontDescriptor"])
@@ -288,8 +294,9 @@ func (p *pdf) font(v any, page int) *font {
 		}
 	}
 	// Simple embedded fonts without an explicit PDF Encoding use the
-	// encoding in their font program, not StandardEncoding. TeX books rely on it.
-	if !f.cid && d["Encoding"] == nil && len(f.unicode) == 0 && (descriptor["FontFile"] != nil || descriptor["FontFile3"] != nil) {
+	// encoding in their font program, not StandardEncoding. ToUnicode may map
+	// only some codes: its presence must not disable this fallback for the rest.
+	if !f.cid && d["Encoding"] == nil && (descriptor["FontFile"] != nil || descriptor["FontFile3"] != nil) {
 		if p.fontProgram(f, page) != nil {
 			for code, n := range f.names {
 				if n != "" {

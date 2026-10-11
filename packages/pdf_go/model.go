@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const Version = "0.2.0"
+const Version = "0.3.0"
 
 var (
 	ErrInvalid   = errors.New("invalid PDF")
@@ -72,11 +72,12 @@ type Run struct {
 	Monochrome bool    `json:"monochrome,omitempty"`
 }
 type Block struct {
-	Kind           string     `json:"kind"` // heading, paragraph, list, table, image, code
+	Kind           string     `json:"kind"` // heading, paragraph, list, table, image, code, math
 	Text           string     `json:"text,omitempty"`
 	Runs           []Run      `json:"runs,omitempty"`
 	Level          int        `json:"level,omitempty"`
 	Rows           [][]string `json:"rows,omitempty"`
+	Table          *Table     `json:"table,omitempty"` // semantic cells; Rows retains text at each anchor
 	Asset          string     `json:"asset,omitempty"`
 	Alt            string     `json:"alt,omitempty"`
 	Role           string     `json:"role,omitempty"`           // e.g. reference, index, caption, footnote
@@ -85,6 +86,26 @@ type Block struct {
 	WidthEm        float64    `json:"widthEm,omitempty"`        // positioned display math width relative to body text
 	Monochrome     bool       `json:"monochrome,omitempty"`
 	Box            Rect       `json:"box"`
+}
+
+// Table preserves cell relationships independently of an output format.
+// Coordinates are zero-based; covered positions have no separate cell.
+type Table struct {
+	Rows       int         `json:"rows"`
+	Columns    int         `json:"columns"`
+	HeaderRows int         `json:"headerRows,omitempty"`
+	Cells      []TableCell `json:"cells"`
+}
+type TableCell struct {
+	Row     int    `json:"row"`
+	Column  int    `json:"column"`
+	RowSpan int    `json:"rowSpan"`
+	ColSpan int    `json:"colSpan"`
+	Text    string `json:"text"`
+	Runs    []Run  `json:"runs,omitempty"`
+	Header  bool   `json:"header,omitempty"`
+	Scope   string `json:"scope,omitempty"` // col, colgroup, row, or rowgroup
+	Box     Rect   `json:"box"`
 }
 type Page struct {
 	Number   int     `json:"number"`

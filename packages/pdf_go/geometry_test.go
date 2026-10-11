@@ -310,6 +310,8 @@ func TestCropBoxIsClippedToPhysicalPage(t *testing.T) {
 }
 
 func FuzzFontPrograms(f *testing.F) {
+	f.Add(namedCFFFixture())
+	f.Add([]byte("600 0 d0 q 10 0 0 10 0 0 cm BI /W 2 /H 2 /IM true ID \x80\x40 EI Q"))
 	f.Add([]byte{1, 0, 4, 4, 0, 0})
 	f.Add([]byte{139, 139, 21, 239, 139, 5, 14})
 	f.Fuzz(func(t *testing.T, b []byte) {
