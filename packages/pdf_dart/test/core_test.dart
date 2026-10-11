@@ -17,13 +17,16 @@ Uint8List _bytes(String s) => Uint8List.fromList(s.codeUnits);
 void main() {
   test('lexer retains literal escaping and indirect references', () {
     final l = _Lexer(
-          _bytes(r'[12 0 R /A#20B (one\n\050two\051three) <FEFF0041>]'),
+          _bytes(
+            r'[12 0 R /A#20B (one\n\050two\051three) <FEFF0041> -12.75 +.5 1.]',
+          ),
         ),
         a = l.value() as List;
     expect(a[0], const _Ref(12, 0));
     expect(_named(a[1]), 'A B');
     expect(_binary((a[2] as _Literal).bytes), 'one\n(two)three');
     expect((a[3] as _Literal).bytes, [254, 255, 0, 65]);
+    expect([_number(a[4]), _number(a[5]), _number(a[6])], [-12.75, 0.5, 1.0]);
   });
   test('bounded original inflate decodes generic encoder fixtures', () {
     for (final level in [0, 1, 6, 9]) {
