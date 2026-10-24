@@ -40,7 +40,7 @@ openai==2.54.0
 opencv-python-headless==4.11.0.86
 packaging==26.3
 pdftext==0.7.1
-pillow==10.4.0
+pillow==13.0.0
 platformdirs==4.13.0
 psutil==7.2.2
 pyasn1==0.6.4
