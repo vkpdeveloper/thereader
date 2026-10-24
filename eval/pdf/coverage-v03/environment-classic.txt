@@ -32,7 +32,7 @@ pyee==13.0.1
 pymupdf==1.28.2
 pymupdf-layout==1.28.2
 pymupdf4llm==1.28.2
-pypdf==6.20.0
+pypdf==6.21.2
 pypdfium2==5.14.0
 python-dotenv==1.2.4
 pyyaml==6.0.3
