@@ -81,7 +81,7 @@ setuptools==84.0.0
 shapely==2.2.0
 shellingham==1.5.4
 six==1.17.0
-soupsieve==3.0.1
+soupsieve==4.0
 sympy==1.14.0
 tabulate==0.10.0
 tokenizers==0.23.3
